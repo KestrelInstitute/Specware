@@ -73,7 +73,7 @@ MetaSlang qualifying spec
  type MetaSlang.AType b =
   | Arrow        AType b * AType b                   * b
   | Product      List (Id * AType b)                 * b
-  | CoProduct    List (Id * Option (AType b))        * b
+  | CoProduct    List (QualifiedId * Option (AType b))        * b
   | Quotient     AType b * ATerm b                   * b
   | Subtype      AType b * ATerm b                   * b
   | Base         QualifiedId * List (AType b)        * b  % Typechecker verifies that QualifiedId refers to some typeInfo.  The items in the list are the actuals of this type instantiation (if any).
@@ -93,7 +93,7 @@ MetaSlang qualifying spec
   | AliasPat      APattern b * APattern b             * b
 %GK says:  | AliasPat      AVar b * APattern b             * b
   | VarPat        AVar b                              * b
-  | EmbedPat      Id * Option (APattern b) * AType b  * b
+  | EmbedPat      QualifiedId * Option (APattern b) * AType b  * b
   | RecordPat     List(Id * APattern b)               * b
   | WildPat       AType b                             * b
   %% Add a LiteralPat for these (takes an ALiteral <-- also new):
@@ -129,9 +129,9 @@ MetaSlang qualifying spec
   | Op             QualifiedId * Fixity
   | Project        Id
   | RecordMerge             % <<
-  | Embed          Id * Bool  % represents a call of a co-product constructor (the bool indicates whether the constructor takes arguments)
-  | Embedded       Id         % represents a call to embed?, takes a constructor
-  | Select         Id         % specific case extraction -- generated only by pattern match compiler and type obligation generator (deprecate?)
+  | Embed          QualifiedId * Bool  % represents a call of a co-product constructor (the bool indicates whether the constructor takes arguments)
+  | Embedded       QualifiedId         % represents a call to embed?, takes a constructor
+  | Select         QualifiedId         % specific case extraction -- generated only by pattern match compiler and type obligation generator (deprecate?)
   %% Factor out literals as new ALiteral construct:
   | Nat            Nat
   | Char           Char
@@ -2144,7 +2144,7 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
    case pattern of
      | AliasPat(p1, p2,_) ->
        foldSubPatterns f (foldSubPatterns f result p1) p2
-     | EmbedPat(id, Some pat,_,_) -> foldSubPatterns f result pat
+     | EmbedPat(_, Some pat,_,_) -> foldSubPatterns f result pat
      | RecordPat(fields,_) ->
        foldl (fn (r,(_,p))-> foldSubPatterns f r p) result fields
      | QuotientPat  (pat,_,_,_) -> foldSubPatterns f result pat
@@ -2559,15 +2559,15 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
  op [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
    case term of
-     | Fun (Embed ("Nil", false), ty, _) | listType? ty -> Some []
-     | Apply (Fun (Embed("Cons", true), 
+     | Fun (Embed (Qualified(q, "Nil"), false), ty, _) | listType? ty -> Some []
+     | Apply (Fun (Embed(Qualified(q, "Cons"), true), 
 		   Arrow (Product ([("1", _), ("2", ty)], _), _, _), _),
 	      Record ([(_, t1), (_, t2)], _), _)
        | listType? ty
        -> (case isFiniteList t2 of
              | Some terms -> Some (t1 :: terms)
              | _ ->  None)
-     | ApplyN ([Fun (Embed ("Cons", true), 
+     | ApplyN ([Fun (Embed (Qualified(q, "Cons"), true), 
 		     Arrow (Product ([("1", _), ("2",  ty1)], _),
 			    ty2, _), _),
 		Record ([(_, t1), (_, t2)], _), _], _)
@@ -2579,8 +2579,8 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
  op [a] isFiniteListPat (pattern : APattern a) : Option (List (APattern a)) =  
    case pattern of
-     | EmbedPat ("Nil", None, ty, _) -> Some []
-     | EmbedPat ("Cons", 
+     | EmbedPat (Qualified(q, "Nil"), None, ty, _) -> Some []
+     | EmbedPat (Qualified(q, "Cons"), 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 ty, _)
        | listType? ty

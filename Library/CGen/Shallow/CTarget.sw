@@ -1447,8 +1447,8 @@ refine def ullongOfMathInt (i:Int | i in? rangeOfUllong) : Ullong = ullong (bits
 %% proof isa -verbatim
 %% theorem C__ushortOfMathInt_alt_def: 
 %%   "\<lbrakk>i \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow> 
-%%    (C__ushortOfMathInt i) = C__Ushort__ushort (toBits(nat i,16::nat))"
-%%   apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__Ushort__ushort (toBits(nat i,16::nat))" in C__mathIntOfUshort_injective)
+%%    (C__ushortOfMathInt i) = C__ushort (toBits(nat i,16::nat))"
+%%   apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__ushort (toBits(nat i,16::nat))" in C__mathIntOfUshort_injective)
 %%   apply(simp add: Bits__bits_length)
 %%   apply(simp)
 %%   apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2)
@@ -1745,7 +1745,7 @@ proof isa -verbatim
 
 lemma charOfMathInt_suffix:
   "\<lbrakk>length bs \<ge> 8; toNat bs \<le> 255\<rbrakk>
-    \<Longrightarrow> C__charOfMathInt (int (toNat bs) mod 256) = C__Char__char (List__suffix (bs, 8))"
+    \<Longrightarrow> C__charOfMathInt (int (toNat bs) mod 256) = C__char (List__suffix (bs, 8))"
   apply (rule_tac t="256" and s="int 256" in subst, arith, 
          simp only: zmod_int [symmetric], simp)
   apply (subst C__mathIntOfChar_injective [symmetric],
@@ -3345,67 +3345,67 @@ end-proof
 
 proof isa C__ucharOfMathInt_Obligation_the
   apply(auto)
-  apply(rule exI [of _ "C__Uchar__uchar (toBits ((nat i), C__CHAR_BIT))"])
+  apply(rule exI [of _ "C__uchar (toBits ((nat i), C__CHAR_BIT))"])
   apply(simp add:C__rangeOfUchar_def)
 end-proof
 
 proof isa C__ushortOfMathInt_Obligation_the
   apply(auto)
-  apply(rule exI [of _ "C__Ushort__ushort (toBits ((nat i), C__short_bits))"])
+  apply(rule exI [of _ "C__ushort (toBits ((nat i), C__short_bits))"])
   apply(simp add:C__rangeOfUshort_def)
 end-proof
 
 proof isa C__uintOfMathInt_Obligation_the
   apply(auto)
-  apply(rule exI [of _ "C__Uint__uint (toBits ((nat i), C__int_bits))"])
+  apply(rule exI [of _ "C__uint (toBits ((nat i), C__int_bits))"])
   apply(simp add:C__rangeOfUint_def)
 end-proof
 
 proof isa C__ulongOfMathInt_Obligation_the
   apply(auto)
-  apply(rule exI [of _ "C__Ulong__ulong (toBits ((nat i), C__long_bits))"])
+  apply(rule exI [of _ "C__ulong (toBits ((nat i), C__long_bits))"])
   apply(simp add:C__rangeOfUlong_def)
 end-proof
 
 proof isa C__ullongOfMathInt_Obligation_the
   apply(auto)
-  apply(rule exI [of _ "C__Ullong__ullong (toBits ((nat i), C__llong_bits))"])
+  apply(rule exI [of _ "C__ullong (toBits ((nat i), C__llong_bits))"])
   apply(simp add:C__rangeOfUllong_def)
 end-proof
 
 proof isa C__scharOfMathInt_Obligation_the 
   apply (auto)
-  apply (rule exI [of _ "C__Schar__schar (TwosComplement__tcNumber (i, C__CHAR_BIT))"])
+  apply (rule exI [of _ "C__schar (TwosComplement__tcNumber (i, C__CHAR_BIT))"])
   apply (simp add:C__rangeOfSchar_def)
 end-proof
 
 proof isa C__sshortOfMathInt_Obligation_the 
   apply (auto)
-  apply (rule exI [of _ "C__Sshort__sshort (TwosComplement__tcNumber (i, C__short_bits))"])
+  apply (rule exI [of _ "C__sshort (TwosComplement__tcNumber (i, C__short_bits))"])
   apply (simp add:C__rangeOfSshort_def)
 end-proof
 
 proof isa C__sintOfMathInt_Obligation_the 
   apply (auto)
-  apply (rule exI [of _ "C__Sint__sint (TwosComplement__tcNumber (i, C__int_bits))"])
+  apply (rule exI [of _ "C__sint (TwosComplement__tcNumber (i, C__int_bits))"])
   apply (simp add:C__rangeOfSint_def)
 end-proof
 
 proof isa C__slongOfMathInt_Obligation_the 
   apply (auto)
-  apply (rule exI [of _ "C__Slong__slong (TwosComplement__tcNumber (i, C__long_bits))"])
+  apply (rule exI [of _ "C__slong (TwosComplement__tcNumber (i, C__long_bits))"])
   apply (simp add:C__rangeOfSlong_def)
 end-proof
 
 proof isa C__sllongOfMathInt_Obligation_the 
   apply (auto)
-  apply (rule exI [of _ "C__Sllong__sllong (TwosComplement__tcNumber (i, C__llong_bits))"])
+  apply (rule exI [of _ "C__sllong (TwosComplement__tcNumber (i, C__llong_bits))"])
   apply (simp add:C__rangeOfSllong_def)
 end-proof
 
 proof isa charOfMathInt_Obligation_the 
   apply (auto)
-  apply (rule exI [of _ "C__Char__char (if C__plainCharsAreSigned then  (TwosComplement__tcNumber (i, C__CHAR_BIT)) else (toBits ((nat i), C__CHAR_BIT)))"])
+  apply (rule exI [of _ "C__char (if C__plainCharsAreSigned then  (TwosComplement__tcNumber (i, C__CHAR_BIT)) else (toBits ((nat i), C__CHAR_BIT)))"])
   apply (case_tac "C__plainCharsAreSigned")
   apply (simp add:C__rangeOfChar_def TwosComplement__tcNumber_length TwosComplement__rangeForLength_def  TwosComplement__toInt_tcNumber_reduce TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def )
   apply (simp add:C__rangeOfChar_def  TwosComplement__toInt_tcNumber_reduce )
@@ -3854,35 +3854,35 @@ proof isa C__ullongOfUlong_bits
 end-proof
 
 proof isa C__ucharOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__ucharOfMathInt i)" and y="C__Uchar__uchar (toBits(nat i, C__CHAR_BIT))" in C__mathIntOfUchar_injective, force)
+  apply(cut_tac x="(C__ucharOfMathInt i)" and y="C__uchar (toBits(nat i, C__CHAR_BIT))" in C__mathIntOfUchar_injective, force)
   apply(simp add: Bits__bits_length)
   apply(simp)
   apply(simp del:C__mathIntOfUchar_injective add:C__mathIntOfUchar_ucharOfMathInt_2 C__ucharOfMathInt__1_def)
 end-proof
 
 proof isa C__ushortOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__Ushort__ushort (toBits(nat i, C__short_bits))" in C__mathIntOfUshort_injective, force)
+  apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__ushort (toBits(nat i, C__short_bits))" in C__mathIntOfUshort_injective, force)
   apply(simp add: Bits__bits_length)
   apply(simp)
   apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2 C__ushortOfMathInt__1_def)
 end-proof
 
 proof isa C__uintOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__uintOfMathInt i)" and y="C__Uint__uint (toBits(nat i, C__int_bits))" in C__mathIntOfUint_injective, force)
+  apply(cut_tac x="(C__uintOfMathInt i)" and y="C__uint (toBits(nat i, C__int_bits))" in C__mathIntOfUint_injective, force)
   apply(simp add: Bits__bits_length)
   apply(simp)
   apply(simp del:C__mathIntOfUint_injective add:C__mathIntOfUint_uintOfMathInt_2 C__uintOfMathInt__1_def)
 end-proof
 
 proof isa C__ulongOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__ulongOfMathInt i)" and y="C__Ulong__ulong (toBits(nat i, C__long_bits))" in C__mathIntOfUlong_injective, force)
+  apply(cut_tac x="(C__ulongOfMathInt i)" and y="C__ulong (toBits(nat i, C__long_bits))" in C__mathIntOfUlong_injective, force)
   apply(simp add: Bits__bits_length)
   apply(simp)
   apply(simp del:C__mathIntOfUlong_injective add:C__mathIntOfUlong_ulongOfMathInt_2 C__ulongOfMathInt__1_def)
 end-proof
 
 proof isa C__ullongOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__ullongOfMathInt i)" and y="C__Ullong__ullong (toBits(nat i, C__llong_bits))" in C__mathIntOfUllong_injective, force)
+  apply(cut_tac x="(C__ullongOfMathInt i)" and y="C__ullong (toBits(nat i, C__llong_bits))" in C__mathIntOfUllong_injective, force)
   apply(simp add: Bits__bits_length)
   apply(simp)
   apply(simp del:C__mathIntOfUllong_injective add:C__mathIntOfUllong_ullongOfMathInt_2 C__ullongOfMathInt__1_def)
@@ -4074,7 +4074,7 @@ proof isa C__scharOfMathInt__1_Obligation_subtype0
 end-proof
 
 proof isa C__scharOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__scharOfMathInt i)" and y="C__Schar__schar (TwosComplement__tcNumber(i, C__CHAR_BIT))" in C__mathIntOfSchar_injective)
+  apply(cut_tac x="(C__scharOfMathInt i)" and y="C__schar (TwosComplement__tcNumber(i, C__CHAR_BIT))" in C__mathIntOfSchar_injective)
   apply(simp add: Bits__bits_length)
   apply(simp add: rangeOfSchar_alt_def)
   apply(simp del:C__mathIntOfSchar_injective add:C__mathIntOfSchar_scharOfMathInt C__scharOfMathInt__1_def rangeOfSchar_alt_def)
@@ -4093,7 +4093,7 @@ proof isa C__sshortOfMathInt__1_Obligation_subtype0
 end-proof
 
 proof isa C__sshortOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__sshortOfMathInt i)" and y="C__Sshort__sshort (TwosComplement__tcNumber(i, C__short_bits))" in C__mathIntOfSshort_injective)
+  apply(cut_tac x="(C__sshortOfMathInt i)" and y="C__sshort (TwosComplement__tcNumber(i, C__short_bits))" in C__mathIntOfSshort_injective)
   apply(simp add: Bits__bits_length)
   apply(simp add: rangeOfSshort_alt_def)
   apply(simp del:C__mathIntOfSshort_injective add:C__mathIntOfSshort_sshortOfMathInt C__sshortOfMathInt__1_def rangeOfSshort_alt_def)
@@ -4111,7 +4111,7 @@ proof isa C__sintOfMathInt__1_Obligation_subtype0
 end-proof
 
 proof isa C__sintOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__sintOfMathInt i)" and y="C__Sint__sint (TwosComplement__tcNumber(i, C__int_bits))" in C__mathIntOfSint_injective)
+  apply(cut_tac x="(C__sintOfMathInt i)" and y="C__sint (TwosComplement__tcNumber(i, C__int_bits))" in C__mathIntOfSint_injective)
   apply(simp add: Bits__bits_length)
   apply(simp add: rangeOfSint_alt_def)
   apply(simp del:C__mathIntOfSint_injective add:C__mathIntOfSint_sintOfMathInt C__sintOfMathInt__1_def rangeOfSint_alt_def)
@@ -4129,7 +4129,7 @@ proof isa C__slongOfMathInt__1_Obligation_subtype0
 end-proof
 
 proof isa C__slongOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__slongOfMathInt i)" and y="C__Slong__slong (TwosComplement__tcNumber(i, C__long_bits))" in C__mathIntOfSlong_injective)
+  apply(cut_tac x="(C__slongOfMathInt i)" and y="C__slong (TwosComplement__tcNumber(i, C__long_bits))" in C__mathIntOfSlong_injective)
   apply(simp add: Bits__bits_length)
   apply(simp add: rangeOfSlong_alt_def)
   apply(simp del:C__mathIntOfSlong_injective add:C__mathIntOfSlong_slongOfMathInt C__slongOfMathInt__1_def rangeOfSlong_alt_def)
@@ -4147,7 +4147,7 @@ proof isa C__sllongOfMathInt__1_Obligation_subtype0
 end-proof
 
 proof isa C__sllongOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__sllongOfMathInt i)" and y="C__Sllong__sllong (TwosComplement__tcNumber(i, C__llong_bits))" in C__mathIntOfSllong_injective)
+  apply(cut_tac x="(C__sllongOfMathInt i)" and y="C__sllong (TwosComplement__tcNumber(i, C__llong_bits))" in C__mathIntOfSllong_injective)
   apply(simp add: Bits__bits_length)
   apply(simp add: rangeOfSllong_alt_def)
   apply(simp del:C__mathIntOfSllong_injective add:C__mathIntOfSllong_sllongOfMathInt C__sllongOfMathInt__1_def rangeOfSllong_alt_def)

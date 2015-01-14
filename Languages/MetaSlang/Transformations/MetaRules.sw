@@ -211,17 +211,17 @@ op MSRule.expandRecordMerge (spc: Spec) (tm: TransTerm): Option MSTerm =
    if equalTerm?(tm, ntm) then None else Some ntm
 
 
-op caseEquality (t: MSTerm, vs: MSVars): Option(MSVars * Id * MSType * MSPattern * MSTerm * MSTerm) =
+op caseEquality (t: MSTerm, vs: MSVars): Option(MSVars * QualifiedId * MSType * MSPattern * MSTerm * MSTerm) =
   let def checkConstrBind(e1, e2) =
         if ~(disjointVars?(freeVars e2, vs)) then None
         else
         case e1 of
-          | Apply(Fun(Embed(constr_id, true), ty, _), v_tm, _) ->
+          | Apply(Fun(Embed(constr_qid, true), ty, _), v_tm, _) ->
             let p_vs = freeVars v_tm in
             if forall? (fn v -> inVars?(v, vs) && ~(isFree(v, e2))) p_vs
               then
                 case termToPattern v_tm of
-                  | Some v_pat -> Some(p_vs, constr_id, ty, v_pat, e2, e1)
+                  | Some v_pat -> Some(p_vs, constr_qid, ty, v_pat, e2, e1)
                   | None -> None
             else None
           | _ -> None
@@ -418,20 +418,20 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
         case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
           | Some cj -> 
             (case caseEquality(cj,vs) of
-               | Some (p_vs, constr_id, f_ty, v_pat, s_tm, v_tm) ->
+               | Some (p_vs, constr_qid, f_ty, v_pat, s_tm, v_tm) ->
                  let new_vs = filter (fn v -> ~(inVars?(v, p_vs))) vs in
                  let constr_ty = range(spc, f_ty) in
                  let tsb =  (s_tm, v_tm) :: tsb in
                  let new_cjs = delete cj cjs in % termsSubst(delete cj cjs, tsb) in
                  let new_ex = mkSimpBind(Exists, new_vs, mkConj new_cjs) in
-                 let new_tm = mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty),
+                 let new_tm = mkCaseExpr(s_tm, [(mkEmbedPat(constr_qid, Some(v_pat), constr_ty),
                                                  new_ex),
                                                 (mkWildPat constr_ty, else_tm)])
                  in
                  % let _ = writeLine("Case:\n"^printTerm new_tm) in
                  let (rec_ex_tm, prf) = transEx1(new_vs, new_cjs, a, tsb, new_ex) in
                  let ret_tm = mkCaseExpr(s_tm,
-                                         [(mkEmbedPat(constr_id, Some(v_pat), constr_ty), rec_ex_tm),
+                                         [(mkEmbedPat(constr_qid, Some(v_pat), constr_ty), rec_ex_tm),
                                           (mkWildPat constr_ty, else_tm)]) in
                  Some(ret_tm,
                       extendCaseProof(orig_tm, new_tm, ret_tm, [0, 0], prf, s_tm))

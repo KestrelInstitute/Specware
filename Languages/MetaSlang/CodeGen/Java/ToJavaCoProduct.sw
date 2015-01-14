@@ -123,7 +123,7 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
      def mkTagCFieldDeclsFromSummands(summands, sumNum) = 
        (case summands of
 	  | Nil -> []
-	  | (cons, _)::rest -> 
+	  | (Qualified(_, cons), _)::rest -> 
 	    let varDeclId = (mkTagCId(cons), 0):VarDeclId in
 	    let varInit = (Expr (CondExp (Un (Prim (IntL sumNum)), None))):VarInit in
 	    let fldDecl = ([Static,Final], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
@@ -135,17 +135,17 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
 				      {
 				       summand <-
 				         case summand of
-					   | (cons, Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args)
-					   | (cons, Some (srt)) -> sumToConsMethodDecl(id, cons, [("1", srt)])
-					   | (cons, None) -> sumToConsMethodDecl(id, cons, []);
+					   | (Qualified(_, cons), Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args)
+					   | (Qualified(_, cons), Some (srt)) -> sumToConsMethodDecl(id, cons, [("1", srt)])
+					   | (Qualified(_, cons), None) -> sumToConsMethodDecl(id, cons, []);
 				       return (summands ++ [summand])
 				      }) [] summands;
     sumTypeClsDecl <- return(sumTypeToClsDecl(id, [tagFieldDecl]++tagCFieldDecls, sumConstructorMethDecls));
     sumClsDecls <- mapM (fn summand ->
 			 case summand of
-			   | (cons, Some(Product(args,_))) -> sumToClsDecl(id,cons,args)
-			   | (cons, Some(srt)) -> sumToClsDecl(id,cons,[("1",srt)])
-			   | (cons, None) -> sumToClsDecl(id,cons,[])
+			   | (Qualified(_, cons), Some(Product(args,_))) -> sumToClsDecl(id,cons,args)
+			   | (Qualified(_, cons), Some(srt)) -> sumToClsDecl(id,cons,[("1",srt)])
+			   | (Qualified(_, cons), None) -> sumToClsDecl(id,cons,[])
 			  ) summands;
 %  let sumClsDeclsCols = map (fn(cons, Some (Product (args, _))) -> sumToClsDecl(id, cons, args) |
 %			   (cons, Some (srt)) -> sumToClsDecl(id, cons, [("1", srt)]) |

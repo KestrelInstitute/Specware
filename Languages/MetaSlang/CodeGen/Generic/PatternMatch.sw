@@ -419,7 +419,7 @@ PatternMatch qualifying spec
   *  We generate tester functions for the various constructor formats.
   *)
 
- op embedded (constructorName : String) (trm : MSTerm) : MSTerm = 
+ op embedded (constructorName : QualifiedId) (trm : MSTerm) : MSTerm = 
   mkApply (mkEmbedded (constructorName, termType trm),
            trm)
 
@@ -596,15 +596,15 @@ PatternMatch qualifying spec
     | RecordPat _          -> (fn _ -> trueTerm)
     | _                    -> (fn _ -> trueTerm)
 
- op coproductFields (spc: Spec, typ: MSType) : List (Id * Option MSType) = 
+ op coproductFields (spc: Spec, typ: MSType) : List (QualifiedId * Option MSType) = 
   let typ = unfoldBase (spc, typ) in
   case typ of
     | CoProduct (fields, _) -> fields
     | Subtype   (tau, _, _) -> coproductFields (spc, tau)
     | Base (Qualified ("List", "List"), [x], _) -> 
-      [("Nil",  None), 
-       ("Cons", Some (Product ([("1", x), ("2", typ)], 
-                               typeAnn typ)))]
+      [(Qualified("List", "Nil"),  None), 
+       (Qualified("List", "Cons"), Some (Product ([("1", x), ("2", typ)], 
+                                                  typeAnn typ)))]
     | _ -> System.fail ("CoProduct type expected, but got " ^ printType typ)
 
  op partitionConstructors (ctx     : Context, 
@@ -622,15 +622,15 @@ PatternMatch qualifying spec
                  (pat, mkProjectTerm (ctx.spc, index, trm))) 
               fields
 
-        | EmbedPat (id, Some pat, coproduct_type, _) -> 
+        | EmbedPat (qid as Qualified(_, id), Some pat, coproduct_type, _) -> 
           %% Given a constructor with a patterned argument,
           %%  produce a singleton list pairing that inner argument pattern with a selection function 
           %%  that assumes the constructor is present in the term surrounding it.
           %% E.g. given Foo (x, y) the pattern will be (x, y) and the extractor will be select[Foo]
           let fields = coproductFields (ctx.spc, coproduct_type) in
-          let tm = case findLeftmost (fn (id2, _) -> id = id2) fields of
+          let tm = case findLeftmost (fn (qid2  as Qualified(_, id2), _) -> id = id2) fields of
                      | Some (_, Some field_type) ->
-                       mkApply ((Fun (Select id, 
+                       mkApply ((Fun (Select qid, 
                                       mkArrow (coproduct_type, field_type), 
                                       noPos)), 
                                 trm)

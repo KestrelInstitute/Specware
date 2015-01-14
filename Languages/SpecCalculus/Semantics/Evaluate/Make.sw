@@ -198,7 +198,7 @@ spec
     let public_element : SpecElemTerm = (Op ([mkUnQualifiedId "public"], 
                                              Unspecified,
                                              false,
-                                             ApplyN ([Fun (Embed ("Cons", true),
+                                             ApplyN ([Fun (Embed (Qualified("List", "Cons"), true),
                                                            Arrow (Product ([("1", mtv), 
                                                                             ("2", list_type)],
                                                                            noPos),
@@ -206,7 +206,7 @@ spec
                                                                   noPos),
                                                            noPos),
                                                       Record ([("1", Fun (String "main",        string_type, noPos)),
-                                                               ("2", Fun (Embed ("Nil", false), list_type,   noPos))],
+                                                               ("2", Fun (Embed (Qualified("List", "Nil"), false), list_type,   noPos))],
                                                               noPos)],
                                                      noPos)),
                                          noPos)

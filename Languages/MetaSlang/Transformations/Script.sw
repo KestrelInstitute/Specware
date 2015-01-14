@@ -680,8 +680,9 @@ spec
       | Relax -> Some "relax"
       | Project fld_nm -> Some fld_nm
       | RecordMerge -> Some "<<"
-      | Embed("Cons", true) -> Some "::"
-      | Embed(id, _) -> Some id
+      | Embed(Qualified(_, "Cons"), true) -> Some "::"
+      | Embed(Qualified(_, "Nil"), false) -> Some "[]"
+      | Embed(Qualified(_, id), _) -> Some id
       | Embedded _ -> Some "embedded"
       | Select _ -> Some "select"
       | Nat x -> Some(show x)

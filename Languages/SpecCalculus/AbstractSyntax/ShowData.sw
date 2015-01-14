@@ -1222,7 +1222,7 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
     | VarPat (v,_) -> ppConcat [ppString "(VarPat ", ppVar c v, ppString ")"]
     | EmbedPat (constr,pat,ty,_) ->
       ppGrConcat ([ppString "(EmbedPat ",
-                   ppID constr,
+                   ppQualifiedId constr,
                    ppString " ",
                    case pat of
                      | None -> ppString "None" %ppNil
@@ -1362,9 +1362,9 @@ op ppFun (fun:MSFun) : WLPretty =
     | Project id ->
       ppConcat [ppString "(Project ", ppID id, ppString ")"]
     | RecordMerge -> ppString "RecordMerge"
-    | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBool b, ppString ")"]
-    | Embedded id  -> ppConcat [ppString "(embedded ", ppID id, ppString ")"]
-    | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppID id, ppString ") ", ppBreak]
+    | Embed (id,b) -> ppConcat [ppString "(embed ", ppQualifiedId id, ppString " ", ppBool b, ppString ")"]
+    | Embedded id  -> ppConcat [ppString "(embedded ", ppQualifiedId id, ppString ")"]
+    | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppQualifiedId id, ppString ") ", ppBreak]
     | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
     | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
     | String str -> ppConcat[ppString "(String ", ppString (enquote str), ppString ")"]  %TODO escape any quotes in the string with backslash
@@ -1466,13 +1466,13 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
       let def ppTaggedType (id,optTy) =
       case optTy of %TODO combine these two cases:
         | None -> ppConcat [ppString "(",
-                            ppID (id),
+                            ppQualifiedId (id),
                             ppString " ",
                             ppString "None",
                             ppString ")"]
         | Some ty ->
           ppConcat [ppString "(",
-                    ppID id,
+                    ppQualifiedId id,
                     ppString " ",
                     ppType c ty,
                     ppString ")"]

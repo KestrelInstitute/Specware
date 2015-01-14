@@ -106,7 +106,7 @@ op [a] pushl (lst:List a, stk:Stack a): Stack a =
 proof isa helperhook
 
   theorem stackToList_equal_empty_lemma: 
-    "([] = stackToList stk) = (Stack__Empty_stack = stk)"
+    "([] = stackToList stk) = (Empty_stack = stk)"
     apply(cases stk)
     apply(auto)
     done
@@ -144,8 +144,8 @@ proof isa stackToList_Obligation_subtype
   apply(cut_tac stackToList_bijective_lemma)
   apply(subgoal_tac "stackToList = (\<lambda> (stk::'a Stack). 
           case stk
-           of Stack__Empty_stack \<Rightarrow> []
-            | Stack__Push elt stk0 \<Rightarrow> Cons elt (stackToList stk0))")
+           of Empty_stack \<Rightarrow> []
+            | Push elt stk0 \<Rightarrow> Cons elt (stackToList stk0))")
   apply(simp)
   apply(thin_tac "bij stackToList")
   apply(rule ext)
@@ -258,6 +258,6 @@ proof isa listToStack_def
   apply(simp add: listToStack_def)
 end-proof
 
-proof Isa Stack__push_def_Obligation_subtype
+proof Isa push_def_Obligation_subtype
   apply(metis empty_stack_def empty_stack_p_def list.distinct(1) stackToList.simps(1) stackToList_listToStack)
 end-proof

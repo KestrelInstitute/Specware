@@ -44,9 +44,9 @@ op mkListType(ty: MSType): MSType = mkBase(Qualified("List", "List"), [ty])
 
 op mkListForm(tms: MSTerms, ty: MSType): MSTerm =
   case tms of
-    | [] -> mkEmbed0("Nil", mkListType ty)
+    | [] -> mkEmbed0(Qualified("List", "Nil"), mkListType ty)
     | tm1 :: r_tms ->
-      mkApply(mkEmbed1("Cons", mkArrow(mkProduct[ty, mkListType ty], mkListType ty)),
+      mkApply(mkEmbed1(Qualified("List", "Cons"), mkArrow(mkProduct[ty, mkListType ty], mkListType ty)),
               mkTuple[tm1, mkListForm(r_tms, ty)])
 
 op mkRedundantDef(dfn: MSTerm, src_ty: MSType, trg_ty: MSType, test_fix_fn: MSTerm, ty_targets: MSTypes,
@@ -325,8 +325,8 @@ op redundantErrorCorrectingProduct (spc: Spec) (morphs: List (SCTerm * Morphism)
    return(new_spc, tracing?)}      % *)
 
 op mkCoProdOfTypes(ty_target_qids: QualifiedIds): MSType =
-  let coprod_flds = map (fn qid as Qualified(q,id) -> (q^"__"^id, Some(mkBase(qid, [])))) ty_target_qids in
-  let errorFld = ("Data_Error", Some(natType)) in
+  let coprod_flds = map (fn qid as Qualified(q,id) -> (Qualified(q,q^"__"^id), Some(mkBase(qid, [])))) ty_target_qids in
+  let errorFld = (mkUnQualifiedId "Data_Error", Some(natType)) in
   mkCanonCoProduct(errorFld :: coprod_flds)
 
 op mkTestFunction(primary_ty_qid: QualifiedId, new_primary_ty: MSType, CoProduct(coprod_flds, _): MSType,
@@ -360,8 +360,8 @@ op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: MSType, coProd_
   let cases = tabulate(length ty_targets,
                        fn i -> (mkNatPat i, trueTerm,
                                 let tyi = ty_targets@i in
-                                let constr_id = constructorForQid(tyi, coProd_def) in
-                                mkApply(mkEmbed1(constr_id, mkArrow(tyi, new_primary_ty)),
+                                let constr_qid = constructorForQid(tyi, coProd_def) in
+                                mkApply(mkEmbed1(constr_qid, mkArrow(tyi, new_primary_ty)),
                                         mkApply((conversion_fn_defs@i).3,
                                                 mkVar param))))
   in                     
@@ -400,9 +400,9 @@ op mkConversionFunction (to_type_qid               : QualifiedId,
   let conversion_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases, noPos), mkVar param)) in
   (conversion_fn_qid, conversion_fn_body, mkOp(conversion_fn_qid, mkArrow(new_primary_ty, to_type)))
 
-op constructorForQid(ty: MSType, CoProduct(coprod_flds, _): MSType): Id =
-  case findLeftmost (fn (id, Some c_ty) -> equalType?(ty, c_ty)) coprod_flds of
-    | Some(id,_) -> id
+op constructorForQid(ty: MSType, CoProduct(coprod_flds, _): MSType): QualifiedId =
+  case findLeftmost (fn (qid, Some c_ty) -> equalType?(ty, c_ty)) coprod_flds of
+    | Some(qid,_) -> qid
 
 op mkCaseDef(dfn: MSTerm, primary_ty: MSType, new_primary_ty: MSType, coProd_def as CoProduct(coprod_flds, _): MSType,
              conversion_fn_defs: List(QualifiedId * MSTerm * MSTerm),
@@ -453,7 +453,7 @@ op mkCaseDef(dfn: MSTerm, primary_ty: MSType, new_primary_ty: MSType, coProd_def
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
                                                   trueTerm,
-                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printType primary_ty^" Data.")
+                                                  if constr_id = mkUnQualifiedId "Data_Error" then mkThrowForm("Error in "^printType primary_ty^" Data.")
                                                   else
                                                   let target_i = positionOf(ty_targets, ty0) in
                                                   let coercion_fn = (conversion_fn_defs@target_i).3 in
@@ -474,7 +474,7 @@ op mkCaseDef(dfn: MSTerm, primary_ty: MSType, new_primary_ty: MSType, coProd_def
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
                                                   trueTerm,
-                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printType primary_ty^" Data.")
+                                                  if constr_id = mkUnQualifiedId "Data_Error" then mkThrowForm("Error in "^printType primary_ty^" Data.")
                                                   else
                                                   let sbst = ((src_param0, primary_ty), mkVar pv)
                                                             :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))

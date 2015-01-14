@@ -193,14 +193,14 @@ op optConsDataType (sp : Spec, ty : MSType) : Option (Id * Id) =
        | _ -> false
  in
  case stripSubtypes (sp, ty) of
-   | CoProduct ([("None", None), ("Some", Some _)], _) -> None 
+   | CoProduct ([(Qualified(_,"None"), None), (Qualified(_,"Some"), Some _)], _) -> None 
      
    % Options never get to be cons types.
    % This is required to make boot strapping work
    % as hash-quote-spec prints options without optimization.
      
-   | CoProduct ([(i1, None  ), (i2, Some s)], _) -> if isTwoTuple s then Some (i1, i2) else None
-   | CoProduct ([(i2, Some s), (i1, None  )], _) -> if isTwoTuple s then Some (i1, i2) else None
+   | CoProduct ([(Qualified(_,i1), None  ), (Qualified(_,i2), Some s)], _) -> if isTwoTuple s then Some (i1, i2) else None
+   | CoProduct ([(Qualified(_,i2), Some s), (Qualified(_,i1), None  )], _) -> if isTwoTuple s then Some (i1, i2) else None
    | _ -> None
     
 
@@ -502,7 +502,7 @@ op [a] mkLTermOp (sp                   : Spec,
                     [mkLApply (eq_oper, 
                                mkLTermList (sp, default_package_name, varset, arg))]))
      
-   | (Select id, ty, _) -> 
+   | (Select (Qualified(_,id)), ty, _) -> 
      (case (optConsDomain (sp, id, ty), optArgs) of
         | (Some queryOp, None)      -> mkLLambda (["!x"], [], mkLVar "!x")
           
@@ -513,7 +513,7 @@ op [a] mkLTermOp (sp                   : Spec,
         | (None,         Some term) -> mkLApply (mkLOp "cdr", 
                                                  [mkLTerm (sp, default_package_name, varset, term)]))
      
-   | (Embedded id, ty, _) -> 
+   | (Embedded (Qualified(_,id)), ty, _) -> 
      let dom = domain (sp, ty) in
      (case (optConsIdentifier (sp, id, dom), optArgs) of
         | (Some queryOp, None)      -> mkLLambda (["!x"], [], 
@@ -557,7 +557,7 @@ op [a] mkLTermOp (sp                   : Spec,
                mkLApplyArity (id, default_package_name, arity, varset, 
                               mkLTermList (sp, default_package_name, varset, term))))
      
-   | (Embed (id, true), ty, _) ->
+   | (Embed (Qualified(_,id), true), ty, _) ->
      let rng = range (sp, ty) in
      (case optConsDataType (sp, rng) of
         | Some _ ->
@@ -578,7 +578,7 @@ op [a] mkLTermOp (sp                   : Spec,
              | Some term -> 
                mkLApply (mkLOp "cons", [id, mkLTerm (sp, default_package_name, varset, term)])))
      
-   | (Embed (id, false), ty, _) -> 
+   | (Embed (Qualified(_,id), false), ty, _) -> 
      (case optConsDataType (sp, ty) of
         | Some _ -> mkLBool false
         | _      -> mkLApply (mkLOp "list", [mkLIntern id]))

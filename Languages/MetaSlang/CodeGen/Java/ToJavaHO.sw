@@ -20,7 +20,7 @@ spec
   def JGen.translateLambdaToExprM(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l) =
     case term of
       | Fun(Op(qid as Qualified(_,id),_),srt,_) -> translateStandAloneOpToExprM(tcx,(qid,srt),k,l)
-      | Fun(Embed(c,_),srt,_) ->
+      | Fun(Embed(Qualified(_, c),_),srt,_) ->
 	let dom = typeDom srt in
 	let rng = typeRng srt in
 	{

@@ -589,7 +589,7 @@ If we want the precedence to be optional:
   (make-type-summand 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :CONSTRUCTOR ()
-  :NAME)
+  :QUALIFIABLE-OP-NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;   QUOTIENT-TYPE  (Not a true type!)

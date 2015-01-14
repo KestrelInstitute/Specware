@@ -13,7 +13,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenUtilities
 
 op atPos : Position = Internal "AddTypeConstructors"
 
-op getConstructorId (type_id : Id,  alt_id : Id, snark? : Bool) : Id =
+op getConstructorId (type_id : Id,  Qualified(_,alt_id) : QualifiedId, snark? : Bool) : Id =
  % the two _'s are important: that how the constructor op names are
  % distinguished from other opnames (hack)
  if snark? then 
@@ -26,7 +26,7 @@ op newCoProductOpInfos (spc          : Spec,
                         tvs          : TyVars,
                         type_dfn     : MSType,
                         type_ref     : MSType,
-                        alternatives : List (Id * Option MSType),
+                        alternatives : List (QualifiedId * Option MSType),
                         snark?       : Bool)
   : List OpInfo =
   %% e.g., type X = | A | B Nat

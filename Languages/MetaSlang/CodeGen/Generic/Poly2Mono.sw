@@ -416,7 +416,7 @@ Poly2Mono qualifying spec
   : MSPattern * TypeOpInfos =
   case pat of
 
-    | EmbedPat (id, opt_pat, typ, pos) ->
+    | EmbedPat (Qualified(q,id), opt_pat, typ, pos) ->
       % Given "| Foo List (Nat)", we might convert to "| Foo_Nat List_Nat"
       let id = 
           case typ of
@@ -437,7 +437,7 @@ Poly2Mono qualifying spec
               (None, minfo)
       in
       let (typ, minfo) = p2mType (spc, modifyConstructors?, typ, minfo) in
-      (EmbedPat (id, opt_pat, typ, pos), minfo)
+      (EmbedPat (Qualified(q,id), opt_pat, typ, pos), minfo)
 
     | AliasPat (pat1, pat2, pos) ->
       let (pat1, minfo) = p2mPattern (spc, modifyConstructors?, pat1, minfo) in
@@ -487,7 +487,7 @@ Poly2Mono qualifying spec
   let (typ1, minfo) = p2mType (spc, modifyConstructors?, typ, minfo) in
   case fun of
 
-    | Embed (id, b?) ->
+    | Embed (Qualified(q,id), b?) ->
       let cptyp = case typ of
                     | Arrow (_, typ, _) -> typ
                     | _ -> typ
@@ -500,13 +500,13 @@ Poly2Mono qualifying spec
                  fun
                else
                  % constructor Cons could become Cons_Nat for List (Nat), etc.
-                 Embed (id ^ (getTypeNameSuffix insttv), b?)
+                 Embed (Qualified(q,id ^ (getTypeNameSuffix insttv)), b?)
            in
            (fun, typ1, minfo)
          % Boolean is same as default
          | _ -> (fun, typ1, minfo))
  
-    | Embedded id ->
+    | Embedded (Qualified(q,id)) ->
       let cptyp = case typ of
                     | Arrow (typ, _, _) -> typ
                     | _ -> typ
@@ -519,7 +519,7 @@ Poly2Mono qualifying spec
                  fun
                else
                  % constructor Cons could become Cons_Nat for List (Nat), etc.
-                 Embedded (id ^ (getTypeNameSuffix insttv))
+                 Embedded (Qualified(q,id ^ (getTypeNameSuffix insttv)))
            in
            (fun, typ1, minfo)
          % Boolean is same as default
@@ -649,7 +649,7 @@ Poly2Mono qualifying spec
  op addTypeSuffixToConstructors (typ : MSType, suffix : String) : MSType =
   case typ of
     | CoProduct (fields, pos) ->
-      let fields = map (fn (id, opttyp) -> (id ^ suffix, opttyp)) fields in
+      let fields = map (fn (Qualified(q,id), opttyp) -> (Qualified(q,id ^ suffix), opttyp)) fields in
       CoProduct (fields, pos)
     | _ -> typ
  

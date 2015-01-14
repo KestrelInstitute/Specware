@@ -729,19 +729,19 @@ lemma permutes_cons_ex:
   proof -
     fix m
     assume pf:"List__permutesToWithMoves m l1 l2"
-    show ?thesis by (simp add: pf exI[of _ "List__PermuteMoves__permCons m"])
+    show ?thesis by (simp add: pf exI[of _ "List__permCons m"])
   qed
 
 lemma permutes_trans:
   "List__permutesToWithMoves m1 l1 l2 ==>
    List__permutesToWithMoves m2 l2 l3 ==>
    \<exists> m . List__permutesToWithMoves m l1 l3"
-  by (simp add: exI[of _ "List__PermuteMoves__permTrans m1 m2"] exI[of _ l2])
+  by (simp add: exI[of _ "List__permTrans m1 m2"] exI[of _ l2])
 
 lemma perm_to_permutes: "l1 <~~> l2 ==> (\<exists>m . List__permutesToWithMoves m l1 l2)"
   apply (induct l1 l2 rule: perm.induct)
-  apply (simp add: exI[of _ List__PermuteMoves__permNil])
-  apply (simp add: exI[of _ List__PermuteMoves__permSwap])
+  apply (simp add: exI[of _ List__permNil])
+  apply (simp add: exI[of _ List__permSwap])
   apply (auto simp add: permutes_cons_ex permutes_trans)
   done
 end-proof

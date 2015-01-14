@@ -387,7 +387,7 @@ op [a] topSort (items : List a, dependsOn? : a * a -> Bool) : List a =
 op [b] stripTypes (pairs : List (Id * AType b)) : List (AType b) =
   map (fn x -> x.2) pairs
 
-op [b] stripTypesOptionVersion (pairs : List (Id * Option (AType b))) : List (AType b) =
+op [b] stripTypesOptionVersion (pairs : List (QualifiedId * Option (AType b))) : List (AType b) =
   case pairs of
     | [] -> []
     | hd::tl ->

@@ -19,7 +19,6 @@ Utilities qualifying spec
        file       : String}
  
  op initialEnv     : (* SpecRef * *) Spec * String -> LocalEnv
- op addConstrsEnv  : LocalEnv * Spec -> LocalEnv
 
  op addVariable    : LocalEnv * String * MSType -> LocalEnv
  op secondPass     : LocalEnv                   -> LocalEnv
@@ -132,7 +131,7 @@ Utilities qualifying spec
              row1
     | _ -> false
 
- def addConstrsEnv (env, sp) =
+ op addConstrsEnv (env: LocalEnv, sp: Spec): LocalEnv =
    env << {internal = sp, 
 	   constrs  = computeConstrMap sp % importMap
 	   }
@@ -155,7 +154,7 @@ Utilities qualifying spec
        let (tvs, srt) = unpackType dfn in
        case srt of
 	 | CoProduct (row, _) ->
-	   foldl (fn (constrMap, (id,_)) -> addConstr (id, qid, dfn, constrMap)) 
+	   foldl (fn (constrMap, (Qualified(_,id),_)) -> addConstr (id, qid, dfn, constrMap)) 
 	         constrMap
 		 row
 	   %% | Base (Qualified (qid, id), _, _) ->
@@ -493,7 +492,7 @@ Utilities qualifying spec
      | NotUnify (s1, s2) -> false
 
   op unifyCP : LocalEnv * MSType * MSType * 
-               List (Id * Option MSType) * List (Id * Option MSType) * 
+               List (QualifiedId * Option MSType) * List (QualifiedId * Option MSType) * 
 	       List (MSType * MSType) * SubtypeMode * Nat
 	       -> Unification
  def unifyCP (env, srt1, srt2, r1, r2, pairs, subtype_mode, dom_count) = 

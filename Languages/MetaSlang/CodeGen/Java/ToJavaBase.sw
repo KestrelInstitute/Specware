@@ -394,7 +394,7 @@ def srtId_internalM(srt,addIds?) =
        return (l,str)
      }
     | CoProduct(fields,_) ->
-      foldM (fn (types,str) -> fn (id,optfsrt) ->
+      foldM (fn (types,str) -> fn (Qualified(_,id),optfsrt) ->
 	     {
 	      sep <- getSep;
 	      str0 <- case optfsrt of
@@ -1143,12 +1143,12 @@ def fieldsAreNumbered(fields) =
  *)
 op getMissingConstructorIds: MSType * List(Id * MSTerm) -> List Id
 def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
-  let missingsummands = filter (fn(constrId,_) -> 
+  let missingsummands = filter (fn(Qualified(_,constrId),_) -> 
 				case findLeftmost (fn(id,_) -> id = constrId) cases of
 				  | Some _ -> false
 				  | None -> true) summands
   in
-  map (fn(id,_) -> id) missingsummands
+  map (fn(Qualified(_,id),_) -> id) missingsummands
 
 (**
  * search for the wild pattern in the match and returns the corresponding body, if it

@@ -80,7 +80,7 @@ spec
         if qid = Qualified (UnQualified,"%Flex")
           then 0
           else Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
-      | (Fun(Embed(id,_),   _,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell id]))
+      | (Fun(Embed(qid,_),   _,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
       | (Fun(Not,           _,_)) ->  1
       | (Fun(And,           _,_)) ->  2
       | (Fun(Or,            _,_)) ->  3

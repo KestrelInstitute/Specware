@@ -182,16 +182,16 @@ proof Isa -verbatim
 (*** convert into SpecWare theorems later ***)
 
 lemma Seq__prefix_fin:
-  "Seq__prefix (Seq__Seq__fin l, n)
-   = Seq__Seq__fin (List__subFromLong(l, 0, n))"
+  "Seq__prefix (Seq__fin l, n)
+   = Seq__fin (List__subFromLong(l, 0, n))"
  by (simp add: Seq__prefix_def)
 lemma Seq__prefix_fin2 [simp]:
   "\<lbrakk>n \<le> length l\<rbrakk> 
-  \<Longrightarrow> Seq__prefix (Seq__Seq__fin l, n) = Seq__Seq__fin (take n l)"
+  \<Longrightarrow> Seq__prefix (Seq__fin l, n) = Seq__fin (take n l)"
  by (simp add: List__prefix__def Seq__prefix_fin)
 lemma Seq__prefix_fin_whole [simp]:
   "\<lbrakk>length l = n\<rbrakk>
-  \<Longrightarrow>  Seq__prefix (Seq__Seq__fin l, n) = Seq__Seq__fin l"
+  \<Longrightarrow>  Seq__prefix (Seq__fin l, n) = Seq__fin l"
  by (drule sym, simp add: List__subFromLong_whole)
 lemma Seq__prefix_fin_whole2 [simp]:
   "\<lbrakk>Seq__finite_p s; Seq__length s = n\<rbrakk> 
@@ -202,17 +202,17 @@ lemma Seq__prefix_fin_whole3 [simp]:
   \<Longrightarrow>  Seq__prefix (s, n) = s"
  by (simp add: Seq__ofLength_p_def)
 lemma Seq__prefix_inf [simp]:
-  "Seq__prefix (Seq__Seq__inf fun, n)
-   = Seq__Seq__fin (Stream__subFromLong(fun, 0, n))"
+  "Seq__prefix (Seq__inf fun, n)
+   = Seq__fin (Stream__subFromLong(fun, 0, n))"
  by (simp add: Seq__prefix_def)
 
 lemma Seq__suffix_fin:
-  "Seq__suffix (Seq__Seq__fin l, n)
-   = Seq__Seq__fin (List__suffix(l,n))"
+  "Seq__suffix (Seq__fin l, n)
+   = Seq__fin (List__suffix(l,n))"
  by (simp add: Seq__suffix_def List__suffix_def)
 lemma Seq__suffix_fin_whole [simp]:
   "\<lbrakk>length l = n\<rbrakk>
-  \<Longrightarrow>  Seq__suffix (Seq__Seq__fin l, n) = Seq__Seq__fin l"
+  \<Longrightarrow>  Seq__suffix (Seq__fin l, n) = Seq__fin l"
  by (drule sym, simp add: Seq__suffix_fin List__suffix_def List__subFromLong_whole)
 lemma Seq__suffix_fin_whole2 [simp]:
   "\<lbrakk>Seq__finite_p s; Seq__length s = n\<rbrakk> \<Longrightarrow>  Seq__suffix (s, n) = s"
@@ -221,7 +221,7 @@ lemma Seq__suffix_fin_whole3 [simp]:
   "\<lbrakk>Seq__ofLength_p n s\<rbrakk> \<Longrightarrow>  Seq__suffix (s, n) = s"
  by (simp add: Seq__ofLength_p_def)
 lemma Seq__suffix_fin_empty [simp]:
-  "Seq__suffix (Seq__Seq__fin l, 0) = Seq__empty"
+  "Seq__suffix (Seq__fin l, 0) = Seq__empty"
  by (simp add: Seq__suffix_fin Seq__empty_def length_0_conv [symmetric]
           del: length_0_conv)
 lemma Seq__suffix_fin_empty2 [simp]:
@@ -246,29 +246,29 @@ proof Isa -verbatim
 
 lemma Seq__removePrefix_fin_empty [simp]:
   "\<lbrakk>length l = n\<rbrakk>
-  \<Longrightarrow>  Seq__removePrefix (Seq__Seq__fin l, n) = Seq__empty"
+  \<Longrightarrow>  Seq__removePrefix (Seq__fin l, n) = Seq__empty"
  by (simp add: Seq__empty_def)
 lemma Seq__removePrefix_inf [simp]:
-  "Seq__removePrefix (Seq__Seq__inf fun, n)
-   = Seq__Seq__inf (\<lambda>i. fun (i + n))"
+  "Seq__removePrefix (Seq__inf fun, n)
+   = Seq__inf (\<lambda>i. fun (i + n))"
  by (simp add: Stream__removePrefix_def)
 lemma Seq__removePrefix_whole [simp]:
   "Seq__removePrefix (s, 0) = s"
  by (case_tac s, simp_all add: Stream__removePrefix_def)
 
 lemma Seq__removeSuffix_fin [simp]:
-  "Seq__removeSuffix (Seq__Seq__fin l, n)
-   = Seq__Seq__fin (take (length l - n) l)"
+  "Seq__removeSuffix (Seq__fin l, n)
+   = Seq__fin (take (length l - n) l)"
  by (simp add: Seq__removeSuffix_def List__prefix__def)
 lemma Seq__removeSuffix_fin_whole [simp]:
-  "Seq__removeSuffix (Seq__Seq__fin l, 0) = Seq__Seq__fin l"
+  "Seq__removeSuffix (Seq__fin l, 0) = Seq__fin l"
  by simp 
 lemma Seq__removeSuffix_fin_whole2 [simp]:
   "\<lbrakk>Seq__finite_p s\<rbrakk> 
   \<Longrightarrow>  Seq__removeSuffix (s, 0) = s"
  by (case_tac s, simp_all)
 lemma Seq__removeSuffix_fin_empty [simp]:
-  "Seq__removeSuffix (Seq__Seq__fin l, length l) = Seq__empty"
+  "Seq__removeSuffix (Seq__fin l, length l) = Seq__empty"
  by (simp add: Seq__empty_def)
 lemma Seq__removeSuffix_fin_empty2 [simp]:
   "\<lbrakk>Seq__finite_p s\<rbrakk> 
@@ -290,18 +290,18 @@ proof Isa -verbatim
 
 lemma Seq__head_fin [simp]:
   "\<lbrakk>l \<noteq> []\<rbrakk> 
-  \<Longrightarrow> Seq__head (Seq__Seq__fin l) = hd l"
+  \<Longrightarrow> Seq__head (Seq__fin l) = hd l"
   by (simp add: Seq__head_def length_greater_0_conv [symmetric] 
                 take_Suc One_nat_def
            del: length_greater_0_conv)
 
 lemma Seq__head_fin2 [simp]:
-  "\<lbrakk>s \<noteq> Seq__empty; s = Seq__Seq__fin l\<rbrakk> 
+  "\<lbrakk>s \<noteq> Seq__empty; s = Seq__fin l\<rbrakk> 
   \<Longrightarrow> Seq__head s = hd l"
   by (simp add: Seq__empty_def)
 
 lemma Seq__head_inf [simp]:
- "\<lbrakk>s \<noteq> Seq__empty; s = Seq__Seq__inf fun\<rbrakk> 
+ "\<lbrakk>s \<noteq> Seq__empty; s = Seq__inf fun\<rbrakk> 
  \<Longrightarrow> Seq__head s = fun 0"
  apply (simp add: Seq__head_def)
  apply (rule_tac t="Stream__subFromLong (fun, 0, 1)"
@@ -315,7 +315,7 @@ done
 
 lemma Seq__last_fin [simp]:
   "\<lbrakk>l \<noteq> []\<rbrakk> 
-  \<Longrightarrow> Seq__last (Seq__Seq__fin l) = last l"
+  \<Longrightarrow> Seq__last (Seq__fin l) = last l"
  apply (simp add: Seq__last_def length_greater_0_conv [symmetric] 
                   Seq__suffix_fin One_nat_def
           del: length_greater_0_conv)
@@ -339,13 +339,13 @@ op [a] butLast (s: FinSeq1 a) : Seq a = removeSuffix (s, 1)
 proof Isa -verbatim
 
 lemma Seq__tail_fin [simp]:
-  "Seq__tail (Seq__Seq__fin l) = Seq__Seq__fin (tl l)"
+  "Seq__tail (Seq__fin l) = Seq__fin (tl l)"
  by (simp add: Seq__tail_def drop_Suc  One_nat_def)
 lemma Seq__tail_inf [simp]:
-  "Seq__tail (Seq__Seq__inf fun) = Seq__Seq__inf (\<lambda>i. fun (i + 1))"
+  "Seq__tail (Seq__inf fun) = Seq__inf (\<lambda>i. fun (i + 1))"
  by (simp add: Seq__tail_def del: Seq__removePrefix.simps)
 lemma Seq__butLast_fin [simp]:
-  "Seq__butLast (Seq__Seq__fin l) =  Seq__Seq__fin (butlast l)"
+  "Seq__butLast (Seq__fin l) =  Seq__fin (butlast l)"
  by (simp add: Seq__butLast_def Seq__removeSuffix_fin butlast_conv_take)
 
 end-proof
@@ -367,7 +367,7 @@ op [a] ++ (s1: FinSeq a, s2: Seq a) infixl 25 : Seq a = the (s: Seq a)
 proof Isa -verbatim
 
 lemma Seq__e_pls_pls_fin [simp]:
-  "(Seq__Seq__fin l1) ++ (Seq__Seq__fin l2) = Seq__Seq__fin (l1 @ l2)"
+  "(Seq__fin l1) ++ (Seq__fin l2) = Seq__fin (l1 @ l2)"
  apply (simp only:  Seq__e_pls_pls_def)
  apply (rule the1I2, rule Seq__e_pls_pls_Obligation_the, auto)
  apply (case_tac x, simp_all)
@@ -378,7 +378,7 @@ lemma Seq__e_pls_pls_fin [simp]:
 done
 
 lemma Seq__e_pls_pls_inf [simp]:
-  "(Seq__Seq__fin l) ++ (Seq__Seq__inf fun) = Seq__Seq__inf (l ++ fun)"
+  "(Seq__fin l) ++ (Seq__inf fun) = Seq__inf (l ++ fun)"
  apply (simp only:  Seq__e_pls_pls_def)
  apply (rule the1I2, rule Seq__e_pls_pls_Obligation_the, auto)
  apply (case_tac x, simp_all)
@@ -408,11 +408,11 @@ op [a] <| (s: FinSeq a, x:a) infixl 25 : Seq1 a = s ++ single x
 proof Isa -verbatim
 
 lemma Seq___e_bar_gt_fin [simp]:
-  "x |> Seq__Seq__fin l = Seq__Seq__fin (x#l)"
+  "x |> Seq__fin l = Seq__fin (x#l)"
  by (simp add: Seq__e_bar_gt_def Seq__single_def)
 
 lemma Seq__e_lt_bar_fin [simp]:
-  "Seq__Seq__fin l <| x = Seq__Seq__fin (l@[x])"
+  "Seq__fin l <| x = Seq__fin (l@[x])"
  by (simp add: Seq__e_lt_bar_def Seq__single_def)
 
 end-proof
@@ -470,16 +470,16 @@ op [a,b] equiLong (s1: Seq a, s2: Seq b) infixl 20 : Bool =
 proof Isa -verbatim
 
 lemma Seq__equiLong_fin [simp]:
-  "Seq__Seq__fin l1 equiLong Seq__Seq__fin l2 = l1 equiLong l2"
+  "Seq__fin l1 equiLong Seq__fin l2 = l1 equiLong l2"
   by (simp add: Seq__equiLong_def)
 lemma Seq__equiLong_inf [simp]:
-  "Seq__Seq__inf fun1 equiLong Seq__Seq__inf fun2"
+  "Seq__inf fun1 equiLong Seq__inf fun2"
   by (simp add: Seq__equiLong_def)
 lemma Seq__equiLong_fin_inf [simp]:
-  "Seq__Seq__fin l equiLong Seq__Seq__inf fun = False"
+  "Seq__fin l equiLong Seq__inf fun = False"
   by (simp add: Seq__equiLong_def)
 lemma Seq__equiLong_inf_fin [simp]:
-  "Seq__Seq__inf fun equiLong Seq__Seq__fin l = False"
+  "Seq__inf fun equiLong Seq__fin l = False"
   by (simp add: Seq__equiLong_def)
 lemma Seq__equiLong_refl:
   "(s1::'a Seq__Seq) equiLong s1"
@@ -755,18 +755,18 @@ proof Isa -verbatim
 
 
 lemma Seq__noRepetitions_p_fin [simp]:
-  "Seq__noRepetitions_p (Seq__Seq__fin l) = distinct l"
+  "Seq__noRepetitions_p (Seq__fin l) = distinct l"
  apply (auto simp add: Seq__noRepetitions_p_def 
                        Map__injective_p_def distinct_conv_nth)
  apply (drule_tac x=x1 in spec, simp, drule_tac x=x2 in spec, simp)
 done
 
 lemma Seq__noRepetitions_p_inf_aux:
-  "Seq__noRepetitions_p (Seq__Seq__inf fun) = inj fun"
+  "Seq__noRepetitions_p (Seq__inf fun) = inj fun"
  by (auto simp add: Seq__noRepetitions_p_def Map__injective_p_def inj_on_def)
 
 lemma Seq__noRepetitions_p_inf [simp]:
-  "Seq__noRepetitions_p (Seq__Seq__inf fun) = Stream__noRepetitions_p fun"
+  "Seq__noRepetitions_p (Seq__inf fun) = Stream__noRepetitions_p fun"
  by (simp add: Stream__noRepetitions_p_def Seq__noRepetitions_p_inf_aux)
 
 
@@ -782,15 +782,15 @@ op increasingNats? (nats: Seq Nat) : Bool =
 proof Isa -verbatim
 
 lemma Seq__increasingNats_p_fin [simp]:
-  "Seq__increasingNats_p (Seq__Seq__fin l) = List__increasingNats_p l"
+  "Seq__increasingNats_p (Seq__fin l) = List__increasingNats_p l"
  by (auto simp add: Seq__increasingNats_p_def List__increasingNats_p_def)
 
 lemma Seq__increasingNats_p_inf [simp]:
-  "Seq__increasingNats_p (Seq__Seq__inf fun) = Stream__increasingNats_p fun"
+  "Seq__increasingNats_p (Seq__inf fun) = Stream__increasingNats_p fun"
  by (simp add: Seq__increasingNats_p_def Stream__increasingNats_p_def)
 
 lemma Seq__increasingNats_p_inf_growth:
-  "\<lbrakk>Seq__increasingNats_p (Seq__Seq__inf fun)\<rbrakk>
+  "\<lbrakk>Seq__increasingNats_p (Seq__inf fun)\<rbrakk>
     \<Longrightarrow> \<forall>j. \<exists>i. fun i > j"
  by (simp add: Stream__increasingNats_p_inf_growth)
 
@@ -978,7 +978,7 @@ type Permutation = (Seq Nat | permutation?)
 proof Isa -verbatim
 
 lemma Seq__permutation_p_inf [simp]:
-  "Seq__permutation_p (Seq__Seq__inf fun) = Stream__permutation_p fun"
+  "Seq__permutation_p (Seq__inf fun) = Stream__permutation_p fun"
   apply (simp add: Seq__permutation_p_def Stream__permutation_p_def 
                    in_strm_p_def bij_def surj_def, 
                    auto simp add: Stream__noRepetitions_p_def)
@@ -1120,7 +1120,7 @@ proof Isa seq_Obligation_subtype0
 end-proof
 
 proof Isa seq_Obligation_subtype1
-   by (simp add: definedAt_m_def undefinedAt_m_def not_ex)
+   by (simp add: definedAt_m_def undefinedAt_m_def)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -1131,7 +1131,7 @@ lemma Seq__seq_bij:
   by (cut_tac Seq__seq_Obligation_subtype, simp add: Seq__seq_def)
 
 lemma Seq__seq_1_fin_simp:
-  "Seq__seq_1 (Seq__Seq__fin l) = (\<lambda>i. if i < length l then Some (l ! i) else None)"
+  "Seq__seq_1 (Seq__fin l) = (\<lambda>i. if i < length l then Some (l ! i) else None)"
   apply (simp add: Seq__seq_1_def, rule sym)
   apply (rule Function__fxy_implies_inverse__stp2)
   apply (rule Seq__seq_bij, 
@@ -1140,17 +1140,17 @@ lemma Seq__seq_1_fin_simp:
 done
 
 lemma Seq__seq_1_fin_dom [simp]:
-  "i \<in> dom (Seq__seq_1 (Seq__Seq__fin l)) = (i < length l)"
+  "i \<in> dom (Seq__seq_1 (Seq__fin l)) = (i < length l)"
   by (simp add: Seq__seq_1_fin_simp dom_def)
 
 lemma Seq__seq_1_fin_elements [simp]:
-  "i \<in> dom (Seq__seq_1 (Seq__Seq__fin l))  \<Longrightarrow> 
-     Seq__seq_1 (Seq__Seq__fin l) i = Some (l ! i)"
+  "i \<in> dom (Seq__seq_1 (Seq__fin l))  \<Longrightarrow> 
+     Seq__seq_1 (Seq__fin l) i = Some (l ! i)"
  by (simp add: Seq__seq_1_fin_simp dom_def split: split_if_asm)
 
 
 lemma Seq__seq_1_inf_simp:
-  "Seq__seq_1 (Seq__Seq__inf fun) = (\<lambda>i. Some (fun i))"
+  "Seq__seq_1 (Seq__inf fun) = (\<lambda>i. Some (fun i))"
   apply (simp add: Seq__seq_1_def, rule sym)
   apply (rule Function__fxy_implies_inverse__stp2)
   apply (rule Seq__seq_bij, 
@@ -1159,11 +1159,11 @@ lemma Seq__seq_1_inf_simp:
 done
 
 lemma Seq__seq_1_inf_dom [simp]:
-  "i \<in> dom (Seq__seq_1 (Seq__Seq__inf fun))"
+  "i \<in> dom (Seq__seq_1 (Seq__inf fun))"
   by (simp add: Seq__seq_1_inf_simp dom_def)
 
 lemma Seq__seq_1_inf_elements [simp]:
-  "Seq__seq_1 (Seq__Seq__inf fun) i = Some (fun i)"
+  "Seq__seq_1 (Seq__inf fun) i = Some (fun i)"
  by (simp add: Seq__seq_1_inf_simp dom_def )
 
 
@@ -1200,14 +1200,6 @@ end-proof
 
 proof Isa ofLength_inf_simp [simp]
   by (simp add: Seq__ofLength_p_def)
-end-proof
-
-proof Isa e_lt_length_Obligation_subtype
-  by (simp add: Seq__infinite_not_finite)
-end-proof
-
-proof Isa e_lt_eq_length_Obligation_subtype
-  by (simp add: Seq__infinite_not_finite)
 end-proof
 
 proof Isa e_lt_length_inf_simp [simp]   
@@ -1276,10 +1268,10 @@ end-proof
 % ------------- Isabelle lemmas for toSet
 proof Isa toSet_simps 
 
-lemma Seq__toSet_fin [simp]:    "Seq__toSet (Seq__Seq__fin l) = set l"
+lemma Seq__toSet_fin [simp]:    "Seq__toSet (Seq__fin l) = set l"
  by (simp add: Seq__toSet_def fun_eq_iff )
 
-lemma Seq__toSet_inf [simp]:    "Seq__toSet (Seq__Seq__inf fun) = range fun"
+lemma Seq__toSet_inf [simp]:    "Seq__toSet (Seq__inf fun) = range fun"
  by (auto simp add: Seq__toSet_def in_strm_p_def)
 end-proof
 % ---------------------------------------------------------------------
@@ -1301,7 +1293,7 @@ end-proof
 
 proof Isa last_Obligation_subtype
  by (drule Seq__head_Obligation_subtype, 
-     auto simp add: Seq__e_lt_eq_length_def Seq__infinite_not_finite)
+     auto simp add: Seq__e_lt_eq_length_def)
 end-proof
 
 proof Isa last_Obligation_subtype0
@@ -1323,7 +1315,7 @@ end-proof
 proof Isa e_pls_pls_Obligation_the
   apply (cases s1, simp_all)  
   apply (cases s2)
-  apply (rule_tac a="Seq__Seq__fin (list @ lista)" in ex1I, 
+  apply (rule_tac a="Seq__fin (list @ lista)" in ex1I, 
          simp_all, clarify)
   apply (case_tac x, simp_all)
   apply (rule_tac t="list @ lista" 
@@ -1331,7 +1323,7 @@ proof Isa e_pls_pls_Obligation_the
          in subst, 
          simp, simp (no_asm))
   apply (thin_tac "?P", thin_tac "?P", 
-         rule_tac a="Seq__Seq__inf (list ++ fun)" in ex1I, simp_all)
+         rule_tac a="Seq__inf (list ++ fun)" in ex1I, simp_all)
   apply (simp add: Stream__e_pls_pls_def Seq__infinite_p_def 
                    Stream__removePrefix_def)
   apply (rule_tac s="List__subFromLong(list, 0, length list)" in HOL.trans)
@@ -1467,14 +1459,14 @@ proof Isa unzip_Obligation_subtype
          simp add: bij_ON_def bij_on_def surj_on_def  Ball_def Bex_def, 
          clarify, thin_tac "?P")
   apply (drule_tac x=list in spec, clarify)
-  apply (rule_tac x="Seq__Seq__fin a" in exI, 
-         rule_tac x="Seq__Seq__fin b" in exI, simp)
+  apply (rule_tac x="Seq__fin a" in exI, 
+         rule_tac x="Seq__fin b" in exI, simp)
   apply (cut_tac Stream__unzip_Obligation_subtype, 
          simp add: bij_def surj_def, 
          clarify, thin_tac "?P")
   apply (drule_tac x="fun" in spec, clarify)
-  apply (rule_tac x="Seq__Seq__inf a" in exI, 
-         rule_tac x="Seq__Seq__inf b" in exI, simp)
+  apply (rule_tac x="Seq__inf a" in exI, 
+         rule_tac x="Seq__inf b" in exI, simp)
 end-proof
 
 proof Isa unzip3_Obligation_subtype
@@ -1514,7 +1506,7 @@ proof Isa removeNones_Obligation_the
   apply (case_tac s, simp)
   (* Case 1: Lists *)
   apply (cut_tac l=list in List__removeNones_Obligation_the, clarify)
-  apply (rule_tac a="Seq__Seq__fin l'" in ex1I, simp)
+  apply (rule_tac a="Seq__fin l'" in ex1I, simp)
   apply (case_tac x, simp, simp)
   apply (case_tac "finite {i. case fun i of None \<Rightarrow> False
                                                   | Some x \<Rightarrow> True}")
@@ -1524,7 +1516,7 @@ proof Isa removeNones_Obligation_the
                                              | Some x \<Rightarrow> True}"
               and t="{i. fun i \<noteq> None}" in subst,
          simp add: fun_eq_iff split: option.split, simp)
-  apply (clarify, rule_tac a="Seq__Seq__fin l" in ex1I, simp)
+  apply (clarify, rule_tac a="Seq__fin l" in ex1I, simp)
   apply (case_tac x, simp, simp) 
   (* Case 2: Infinite streams, same proof *)
   apply (cut_tac s="fun" in Stream__removeNonesI_Obligation_the)
@@ -1534,7 +1526,7 @@ proof Isa removeNones_Obligation_the
                                              | Some x \<Rightarrow> True}"
               and t="{i. fun i \<noteq> None}" in subst,
          simp add: fun_eq_iff split: option.split, simp)
-  apply (clarify, rule_tac a="Seq__Seq__inf s'" in ex1I, simp)
+  apply (clarify, rule_tac a="Seq__inf s'" in ex1I, simp)
   apply (case_tac x, simp, simp)
 end-proof
 
@@ -1795,8 +1787,8 @@ end-proof
 proof Isa unflattenU_Obligation_subtype
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
-  apply (rule_tac x="Seq__Seq__inf  
-                      (\<lambda>i. Seq__Seq__fin 
+  apply (rule_tac x="Seq__inf  
+                      (\<lambda>i. Seq__fin 
                            (Stream__unflattenU (fun, n) i))" in exI,
          auto simp add: Seq__SegSeq__subtype_pred_def 
                         Stream__map_def Stream__repeat_def)
@@ -1811,15 +1803,15 @@ end-proof
 proof Isa unflattenU_Obligation_subtype1
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
-  apply (rule_tac x="Seq__Seq__fin  
-                       (map Seq__Seq__fin (List__unflatten (list, n)))" in exI,
+  apply (rule_tac x="Seq__fin  
+                       (map Seq__fin (List__unflatten (list, n)))" in exI,
          auto simp add:  Seq__forall_p_def list_all_iff)
   apply (simp add: Seq__SegSeq__subtype_pred_def List__unflatten_length
                    zdvd_int List__e_at_at_def list_1_Isa_nth)
   apply (frule_tac List__unflatten_length_result, simp add: zdvd_int,
          clarsimp simp add: list_eq_iff_nth_eq List__unflatten_length  zdvd_int
                    list_all_iff)
-  apply (rule_tac t = "Seq__list \<circ> Seq__Seq__fin" and s=id in subst,
+  apply (rule_tac t = "Seq__list \<circ> Seq__fin" and s=id in subst,
          simp add: fun_eq_iff,
          rule sym, simp add: zdvd_int List__unflatten_concat )
 end-proof
@@ -1832,7 +1824,7 @@ proof Isa positionsSuchThat_Obligation_the
   apply (fold Seq__noRepetitions_p_def, case_tac s)
   (*** Case 1: Lists ***)
   apply (cut_tac l=list and p=p in  List__positionsSuchThat_Obligation_the)
-  apply (erule ex1E, clarify, rule_tac a="Seq__Seq__fin POSs" in ex1I)
+  apply (erule ex1E, clarify, rule_tac a="Seq__fin POSs" in ex1I)
   apply (thin_tac ?P, simp)
   apply (clarify, case_tac x, drule_tac x=lista in spec, simp)
   apply (thin_tac ?P, clarsimp simp add: in_strm_p_def)
@@ -1844,7 +1836,7 @@ proof Isa positionsSuchThat_Obligation_the
   apply (case_tac "Set__infinite_p {i. p (fun i)}")
   apply (frule Set__infinite_nat_growth)
   apply (clarsimp, drule Stream__positionsSuchThatI_Obligation_the)
-  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__Seq__inf POSs" in ex1I)
+  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__inf POSs" in ex1I)
   apply (rotate_tac 1, thin_tac ?P, simp)
   apply (clarify, case_tac x, rotate_tac 1, thin_tac "?P", clarsimp)
   apply (case_tac "list=[]", simp)
@@ -1858,7 +1850,7 @@ proof Isa positionsSuchThat_Obligation_the
   apply (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def 
                    setToPred_def) 
   apply (frule Stream__positionsSuchThatF_Obligation_the)
-  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__Seq__fin POSs" in ex1I)
+  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__fin POSs" in ex1I)
   apply (rotate_tac 1, thin_tac ?P, simp)
   apply (clarify, case_tac x, drule_tac x=list in spec, simp)
   apply (rotate_tac 1, thin_tac ?P, clarsimp simp add: in_strm_p_def)
@@ -1908,9 +1900,9 @@ lemma Seq__positionsSuchThat_elements [simp]:
   by (simp add: Seq__positionsSuchThat_simps)
 
 lemma Seq__positionsSuchThat_fin:
-   "Seq__positionsSuchThat (Seq__Seq__fin l,p)
-     = Seq__Seq__fin (List__positionsSuchThat (l,p))"
-   apply (cut_tac s="Seq__Seq__fin l" in Seq__positionsSuchThat_Obligation_the,
+   "Seq__positionsSuchThat (Seq__fin l,p)
+     = Seq__fin (List__positionsSuchThat (l,p))"
+   apply (cut_tac s="Seq__fin l" in Seq__positionsSuchThat_Obligation_the,
           simp add: Seq__positionsSuchThat_def, rule the1I2, simp)
    apply (thin_tac ?P, clarsimp)
    apply (fold Seq__noRepetitions_p_def)
@@ -1925,15 +1917,15 @@ lemma Seq__positionsSuchThat_fin:
 done
 
 lemma Seq__positionsOf_fin:
-  "Seq__positionsOf (Seq__Seq__fin l,a) = Seq__Seq__fin (List__positionsOf (l,a))"
+  "Seq__positionsOf (Seq__fin l,a) = Seq__fin (List__positionsOf (l,a))"
   by (simp add: Seq__positionsOf_def List__positionsOf_def 
                 Seq__positionsSuchThat_fin)
 
 lemma Seq__positionsSuchThat_inf:
   "\<lbrakk>Set__infinite_p {i. p (s i)}\<rbrakk> \<Longrightarrow> 
-      Seq__positionsSuchThat (Seq__Seq__inf s,p)
-    = Seq__Seq__inf (Stream__positionsSuchThatI (s,p))"
-   apply (cut_tac s="Seq__Seq__inf s" in Seq__positionsSuchThat_Obligation_the,
+      Seq__positionsSuchThat (Seq__inf s,p)
+    = Seq__inf (Stream__positionsSuchThatI (s,p))"
+   apply (cut_tac s="Seq__inf s" in Seq__positionsSuchThat_Obligation_the,
           simp add: Seq__positionsSuchThat_def, rule the1I2, simp)
    apply (rotate_tac 1, thin_tac ?P, clarsimp, fold Seq__noRepetitions_p_def)
    apply (case_tac x, simp_all)
@@ -1949,9 +1941,9 @@ done
 
 lemma Seq__positionsSuchThat_inf2:
   "\<lbrakk>finite {i. p (s i)}\<rbrakk> \<Longrightarrow> 
-      Seq__positionsSuchThat (Seq__Seq__inf s,p)
-    = Seq__Seq__fin (Stream__positionsSuchThatF (s,p))"
-   apply (cut_tac s="Seq__Seq__inf s" in Seq__positionsSuchThat_Obligation_the,
+      Seq__positionsSuchThat (Seq__inf s,p)
+    = Seq__fin (Stream__positionsSuchThatF (s,p))"
+   apply (cut_tac s="Seq__inf s" in Seq__positionsSuchThat_Obligation_the,
           simp add: Seq__positionsSuchThat_def, rule the1I2, simp)
    apply (rotate_tac 1, thin_tac ?P, clarsimp, fold Seq__noRepetitions_p_def)
    apply (case_tac x, simp_all)
@@ -1967,26 +1959,26 @@ done
 
 lemma Seq__positionsSuchThat_inf3:
   "\<lbrakk>\<not> Set__infinite_p {i. p (s i)}\<rbrakk> \<Longrightarrow> 
-      Seq__positionsSuchThat (Seq__Seq__inf s,p)
-    = Seq__Seq__fin (Stream__positionsSuchThatF (s,p))"
+      Seq__positionsSuchThat (Seq__inf s,p)
+    = Seq__fin (Stream__positionsSuchThatF (s,p))"
  by (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def 
                Seq__positionsSuchThat_inf2 setToPred_def) 
 
 lemma Seq__positionsOf_inf:
   "\<lbrakk>Set__infinite_p {i. s i = a}\<rbrakk> \<Longrightarrow> 
-   Seq__positionsOf (Seq__Seq__inf s,a) = Seq__Seq__inf (Stream__positionsOfI (s,a))"
+   Seq__positionsOf (Seq__inf s,a) = Seq__inf (Stream__positionsOfI (s,a))"
   by (simp add: Seq__positionsOf_def Stream__positionsOfI_def
                 Seq__positionsSuchThat_inf)
 
 lemma Seq__positionsOf_inf2:
   "\<lbrakk>finite {i. s i = a}\<rbrakk> \<Longrightarrow> 
-   Seq__positionsOf (Seq__Seq__inf s,a) = Seq__Seq__fin (Stream__positionsOfF (s,a))"
+   Seq__positionsOf (Seq__inf s,a) = Seq__fin (Stream__positionsOfF (s,a))"
   by (simp add: Seq__positionsOf_def Stream__positionsOfF_def
                 Seq__positionsSuchThat_inf2)
 
 lemma Seq__positionsOf_inf3:
   "\<lbrakk>\<not> Set__infinite_p {i. s i = a}\<rbrakk> \<Longrightarrow> 
-   Seq__positionsOf (Seq__Seq__inf s,a) = Seq__Seq__fin (Stream__positionsOfF (s,a))"
+   Seq__positionsOf (Seq__inf s,a) = Seq__fin (Stream__positionsOfF (s,a))"
   by (simp add: Seq__positionsOf_def Stream__positionsOfF_def
                 Seq__positionsSuchThat_inf3)
 
@@ -2177,11 +2169,11 @@ proof Isa permute_Obligation_the
  apply (simp_all, simp_all add: Seq__permutation_p_def)
  apply (cut_tac l=lista and prm=list in List__permute_Obligation_the)
  apply (simp_all add: List__permutation_p_def, erule ex1E, clarify)
- apply (rule_tac a="Seq__Seq__fin r" in ex1I, simp_all)
+ apply (rule_tac a="Seq__fin r" in ex1I, simp_all)
  apply (case_tac x, simp_all)
  apply (drule_tac s=funa in Stream__permute_Obligation_the)
  apply (erule ex1E)
- apply (rule_tac a="Seq__Seq__inf s'" in ex1I, simp_all)
+ apply (rule_tac a="Seq__inf s'" in ex1I, simp_all)
  apply (case_tac x, simp_all)
 end-proof
 
@@ -2249,11 +2241,11 @@ proof Isa isoSeq_Obligation_subtype
   apply (drule_tac List__isoList_subtype_constr, 
          simp add: bij_def surj_def List__isoList_def, clarify,
          drule_tac x=list in spec, clarify,
-         rule_tac x= "Seq__Seq__fin x" in exI, auto)
+         rule_tac x= "Seq__fin x" in exI, auto)
   apply (drule_tac Stream__isoStream_Obligation_subtype,
          simp add: bij_def surj_def, clarify,
          drule_tac x="fun" in spec, clarify,
-         rule_tac x= "Seq__Seq__inf x" in exI, auto)
+         rule_tac x= "Seq__inf x" in exI, auto)
 end-proof
 
 endspec

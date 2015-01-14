@@ -15,8 +15,8 @@ spec
     | String      String
     | Bool        Bool
     | RecordVal   Subst
-    | Constructor Id * MSIValue * MSType
-    | Constant    Id * MSType
+    | Constructor QualifiedId * MSIValue * MSType
+    | Constant    QualifiedId * MSType
     | QuotientVal MSIValue * MSIValue	* QualifiedId	% closure * element * type id
     | ChooseClosure MSIValue * MSType * QualifiedId
     | Closure     MSMatch * Subst
@@ -231,7 +231,7 @@ spec
       | Char   c -> Char   c
       | String s -> String s
       | Bool   b -> Bool   b
-      | Embed (id, false) -> Constant(id,ty)
+      | Embed (qid, false) -> Constant(qid,ty)
       | _ -> Unevaluated t
 
   op  nonStrict?: MSTerm -> Bool
@@ -288,7 +288,7 @@ spec
   def evalApplySpecial(ft,a,sb,spc,depth,trace?) =
     let def default() = Unevaluated(mkApply(ft, valueToTerm a)) in
     case ft of
-      | Fun(Embed(id,true),ty,_) -> Constructor(id,a,ty)
+      | Fun(Embed(qid,true),ty,_) -> Constructor(qid,a,ty)
       | Fun(Op(Qualified(spName,opName),_),_,_) ->
         (if spName in? evalQualifiers
 	  then (case a
@@ -672,10 +672,11 @@ spec
 %	   then Int(stringToNat s)
 %	   else default()
        | ("length",String s)  -> Int(length s)
-       | ("explode",String s) -> foldr (fn (c,r) -> Constructor("Cons",RecordVal[("1",Char c),("2",r)],
+       | ("explode",String s) -> foldr (fn (c,r) -> Constructor(Qualified("List","Cons"),
+                                                                RecordVal[("1",Char c),("2",r)],
                                                                 mkArrow(mkProduct[charType, listCharType],
                                                                         listCharType)))
-                                   (Constant("Nil",listCharType)) (explode s)
+                                   (Constant(Qualified("List","Nil"),listCharType)) (explode s)
        | ("toScreen",String s)  -> let _ = toScreen  s in RecordVal []
        | ("print",String s)     -> let _ = System.print  s in RecordVal []
        | ("writeLine",String s) -> let _ = writeLine s in RecordVal []
@@ -700,8 +701,8 @@ spec
        | ("debug",String s) -> debug s	% Might want to do something smarter
        | ("warn",String s) -> warn s
        | ("getEnv",String s) -> (case getEnv s of
-				   | None -> Constant("None",optionStringType)
-				   | Some s -> Constructor("Some",String s,optionStringType))
+				   | None -> Constant(Qualified("Option", "None"),optionStringType)
+				   | Some s -> Constructor(Qualified("Option", "Some"),String s,optionStringType))
        | ("garbageCollect",Bool b) -> let _ = System.garbageCollect b in RecordVal []
        | ("trueFilename",String s) -> String(trueFilename s)
 
@@ -851,14 +852,14 @@ spec
   op  metaListToList: (MSIValue | metaList?) -> List MSIValue
   def metaListToList v =
     case v of
-      | Constant ("Nil",_) -> []
-      | Constructor("Cons",RecordVal[("1",x),("2",r)],_) -> Cons(x,metaListToList r)
+      | Constant (Qualified(_,"Nil"),_) -> []
+      | Constructor(Qualified(_,"Cons"),RecordVal[("1",x),("2",r)],_) -> Cons(x,metaListToList r)
 
   op  metaList?: MSIValue -> Bool
   def metaList? v =
     case v of
-      | Constant("Nil",_) -> true
-      | Constructor("Cons",RecordVal[("1",_),("2",r)],_) -> metaList? r
+      | Constant(Qualified(_,"Nil"),_) -> true
+      | Constructor(Qualified(_,"Cons"),RecordVal[("1",_),("2",r)],_) -> metaList? r
       | _ -> false
 
 
@@ -915,7 +916,7 @@ spec
 						     (0,ppValue ctxt x)]))
 					       rm)),
 			    string "}"]
-      | Constructor("Cons",arg as RecordVal[(_,_),(_,_)],_) ->
+      | Constructor(Qualified(_,"Cons"),arg as RecordVal[(_,_),(_,_)],_) ->
 	(case valueToList v of
 	   | Some listVals ->
 	     prettysNone [string "[",
@@ -923,8 +924,8 @@ spec
 					(map (ppValue ctxt) listVals)),
 			  string "]"]
 	   | None -> prettysFill[string "Cons",string " ",ppValue ctxt arg])
-      | Constructor (id,arg,_) -> prettysFill [string id,string " ",ppValue ctxt arg]
-      | Constant        (id,_) -> string id
+      | Constructor (qid,arg,_) -> prettysFill [string(printQualifiedId qid),string " ",ppValue ctxt arg]
+      | Constant        (qid,_) -> string(printQualifiedId qid)
       | QuotientVal (f,arg,srt_id)  -> prettysFill [string "quotient[",
                                                     string (printQualifiedId srt_id), string "] ",
                                                     ppValue ctxt arg]
@@ -948,11 +949,11 @@ spec
   op  valueToList: MSIValue -> Option(List MSIValue)
   def valueToList v =
     case v of
-      | Constructor("Cons",RecordVal[(_,a),(_,rl)],_) ->
+      | Constructor(Qualified(_,"Cons"),RecordVal[(_,a),(_,rl)],_) ->
         (case valueToList rl of
 	  | Some l -> Some(Cons(a,l))
 	  | None -> None)
-      | Constant ("Nil",_) -> Some []
+      | Constant (Qualified(_,"Nil"),_) -> Some []
       | _ -> None
 
   op  valueToTerm: MSIValue -> MSTerm

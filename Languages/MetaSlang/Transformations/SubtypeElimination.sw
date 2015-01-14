@@ -493,28 +493,28 @@ SpecNorm qualifying spec
           | CoProduct(constrs0, a) ->
             %% Lifting a CoProduct is dangerous in that it makes the CoProduct not be at the top level, 
             %% but at the point it is done it may be benign.
-            let constrs1 = map (fn (constr_id, opt_ty) -> (constr_id, mapOption (fn ty -> raiseSubtypeFn(ty, spc)) opt_ty)) constrs0 in
+            let constrs1 = map (fn (constr_qid, opt_ty) -> (constr_qid, mapOption (fn ty -> raiseSubtypeFn(ty, spc)) opt_ty)) constrs0 in
             if exists? (fn (_,opt_tyi) -> case opt_tyi of
                                             | Some(Subtype _) -> true
                                             | _ -> false)
                  constrs1
               then
                 let (bare_constrs, cases) =
-                    foldl (fn ((bare_constrs, cases), (constr_id, opt_tyi)) ->
+                    foldl (fn ((bare_constrs, cases), (constr_qid as Qualified(_, constr_id), opt_tyi)) ->
                              case opt_tyi of
                                | Some(Subtype(t,p,_)) ->
                                  (case p of
                                     | Lambda([(pat, _, bod)], _) ->
-                                      (bare_constrs ++ [(constr_id, Some t)],
-                                       cases ++ [(EmbedPat(constr_id, Some(pat), ty, a), trueTerm, bod)])
+                                      (bare_constrs ++ [(constr_qid, Some t)],
+                                       cases ++ [(EmbedPat(constr_qid, Some(pat), ty, a), trueTerm, bod)])
                                     | _ ->
                                       let v = ("y_"^constr_id, t)  in
-                                      (bare_constrs ++ [(constr_id, Some t)],
-                                       cases ++ [(EmbedPat(constr_id, Some(mkVarPat v), ty, a), trueTerm, simplifiedApply(p, mkVar v, spc))]))
-                               | Some tyi -> (bare_constrs ++ [(constr_id, opt_tyi)],
-                                              cases ++ [(EmbedPat(constr_id, Some(mkWildPat tyi), ty, a), trueTerm, trueTerm)])
-                               | _ -> (bare_constrs ++ [(constr_id, opt_tyi)],
-                                       cases ++ [(EmbedPat(constr_id, None, ty, a), trueTerm, trueTerm)]))
+                                      (bare_constrs ++ [(constr_qid, Some t)],
+                                       cases ++ [(EmbedPat(constr_qid, Some(mkVarPat v), ty, a), trueTerm, simplifiedApply(p, mkVar v, spc))]))
+                               | Some tyi -> (bare_constrs ++ [(constr_qid, opt_tyi)],
+                                              cases ++ [(EmbedPat(constr_qid, Some(mkWildPat tyi), ty, a), trueTerm, trueTerm)])
+                               | _ -> (bare_constrs ++ [(constr_qid, opt_tyi)],
+                                       cases ++ [(EmbedPat(constr_qid, None, ty, a), trueTerm, trueTerm)]))
                       ([],[]) constrs1
                    in
                    let lifted_ty = Subtype(CoProduct(bare_constrs, a),

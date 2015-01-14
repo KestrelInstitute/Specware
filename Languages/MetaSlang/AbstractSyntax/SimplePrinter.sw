@@ -294,7 +294,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | VarPat (v,_) -> ppAVarWithoutType v
       | EmbedPat (constr,pat,srt,_) ->
           ppGrConcat [
-            ppString constr,
+            ppQualifiedId constr,
             case pat of
               | None -> ppNil
               | Some pat -> ppAppend (ppString " ") (ppAPattern pat)
@@ -405,23 +405,23 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           ]
       | RecordMerge ->
 	  ppString "<<"
-      | Embed (id,b) ->
+      | Embed (qid,b) ->
           % ppConcat [
             % ppString "(embed ",
-            ppString id
+            ppQualifiedId qid
             % ppString " "
             % ppBool b,
             % ppString ")"
           % ]
-      | Embedded id ->
+      | Embedded qid ->
           ppConcat [
             ppString "embedded ",
-            ppString id
+            ppQualifiedId qid
           ]
-      | Select id ->
+      | Select qid ->
           ppConcat [
             ppString "select ",
-            ppString id
+            ppQualifiedId qid
           ]
       | Nat n -> ppString (Nat.show n)
       | Char chr -> ppString (Char.show chr)
@@ -513,14 +513,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                   ppString "}"
                 ]))
       | CoProduct (taggedTypes,_) -> 
-          let def ppTaggedType (id,optSrt) =
+          let def ppTaggedType (qid,optSrt) =
             case optSrt of
-              | None -> ppString id
+              | None -> ppQualifiedId qid
               | Some srt ->
-                  ppConcat [
-                    ppString (id ^ " "),
-                    ppAType srt
-                  ]
+                  ppConcat [ppQualifiedId qid,
+                            ppString  " ",
+                            ppAType srt]
           in ppGrConcat [
             ppString "(",
             ppGrConcat [

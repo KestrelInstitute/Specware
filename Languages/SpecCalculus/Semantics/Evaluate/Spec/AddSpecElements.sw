@@ -14,6 +14,12 @@ SpecCalc qualifying spec
   {(sp,_) <- addOrRefineType new_names new_dfn old_spec pos None true;
    return sp}
 
+ op addQualifiersToCoProduct (spc: Spec) (ty: MSType): MSType =
+   case ty of
+     | CoProduct(fields, a) ->
+       CoProduct(map (fn (qid, o_ty) -> (addQualifier spc qid, o_ty))fields, a)
+     | _ -> ty
+
  op addOrRefineType (new_names    : QualifiedIds)
                     (new_dfn      : MSType)
                     (old_spec     : Spec)
@@ -26,6 +32,7 @@ SpecCalc qualifying spec
   % Collect the info's for such references
   let new_names   = reverse (removeDuplicates new_names)  in % don't let duplicate names get into a typeinfo!
   let new_names   = map (addQualifier old_spec) new_names in
+  let new_dfn     = mapType (id, addQualifiersToCoProduct old_spec, id) new_dfn in                        
   let primaryName = head new_names                        in
   let new_info    = {names = new_names, dfn = new_dfn}    in
   let old_infos = foldl (fn (old_infos,new_name) ->

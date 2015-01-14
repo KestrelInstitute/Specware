@@ -862,9 +862,9 @@ PrintAsC qualifying spec
     | Some n ->
       (CPrecedence_PRIMARY, 
        string (case radix of
-                 | Fun (Embed ("hex", _), _, _) -> hex (n, suffix)
-                 | Fun (Embed ("oct", _), _, _) -> oct (n, suffix)
-                 | Fun (Embed ("dec", _), _, _) -> dec (n, suffix)
+                 | Fun (Embed (Qualified(_,"hex"), _), _, _) -> hex (n, suffix)
+                 | Fun (Embed (Qualified(_,"oct"), _), _, _) -> oct (n, suffix)
+                 | Fun (Embed (Qualified(_,"dec"), _), _, _) -> dec (n, suffix)
                  | _                            -> dec (n, suffix)), % default to dec ??
        status)
     | _ -> 

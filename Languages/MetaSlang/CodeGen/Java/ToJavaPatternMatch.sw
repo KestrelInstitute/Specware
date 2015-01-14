@@ -31,7 +31,7 @@ def parseCoProductCase spc term =
   let def makeCases(id,case_tm,then_exp,els_exp,block?) =
         let def parseRest t =
 	      case t of
-		| IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm1,_),
+		| IfThenElse(Apply(Fun(Embedded (Qualified(_,id)),srt,_),case_tm1,_),
 			     then_exp,els_exp, _)  ->
 		  if equivTerm? spc (case_tm,case_tm1)
 		    then let (cases,otherwise_tm) = parseRest els_exp in
@@ -57,13 +57,13 @@ def parseCoProductCase spc term =
 
     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "block"), _), _, _),
 	     Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _),
-		    Record([("1",IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
+		    Record([("1",IfThenElse(Apply(Fun(Embedded (Qualified(_,id)),srt,_),case_tm,_),
 					    then_exp, els_exp, _)),
 			    ("2",default)],_) , _), _)
       ->
       makeCases(id,case_tm,then_exp,simpSuccess(default,true),true)
 
-    | IfThenElse(Apply(Fun(Embedded id,srt,_),case_tm,_),
+    | IfThenElse(Apply(Fun(Embedded (Qualified(_,id)),srt,_),case_tm,_),
 		 then_exp, els_exp, _) ->
       makeCases(id,case_tm,then_exp,els_exp,false)      
 
@@ -71,7 +71,7 @@ def parseCoProductCase spc term =
     %%   def null(l) = case l of [] -> true | _ -> false
     %% now may be optimized to a defintion using Embedded, such as this:
     %%   def null(l) = embed? Nil l
-    | Apply(Fun(Embedded id,srt,_),case_tm,_) ->
+    | Apply(Fun(Embedded(Qualified(_,id)),srt,_),case_tm,_) ->
       Some(case_tm, [(id,mkTrue())], Some(mkFalse()), false)
 
     | _ -> None

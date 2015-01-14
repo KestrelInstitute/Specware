@@ -1123,7 +1123,7 @@ ASWPrinter qualifying spec
       | VarPat (v,_) -> ppVar c v
       | EmbedPat (constr,pat,srt,_) ->
 	ppGrConcat ([ppString "embed ",
-		    ppID constr,
+		    ppQualifiedId constr,
 		    case pat of
 		      | None -> ppNil
 		      | Some pat -> ppAppend (ppString " ") (ppPattern c pat)]
@@ -1239,9 +1239,9 @@ ASWPrinter qualifying spec
       | Project id ->
           ppConcat [ppString "project ", ppID id]
       | RecordMerge -> ppString "merge"
-      | Embed (id,b) -> ppConcat [ppString "embed ", ppID id, ppString " ", ppBool b]
-      | Embedded id  -> ppConcat [ppString "embedded ", ppID id]
-      | Select id -> ppConcat [ppString "select ", ppID id]
+      | Embed (id,b) -> ppConcat [ppString "embed ", ppQualifiedId id, ppString " ", ppBool b]
+      | Embedded id  -> ppConcat [ppString "embedded ", ppQualifiedId id]
+      | Select id -> ppConcat [ppString "select ", ppQualifiedId id]
       | Nat n -> ppString (show n)
       | Char chr -> ppConcat[ppString "#", ppString (show chr)]
       | String str -> ppString ("\"" ^ str ^ "\"")
@@ -1326,9 +1326,9 @@ ASWPrinter qualifying spec
       | CoProduct (taggedTypes,_) -> 
 	let def ppTaggedType (id,optTy) =
 	  case optTy of
-	    | None -> ppID id
+	    | None -> ppQualifiedId id
 	    | Some ty ->
-		ppConcat [ppID (id),
+		ppConcat [ppQualifiedId (id),
 			  ppString ": ",
 			  ppType c ty]
 	in ppGrConcat [

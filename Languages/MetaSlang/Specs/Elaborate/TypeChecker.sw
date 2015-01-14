@@ -42,10 +42,7 @@ op resolveNameFromType        : LocalEnv * MSTerm*Id * MSType * Position -> MSTe
 op elaborateTerm              : LocalEnv * MSTerm    * MSType * MSTerms  -> MSTerm
 op elaboratePattern           : LocalEnv * MSPattern * MSType            -> MSPattern * LocalEnv
 
-op mkEmbed0                   : LocalEnv * MSType          * Id            -> Option Id
-op mkEmbed1                   : LocalEnv * MSType * MSTerm * Id * Position -> Option MSTerm
-op lookupEmbedId              : LocalEnv * Id * MSType                     -> Option (Option MSType)
-op isCoproduct                : LocalEnv * MSType                          -> Option (List (Id * Option MSType))
+op isCoproduct                : LocalEnv * MSType                          -> Option (List (QualifiedId * Option MSType))
 op mkProject                  : LocalEnv * Id * MSType * Position          -> Option MSTerm
 
 op undeclaredName             : LocalEnv * MSTerm      * Id * MSType * Position -> MSTerm
@@ -376,8 +373,8 @@ op checkType1(env: LocalEnv, ty: MSType, o_tm: Option MSTerm, checkTerms?: Bool)
                  Base (new_type_qid, new_instance_types, pos))
 
     | CoProduct (fields, pos) ->
-      let nfields = map (fn (id, None)   -> (id, None) 
-                          | (id, Some s) -> (id, Some (checkType1 (env, s, None, checkTerms?))))
+      let nfields = map (fn (qid, None)   -> (qid, None) 
+                          | (qid, Some s) -> (qid, Some (checkType1 (env, s, None, checkTerms?))))
                      fields
       in
       if nfields = fields then 
@@ -504,7 +501,7 @@ def fixateTwoNames (q_id_fixity : Id * Id * Fixity, explicit_fixity : Fixity)
 
 def resolveNameFromType(env, trm, id, ty, pos) =
   case mkEmbed0 (env, ty, id) of
-    | Some id -> Fun (Embed (id, false), checkType0 (env, ty), pos)
+    | Some qid -> Fun (Embed (qid, false), checkType0 (env, ty), pos)
     | None -> 
   case mkEmbed1 (env, ty, trm, id, pos) of
     | Some term -> term
@@ -518,7 +515,7 @@ def resolveNameFromType(env, trm, id, ty, pos) =
 
 op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): MSTerms =
   case mkEmbed0 (env, ty, id) of
-    | Some id -> [Fun (Embed (id, false), checkType0 (env, ty), pos)]
+    | Some qid -> [Fun (Embed (qid, false), checkType0 (env, ty), pos)]
     | None -> 
   case mkEmbed1 (env, ty, trm, id, pos) of
     | Some term -> [term]
@@ -533,7 +530,7 @@ op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Posi
 
 op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos: Position): Option MSTerm =
   case mkEmbed0 (env, ty, id) of
-    | Some id -> Some(Fun (Embed (id, false), checkType0 (env, ty), pos))
+    | Some qid -> Some(Fun (Embed (qid, false), checkType0 (env, ty), pos))
     | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
 op checkOp (info: OpInfo, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
@@ -778,7 +775,7 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
                       %% Accord checks to see if id2 (id1) typechecks
                       undeclared2 (env, trm, id1, id2, term_type, pos)))
 
-          | Fun (Embed (id, _), ty, pos) -> 
+          | Fun (Embed (qid as Qualified(_,id), _), ty, pos) -> 
             let _  (* ty *) = elaborateCheckTypeForTerm (env, trm, ty, term_type) in
             %% using term_type instead of ty in the following was cause of bug 110 : "[] read as bogus Nil"
             resolveNameFromType (env, trm, id, ty, pos) 
@@ -790,28 +787,34 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
                | None -> undeclaredResolving (env,trm,id,term_type,pos))
 
         % | Fun (Select id,ty,pos) -> Fun (Select id,ty,pos)      (*** Not checked ***)
-          | Fun (Embedded id, ty, pos) ->
+          | Fun (Embedded(qid as Qualified(q, id)), ty, pos) ->
             let a = freshMetaTyVar ("Embedded", pos) in
             let ty1 = Arrow(a, type_bool, pos) in
             (elaborateTypeForTerm (env, trm, ty1, term_type);
              elaborateTypeForTerm (env, trm, ty, ty1);
-             (case unfoldType (env, ty) of
-                | Arrow (dom, _, _) -> 
-                  (case isCoproduct (env, dom) of
-                     | Some fields -> 
-                       if exists? (fn (id2, _) -> id = id2) fields then
-                         ()
-                       else
-                         error (env, 
-                                "Name "^id^" is not among the constructors of "^ printType dom, 
-                                pos)
-                     | None -> 
-                       pass2Error (env, dom, 
-                                   newLines ["Sum type with constructor "^id^" expected", 
-                                             "found instead "^printType dom], 
-                                   pos))
-                | _ -> pass2Error (env, ty, "Function type expected ", pos));
-             Fun (Embedded id, ty, pos))
+             let qid =
+                 case unfoldType (env, ty) of
+                    | Arrow (dom, _, _) -> 
+                      (case isCoproduct (env, dom) of
+                         | Some fields -> 
+                           if exists? (fn (qid2, _) -> qid = qid2) fields then
+                             qid
+                           else
+                             (case findLeftmost (fn (Qualified(_, id2), _) -> id = id2 && q = UnQualified) fields of
+                                | Some(qid2, _) -> qid2
+                                | _ -> 
+                                  (error (env, 
+                                          "Name "^show qid^" is not among the constructors of "^ printType dom, 
+                                          pos); qid))
+                         | None -> 
+                           (pass2Error (env, dom, 
+                                       newLines ["Sum type with constructor "^show qid^" expected", 
+                                                 "found instead "^printType dom], 
+                                        pos);
+                            qid))
+                    | _ -> (pass2Error (env, ty, "Function type expected ", pos); qid)
+             in
+             Fun (Embedded qid, ty, pos))
 
           | Fun (PChoose qid, ty, pos) -> 
             %% Has type:  {f: base_type -> result_type | fa(m,n) equiv(m,n) => f m = f n} -> quot_type -> result_type
@@ -1552,22 +1555,22 @@ def elaborateType (env, s1, s2) =
 % ========================================================================
 %% Called inside elaborateTerm 
 
-def mkEmbed0 (env, ty, id) =
+op mkEmbed0 (env: LocalEnv, ty: MSType, id: Id): Option QualifiedId =
   case lookupEmbedId (env, id, ty) of
-    | Some None -> Some id
+    | Some (None, qid) -> Some qid
     | _   -> None
 
-def lookupEmbedId (env, id, ty) = 
+op lookupEmbedId (env: LocalEnv, id: Id, ty: MSType): Option(Option MSType * QualifiedId) = 
   case unfoldTypeCoProd (env, ty) of
     | CoProduct(row, _) -> 
       let def lookup row =
             case row of
-              | [] -> None : Option (Option MSType)
-              | (found_id, entry) :: row ->  
+              | [] -> None
+              | (found_qid as Qualified(_,found_id), entry) :: row ->  
                 if id = found_id then
                   Some (case entry of
-                          | None   -> None
-                          | Some s -> Some (checkType (env, s)))
+                          | None   -> (None, found_qid)
+                          | Some s -> (Some (checkType (env, s)), found_qid))
                 else 
                   lookup row
       in
@@ -1575,7 +1578,7 @@ def lookupEmbedId (env, id, ty) =
     | Subtype (ty, pred, _) -> lookupEmbedId (env, id, ty)
     | _ -> None
 
-def mkEmbed1 (env, ty, trm, id, pos) = 
+op mkEmbed1 (env: LocalEnv, ty: MSType, trm: MSTerm, id: Id, pos: Position): Option MSTerm = 
   case isArrowCoProduct (env, ty) of
     | Some (dom_type, coprod_ty, row) ->
       let 
@@ -1583,7 +1586,7 @@ def mkEmbed1 (env, ty, trm, id, pos) =
         def findId ls = 
           case ls of
             | [] -> None   % Some (undeclaredName (env, trm, id, ty, pos))
-            | (constructor_id, Some constructor_dom_type) :: row -> 
+            | (constructor_qid as Qualified(_,constructor_id), Some constructor_dom_type) :: row -> 
               if id = constructor_id then
                   %let _ = writeLine ("ty:  "^printType ty) in
                   %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
@@ -1591,7 +1594,7 @@ def mkEmbed1 (env, ty, trm, id, pos) =
                 let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
                 % let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
                 let _ = elaborateType(env, constr_ty, ty) in
-                Some (Fun (Embed (id, true), constr_ty, pos))
+                Some (Fun (Embed (constructor_qid, true), constr_ty, pos))
               else 
                 findId row
             | _ :: row -> findId row
@@ -1599,7 +1602,7 @@ def mkEmbed1 (env, ty, trm, id, pos) =
         findId row
     | _ -> None
 
-def isArrowCoProduct (env, ty) : Option (MSType * MSType * List (Id * Option MSType)) =
+def isArrowCoProduct (env, ty) : Option (MSType * MSType * List (QualifiedId * Option MSType)) =
   case unfoldType (env, ty) of
     | Arrow (dom, rng, _) -> 
       (case isCoproduct (env, rng) of
@@ -1609,7 +1612,7 @@ def isArrowCoProduct (env, ty) : Option (MSType * MSType * List (Id * Option MST
 
 def isCoproduct (env, ty)  = 
   case unfoldTypeCoProd (env, ty) of
-    | CoProduct (row, _)    -> Some row
+    | CoProduct (row, _)   -> Some row
     | Subtype   (ty, _, _) -> isCoproduct (env, ty)
     | _ -> None
 
@@ -1647,13 +1650,13 @@ op constrTerm(env: LocalEnv, id: Id, coprod_qid: QualifiedId, coprod_ty: MSType,
   let (v_ty, c_ty) = metafyBaseType (coprod_qid, coprod_ty, termAnn trm) in
   let id_ty = case c_ty of
                  | CoProduct (fields, pos) ->
-                   (case findLeftmost (fn (id2, _) -> id = id2) fields of
+                   (case findLeftmost (fn (Qualified(_,id2), _) -> id = id2) fields of
                       | Some (_, Some dom_ty) -> Arrow (dom_ty, v_ty, pos)
                       | _ -> v_ty)
                  | _ -> v_ty
   in
   (case mkEmbed0 (env, id_ty, id) of
-     | Some id -> Some (Fun (Embed (id, false), checkType (env, id_ty), pos))
+     | Some qid -> Some (Fun (Embed (qid, false), checkType (env, id_ty), pos))
      | None -> mkEmbed1 (env, id_ty, trm, id, pos))
 
 %% If id is the unique name of a constructor, use that constructor
@@ -1778,7 +1781,7 @@ def elaboratePatternRec (env, p, type1, seenVars) =
     | VarPat ((id, ty), pos) -> 
       let ty = elaborateTypeForPat (env, p, ty, type1)  in 
       (case lookupEmbedId (env, id, ty) of
-         | Some None -> (EmbedPat (id, None, ty, pos), env, seenVars)
+         | Some (None, qid) -> (EmbedPat (qid, None, ty, pos), env, seenVars)
          | Some _ -> 
            (error (env, "Constructor "^id^" expects an argument, but was given none", pos);
             % raise (TypeCheck (pos, "Constructor "^id^" expects an argument, but was given none"));
@@ -1804,7 +1807,7 @@ def elaboratePatternRec (env, p, type1, seenVars) =
       let (pat1, env, seenVars) = elaboratePatternRec (env, pat1, type1, seenVars) in
       let (pat2, env, seenVars) = elaboratePatternRec (env, pat2, type1, seenVars) in
       (AliasPat (pat1, pat2, pos), env, seenVars)
-    | EmbedPat (embedId, pattern, type0, pos) ->
+    | EmbedPat (embedQId as Qualified(_,embedId), pattern, type0, pos) ->
       let type0 = elaborateTypeForPat (env, p, type0, type1) in
       let type0 =
           if undeterminedType? type0 then
@@ -1826,22 +1829,22 @@ def elaboratePatternRec (env, p, type1, seenVars) =
                   let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars) in
                   (env, Some pat, seenVars)
           in
-          (EmbedPat (embedId, epat, type0, pos), env, seenVars)
+          (EmbedPat (embedQId, epat, type0, pos), env, seenVars)
         else
-          let ty = lookupEmbedId (env, embedId, type0) in
-          let (env, pat, seenVars) = 
-              (case (ty, pattern) of
-                 | (Some (Some ty), Some pat) -> 
+          let ty_info = lookupEmbedId (env, embedId, type0) in
+          let (env, embedQId, pat, seenVars) = 
+              (case (ty_info, pattern) of
+                 | (Some (Some ty, embedQId), Some pat) -> 
                    let (pat, env, seenVars) = elaboratePatternRec (env, pat, ty, seenVars) in
-                   (env, Some pat, seenVars)
+                   (env, embedQId, Some pat, seenVars)
 
-                 | (Some None, None) -> (env, None, seenVars)
+                 | (Some (None, embedQId), None) -> (env, embedQId, None, seenVars)
                  | (None, None) -> 
                    (error (env, "Type for constructor "
                            ^ embedId
                            ^ " not found. Resolving with type "
                            ^ printType type1, pos);
-                    (env, None, seenVars))
+                    (env, embedQId, None, seenVars))
                  | (None, Some pat) -> 
                    let alpha = freshMetaTyVar ("EmbedPat_b", pos) in
                    let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars)
@@ -1850,20 +1853,20 @@ def elaboratePatternRec (env, p, type1, seenVars) =
                            ^ embedId
                            ^ " not found. Resolving with type "
                            ^ printType type1, pos);
-                    (env, None, seenVars))
+                    (env, embedQId, None, seenVars))
                  | (Some None, Some pat) -> 
                    (error (env, newLines ["Constructor "
                                           ^ embedId
                                           ^ " takes no argument", 
                                           "but was given "
                                           ^ printPattern pat], pos);
-                    (env, Some pat, seenVars))
-                 | (Some (Some _), None) -> 
+                    (env, embedQId, Some pat, seenVars))
+                 | (Some (Some _, embedQId), None) -> 
                    (error (env, "Argument expected for constructor "
                            ^ embedId, pos);
-                    (env, None, seenVars)))
+                    (env, embedQId, None, seenVars)))
           in
-            (EmbedPat (embedId, pat, type1, pos), env, seenVars)
+            (EmbedPat (embedQId, pat, type1, pos), env, seenVars)
     | RecordPat (row, pos) ->
       let r = map (fn (id, ty)-> (id, freshMetaTyVar ("RecordPat", pos))) row in
       let _ = elaborateTypeForPat (env, p, (Product (r, pos)), type1) in

@@ -117,7 +117,7 @@ import Script
         let args = termToList arg in
         (case findLeftmost (constructorTerm? spc) args of
          | Some stm ->
-           let Some(constr_id, rw_qids) = constructorTerm spc stm in
+           let Some(constr_qid as Qualified(_, constr_id), rw_qids) = constructorTerm spc stm in
            let proto_args = tabulate(length args,
                                      fn i -> let arg = args@i in
                                              if arg = stm then stm

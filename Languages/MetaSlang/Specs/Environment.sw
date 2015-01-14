@@ -194,7 +194,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
       | CoProduct _ -> true
       | _ -> false
 
- op coproduct (sp : Spec, srt : MSType): List (Id * Option MSType) = 
+ op coproduct (sp : Spec, srt : MSType): List (QualifiedId * Option MSType) = 
   case stripSubtypes (sp, srt) of
     | CoProduct (fields, _) -> fields
     | mystery -> System.fail ("Could not extract co-product type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
@@ -245,8 +245,6 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
 
  op mkRestrict    : Spec * {pred : MSTerm, term : MSTerm} -> MSTerm
  op mkProjectTerm : Spec * Id * MSTerm                    -> MSTerm
- op mkSelectTerm  : Spec * Id * MSTerm                    -> MSTerm
-
  def mkRestrict (sp, {pred, term}) = 
   let srt = inferType (sp, term) in
   let srt = mkArrow (srt, mkSubtype (srt, pred)) in
@@ -262,11 +260,11 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
                   term)
         | _ -> System.fail "Projection index not found in product")
 
- def mkSelectTerm (sp, id, term) = 
+ op mkSelectTerm (sp: Spec, qid: QualifiedId, term: MSTerm): MSTerm = 
   let srt    = inferType (sp, term) in
   let fields = coproduct (sp, srt)  in
-  case findLeftmost (fn (id2, s)-> id = id2) fields
-    of Some (_,Some s) -> mkApply (Fun (Select id, mkArrow (srt, s), noPos),
+  case findLeftmost (fn (id2, s) -> qid = id2) fields
+    of Some (_,Some s) -> mkApply (Fun (Select qid, mkArrow (srt, s), noPos),
                                    term)
      | _ -> System.fail "Selection index not found in product"
 

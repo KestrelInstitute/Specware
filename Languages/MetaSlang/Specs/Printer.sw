@@ -157,7 +157,7 @@ AnnSpecPrinter qualifying spec
 	  | Op (_, fixity) -> (case fixity of
 				 | Unspecified -> Nonfix
 				 | _ -> fixity)
-          | Embed("Cons", true) -> Infix (Right, 24)
+          | Embed(Qualified(_, "Cons"), true) -> Infix (Right, 24)
 	  | And            -> Infix (Right, 15) 
 	  | Or             -> Infix (Right, 14) 
 	  | Implies        -> Infix (Right, 13) 
@@ -192,10 +192,10 @@ AnnSpecPrinter qualifying spec
      | Nat         n           -> pp.fromString (Nat.show n)
      | String      s           -> pp.fromString ("\""^escapeString s^"\"")   % "abc"
      | Char        c           -> pp.fromString ("\#"^escapeString(show c))  % \ to appease emacs
-     | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
+     | Embed       (qid, _)    -> pp.ppOpId qid  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
-     | Embedded    s           -> pp.fromString ("embed? "^s)
+     | Embedded    qid         -> prConcat [pp.fromString "embed? ", pp.ppOpId qid]
      | Quotient    qid         -> pp.fromString ("quotient[" ^ show qid ^ "] ")
      | Choose      qid         -> pp.fromString ("choose["   ^ show qid ^ "] ")
      | PQuotient   qid         -> pp.fromString ("quotient[" ^ show qid ^ "] ")
@@ -221,7 +221,7 @@ AnnSpecPrinter qualifying spec
 					       ppTerm context ([], Top) p,
 					       string ")"]
      %% Only used internally at present
-     | Select      s           -> pp.fromString ("select(" ^ s ^ ")")
+     | Select (Qualified(_,s)) -> pp.fromString ("select(" ^ s ^ ")")
 
 
  def [a] singletonPattern (pat : APattern a) = 
@@ -234,7 +234,7 @@ AnnSpecPrinter qualifying spec
  op [a] stripQual (tm: ATerm a): ATerm a =
    case tm of
      | Fun(Op(Qualified(_,opName),fx),s,a) | ~alwaysPrintQualifiers? -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
-     | Fun(Embed("Cons", true), s, a) -> Fun(Embed("::", true), s, a)
+     | Fun(Embed(Qualified(_, "Cons"), true), s, a) -> Fun(Embed(mkUnQualifiedId "::", true), s, a)
      | _ -> tm
 
  % FIXME / TODO: I think the paths into patterns here (e.g., [0, i])
@@ -684,16 +684,16 @@ AnnSpecPrinter qualifying spec
 
      | CoProduct (row, _) -> 
        let
-         def ppEntry (path, (id, srtOption)) = 
+         def ppEntry (path, (qid, srtOption)) = 
 	   case srtOption of
 	     | Some s -> 
 	       prettysNone [pp.Bar, 
-			    pp.fromString  id, 
+			    pp.ppOpId qid, 
 			    string  " ", 
 			    ppType context (path, CoProduct) s]
 	     | None -> 
 	       prettysNone [pp.Bar, 
-			    pp.fromString  id]
+			    pp.ppOpId  qid]
        in
        let (left, right) = 
            case parent of
@@ -859,8 +859,8 @@ AnnSpecPrinter qualifying spec
                               (2, ppType context ([0] ++ path, Top : ParentType) srt)]))
        else 
 	 pp.fromString id
-     | EmbedPat  ("Nil", None, ty, _) | listType?(ty) -> string "[]"
-     | EmbedPat  (id, None, _, _) -> pp.fromString id
+     | EmbedPat  (Qualified(_, "Nil"), None, ty, _) | listType?(ty) -> string "[]"
+     | EmbedPat  (Qualified(_, id), None, _, _) -> pp.fromString id
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
@@ -877,7 +877,7 @@ AnnSpecPrinter qualifying spec
 			  prettysFill [ppPattern context (path, false, false) pat])])
 	 in
 	   ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
-     | EmbedPat ("Cons", 
+     | EmbedPat (Qualified(_,"Cons"), 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 Base (_, [_], _), _) ->
        (case isFiniteListPat pattern of
@@ -895,7 +895,7 @@ AnnSpecPrinter qualifying spec
  %           prettysFill [ppPattern context ([0]++ path, false) p1, 
  %                        string " :: ", 
  %                        ppPattern context ([1]++ path, false) p2])
-     | EmbedPat (id, Some pat, _(* srt *), _) -> 
+     | EmbedPat (Qualified(_,id), Some pat, _(* srt *), _) -> 
        enclose (enclose?, pp,
 		blockFill (0, (Cons ((0, pp.fromString id), 
                                      if singletonPattern pat then

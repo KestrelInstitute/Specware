@@ -912,13 +912,14 @@ Haskell qualifying spec
                                           let (ty_vars, superty) = unpackType info.dfn in
                                           let subty = mkBase(type_qid, map mkTyVar ty_vars) in
                                           let constructor_nm = newtypeConstructorName c type_qid in
-                                          let c = addConstructorTranslation(c, constructor_nm, constructor_nm) in
+                                          let c = addConstructorTranslation(c, mkUnQualifiedId constructor_nm, constructor_nm) in
                                           let coerce_info = {subtype = type_qid,
                                                              supertype = superty,
                                                              coerceToSuper =
                                                                let x = ("x", superty) in
-                                                               mkLambda(mkEmbedPat(constructor_nm, Some(mkVarPat x), subty), mkVar x),
-                                                             coerceToSub   = mkEmbed1(constructor_nm,
+                                                               mkLambda(mkEmbedPat(mkUnQualifiedId constructor_nm,
+                                                                                   Some(mkVarPat x), subty), mkVar x),
+                                                             coerceToSub   = mkEmbed1(mkUnQualifiedId constructor_nm,
                                                                                       mkArrow(superty, subty)),
                                                              overloadedOps = []}
                                           in
@@ -980,11 +981,11 @@ Haskell qualifying spec
           case (d_ty, u_ty) of
             | (Base(d_qid, _, _), _) | exists? (fn (qid, _) -> qid = d_qid) type_qid_constrs && ~(embed? Base u_ty) ->
               let Some(_, newtypeConstructorNmID) = findLeftmost (fn (qid, _) -> qid = d_qid) type_qid_constrs in
-              mkApply(mkEmbed1(newtypeConstructorNmID, mkArrow(u_ty, d_ty)), new_tm)
+              mkApply(mkEmbed1(mkUnQualifiedId newtypeConstructorNmID, mkArrow(u_ty, d_ty)), new_tm)
             | (_, Base(u_qid, _, _)) | exists? (fn (qid, _) -> qid = u_qid) type_qid_constrs && ~(embed? Base d_ty) ->
               let Some(_, newtypeConstructorNmID) = findLeftmost (fn (qid, _) -> qid = u_qid) type_qid_constrs in
               let x = ("x", d_ty) in
-              MS.mkLet([(mkEmbedPat(newtypeConstructorNmID, Some(mkVarPat x), u_ty), new_tm)], mkVar x)
+              MS.mkLet([(mkEmbedPat(mkUnQualifiedId newtypeConstructorNmID, Some(mkVarPat x), u_ty), new_tm)], mkVar x)
             | _ -> new_tm
     in
     let (tvs, ty, term) = unpackFirstTerm(dfn) in
@@ -1214,27 +1215,27 @@ Haskell qualifying spec
     Qualified("List", "List"),
     Qualified("Compare", "Comparison")]
 
- op constructorTranslation(c_nm: String, c: Context): Option String =
-   case specialOpInfo c (mkUnQualifiedId c_nm) of
+ op constructorTranslation(c_nm: QualifiedId, c: Context): Option String =
+   case specialOpInfo c c_nm of
      | Some(tr_nm, None, false, false, true) | ~(isLowerCase(tr_nm@0)) ->
        Some tr_nm
      | _ -> None
 
- op addConstructorTranslation(c: Context, c_nm: String, c_tg: String): Context =
+ op addConstructorTranslation(c: Context, c_qid: QualifiedId, c_tg: String): Context =
    let tbl = c.trans_table in
-   c << {trans_table = tbl << {op_map = update(tbl.op_map, mkUnQualifiedId c_nm,
+   c << {trans_table = tbl << {op_map = update(tbl.op_map, c_qid,
                                                (c_tg, None, false, false, true))}}
 
- op ppConstructor(c_nm: String, qid: QualifiedId, c: Context): Pretty =
-   case constructorTranslation(c_nm, c) of
+ op ppConstructor(c_qid as Qualified(_, c_nm): QualifiedId, qid: QualifiedId, c: Context): Pretty =
+   case constructorTranslation(c_qid, c) of
      | Some tr_c_nm -> prString tr_c_nm
      | None -> prString(if qid in? directConstructorTypes then ppIdStr c_nm true
                          else (typeQualifiedIdStr c qid true) ^ "__" ^ (ppIdStr c_nm (isUpperCase (c_nm@0))))
 
- op ppConstructorTyped(c_nm: String, ty: MSType, c: Context): Pretty =
+ op ppConstructorTyped(c_nm: QualifiedId, ty: MSType, c: Context): Pretty =
    case unfoldToBaseNamedType(getSpec c, ty) of
      | Base(qid, _, _) -> ppConstructor(c_nm, qid, c)
-     | _ -> fail("Couldn't find coproduct type of constructor "^c_nm^": \n"^printType ty)
+     | _ -> fail("Couldn't find coproduct type of constructor "^show c_nm^": \n"^printType ty)
 
  op ppIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    let qid = head qids in
@@ -1289,11 +1290,11 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
               case ty of
                 | CoProduct(taggedTypes, _) ->
                   (let strict? = strictPragma? opt_prag in
-                   let def ppTaggedType (id, optTy) =
+                   let def ppTaggedType (qid, optTy) =
                      case optTy of
-                       | None -> ppConstructor(id, mainId, c)
+                       | None -> ppConstructor(qid, mainId, c)
                        | Some ty ->
-                         prConcat [ppConstructor(id, mainId, c), prSpace,
+                         prConcat [ppConstructor(qid, mainId, c), prSpace,
                                    case ty of
                                      | Product(fields as ("1", _)::_, _) ->	% Treat as curried
                                        prConcat(addSeparator prSpace
@@ -1809,7 +1810,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         let vs = case st of
                    | Apply(f as Fun(Op(Qualified(q, id), _), _, _), arg, _) ->
                      filterKnown(vs, id, f, termList arg, bound_vs)
-                   | Apply(Fun(Embed(id, _), _, _), arg, _) ->
+                   | Apply(Fun(Embed(Qualified(_,id), _), _, _), arg, _) ->
                      if id in? c.overloadedConstructors
                        then vs
                        else removeArgs(vs, termList arg, bound_vs)
@@ -2033,9 +2034,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | (CharPat _, _, _)::_ -> true
      | _ -> false
 
- op mkCoproductPat(ty: MSType, id: String, spc: Spec): MSPattern =
-   let Some(_, opt_ty) = findLeftmost (fn (id1, _) -> id = id1) (coproduct(spc, ty)) in
-   mkEmbedPat(id, mapOption mkWildPat opt_ty, ty)
+ op mkCoproductPat(ty: MSType, qid: QualifiedId, spc: Spec): MSPattern =
+   let Some(_, opt_ty) = findLeftmost (fn (qid1, _) -> qid = qid1) (coproduct(spc, ty)) in
+   mkEmbedPat(qid, mapOption mkWildPat opt_ty, ty)
 
  op strictFuns: List String = ["$!", "monadBind", "monadSeq"]
 
@@ -2081,16 +2082,16 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                            prSpace],
                                   prString "in "],
                                ppTerm c parentTerm bod])
-        | (Fun(Embed(constr_id, _), ty, _), Record (("1", _)::_, _)) ->
+        | (Fun(Embed(constr_qid, _), ty, _), Record (("1", _)::_, _)) ->
           let constr_ty = range(spc, ty) in
-          if multiArgConstructor?(constr_id, constr_ty, spc) then
+          if multiArgConstructor?(constr_qid, constr_ty, spc) then
           %% Treat as curried
-             prBreak 2 [ppConstructorTyped(constr_id, constr_ty, c),
+             prBreak 2 [ppConstructorTyped(constr_qid, constr_ty, c),
                         prSpace,
                         prPostSep 2 blockFill prSpace
                           (map (ppTermEncloseComplex? c Nonfix)
                              (MS.termToList term2))]
-          else prConcat [ppConstructorTyped(constr_id, constr_ty, c),
+          else prConcat [ppConstructorTyped(constr_qid, constr_ty, c),
                          prSpace,
                          ppTerm c Nonfix term2]
         | (Lambda (match, _), _) ->
@@ -2489,7 +2490,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                   prString "@",
                   enclose?(true, ppPattern c pat2)]
      | VarPat (v, _) -> ppVarWithoutType v
-     | EmbedPat ("Cons", Some(RecordPat ([("1", hd), ("2", tl)], _)), _, _) ->
+     | EmbedPat (Qualified(_,"Cons"), Some(RecordPat ([("1", hd), ("2", tl)], _)), _, _) ->
        prBreak 2 [ppPattern c hd, prSpace, prConcat[prString ": ", ppPattern c tl]]
      | EmbedPat (constr, pat, ty, _) ->
        prBreak 0 [ppConstructorTyped (constr, ty, c),
@@ -2563,7 +2564,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | RecordPat((fld1, _)::_, _) -> fld1 ~= "1"
      | _ -> false
 
- op  multiArgConstructor?: Id * MSType * Spec -> Bool
+ op  multiArgConstructor?: QualifiedId * MSType * Spec -> Bool
  def multiArgConstructor?(constrId, ty, spc) =
    case ty of
      | Base(qid, _, _) ->
@@ -2642,7 +2643,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        let (dom, _) = arrow(getSpec c, ty) in
        ppTerm c parentTerm (mkLambda(mkVarPat("tp", dom), mkApply(mkFun(fun, ty), mkVar("tp", dom))))
      | RecordMerge -> prString "<<"
-     | Embed ("Nil", false) -> prString "[]"
+     | Embed (Qualified(_,"Nil"), false) -> prString "[]"
      | Embed (id, b) ->
        (let spc = getSpec c in
         case arrowOpt(spc, ty) of
@@ -2657,7 +2658,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Embedded id ->
        let (dom, _) = arrow(getSpec c, ty) in
        ppTerm c parentTerm (mkLambda(mkVarPat("cp", dom), mkApply(mkFun(fun, ty), mkVar("cp", dom))))
-     | Select id -> prConcat [prString "select ", prString id] % obsolete?
+     | Select (Qualified(_,id)) -> prConcat [prString "select ", prString id] % obsolete?
      | Nat n -> prString (Nat.show n)
      | Char chr -> prConcat [prString "'",
                              prString (cShow chr),
@@ -2884,7 +2885,7 @@ def termFixity c term =
          | Not            -> (Some(prString "~"), Nonfix, false, false) % ???
          | Equals         -> (Some(prString "=="), Infix (NotAssoc, 4), true, false) % was 10 ??
          | NotEquals      -> (Some(prString "/="), Infix (NotAssoc, 4), true, false) % ???
-         | Embed("Cons", true) -> (Some(prString ":"), Infix (Right, 5), true, false)
+         | Embed(Qualified(_,"Cons"), true) -> (Some(prString ":"), Infix (Right, 5), true, false)
          % | RecordMerge    -> (None, Infix (Left, 25), true, false)  % ???
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
@@ -3035,7 +3036,7 @@ def isSimplePattern? trm =
       (fn (info, result as (found, overloaded)) ->
          case typeInnerType(info.dfn) of
            | CoProduct(prs, _) ->
-             foldl (fn ((found, overloaded), (id, _)) ->
+             foldl (fn ((found, overloaded), (Qualified(_,id), _)) ->
                       if id in? found
                         then (  found, id::overloaded)
                       else (id::found,     overloaded))

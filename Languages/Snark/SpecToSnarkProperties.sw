@@ -245,7 +245,7 @@ snark qualifying spec
        | Op(Qualified(qual,id),_) ->
 	    let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
-       | Embedded id ->
+       | Embedded (Qualified(_, id)) ->
 	      let Arrow (dom,rng,_) = srt in
 	      let unfoldDomSrt = unfoldBaseUnInterp(sp, dom) in
 	      let isfmla = boolType?(unfoldDomSrt) in
@@ -463,7 +463,7 @@ snark qualifying spec
 	     | Some (Base (Qualified(q, prodSrtId),_, _)) ->
        %%IMPORTANT LOOK AT CODEGENTRANSFORMS FOR CONSISTENCY
 	     Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^prodSrtId^"_"^id)), Lisp.list snarkArgs))
-      | Embed (id, b) -> %let _ = if id = "Cons" then debug("embed__Cons") else () in
+      | Embed (Qualified(_, id), b) -> %let _ = if id = "Cons" then debug("embed__Cons") else () in
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "embed__"^id)), Lisp.list snarkArgs)
       | Restrict -> let [tm] = args in mkSnarkTerm(context, sp, dpn, vars, tm)
@@ -497,7 +497,7 @@ snark qualifying spec
 		      mkSnarkTerm(context, sp, dpn, vars, e)]
       | Fun (Op(Qualified(qual,id),_),_, _) -> Lisp.symbol("SNARK",mkSnarkName(qual, id))
       | Fun ((Nat nat), Nat, _) -> Lisp.nat(nat)
-      | Fun (Embed(id, _),_, _) -> Lisp.symbol("SNARK",mkSnarkName(UnQualified,"embed__"^id))
+      | Fun (Embed(Qualified(_, id), _),_, _) -> Lisp.symbol("SNARK",mkSnarkName(UnQualified,"embed__"^id))
       | Var (v,_) -> snarkVarTerm(v)
       | Record (fields, _) -> mkSnarkTermRecord(context, sp, dpn, vars, term)
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct

@@ -44,7 +44,7 @@ type MSProductFields = List MSProductField
 type MSProductField  = MSFieldName * MSType
 
 type MSCoProductFields = List MSCoProductField
-type MSCoProductField  = MSFieldName * Option MSType
+type MSCoProductField  = QualifiedId * Option MSType
 
 op mkTyVar        (name : String)                       : MSType = TyVar     (name,       noPos)
 op mkBase         (qid  : QualifiedId, types : MSTypes) : MSType = Base      (qid, types, noPos)
@@ -70,7 +70,7 @@ op mkCanonRecordType (fields : MSProductFields) : MSType =
  mkRecordType (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) fields)
 
 op mkCanonCoProduct (alts: MSCoProductFields) : MSType =
- mkCoProduct  (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) alts)
+ mkCoProduct  (sortGT (fn ((Qualified(_,id1),_), (Qualified(_,id2),_)) -> id1 > id2) alts)
 
 %% Type terms for constant types:
 
@@ -149,8 +149,8 @@ op mkString (s : String) : MSTerm = mkFun (String s, stringType)
 
 op mkRelax    (typ : MSType,      pred : MSTerm) : MSTerm = mkFun (Relax,    mkArrow (mkSubtype (typ, pred), typ))
 op mkRestrict (typ : MSType,      pred : MSTerm) : MSTerm = mkFun (Restrict, mkArrow (typ, mkSubtype (typ, pred)))
-op mkEmbed0   (id  : MSFieldName, typ  : MSType) : MSTerm = mkFun (Embed (id, false), typ) % no arg
-op mkEmbed1   (id  : MSFieldName, typ  : MSType) : MSTerm = mkFun (Embed (id, true),  typ) % arg
+op mkEmbed0   (qid  : QualifiedId, typ  : MSType) : MSTerm = mkFun (Embed (qid, false), typ) % no arg
+op mkEmbed1   (qid  : QualifiedId, typ  : MSType) : MSTerm = mkFun (Embed (qid, true),  typ) % arg
 
 % def mkChoose   (typ, equiv) = let q = mkQuotientType (typ, equiv) in mkFun (Choose q, mkArrow (q, typ))
 % This definition of choose is not correct according to David's requirements.
@@ -179,7 +179,7 @@ op mkQuotient (a : MSTerm, qid : QualifiedId, typ : MSType) : MSTerm =
                           Base (qid, type_args, noPos))), 
           a)
 
-op mkEmbedded (id : MSFieldName, typ : MSType) : MSTerm = mkFun (Embedded id, mkArrow (typ, boolType))
+op mkEmbedded (qid : QualifiedId, typ : MSType) : MSTerm = mkFun (Embedded qid, mkArrow (typ, boolType))
 
  % Is the Nonfix here always correct?
 op mkOp       (qid : QualifiedId,                  typ : MSType) : MSTerm = mkFun (Op (qid, Nonfix), typ)
@@ -212,7 +212,7 @@ op [a] forallTerm? (term : ATerm a) : Bool =
 %% Op's (particular Fun's)
 
 op mkProject   (id : Id, super : MSType, sub   : MSType) : MSTerm = mkFun (Project id, mkArrow (super, sub))
-op mkSelect    (id : Id, super : MSType, field : MSType) : MSTerm = mkFun (Project id, mkArrow (super, field))
+op mkSelect    (qid : QualifiedId, super : MSType, field : MSType) : MSTerm = mkFun (Select qid, mkArrow (super, field))
 op mkEquals    (typ : MSType)                            : MSTerm = mkFun (Equals,    typ)
 op mkNotEquals (typ : MSType)                            : MSTerm = mkFun (NotEquals, typ)
 
@@ -312,7 +312,7 @@ op mkProjection  (id : Id, term : MSTerm) : MSTerm =
    | _ -> 
      System.fail ("Product type expected for mkProjection: " ^ printType super_type)
 
-op mkSelection (id : Id, term : MSTerm) : MSTerm =
+op mkSelection (id : QualifiedId, term : MSTerm) : MSTerm =
  let typ = termType term in
  case typ of
    | CoProduct(fields,_) -> 
@@ -385,7 +385,7 @@ op negateTerm (term : MSTerm) : MSTerm =
 
 op mkAliasPat   (p1   : MSPattern, p2 : MSPattern)                : MSPattern = AliasPat  (p1, p2,       noPos)
 op mkVarPat     (v    : MSVar)                                    : MSPattern = VarPat    (v,            noPos)
-op mkEmbedPat   (id   : Id, pat : Option MSPattern, typ : MSType) : MSPattern = EmbedPat  (id, pat, typ, noPos) 
+op mkEmbedPat   (qid  : QualifiedId, pat : Option MSPattern, typ : MSType) : MSPattern = EmbedPat  (qid, pat, typ, noPos) 
 op mkRecordPat  (pats : List (Id * MSPattern))                    : MSPattern = RecordPat (pats,         noPos)
 
 op mkTuplePat   (pats : MSPatterns) : MSPattern =
@@ -416,8 +416,8 @@ op [a] patternToList (pat : APattern a) : List (APattern a) =
    | _ -> 
      [pat]
 
-op mkConsPat (p1   : MSPattern, p2 : MSPattern) : MSPattern = mkEmbedPat ("Cons", Some (mkTuplePat [p1, p2]), patternType p2)
-op mkNilPat  (typ  : MSType)                    : MSPattern = mkEmbedPat ("Nil",  None,                       typ)
+op mkConsPat (p1   : MSPattern, p2 : MSPattern) : MSPattern = mkEmbedPat (Qualified("List", "Cons"), Some (mkTuplePat [p1, p2]), patternType p2)
+op mkNilPat  (typ  : MSType)                    : MSPattern = mkEmbedPat (Qualified("List", "Nil"),  None,                       typ)
 op mkListPat (pats : MSPatterns | pats ~= []): MSPattern =
  let elt_type = patternType (pats @ 0) in
  foldr mkConsPat (mkNilPat (mkListType elt_type)) pats

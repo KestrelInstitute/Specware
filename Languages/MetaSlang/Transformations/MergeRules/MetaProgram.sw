@@ -631,7 +631,7 @@ uindent ^ "qed\n"
          let eq = isabelleTerm pterm ^ " = " ^ isabelleTerm scrutinee in
          let cons = 
              case pat of
-               | EmbedPat (id,_,_,_) ->  id 
+               | EmbedPat (Qualified(_, id),_,_,_) ->  id 
                | _ -> "constructor"
          in
 indent ^ "      case " ^ parenPat pterm ^ "\n" ^

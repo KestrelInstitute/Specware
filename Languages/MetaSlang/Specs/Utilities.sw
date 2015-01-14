@@ -1971,7 +1971,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | ("1",_)::_ -> true
      | _ -> false
 
- op coproductOpt (sp : Spec, ty : MSType): Option (List (Id * Option MSType)) = 
+ op coproductOpt (sp : Spec, ty : MSType): Option (List (QualifiedId * Option MSType)) = 
   case stripSubtypes (sp, unfoldBase (sp,ty))
     of CoProduct (fields, _) -> Some fields
      | _ -> None
@@ -2937,10 +2937,10 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
  op constructorTerm? (spc: Spec) (tm: MSTerm): Bool =
    some?(constructorTerm spc tm)
 
- op constructorTerm (spc: Spec) (tm: MSTerm): Option(String * QualifiedIds) =
+ op constructorTerm (spc: Spec) (tm: MSTerm): Option(QualifiedId * QualifiedIds) =
    case tm of
-     | Fun(Embed (id, _), _, _) -> Some(id, [])
-     | Apply(Fun(Embed(id, _), _, _), _, _) -> Some(id, [])
+     | Fun(Embed (qid, _), _, _) -> Some(qid, [])
+     | Apply(Fun(Embed(qid, _), _, _), _, _) -> Some(qid, [])
      | Fun(Op(qid, _), _, _) ->
        (case findTheOp(spc, qid) of
         | None -> None

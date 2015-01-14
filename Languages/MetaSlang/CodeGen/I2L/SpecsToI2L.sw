@@ -800,10 +800,10 @@ op type2itype (ms_tvs  : TyVars,
      in
      (case opt_enum_ids of
         | Some ids ->
-          (I_Enum ids, false)
+          (I_Enum (map (fn (Qualified(_,id)) -> id) ids), false)
         | _ ->
           let i_unionfields = 
-              map (fn (id, opt_arg) ->
+              map (fn (Qualified(_,id), opt_arg) ->
                      (id, 
                       case opt_arg of
                         | None -> I_Void
@@ -1154,7 +1154,7 @@ op alt_index (x : Id, ms_type : MSType, ctxt : S2I_Context) : Nat =
    def aux (n, alts) =
      case alts of
        | [] -> 0
-       | (alt, _) :: alts ->
+       | (Qualified(_,alt), _) :: alts ->
          if alt = x then 
            n
          else
@@ -1241,7 +1241,7 @@ op term2expression_fun (ms_fun  : MSFun,
             %if isOutputOp varname then VarDeref varname else 
             I_Var i_fname)
        
-     | Embed (id,arg?) -> 
+     | Embed (Qualified(_,id),arg?) -> 
        make_embedder (ms_type, id, arg?)
      | _ -> 
        fail (mkInOpStr ctxt ^ "unsupported Fun: " ^ printTerm ms_term)
@@ -1346,7 +1346,7 @@ op term2expression_apply_fun (ms_fun      : MSFun,
      else
        I_FunCall (i_fname, projections, i_exprs)
        
-   | Embed (id, _) ->
+   | Embed (Qualified(_,id), _) ->
      let 
        def mkExpr2 () = term2expression (ms_t2, ctxt)
      in
@@ -1394,7 +1394,7 @@ op term2expression_apply_fun (ms_fun      : MSFun,
      else 
        fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString ms_fun)
        
-   | Embedded id -> 
+   | Embedded (Qualified(_,id)) -> 
      let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs) in
      let index =
          case unfoldToArrow (ctxt.ms_spec, ms_lhs_type) of
@@ -1408,7 +1408,7 @@ op term2expression_apply_fun (ms_fun      : MSFun,
      let selector = {name = id, index = index} in
      I_Embedded (selector, term2expression (ms_t2, ctxt))
      
-   | Select id ->
+   | Select (Qualified(_,id)) ->
      let i_expr2 = term2expression (ms_t2, ctxt) in
      if projections = [] then 
        % let union = I_Project (expr2, "alt") in
@@ -1656,7 +1656,7 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
                        (case opt_ms_type of
                           | Some ms_type -> Some (type2itype ([], ms_type, unsetToplevel ctxt))
                           | _ -> None)
-                     | _ -> fail ("internal error: constructor id " ^ id ^ " of term " ^
+                     | _ -> fail ("internal error: constructor id " ^ show id ^ " of term " ^
                                     printTerm ms_arg ^ " cannot be found."))
                 | _ -> 
                   let ms_utype = unfoldBase (ctxt.ms_spec, ms_type) in
@@ -1675,7 +1675,7 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
               let i_exp = term2expression (ms_tm, ctxt) in
               case ms_pat of
                 
-                | EmbedPat (constructorId, opt_ms_pat, parent_ms_type, _) ->
+                | EmbedPat (Qualified(_,constructorId), opt_ms_pat, parent_ms_type, _) ->
                   % let opttype = getTypeForConstructorArgs (parent_type, constructorId) in
                   let vars =
                       case opt_ms_pat of

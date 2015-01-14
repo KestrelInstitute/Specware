@@ -78,7 +78,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	 | Fun (Bool   b, _, _) -> return(mts, mkJavaBool   b, k, l)
 	 | Fun (String s, _, _) -> return(mts, mkJavaString s, k, l)
 	 | Fun (Char   c, _, _) -> return(mts, mkJavaChar   c, k, l)
-	 | Fun (Embed (c, _), srt, _) -> 
+	 | Fun (Embed (Qualified(_,c), _), srt, _) -> 
 		if flatType? srt then
 		  {
 		   sid <- srtIdM srt;
@@ -205,8 +205,8 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
      | Fun (Equals,        srt, _) -> translateEqualsToExprM    (tcx,      argsTerm, k, l)
      | Fun (NotEquals,     srt, _) -> translateNotEqualsToExprM (tcx,      argsTerm, k, l)
      | Fun (Project id,    srt, _) -> translateProjectToExprM   (tcx, id,  argsTerm, k, l)
-     | Fun (Select id,     srt, _) -> translateSelectToExprM    (tcx, id,  argsTerm, k, l)
-     | Fun (Embed (id, _), srt, _) ->
+     | Fun (Select (Qualified(_,id)),srt, _) -> translateSelectToExprM    (tcx, id,  argsTerm, k, l)
+     | Fun (Embed (Qualified(_,id), _), srt, _) ->
        {
 	sid <- srtIdM (inferTypeFoldRecords(spc,term));
 	translateConstructToExprM(tcx, sid, id, argsTerm, k, l)

@@ -94,6 +94,9 @@ SpecCalc qualifying spec
          | Base (qid, srts, a) ->
            let new_qid = qualifyTypeId new_q qid in
            if new_qid = qid then type_term else Base (new_qid, srts, a)
+         | CoProduct (fields, a) ->
+           let new_fields = map (fn (qid, x) -> (qualifyOpId new_q immune_ids qid, x)) fields in
+           if new_fields = fields then type_term else CoProduct (new_fields, a)
          | _ -> type_term
   
       def qualify_term op_term =
@@ -101,9 +104,23 @@ SpecCalc qualifying spec
          | Fun (Op (qid, fixity), srt, a) ->
            let new_qid = qualifyOpId new_q immune_ids qid in
            if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
+         | Fun(Embed (qid, b), srt, a) ->
+           let new_qid = qualifyOpId new_q immune_ids qid in
+           if new_qid = qid then op_term else Fun (Embed (new_qid, b), srt, a)
+         | Fun(Embedded qid, srt, a) ->
+           let new_qid = qualifyOpId new_q immune_ids qid in
+           if new_qid = qid then op_term else Fun (Embedded new_qid, srt, a)
+         | Fun(Select qid, srt, a) ->
+           let new_qid = qualifyOpId new_q immune_ids qid in
+           if new_qid = qid then op_term else Fun (Select new_qid, srt, a)
          | _ -> op_term
   
-      def qualify_pattern pat = pat
+      def qualify_pattern pat =
+        case pat of
+          | EmbedPat(qid, o_pat, ty, a) ->
+            let new_qid = qualifyOpId new_q immune_ids qid in
+            if new_qid = qid then pat else EmbedPat(qid, o_pat, ty, a)
+          | _ -> pat
   
       def qualify_types types =
         let 

@@ -449,14 +449,14 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-type-sum (type-summands l r)
-  (let ((alphabetical-type-summands (sort type-summands #'(lambda (x y) (string< (car x) (car y))))))
+  (let ((alphabetical-type-summands (sort type-summands #'(lambda (x y) (string< (cddar x) (cddar y))))))
     (cons :|CoProduct|
           (cons alphabetical-type-summands
                 (make-pos l r)))))
 
-(defun make-type-summand (constructor optional-slack-type l r)
+(defun make-type-summand (constructor-qid optional-slack-type l r)
   (declare (ignore l r))
-  (cons constructor
+  (cons constructor-qid
         (if (eq :unspecified optional-slack-type)
             '(:|None|)
             (cons :|Some| optional-slack-type))))
@@ -796,7 +796,7 @@ If we want the precedence to be optional:
            (cons 
             :|Fun| 
             (vector 
-             (cons :|Embed| (cons "Cons" t)) 
+             (cons :|Embed| (cons (MetaSlang::mkQualifiedId-2 "List" "Cons") t)) 
              (cons 
               :|Arrow| 
               (vector 
@@ -808,7 +808,7 @@ If we want the precedence to be optional:
           pos)))) 
       (List-Spec::foldr-1-1-1 
        #'(lambda (apV) (mkCons (car apV) (cdr apV))) 
-       (cons :|Fun| (vector (cons :|Embed| (cons "Nil" nil)) list_type pos)) 
+       (cons :|Fun| (vector (cons :|Embed| (cons (MetaSlang::mkQualifiedId-2 "List" "Nil") nil)) list_type pos)) 
        terms))))
 
 (defun make-list-display (expressions l r)
@@ -823,8 +823,9 @@ If we want the precedence to be optional:
 (defun make-projector      (field-selector l r) (make-fun (cons :|Project|   field-selector)         (freshMetaTypeVar l r) l r))
 (defun make-quotienter     (type-qid       l r) (make-fun (cons :|PQuotient| type-qid)               (freshMetaTypeVar l r) l r))
 (defun make-chooser        (type-qid       l r) (make-fun (cons :|PChoose|   type-qid)               (freshMetaTypeVar l r) l r))
-(defun make-embedder       (constructor    l r) (make-fun (cons :|Embed|     (cons constructor nil)) (freshMetaTypeVar l r) l r))
-(defun make-embedding-test (constructor    l r) (make-fun (cons :|Embedded|  constructor)            (freshMetaTypeVar l r) l r))
+(defun make-embedder       (constructor-qid    l r) (make-fun (cons :|Embed|     (cons constructor-qid nil))
+                                                              (freshMetaTypeVar l r) l r))
+(defun make-embedding-test (constructor-qid    l r) (make-fun (cons :|Embedded|  constructor-qid)    (freshMetaTypeVar l r) l r))
 
 (defun make-fun (f s l r)
   (cons :|Fun|
@@ -962,7 +963,8 @@ If we want the precedence to be optional:
   (cons :|TypedPat| (vector pattern type (make-pos l r))))
 
 (defun make-aliased-pattern    (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
-(defun make-embed-pattern      (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
+(defun make-embed-pattern      (qid pattern      l r) (cons :|EmbedPat|      (vector qid
+                                                                                     (cons :|Some| pattern) (freshMetaTypeVar l r)      (make-pos l r))))
 (defun make-quotient-pattern   (type-qid pattern l r)
   (cons :|QuotientPat|   (vector pattern type-qid
                                  '()                     ; Type checker ignores this

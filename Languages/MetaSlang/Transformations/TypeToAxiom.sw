@@ -135,7 +135,7 @@ Prover qualifying spec
    let exhaustAxioms = exhaustAxioms(spc, srt, name, fields) in
    exhaustAxioms++disEqAxioms
 
- op  exhaustAxioms: Spec * MSType * QualifiedId * List (Id * Option MSType) -> SpecElements
+ op  exhaustAxioms: Spec * MSType * QualifiedId * List (QualifiedId * Option MSType) -> SpecElements
  def exhaustAxioms(spc, srt, name as Qualified(qname, id), fields) =
    let newVar = (id^"_Var", mkBase(name, [])) in
    let eqDisjuncts = mkEqFmlasForFields(srt, newVar, fields) in
@@ -147,7 +147,7 @@ Prover qualifying spec
    [Property(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla, noPos),
     Property(Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla, noPos)]
 
- op  mkEqFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> MSTerms
+ op  mkEqFmlasForFields: MSType * MSVar * List (QualifiedId * Option MSType) -> MSTerms
  def mkEqFmlasForFields(srt, var, fields) =
    case fields of
      | [] -> []
@@ -159,7 +159,7 @@ Prover qualifying spec
        let restEqls = mkEqFmlasForFields(srt, var, restFields) in
        Cons(eqlFmla, restEqls)
 
- op  mkPredFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> MSTerms
+ op  mkPredFmlasForFields: MSType * MSVar * List (QualifiedId * Option MSType) -> MSTerms
  def mkPredFmlasForFields(srt, var, fields) =
    case fields of
      | [] -> []
@@ -168,27 +168,27 @@ Prover qualifying spec
        let restPreds = mkPredFmlasForFields(srt, var, restFields) in
        Cons(predFmla, restPreds)
 
- op  mkDisEqsForFields: Spec * MSType * QualifiedId * List (Id * Option MSType) -> SpecElements
+ op  mkDisEqsForFields: Spec * MSType * QualifiedId * List (QualifiedId * Option MSType) -> SpecElements
  def mkDisEqsForFields(spc, srt, name, fields) =
    case fields of
      | [] -> []
-     | (id, optSrt)::restFields ->
-       let diseqs = mkDisEqsForIdAndRest(id, srt, name, optSrt, restFields) in
+     | (qid, optSrt)::restFields ->
+       let diseqs = mkDisEqsForIdAndRest(qid, srt, name, optSrt, restFields) in
        let restDisEqs = mkDisEqsForFields(spc, srt, name, restFields) in
 	diseqs++restDisEqs
 
- op  mkDisEqsForIdAndRest: Id * MSType * QualifiedId * Option MSType * List (Id * Option MSType) -> SpecElements
- def mkDisEqsForIdAndRest(id, srt, name, optSrt, restFields) =
-   foldr (fn ((id2, optSrt2), props) ->
-	  let disEq = mkDisEqForTwoConstructors(id, srt, name, optSrt, id2, optSrt2) in
+ op  mkDisEqsForIdAndRest: QualifiedId * MSType * QualifiedId * Option MSType * List (QualifiedId * Option MSType) -> SpecElements
+ def mkDisEqsForIdAndRest(qid, srt, name, optSrt, restFields) =
+   foldr (fn ((qid2, optSrt2), props) ->
+	  let disEq = mkDisEqForTwoConstructors(qid, srt, name, optSrt, qid2, optSrt2) in
 	  Cons(Property disEq, props))
          [] 
 	 restFields
 
- op  mkDisEqForTwoConstructors: Id * MSType * QualifiedId * Option MSType * Id * Option MSType -> Property
- def mkDisEqForTwoConstructors(id1, srt, name, optSrt1, id2, optSrt2) =
-   let tm1 = mkConstructorTerm(srt, id1, optSrt1) in
-   let tm2 = mkConstructorTerm(srt, id2, optSrt2) in
+ op  mkDisEqForTwoConstructors: QualifiedId * MSType * QualifiedId * Option MSType * QualifiedId * Option MSType -> Property
+ def mkDisEqForTwoConstructors(qid1, srt, name, optSrt1, qid2, optSrt2) =
+   let tm1 = mkConstructorTerm(srt, qid1, optSrt1) in
+   let tm2 = mkConstructorTerm(srt, qid2, optSrt2) in
    let eql = mkEquality(srt, tm1, tm2) in
    let disEql = mkNot(eql) in
    let vars = freeVars(eql) in
@@ -197,20 +197,20 @@ Prover qualifying spec
    % (Axiom, mkQualifiedId(qual, id^"_"^id1^"_notEq_"^id2), [], fmla)
    (Axiom, mkQualifiedId(qual, id^"_def"), [], fmla, noPos)
 
- op  mkConstructorTerm: MSType * Id * Option MSType -> MSTerm
- def mkConstructorTerm(srt, id, optSrt) =
+ op  mkConstructorTerm: MSType * QualifiedId * Option MSType -> MSTerm
+ def mkConstructorTerm(srt, qid, optSrt) =
    case optSrt of
-     | None -> Fun (Embed (id, false), srt, noPos)
+     | None -> Fun (Embed (qid, false), srt, noPos)
      | Some (Product (args, _)) ->
        let recordFields = map (fn (aid, asrt) -> (aid, mkVar(("var_"^aid, asrt)))) args in
        let args = mkRecord(recordFields) in
-       Apply (Fun (Embed (id, true), srt, noPos), args, noPos)
+       Apply (Fun (Embed (qid, true), srt, noPos), args, noPos)
      | Some aSrt ->
        let arg = mkVar(("constr_var_arg", aSrt)) in
-       Apply (Fun (Embed (id, true), srt, noPos), arg, noPos)
+       Apply (Fun (Embed (qid, true), srt, noPos), arg, noPos)
 
- op  mkEmbedPred: MSType * Id * MSVar -> MSTerm
- def mkEmbedPred(srt, id, var) =
-   mkApply((mkEmbedded(id, srt)), mkVar(var))
+ op  mkEmbedPred: MSType * QualifiedId * MSVar -> MSTerm
+ def mkEmbedPred(srt, qid, var) =
+   mkApply((mkEmbedded(qid, srt)), mkVar(var))
 
 endspec

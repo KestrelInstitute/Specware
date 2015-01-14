@@ -118,8 +118,8 @@ StandardSpec qualifying spec
   let list1_type = Base (Qualified ("List", "List1"), [element_type], pos) in
   let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),
                           list1_type, pos) in
-  let consFun    = Fun   (Embed     ("Cons", true),  cons_type, pos) in
-  let empty_list = Fun   (Embed     ("Nil",  false), list_type, pos) in
+  let consFun    = Fun   (Embed     (Qualified("List", "Cons"), true),  cons_type, pos) in
+  let empty_list = Fun   (Embed     (Qualified("List", "Nil"),  false), list_type, pos) in
   let def mkCons (x, xs) = ApplyN ([consFun, Record( [("1",x), ("2",xs)], pos)], pos) in
   foldr mkCons empty_list terms
 
@@ -128,8 +128,8 @@ op mkList (terms : MSTerms, pos: Position, element_type: MSType): MSTerm =
   let list1_type = Base (Qualified ("List", "List1"), [element_type], pos) in
   let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),
                           list1_type, pos) in
-  let consFun    = Fun   (Embed     ("Cons", true),  cons_type, pos) in
-  let empty_list = Fun   (Embed     ("Nil",  false), list_type, pos) in
+  let consFun    = Fun   (Embed     (Qualified("List", "List"), true),  cons_type, pos) in
+  let empty_list = Fun   (Embed     (Qualified("List", "Nil"),  false), list_type, pos) in
   let def mkCons (x, xs) = Apply (consFun, Record( [("1",x), ("2",xs)], pos), pos) in
   foldr mkCons empty_list terms
 
@@ -143,13 +143,13 @@ op mkList (terms : MSTerms, pos: Position, element_type: MSType): MSTerm =
 
  def mkListPattern (patterns : MSPatterns, pos, element_type) : MSPattern = 
   let list_type  = Base (Qualified("List","List"),  [element_type], pos) in
-  let empty_list = EmbedPat ("Nil",  None,  list_type, pos) in
+  let empty_list = EmbedPat (Qualified("List", "Nil"),  None,  list_type, pos) in
   let def mkCons (x, xs) = 
-       EmbedPat ("Cons", Some (RecordPat ([("1",x), ("2",xs)], pos)), list_type, pos) in
+       EmbedPat (Qualified("List", "Cons"), Some (RecordPat ([("1",x), ("2",xs)], pos)), list_type, pos) in
   List.foldr mkCons empty_list patterns
 
  def mkConsPattern (p1 : MSPattern, p2 : MSPattern, pos, element_type) : MSPattern =
   let list_type  = Base (Qualified("List","List"), [element_type], pos) in
-  EmbedPat ("Cons", Some (RecordPat ([("1",p1), ("2",p2)], pos)), list_type, pos)
+  EmbedPat (Qualified("List", "Cons"), Some (RecordPat ([("1",p1), ("2",p2)], pos)), list_type, pos)
 
 endspec

@@ -144,6 +144,8 @@ op extractTactic(tf: TypedFun): Option Tactic =
                    | _ -> None)
     tf
 
+op mkMTQId(id: Id): QualifiedId = Qualified("MetaTransform", id)
+
 op annTypeValueType: MSType = mkBase(Qualified("MetaTransform", "AnnTypeValue"), [])
 op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
 op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
@@ -160,10 +162,10 @@ op transOpNameType: MSType = mkBase(Qualified("Utilities", "TransOpName"), [])
 op monadAnnTypeValueType: MSType = mkBase(Qualified("SpecCalc", "Env"), [annTypeValueType])
 op optionAnnTypeValueType: MSType = mkBase(Qualified("Option", "Option"), [annTypeValueType])
 
-op TFnTerm: MSTerm = mkEmbed1("TFn", mkArrow(mkArrow(annTypeValueType, typedFunType), typedFunType))
-op TValTerm: MSTerm = mkEmbed1("TVal", mkArrow(annTypeValueType, typedFunType))
-op monadVTerm: MSTerm = mkEmbed1("MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
-op optVTerm: MSTerm = mkEmbed1("OptV", mkArrow(optionAnnTypeValueType, annTypeValueType))
+op TFnTerm: MSTerm = mkEmbed1(mkMTQId "TFn", mkArrow(mkArrow(annTypeValueType, typedFunType), typedFunType))
+op TValTerm: MSTerm = mkEmbed1(mkMTQId "TVal", mkArrow(annTypeValueType, typedFunType))
+op monadVTerm: MSTerm = mkEmbed1(mkMTQId "MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
+op optVTerm: MSTerm = mkEmbed1(mkMTQId "OptV", mkArrow(optionAnnTypeValueType, annTypeValueType))
 op returnTerm: MSTerm = mkOp(Qualified("SpecCalc", "return"), mkArrow(annTypeValueType, monadAnnTypeValueType))
 op monadBindTerm: MSTerm = mkOp(Qualified("SpecCalc", "monadBind"),
                                 mkArrow(mkProduct[mkBase(Qualified("SpecCalc", "Env"), [specType]),
@@ -197,12 +199,12 @@ op mtiToMSType(mti: MTypeInfo): MSType =
 
 op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
   case ty_i of
-    | Spec -> mkEmbed1("SpecV", mkArrow(specType, annTypeValueType))
-    | Morphism -> mkEmbed1("MorphismV", mkArrow(morphismType, annTypeValueType))
-    | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
-    | TransTerm -> mkEmbed1("TransTermV", mkArrow(transTermType, annTypeValueType))
-    | RefinementProof -> mkEmbed1("ProofV", mkArrow(refinementProofType, annTypeValueType))
-    | ProofTactic -> mkEmbed1("TacticV", mkArrow(proofTacticType, annTypeValueType))
+    | Spec -> mkEmbed1(mkMTQId "SpecV", mkArrow(specType, annTypeValueType))
+    | Morphism -> mkEmbed1(mkMTQId "MorphismV", mkArrow(morphismType, annTypeValueType))
+    | Term -> mkEmbed1(mkMTQId "TermV", mkArrow(msTermType, annTypeValueType))
+    | TransTerm -> mkEmbed1(mkMTQId "TransTermV", mkArrow(transTermType, annTypeValueType))
+    | RefinementProof -> mkEmbed1(mkMTQId "ProofV", mkArrow(refinementProofType, annTypeValueType))
+    | ProofTactic -> mkEmbed1(mkMTQId "TacticV", mkArrow(proofTacticType, annTypeValueType))
     | Opt o_ty ->
       let arg_ty = mtiToMSType o_ty in
       let arg_v = ("o_result", arg_ty) in
@@ -213,17 +215,17 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
                                                     mkArrow(mtiToMSType ty_i, optionAnnTypeValueType))),
                                        mkAnnTypeValueFun o_ty),
                                mkVar arg_v)))
-    | Monad _ -> mkEmbed1("MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
-%    | Monad Spec -> mkEmbed1("MonadV", mkArrow(specType, annTypeValueType))
+    | Monad _ -> mkEmbed1(mkMTQId "MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
+%    | Monad Spec -> mkEmbed1(mkMTQId "MonadV", mkArrow(specType, annTypeValueType))
     | Tuple tis ->
       let tp_vs = tabulate(length tis, fn i -> ("x"^show i, mtiToMSType(tis@i))) in
       let tv = ("tp_result", mkProduct(map (fn _ -> annTypeValueType) tis)) in
       mkLambda(mkVarPat tv,
                mkLet([(mkVarsPat tp_vs, mkVar tv)],
-                     mkApply(mkEmbed1("TupleV", mkArrow(mkListType(annTypeValueType), annTypeValueType)),
+                     mkApply(mkEmbed1(mkMTQId "TupleV", mkArrow(mkListType(annTypeValueType), annTypeValueType)),
                              mkList(map (fn (tii, v) -> mkApply(mkAnnTypeValueFun tii, mkVar v)) (zip(tis, tp_vs)),
                                     noPos, annTypeValueType))))
-%    | Monad Term ->  mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
+%    | Monad Term ->  mkEmbed1(mkMTQId "TermV", mkArrow(msTermType, annTypeValueType))
     | _ -> fail ("Can only return Specs, MSTerms and Proofs, not "^show ty_i)
 
 op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
@@ -489,14 +491,14 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
       let el_extr_fns = map mkExtractFn el_tyis in
       let el_tys = map (fn extr_fn -> let Arrow(_, ran, _) = termType extr_fn in ran) el_extr_fns in
       let el_vs = tabulate(length el_tys, fn i -> ("x_"^show i, el_tys@i)) in
-      mkLambda(mkEmbedPat("TupleV", Some(mkListPat(map mkVarPat el_vs)), annTypeValueType),
+      mkLambda(mkEmbedPat(mkMTQId "TupleV", Some(mkListPat(map mkVarPat el_vs)), annTypeValueType),
                mkTuple(map (fn (v, extr_fn) -> mkApply(extr_fn, mkVar v)) (zip(el_vs, el_extr_fns))))
       
     | Rec (flds) ->
       let extr_fns = map (fn (id, el) -> (id, mkExtractFn el)) flds in
       let el_tys = map (fn (id, extr_fn) -> let Arrow(_, ran, _) = termType extr_fn in ran) extr_fns in
       let el_vs = tabulate(length el_tys, fn i -> ("x_"^show i, el_tys@i)) in
-      mkLambda(mkEmbedPat("RecV", Some(mkListPat(map (fn el_v -> mkTuplePat[mkWildPat stringType, mkVarPat el_v]) el_vs)),
+      mkLambda(mkEmbedPat(mkMTQId "RecV", Some(mkListPat(map (fn el_v -> mkTuplePat[mkWildPat stringType, mkVarPat el_v]) el_vs)),
                           annTypeValueType),
                mkRecord(map (fn (v, (id, extr_fn)) -> (id, mkApply(extr_fn, mkVar v))) (zip(el_vs, extr_fns))))
     % | Monad m -> "Monad "^show m

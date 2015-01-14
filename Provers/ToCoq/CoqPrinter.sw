@@ -638,8 +638,8 @@ def ppPat pat =
       { p_pp <- ppPat p;
         retFill [(0, ppParens p_pp), (0, string "as"), (0, string v)] }
     | VarPat ((v, _), _) -> retString v
-    | EmbedPat (ctor, None, _, _) -> retString ctor
-    | EmbedPat (ctor, Some arg_pat, _, _) ->
+    | EmbedPat (Qualified(_, ctor), None, _, _) -> retString ctor
+    | EmbedPat (Qualified(_, ctor), Some arg_pat, _, _) ->
       { arg_pp <- ppPat arg_pat;
         retFill [(0, string ctor), (2, arg_pp)] }
     | RecordPat (id_pats, _) ->
@@ -696,9 +696,9 @@ def ppFun (f, tp) =
     | Op (Qualified qid, fixity) -> return (ppQid qid)
     | Project id -> unhandledFun "Project" f
     | RecordMerge -> unhandledFun "RecordMerge" f
-    | Embed (id, flag) -> retString id
-    | Embedded id -> unhandledFun "Embedded" f
-    | Select id -> unhandledFun "Select" f
+    | Embed (Qualified(_, id), flag) -> retString id
+    | Embedded (Qualified(_, id)) -> unhandledFun "Embedded" f
+    | Select (Qualified(_, id)) -> unhandledFun "Select" f
     | Nat n -> retString (show n)
     | Char c -> retString ("\"" ^ implode [c] ^ "\"%char")
     | String str -> retString ("\"" ^ str ^ "\"%string")
@@ -827,7 +827,7 @@ def ppTypeDef (q,id, tp) =
     | CoProduct (id_tps, _) ->
       { id_tps_pp
          <- (mapM
-               (fn (ctor, tp_opt) ->
+               (fn (Qualified(_, ctor), tp_opt) ->
                   case tp_opt of
                     | None -> return (ctor, None)
                     | Some tp ->

@@ -155,7 +155,7 @@ op ppTypeName (spc:Spec) (t:MSType) : PPError WLPretty =
 
 %% Prints a (defcoproduct) form from the spec, the coproduct name, its type cases, and 
 %% its type variables.
-op ppCoProductTypeDefHelper (spc:Spec) (typeCases : List (Id * Option MSType)) : PPError (List WLPretty) = 
+op ppCoProductTypeDefHelper (spc:Spec) (typeCases : List (QualifiedId * Option MSType)) : PPError (List WLPretty) = 
   let def ppTypeCaseHelper (id,optTy) =
   case optTy of
     | None    -> Good (ppString "")
@@ -170,13 +170,13 @@ op ppCoProductTypeDefHelper (spc:Spec) (typeCases : List (Id * Option MSType)) :
       (case ppTypeName spc ty of
          | Good tn -> Good tn
          | Bad s -> Bad s)
-  in let def ppTypeCase (id,optTy) =
+  in let def ppTypeCase (Qualified(_, id),optTy) =
   case ppTypeCaseHelper (id,optTy) of
     | Good s -> Good (ppConcat [ppString "(", ppString id, ppString " ", s, ppString ")"])
     | Bad s -> Bad s
   in ppErrorMap ppTypeCase typeCases
 
-op ppCoproductTypeDef (spc:Spec) (id : Id) (typeCases : List (Id * Option MSType)) (typeVars : List String) : PPError WLPretty = 
+op ppCoproductTypeDef (spc:Spec) (id : Id) (typeCases : List (QualifiedId * Option MSType)) (typeVars : List String) : PPError WLPretty = 
   case (ppCoProductTypeDefHelper spc typeCases, typeVars) of
     | (Good tcstrs,[]) ->
       Good (ppConcat [ppString "(defcoproduct ", ppString id, ppNewline,
@@ -285,7 +285,7 @@ op ppFun (f : MSFun) : PPError WLPretty =
     | Iff -> Good (ppString "iff")
     | Equals -> Good (ppString "equal")
     | Op (Qualified (q,id),_) -> Good (ppString id)
-    | Embed (id,_) -> Good (ppString id)
+    | Embed (Qualified(_, id),_) -> Good (ppString id)
     | _ -> Bad "Can't handle f in ppFun"
 
 %%%%%%%%%%%%%%%%%%
@@ -324,16 +324,16 @@ op ppPattern (pat:MSPattern) (spc:Spec) : PPError WLPretty =
     | WildPat _ -> Good (ppString "_")
     | NatPat (n,_) -> Good (ppString (intToString n))
     | VarPat ((v,_),_) -> Good (ppString v)
-    | EmbedPat (id,None,Base (_,actuals as (_::_),_),_) ->
+    | EmbedPat (Qualified(_, id),None,Base (_,actuals as (_::_),_),_) ->
       (case ppErrorMap (ppTypeName spc) actuals of
          | Good actualstrs ->
            Good (ppConcat [ppString "((:inst ", ppString id, 
                            ppString " ", ppSep (ppString " ") actualstrs, 
                            ppString "))"])
          | Bad s -> Bad s)
-    | EmbedPat (id,None,_,_) ->
+    | EmbedPat (Qualified(_, id),None,_,_) ->
       Good (ppConcat [ppString "(", ppString id, ppString ")"])
-    | EmbedPat (id,Some inPat,Base (_,actuals as (_::_),_),_) ->
+    | EmbedPat (Qualified(_, id),Some inPat,Base (_,actuals as (_::_),_),_) ->
       (case (ppErrorMap (ppTypeName spc) actuals, ppPatternHelper inPat spc) of
          | (Good actualstrs, Good sInPat) ->
            Good (ppConcat [ppString "((:inst ", ppString id,
@@ -342,7 +342,7 @@ op ppPattern (pat:MSPattern) (spc:Spec) : PPError WLPretty =
                            sInPat, ppString ")"])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
-    | EmbedPat (id,Some inPat,_,_) -> 
+    | EmbedPat (Qualified(_, id),Some inPat,_,_) -> 
       (case ppPatternHelper inPat spc of
          | Good sInPat -> Good (ppConcat [ppString "(", ppString id, ppString " ", sInPat, ppString ")"])
          | Bad s -> Bad s)
