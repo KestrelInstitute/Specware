@@ -10,5 +10,5 @@ clean:
 	find . -name \*.sfsl -print | xargs rm -f
 
 realclean: clean
-	rm Applications/Specware/bin/linux/Specware4.sbclexe
-	rm Applications/Specware/bin/linux/Bootstrap.sbclimage
+	rm -f Applications/Specware/bin/linux/Specware4.sbclexe
+	rm -f Applications/Specware/bin/linux/Bootstrap.sbclimage
