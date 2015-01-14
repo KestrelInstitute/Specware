@@ -14,10 +14,6 @@
 # around this circularity for the first bootstrap, you can use the
 # tarball of the Specware Lisp files that is stored in the SVN repo.
 
-# TODO: If there is a tarball (of .lisp files) that is newer than the
-# Specware executable, this script could use that to bootstrap instead
-# of the executable.
-
 # So, the possible scenarios are:
 
 # 1. If the specware executable file exists, use it to recreate itself from the .sw files.
@@ -73,13 +69,16 @@ build_executable_from_lisp_files () {
     fi
 }
 
-if [ -f ${SPECWARE_EXECUTABLE} ] ; then
+TARBALL="${SPECWARE4}/Applications/Specware/SpecwareLispFiles.tgz"  #This should always exist (either from the repo or newer)
+
+# Note: If the SPECWARE_EXECUTABLE is not newer than the tarball, we use the tarball:
+if [ -f ${SPECWARE_EXECUTABLE} ] && [ ${SPECWARE_EXECUTABLE} -nt ${TARBALL} ] ; then
     echo "Bootstrapping with existing executable ${SPECWARE_EXECUTABLE}:"
 else
     echo "Making an initial executable from the tarball of Lisp files:"
     cd "$SPECWARE4"/Applications/Specware
     echo "Untarring files:"  #FIXME do we ever not want to ovewrite the existing lisp files?
-    tar xfzv SpecwareLispFiles.tgz -C lisp
+    tar xfzv ${TARBALL} -C lisp
     ls -lrt "$SPECWARE4"/Applications/Specware/lisp/*.lisp
     build_executable_from_lisp_files
 fi
