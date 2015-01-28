@@ -1,4 +1,3 @@
-
 CoqTermPrinter qualifying spec
 
 import /Library/PrettyPrinter/BjornerEspinosa
@@ -11,6 +10,19 @@ import /Languages/MetaSlang/Specs/MSTerm
 import /Languages/SpecCalculus/Semantics/Value
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 import /Languages/SpecCalculus/AbstractSyntax/UnitId
+
+(*
+   Utility term functions.
+
+*)
+
+(* Unroll a curried application to its arguments and its head symbol. *)
+op unrollApp(t:MSTerm):(MSTerm * List MSTerm) =
+  let def work (tm:MSTerm, accum:List MSTerm):(MSTerm * List MSTerm) =
+      case tm of
+        | Apply (f, a, _) -> work (f, (a::accum))
+        | _ -> (tm,accum)
+  in work (t, [])
 
 
 (***
@@ -58,6 +70,20 @@ op [a,b] filterMapM (f : a -> Monad (Option b)) (l : List a) : Monad (List b) =
         case x_out_opt of
           | None -> return l'_out
           | Some x_out -> return (x_out :: l'_out) }
+
+op [a,b,c] filterFoldM (f : (a * c) -> Monad (Option (b * c))) (acc:c) (l : List a) : Monad (List b * c) =
+  case l of
+    | [] -> return ([], acc)
+    | x::l' ->
+      { x_out_opt <- f (x,acc);
+        case x_out_opt of
+          | None -> filterFoldM f acc l'
+          | Some (x_out, next) -> {
+              (l'_out,acc') <- filterFoldM f next l';
+              return (x_out :: l'_out, acc')}
+            }
+            
+      
 
 (* version of foldr that assumes a non-empty list, so does not need a
    base case *)
@@ -128,9 +154,14 @@ def specPathToRelUID spath =
       Some (ctorfun { path = path ++ [filename], hashSuffix = Some suffix })
     | _ -> None
 
+
+op relUIDToString(r:RelativeUID):String =
+  case r of
+    | UnitId_Relative u -> last (u.path)
+    | SpecPath_Relative u ->  last (u.path)
+
 (* declare this here so we don't have to import Bootstrap above *)
 op  Specware.evaluateUnitId: String -> Option Value
-
 
 (***
  *** converting Specware names to Coq names
@@ -246,13 +277,22 @@ def termIsDefined? (t : MSTerm) : Bool =
 type Context =
   {
    freshNatCounter : Nat, % for making fresh names
-   topPrettys : List Pretty % out-of-band extras printed at top-level
+   topPrettys : List Pretty, % out-of-band extras printed at top-level
+   specName : String,
+   prop : Bool, % If in `prop`, then Specware logical connectives will
+               % be rendered using their Coq Prop forms, rather than
+               % the decidable boolean forms (e.g. forall vs.
+               % forallb).
+   prec : Nat
    }
 
-def mkContext () =
+def mkContext (sn:String) =
   {
+   specName = sn,
    freshNatCounter = 0,
-   topPrettys = []
+   topPrettys = [],
+   prop = false,
+   prec = 0
    }
 
 type Monad a = Context -> Either (String, Context * a)
@@ -294,7 +334,47 @@ op appendTopPretty (p : Pretty) : Monad () =
   fn ctx -> Right (ctx << { topPrettys = ctx.topPrettys ++ [p] }, ())
 
 op prependTopPretty (p : Pretty) : Monad () =
-  fn ctx -> Right (ctx << { topPrettys = p :: ctx.topPrettys }, ())
+fn ctx -> Right (ctx << { topPrettys = p :: ctx.topPrettys }, ())
+
+
+op getSpecName : Monad String =
+{ ctx <- getCtx;
+   return ctx.specName
+   }
+
+op [a] withProp(m:Monad a):Monad a =
+  {
+   ctx <- getCtx;
+   putCtx (ctx << { prop = true });
+   v <- m;
+   ctx' <- getCtx;
+   putCtx (ctx' << { prop = ctx.prop});
+   return v
+  }
+
+op [a] withBool(m:Monad a):Monad a =
+  {
+   ctx <- getCtx;
+   putCtx (ctx << { prop = false });
+   v <- m;
+   ctx' <- getCtx;
+   putCtx (ctx' << { prop = ctx.prop});
+   return v
+   }
+
+op [a] withPrec(p:Precedence)(m:Monad a):Monad a =
+  {
+   ctx <- getCtx;
+   putCtx (ctx << { prec = p });
+   v <- m;
+   ctx' <- getCtx;
+   putCtx (ctx' << { prec = ctx.prec});
+   return v
+   }
+
+
+op [a] splitProp(mt:Monad a)(mf:Monad a):Monad a =
+ fn ctx -> if ctx.prop then mt ctx else mf ctx
 
 
 (* Run operation for our monad: use a computation to write a Pretty to
@@ -352,6 +432,19 @@ op ppCurlies (pp : Pretty) : Pretty =
   blockFill (0, [(0, string " {"), (1, pp), (0, string "} ")])
 
 
+(* pretty-print parens, but only if the given precedence is less than (or equal) to the enclosing term precedence *)
+op ppPrecParens (prec:Precedence) (mpp : Monad Pretty) : Monad Pretty =
+  {
+   ctx <- getCtx;
+   if (prec <= ctx.prec)
+     then {
+       pp <-  mpp;
+       return (blockFill (0, [(0, string "("), (1, pp), (0, string ")")]))
+      }
+   else
+     mpp
+  }  
+
 (***
  *** Coq-specific pretty-printing functions
  ***)
@@ -359,7 +452,7 @@ op ppCurlies (pp : Pretty) : Pretty =
 (* pretty-print a Coq application *)
 op coqApply : Pretty -> Pretty -> Pretty
 def coqApply f_pp a_pp =
-  blockFill (0, [(0, ppParens f_pp), (2, ppParens a_pp)])
+  blockFill (0, [(0, f_pp),(1,string " "), (2, a_pp)])
 
 (* pretty-print a Coq application, using monads *)
 op coqApplyM : Monad Pretty -> Monad Pretty -> Monad Pretty
@@ -391,7 +484,67 @@ def ppCoqParam (q, id, tp_pp) =
                       (2, string (qidToCoqName (q,id))),
                       (0, string " : "),
                       (2, tp_pp),
-                      (0, string ".")])
+                 (0, string ".")])
+
+
+ (* pretty-print a  Coq Class *)
+ op ppCoqClass(className:Pretty, params:Pretty, classSort:Pretty, fieldAlist:List (String * Pretty)): Pretty =
+ let head = (blockFill
+               (0,
+                [(0, string "Class "),
+                 (2, className),
+                 (2, params),
+                 (0, string " : "),
+                 (2, classSort),
+                 (2, string " := ")
+                 ])) in
+ let middle = (ppIndentMiddle
+                 (string "{") 
+                 (prPostSep 0 blockFill (string ";")
+                    (map (fn (fnm, ftp_pp) ->
+                            (blockFill
+                               (0, [(0,string fnm), (0, string ":"), (0, string " "), (2,ftp_pp)])))
+                       fieldAlist))
+                 (string "}")) in
+ let tail =  string "." in
+ blockFill (0, [(0, head), (2, middle), (0, tail)])
+
+
+ op ppCoqOperationalClass(sn, q, id, prev, tp_pp):(Pretty * Option String) =
+   let params = (case prev of
+                 | None -> string ""
+                 | Some q -> string (" `{" ^ q ^ " } ")) in
+   let className = prConcat [string sn, string "_", string (qidToCoqName (q,id))] in
+   let fieldAList = [(qidToCoqName (q,id), tp_pp)] in
+   let doc =  ppCoqClass(className, params, string "Type", fieldAList)
+   in (doc, Some (sn ^ "_" ^ id))
+
+
+(* FIXME: Change this to use ppCoqClass *)
+op ppCoqPredicateClass : (String * String * List (String * Pretty)) -> Pretty
+def ppCoqPredicateClass (nm, final, fieldAlist) =
+  prBreak 0 [
+    (blockFill
+       (0,
+        [(0, string "Class "),
+         (2, string nm),
+         (2, string (" `{" ^ final ^ "} ")),
+         (0, string " : "),
+         (2, string "Prop"),
+         (2, string " := ")
+         ])),
+
+    (ppIndentMiddle
+            (string "{") 
+            (prPostSep 0 blockFill (string ";")
+               (map (fn (fnm, ftp_pp) ->
+                       (blockFill
+                          (0, [(0,string fnm), (0, string ":"), (0, string " "), (2,ftp_pp)])))
+                  fieldAlist))
+             (string "}")),
+    string "."
+             ]
+  
 
 (* pretty-print a Coq definition, which takes in a (pretty-printed)
    Coq type and Coq value of that type *)
@@ -461,6 +614,9 @@ def ppCoqRecordElem (fields) =
 def ppTuple (l : List Pretty) : Pretty =
   ppParens (prBreak 0 (intersperse (string ", ") l))
 
+
+
+     
 (* pretty-print an element of a Specware record type, which is a tuple
    if the fields are all natural numbers in ascending order from 1 *)
 op ppCoqRecordElemOrTuple : (List (String * Pretty)) -> Pretty
@@ -535,7 +691,9 @@ def unhandledTerm (str : String) (tm : MSTerm) : Monad Pretty =
 op ppTerm : MSTerm -> Monad Pretty
 def ppTerm tm =
   case tm of
-    | Apply (f, a, _) -> coqApplyM (ppTerm f) (ppTerm a)
+    | t as Apply (f, a, _) ->
+         let (fun,args) = unrollApp t 
+         in ppApplication (fun, args)
     | ApplyN (ts, _) -> unhandledTerm "ApplyN" tm
     | Record (elems, _) ->
       { elems_pp
@@ -545,11 +703,12 @@ def ppTerm tm =
     | Bind (Forall, vars, body, _) ->
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
-        return (ppForallB vars_pp body_pp) }
+        ppForallTerm vars_pp body_pp
+      }
     | Bind (Exists, vars, body, _) ->
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
-        return (ppExistsB vars_pp body_pp) }
+        ppExistsTerm vars_pp body_pp }
     | Bind (Exists1, vars, body, _) ->
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
@@ -600,6 +759,24 @@ def ppTerm tm =
         return (ppCoqFun (blockFill (0, tyvars_pp)) body_pp) }
     | And (ts, _) -> unhandledTerm "And" tm
     | Any _ -> unhandledTerm "Any" tm
+
+
+(* pretty-print an application to n-arguments. *)
+op ppApplication(f:MSTerm, args:List MSTerm):Monad Pretty =
+{
+   fixity <- termFixity f;
+   fDoc <- ppTerm f;
+   case (fixity, args) of
+     | (Infix (assoc, prec), [ Record ([("1",tm1), ("2",tm2)], _) ]) ->
+        {
+         doc1 <- withPrec prec (ppTerm tm1);
+         doc2 <- withPrec prec (ppTerm tm2);
+         let doc = blockFill (0,[(0,doc1), (0,fDoc), (0,doc2)]) in
+         ppPrecParens prec (return doc)
+        }
+     | _ -> ppPrecParens appPrecedence (withPrec appPrecedence (coqApplyMultiM (return fDoc) (map ppTerm args)))
+}
+
 
 (* pretty-print a pattern-match over a scrutinee, where the latter has
    already been pretty-printed *)
@@ -674,16 +851,42 @@ op ppVarBindings (vs : List MSVar) : Monad Pretty =
 op unhandledFun (str : String) (f : MSFun) : Monad Pretty =
   unhandled ("ppFun", str, anyToString f)
 
+
+op termFixity(f:MSTerm):Monad Fixity =
+  case f of
+  | Fun (f, tp, _) -> funFixity f
+  | _ -> return Nonfix
+
+
+(* Given a function, return its fixity. For boolean operations, the
+   result will differ depending on whether we're printing in Prop or
+   Boolean context. Prop connectives are printed to match coq's
+   syntax, while bool connections are infix.
+ *)
+op funFixity(f:MSFun):Monad Fixity =
+  case f of
+    | Not -> splitProp (return Nonfix) (return Nonfix)
+    | And -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | Or -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | Implies -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | Iff -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | Equals -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | NotEquals -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | _  -> return Nonfix
+
+op appPrecedence:Nat = 10      
+  
+  
 op ppFun : MSFun * MSType -> Monad Pretty
 def ppFun (f, tp) =
   case f of
-    | Not -> retString "negb"
-    | And -> retString "andb_pair"
-    | Or -> retString "orb_pair"
-    | Implies -> retString "implb_pair"
-    | Iff -> retString "iffb_pair"
-    | Equals -> retString "dec_eq_b_pair"
-    | NotEquals -> retString "dec_neq_b_pair"
+    | Not -> splitProp (retString " ~") (retString "notb")
+    | And -> splitProp (retString " /\\ ") (retString "andb_pair")
+    | Or -> splitProp (retString " \\/ ") (retString "orb_pair")
+    | Implies -> splitProp (retString " -> ") (retString "implb_pair")
+    | Iff -> splitProp (retString " <-> ") (retString "iffb_pair")
+    | Equals -> splitProp (retString " = ") (retString "dec_eq_b_pair")
+    | NotEquals -> splitProp (retString " != ") (retString "dec_neq_b_pair")
 
     | Quotient tp -> unhandledFun "Quotient" f
     | Choose tp -> unhandledFun "Choose" f
@@ -719,6 +922,11 @@ op ppTyVarBindings : TyVars -> List Pretty
 def ppTyVarBindings tyvars =
   map ppTyVarBinding tyvars
 
+
+op ppForallTerm(vs_pp : List Pretty) (body_pp : Pretty) : Monad Pretty =
+    splitProp (return (ppForall vs_pp body_pp)) (return (ppForallB vs_pp body_pp))
+
+
 (* pretty-print a forall type, assuming all the variables have been
    pretty-printed as "(name : tp)" and that body_pp is a
    pretty-printed Coq type *)
@@ -726,8 +934,8 @@ def ppForall (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
   if vs_pp = [] then body_pp else
     blockFill
     (0, [(0, string "forall")]
-       ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
-       ++ [(0, string ","), (0, body_pp)])
+       ++ [(2, prLinear 2 vs_pp)]
+       ++ [(2, string ","), (4, body_pp)])
 
 (* pretty-print a forall proposition converted to a bool, assuming all
    the variables have been pretty-printed as "(name : tp)" and that
@@ -739,6 +947,22 @@ def ppForallB (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
           ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
           ++ [(0, string ","), (0, body_pp)]))
 
+
+op ppExistsTerm(vs_pp : List Pretty) (body_pp : Pretty) : Monad Pretty =
+   splitProp (return (ppExists vs_pp body_pp)) (return (ppExistsB vs_pp body_pp))
+
+
+(* pretty-print an exists proposition , assuming
+   all the variables have been pretty-printed as "(name : tp)" and
+   that body_pp is a pretty-printed Coq term of type Prop *)
+def ppExists (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
+  if vs_pp = [] then body_pp else
+    (blockFill
+       (0, [(0, string "exists")]
+          ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
+          ++ [(0, string ","), (0, body_pp)]))
+
+    
 (* pretty-print an exists proposition converted to a bool, assuming
    all the variables have been pretty-printed as "(name : tp)" and
    that body_pp is a pretty-printed Coq term of type bool *)
@@ -758,6 +982,8 @@ def ppExistsB1 (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
        (0, [(0, string "existsB!")]
           ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
           ++ [(0, string ","), (0, body_pp)]))
+
+
 
 op ppType : MSType -> Monad Pretty
 def ppType tp =
@@ -851,7 +1077,7 @@ def ppTypeDef (q,id, tp) =
 *)
 
 op importSpec (cur_spec : Spec) (ruid : RelativeUID) : Monad (Option Pretty) =
-     {
+{
       appendTopPretty (string ("Require " ^ relUIDToCoqNameString ruid));
       return (Some (string ("Include " ^ relUIDToCoqNameString ruid ^ ".Spec.")))
       }  
@@ -900,62 +1126,81 @@ def tp_elem_name = "__type"
 def pinst_elem_name = "__pinst"
 
 
-(* pretty-print a spec element as an element of a Coq module *)
-op ppSpecElem : Spec -> SpecElement -> Monad (Option Pretty)
-def ppSpecElem s elem =
-  let def ppTypeSpecElem (q, id) : Monad (Option Pretty) =
+
+(* pretty-print the (operational) parts of a spec as a sequence of unbundled classes *)
+op ppOperationalSpecElem : Spec -> (SpecElement * Option String) -> Monad (Option (Pretty * Option String))
+def ppOperationalSpecElem s (elem, prev) = {
+   sn <- getSpecName
+                                            ;
+   let def ppTypeSpecElem (q, id) : Monad (Option (Pretty * Option String)) =
     (case findAQualifierMap (s.types, q, id) of
        | Some tp_info ->
          if typeIsDefined? tp_info.dfn then
            { tp_pp <- ppType tp_info.dfn;
-            return
+            let next = Some (sn ^ "_" ^ id) in                                                          
+             return
               (Some
-                 (ppCoqPgmDef (qidToCoqName (q, id), string "Set", tp_pp))) }
+                 (ppCoqPgmDef (qidToCoqName (q, id), string "Set", tp_pp), next)) }
          else
-           return (Some (ppCoqParam (q, id, string "Set")))
-       | None -> err ("ppSpecElem: could not find type " ^ id ^ " in spec!"))
+           return (Some (ppCoqOperationalClass (sn, q, id, prev, string "Set")))
+       | None -> err ("ppOpSpecElem: could not find type " ^ id ^ " in spec!"))
   in
-  let def ppOpSpecElem (q, id) : Monad (Option Pretty) =
-    (case findAQualifierMap (s.ops, q, id) of
+    let def ppOpSpecElem (q, id) : Monad (Option (Pretty * Option String)) =
+     (case findAQualifierMap (s.ops, q, id) of
        | Some op_info ->
          if termIsDefined? op_info.dfn then
            { def_pp <- ppTerm op_info.dfn;
              tp_pp <- ppType (termType op_info.dfn);
-            return (Some (ppCoqPgmDef (qidToCoqName (q, id), tp_pp, def_pp))) }
+            return (Some (ppCoqPgmDef (qidToCoqName (q, id), tp_pp, def_pp),prev)) }
          else
            { tp_pp <- ppType (termType op_info.dfn);
-             return (Some (ppCoqParam (q, id, tp_pp))) }
-       | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))
+             return (Some (ppCoqOperationalClass (sn, q, id, prev,  tp_pp))) }
+       | None -> err ("ppOpSpecElem: could not find op " ^ id ^ " in spec!"))
   in
   case elem of
-   | Import ((UnitId ruid, _), _, _, _) -> importSpec s ruid
+   % | Import ((UnitId ruid, _), _, _, _) -> importSpec s ruid
    | Type (Qualified qid, _) -> ppTypeSpecElem qid
    | TypeDef (Qualified qid, _) -> ppTypeSpecElem qid
    | Op (Qualified qid, _, _) -> ppOpSpecElem qid
    | OpDef (Qualified qid, _, _, _) -> ppOpSpecElem qid
-   | Property (Axiom, Qualified (q, id), tyvars, tm, _) ->
-     (* FIXME: search for a proof *)
-     { tm_pp <- ppTerm tm;
-       return
-        (Some
-           (ppCoqParam
-              (q, id,
-               ppForall (ppTyVarBindings tyvars) tm_pp))) }
-   | Property prop -> (* FIXME *) return (Some (string "(* property *)"))
    | Comment (str, _) ->
      (* FIXME *)
-     return (Some (string ("(* Comment: " ^ str ^ " *)")))
+     return (Some (string ("(* Comment: " ^ str ^ " *)"), prev))
    | Pragma (str1, str2, str3, _) ->
      (* FIXME *)
      return
        (Some
-          (string ("(* pragma: (" ^ str1 ^ "," ^ str2 ^ "," ^ str3 ^ ") *)")))
+          (string ("(* pragma: (" ^ str1 ^ "," ^ str2 ^ "," ^ str3 ^ ") *)"), prev))
+   % | Property (Axiom, Qualified (q, id), tyvars, tm, _) -> return None
+     % (* FIXME: search for a proof *)
+     % { tm_pp <- ppTerm tm;
+     %   return
+     %    (Some
+     %       (ppCoqParam
+     %          (q, id,
+     %           ppForall (ppTyVarBindings tyvars) tm_pp))) }
+   | _ -> return None
+ }
 
+op ppPredicateSpecElem : Spec -> SpecElement -> Monad (Option (String * Pretty))
+def ppPredicateSpecElem s elem = {
+   sn <- getSpecName;
+   case elem of
+     | Property (Axiom, Qualified (q, id), tyvars, tm, _) ->
+       withProp 
+     ({ tm_pp <- ppTerm tm;
+       return
+        (Some
+           (id, ppForall (ppTyVarBindings tyvars) tm_pp)) })
+   | _ -> return None
+ }
 
+  
+  
 (* top-level entry point for pretty-printing specs *)
 op ppSpec : CoqModName -> Spec -> Monad Pretty
 def ppSpec coq_mod s =
-
+  
   (* first get the spec elements, ensuring that we don't have both a
      decl and def of the same type or op *)
   let def spec_elem_same_qid elem1 elem2 =
@@ -970,11 +1215,25 @@ def ppSpec coq_mod s =
   let spec_elems = removeDups spec_elem_same_qid s.elements in
 
   {
-   (* next, pretty-print the spec elements *)
-   spec_elems_pp <- filterMapM (ppSpecElem s) spec_elems;
+
+   appendTopPretty (string ("Add LoadPath \"$SPECWARE4/Provers/ToCoq/\"."));
+   appendTopPretty (string ("Require Import MetaSlang."));
+
+   (* next, pretty-print the operational spec elements *)
+   (spec_operational_elems_pp, final) <- filterFoldM (ppOperationalSpecElem s) None spec_elems;
+   op_class_name <- return (case final of
+                         | None -> "FIXME: Should have a class name here."
+                         | Some nm -> nm);
+
+   (* pretty-print the elements of the predicate class *) 
+   spec_predicate_elems_pp <- filterMapM (ppPredicateSpecElem s) spec_elems;
+   sn <- getSpecName;
+
+   let pred_class = ppCoqPredicateClass (sn, op_class_name, spec_predicate_elems_pp) in
+   
 
    (* Now, build the Coq module! *)
-   return (ppCoqModuleType ("Spec", spec_elems_pp))
+   return (ppCoqModule ("Spec", spec_operational_elems_pp ++ [pred_class]))
   }
 
 
@@ -985,23 +1244,27 @@ def ppSpec coq_mod s =
 (* adapted from IsaPrinter.sw *)
 op printUIDToCoqFile : String -> String
 def printUIDToCoqFile spath =
+
   case specPathToCoqModule spath of
     | None -> "Error: Malformed spec path: " ^ spath
     | Some mod_path ->
       (case Specware.evaluateUnitId spath of
          | None -> "Error: Unknown UID " ^ spath
          | Some (Spec s) ->
-           let context = mkContext () in
-           let filepath =
-             if head mod_path = "Specware" then tail mod_path
-             else mod_path
-           in
-           let filename = concatenate #/ filepath ^ ".v" in
-           let _ = ensureDirectoriesExist filename in
-           let m = ppSpec mod_path s in
-           (case writingToFile (filename, context, m) of
-              | None -> filename
-              | Some err_str -> "Error: " ^ err_str))
-    | _ -> "Error: currently only support converting Specs to Coq"
+          (case specPathToRelUID spath of
+             | None -> "Error: Could not convert spec path " ^ spath ^ " to Relative UUID"
+             | Some relpath ->
+                 let context = mkContext (relUIDToString relpath) in
+                 let filepath =
+                   if head mod_path = "Specware" then tail mod_path
+                   else mod_path
+                 in
+                 let filename = concatenate #/ filepath ^ ".v" in
+                 let _ = ensureDirectoriesExist filename in
+                 let m = ppSpec mod_path s in
+                (case writingToFile (filename, context, m) of
+                  | None -> filename
+                  | Some err_str -> "Error: " ^ err_str)))
+      | _ -> "Error: currently only support converting Specs to Coq"
 
 end-spec
