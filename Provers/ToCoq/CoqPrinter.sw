@@ -523,27 +523,7 @@ def ppCoqParam (q, id, tp_pp) =
 (* FIXME: Change this to use ppCoqClass *)
 op ppCoqPredicateClass : (String * String * List (String * Pretty)) -> Pretty
 def ppCoqPredicateClass (nm, final, fieldAlist) =
-  prBreak 0 [
-    (blockFill
-       (0,
-        [(0, string "Class "),
-         (2, string nm),
-         (2, string (" `{" ^ final ^ "} ")),
-         (0, string " : "),
-         (2, string "Prop"),
-         (2, string " := ")
-         ])),
-
-    (ppIndentMiddle
-            (string "{") 
-            (prPostSep 0 blockFill (string ";")
-               (map (fn (fnm, ftp_pp) ->
-                       (blockFill
-                          (0, [(0,string fnm), (0, string ":"), (0, string " "), (2,ftp_pp)])))
-                  fieldAlist))
-             (string "}")),
-    string "."
-             ]
+  ppCoqClass(string nm, string (" `{" ^ final ^ "} "), string "Prop", fieldAlist)
   
 
 (* pretty-print a Coq definition, which takes in a (pretty-printed)
@@ -1221,19 +1201,24 @@ def ppSpec coq_mod s =
 
    (* next, pretty-print the operational spec elements *)
    (spec_operational_elems_pp, final) <- filterFoldM (ppOperationalSpecElem s) None spec_elems;
-   op_class_name <- return (case final of
+
+
+   sn <- getSpecName;
+   last_class_name <- return (case final of
                          | None -> "FIXME: Should have a class name here."
                          | Some nm -> nm);
 
+   (* Create a 'terminal' class called 'sn_ops' -- it doesn't seem that we can define class aliases *)
+   op_class_name <- return (sn ^ "_ops");
+   ops_class <- return (ppCoqClass(string op_class_name, string (" `{" ^ last_class_name ^ "} "), string "Type", [(sn ^ "_triv", string "true")]));
+                       
+
    (* pretty-print the elements of the predicate class *) 
    spec_predicate_elems_pp <- filterMapM (ppPredicateSpecElem s) spec_elems;
-   sn <- getSpecName;
-
-   let pred_class = ppCoqPredicateClass (sn, op_class_name, spec_predicate_elems_pp) in
+   pred_class <- return (ppCoqPredicateClass (sn, op_class_name, spec_predicate_elems_pp));
    
-
    (* Now, build the Coq module! *)
-   return (ppCoqModule ("Spec", spec_operational_elems_pp ++ [pred_class]))
+   return (ppCoqModule ("Spec", spec_operational_elems_pp ++ [ops_class, pred_class]))
   }
 
 
