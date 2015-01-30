@@ -102,6 +102,8 @@ type LispTerms   = List LispTerm
 type LispDecls   = List LispDecl
 type Definitions = List Definition
 
+op lispFileLineLength: Nat = 250
+
 op emptySpec : LispSpec = 
  {name           = "BASESPECS",
   extraPackages  = [],
@@ -307,7 +309,7 @@ op section (title : String, ps : Prettys) : Prettys =
 
 op ppDefToStream (ldef : Definition, stream : Stream) : () =
  let p = ppOpDefn ldef in
- let t = format (120, p) in
+ let t = format (lispFileLineLength, p) in
  let _ = toStreamT (t,
                     fn (_,string) -> streamWriter (stream, string),
                     fn (n)        -> streamWriter (stream, newlineAndBlanks n))
@@ -438,7 +440,7 @@ op ppSpecToTerminal (spc : LispSpec) : () =
 op ppSpecsToFile (specs : LispSpecs, file : String, preamble : Text) : () =
  let ps = List.map ppSpec specs in
  let p  = prettysAll ps in
- let t  = format (80, p) in
+ let t  = format (lispFileLineLength, p) in
  toFile (file, t ++ preamble)
 
 % 
