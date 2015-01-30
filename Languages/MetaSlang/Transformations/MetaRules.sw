@@ -411,7 +411,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                  Some(ret_tm,
                       extendSimpProof(orig_tm, new_tm, ret_tm,
                                       if trivial_bind? then [] else [1],
-                                      prf, "(auto simp add: Let_def prod.split_asm)"))
+                                      prf, " (simp add: Let_def prod.split_asm, (metis surj_pair fst_conv snd_conv)+)"))
                | None -> None)
          | None ->
         %% (ex(x,y) <C=constructor> x = e && q x y) = (case e of C x -> ex(y) q x y | _ -> false)
