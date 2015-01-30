@@ -11,19 +11,6 @@ import /Languages/SpecCalculus/Semantics/Value
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 import /Languages/SpecCalculus/AbstractSyntax/UnitId
 
-(*
-   Utility term functions.
-
-*)
-
-(* Unroll a curried application to its arguments and its head symbol. *)
-op unrollApp(t:MSTerm):(MSTerm * List MSTerm) =
-  let def work (tm:MSTerm, accum:List MSTerm):(MSTerm * List MSTerm) =
-      case tm of
-        | Apply (f, a, _) -> work (f, (a::accum))
-        | _ -> (tm,accum)
-  in work (t, [])
-
 
 (***
  *** customizations and flags
@@ -71,6 +58,11 @@ op [a,b] filterMapM (f : a -> Monad (Option b)) (l : List a) : Monad (List b) =
           | None -> return l'_out
           | Some x_out -> return (x_out :: l'_out) }
 
+(* This is like filterMapM but with a (left) fold. That is, for each
+   element x of l in turn, we apply f to (x, acc); if this returns
+   Some (x',acc'), then we recurse, using acc' as the new accumulator,
+   and prepend x' to the result list; otherwise, we recurse and use
+   the old value of the accumulator. *)
 op [a,b,c] filterFoldM (f : (a * c) -> Monad (Option (b * c))) (acc:c) (l : List a) : Monad (List b * c) =
   case l of
     | [] -> return ([], acc)
@@ -82,8 +74,6 @@ op [a,b,c] filterFoldM (f : (a * c) -> Monad (Option (b * c))) (acc:c) (l : List
               (l'_out,acc') <- filterFoldM f next l';
               return (x_out :: l'_out, acc')}
             }
-            
-      
 
 (* version of foldr that assumes a non-empty list, so does not need a
    base case *)
@@ -334,14 +324,21 @@ op appendTopPretty (p : Pretty) : Monad () =
   fn ctx -> Right (ctx << { topPrettys = ctx.topPrettys ++ [p] }, ())
 
 op prependTopPretty (p : Pretty) : Monad () =
-fn ctx -> Right (ctx << { topPrettys = p :: ctx.topPrettys }, ())
-
+  fn ctx -> Right (ctx << { topPrettys = p :: ctx.topPrettys }, ())
 
 op getSpecName : Monad String =
-{ ctx <- getCtx;
-   return ctx.specName
+  { ctx <- getCtx;
+    return ctx.specName
    }
 
+(* Read the value of the prop flag *)
+op getProp : Monad Bool =
+  {
+   ctx <- getCtx;
+   return ctx.prop
+  }
+
+(* Execute m with the prop flag set *)
 op [a] withProp(m:Monad a):Monad a =
   {
    ctx <- getCtx;
@@ -352,6 +349,7 @@ op [a] withProp(m:Monad a):Monad a =
    return v
   }
 
+(* Execute m with the prop flag cleared, in "bool" mode *)
 op [a] withBool(m:Monad a):Monad a =
   {
    ctx <- getCtx;
@@ -362,6 +360,7 @@ op [a] withBool(m:Monad a):Monad a =
    return v
    }
 
+(* Execute m with the given precedence, p *)
 op [a] withPrec(p:Precedence)(m:Monad a):Monad a =
   {
    ctx <- getCtx;
@@ -372,9 +371,12 @@ op [a] withPrec(p:Precedence)(m:Monad a):Monad a =
    return v
    }
 
-
-op [a] splitProp(mt:Monad a)(mf:Monad a):Monad a =
- fn ctx -> if ctx.prop then mt ctx else mf ctx
+(* Run mt if the prop flag is set, or mf otherwise *)
+op [a] ifProp(mt:Monad a)(mf:Monad a):Monad a =
+  {
+   prop <- getProp;
+   if prop then mt else mf
+  }
 
 
 (* Run operation for our monad: use a computation to write a Pretty to
@@ -452,7 +454,7 @@ op ppPrecParens (prec:Precedence) (mpp : Monad Pretty) : Monad Pretty =
 (* pretty-print a Coq application *)
 op coqApply : Pretty -> Pretty -> Pretty
 def coqApply f_pp a_pp =
-  blockFill (0, [(0, f_pp),(1,string " "), (2, a_pp)])
+  blockFill (0, [(0, prConcat [f_pp, string " "]), (2, a_pp)])
 
 (* pretty-print a Coq application, using monads *)
 op coqApplyM : Monad Pretty -> Monad Pretty -> Monad Pretty
@@ -484,40 +486,40 @@ def ppCoqParam (q, id, tp_pp) =
                       (2, string (qidToCoqName (q,id))),
                       (0, string " : "),
                       (2, tp_pp),
-                 (0, string ".")])
+                      (0, string ".")])
 
 
- (* pretty-print a  Coq Class *)
- op ppCoqClass(className:Pretty, params:Pretty, classSort:Pretty, fieldAlist:List (String * Pretty)): Pretty =
- let head = (blockFill
-               (0,
-                [(0, string "Class "),
-                 (2, className),
-                 (2, params),
-                 (0, string " : "),
-                 (2, classSort),
-                 (2, string " := ")
-                 ])) in
- let middle = (ppIndentMiddle
-                 (string "{") 
-                 (prPostSep 0 blockFill (string ";")
-                    (map (fn (fnm, ftp_pp) ->
-                            (blockFill
-                               (0, [(0,string fnm), (0, string ":"), (0, string " "), (2,ftp_pp)])))
-                       fieldAlist))
-                 (string "}")) in
- let tail =  string "." in
- blockFill (0, [(0, head), (2, middle), (0, tail)])
+(* pretty-print a Coq Class *)
+op ppCoqClass(className:Pretty, params:Pretty, classSort:Pretty, fieldAlist:List (String * Pretty)): Pretty =
+  blockFill
+  (0,
+   [(0, string "Class "),
+    (2, className),
+    (4, prConcat [params, string " "]),
+    (0, string ": "),
+    (2, prConcat [classSort, string " "]),
+    (0, string ":= "),
+    (2,
+     (ppIndentMiddle
+        (string "{")
+        (prPostSep 0 blockFill (string ";")
+           (map (fn (fnm, ftp_pp) ->
+                   (blockFill
+                      (0, [(0,string fnm), (0, string ":"), (0, string " "), (2,ftp_pp)])))
+              fieldAlist))
+        (string "}"))
+     ),
+    (0, string ".")
+    ])
 
-
- op ppCoqOperationalClass(sn, q, id, prev, tp_pp):(Pretty * Option String) =
-   let params = (case prev of
-                 | None -> string ""
-                 | Some q -> string (" `{" ^ q ^ " } ")) in
-   let className = prConcat [string sn, string "_", string (qidToCoqName (q,id))] in
-   let fieldAList = [(qidToCoqName (q,id), tp_pp)] in
-   let doc =  ppCoqClass(className, params, string "Type", fieldAList)
-   in (doc, Some (sn ^ "_" ^ id))
+op ppCoqOperationalClass(sn, q, id, prev, tp_pp):(Pretty * Option String) =
+  let params = (case prev of
+                  | None -> string ""
+                  | Some q -> string (" `{" ^ q ^ " } ")) in
+  let className = prConcat [string sn, string "_", string (qidToCoqName (q,id))] in
+  let fieldAList = [(qidToCoqName (q,id), tp_pp)] in
+  let doc =  ppCoqClass(className, params, string "Type", fieldAList) in
+  (doc, Some (sn ^ "_" ^ id))
 
 
 (* FIXME: Change this to use ppCoqClass *)
@@ -672,7 +674,7 @@ op ppTerm : MSTerm -> Monad Pretty
 def ppTerm tm =
   case tm of
     | t as Apply (f, a, _) ->
-         let (fun,args) = unrollApp t 
+         let (fun,args) = unpackApplication t 
          in ppApplication (fun, args)
     | ApplyN (ts, _) -> unhandledTerm "ApplyN" tm
     | Record (elems, _) ->
@@ -845,13 +847,13 @@ op termFixity(f:MSTerm):Monad Fixity =
  *)
 op funFixity(f:MSFun):Monad Fixity =
   case f of
-    | Not -> splitProp (return Nonfix) (return Nonfix)
-    | And -> splitProp (return (Infix (Left, 5))) (return Nonfix)
-    | Or -> splitProp (return (Infix (Left, 5))) (return Nonfix)
-    | Implies -> splitProp (return (Infix (Left, 5))) (return Nonfix)
-    | Iff -> splitProp (return (Infix (Left, 5))) (return Nonfix)
-    | Equals -> splitProp (return (Infix (Left, 5))) (return Nonfix)
-    | NotEquals -> splitProp (return (Infix (Left, 5))) (return Nonfix)
+    | Not -> ifProp (return Nonfix) (return Nonfix)
+    | And -> ifProp (return (Infix (Left, 5))) (return Nonfix)
+    | Or -> ifProp (return (Infix (Left, 5))) (return Nonfix)
+    | Implies -> ifProp (return (Infix (Left, 5))) (return Nonfix)
+    | Iff -> ifProp (return (Infix (Left, 5))) (return Nonfix)
+    | Equals -> ifProp (return (Infix (Left, 5))) (return Nonfix)
+    | NotEquals -> ifProp (return (Infix (Left, 5))) (return Nonfix)
     | _  -> return Nonfix
 
 op appPrecedence:Nat = 10      
@@ -860,13 +862,13 @@ op appPrecedence:Nat = 10
 op ppFun : MSFun * MSType -> Monad Pretty
 def ppFun (f, tp) =
   case f of
-    | Not -> splitProp (retString " ~") (retString "notb")
-    | And -> splitProp (retString " /\\ ") (retString "andb_pair")
-    | Or -> splitProp (retString " \\/ ") (retString "orb_pair")
-    | Implies -> splitProp (retString " -> ") (retString "implb_pair")
-    | Iff -> splitProp (retString " <-> ") (retString "iffb_pair")
-    | Equals -> splitProp (retString " = ") (retString "dec_eq_b_pair")
-    | NotEquals -> splitProp (retString " != ") (retString "dec_neq_b_pair")
+    | Not -> ifProp (retString " ~") (retString "notb")
+    | And -> ifProp (retString " /\\ ") (retString "andb_pair")
+    | Or -> ifProp (retString " \\/ ") (retString "orb_pair")
+    | Implies -> ifProp (retString " -> ") (retString "implb_pair")
+    | Iff -> ifProp (retString " <-> ") (retString "iffb_pair")
+    | Equals -> ifProp (retString " = ") (retString "dec_eq_b_pair")
+    | NotEquals -> ifProp (retString " != ") (retString "dec_neq_b_pair")
 
     | Quotient tp -> unhandledFun "Quotient" f
     | Choose tp -> unhandledFun "Choose" f
@@ -904,7 +906,7 @@ def ppTyVarBindings tyvars =
 
 
 op ppForallTerm(vs_pp : List Pretty) (body_pp : Pretty) : Monad Pretty =
-    splitProp (return (ppForall vs_pp body_pp)) (return (ppForallB vs_pp body_pp))
+  ifProp (return (ppForall vs_pp body_pp)) (return (ppForallB vs_pp body_pp))
 
 
 (* pretty-print a forall type, assuming all the variables have been
@@ -927,14 +929,13 @@ def ppForallB (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
           ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
           ++ [(0, string ","), (0, body_pp)]))
 
-
+(* Same as ppForall, but with existential terms *)
 op ppExistsTerm(vs_pp : List Pretty) (body_pp : Pretty) : Monad Pretty =
-   splitProp (return (ppExists vs_pp body_pp)) (return (ppExistsB vs_pp body_pp))
+  ifProp (return (ppExists vs_pp body_pp)) (return (ppExistsB vs_pp body_pp))
 
-
-(* pretty-print an exists proposition , assuming
-   all the variables have been pretty-printed as "(name : tp)" and
-   that body_pp is a pretty-printed Coq term of type Prop *)
+(* pretty-print an exists proposition, assuming all the variables have
+   been pretty-printed as "(name : tp)" and that body_pp is a
+   pretty-printed Coq term of type Prop *)
 def ppExists (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
   if vs_pp = [] then body_pp else
     (blockFill
@@ -942,7 +943,6 @@ def ppExists (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
           ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
           ++ [(0, string ","), (0, body_pp)]))
 
-    
 (* pretty-print an exists proposition converted to a bool, assuming
    all the variables have been pretty-printed as "(name : tp)" and
    that body_pp is a pretty-printed Coq term of type bool *)
@@ -964,7 +964,7 @@ def ppExistsB1 (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
           ++ [(0, string ","), (0, body_pp)]))
 
 
-
+(* Pretty-print a Specware type to a Coq type *)
 op ppType : MSType -> Monad Pretty
 def ppType tp =
   case tp of
@@ -1057,48 +1057,67 @@ def ppTypeDef (q,id, tp) =
 *)
 
 op importSpec (cur_spec : Spec) (ruid : RelativeUID) : Monad (Option Pretty) =
-{
-      appendTopPretty (string ("Require " ^ relUIDToCoqNameString ruid));
-      return (Some (string ("Include " ^ relUIDToCoqNameString ruid ^ ".Spec.")))
-      }  
+  {
+   appendTopPretty (string ("Require " ^ relUIDToCoqNameString ruid));
+   return (Some (string ("Include " ^ relUIDToCoqNameString ruid ^ ".Spec.")))
+  }  
 
 (***
  *** pretty-printer for specs
  ***)
 
-(* The basic idea is that a spec is translated into two Coq objects:
+(* The basic idea is that a spec is translated into two Coq
+   type-classes, one for the types and ops of the spec and one for the
+   axioms and proofs. We call the first one the "ops type-class" for
+   the spec; the second is just referred to as the type-class for the
+   spec, since it contains the ops type-class as well, but we
+   sometimes call it the "axioms type-class" to be more specific.  If
+   a spec is named Foo, then its ops type-class is named "Foo__ops",
+   and its axioms type-class is called "Foo".
 
-    1. A record type, whose elements are the types (in Set),
-    operators, and proofs of the axioms declared in the spec; AND
+   The ops type-class is defined as a sequence of operational
+   type-classes (type-classes with a single element), one for each
+   type, op, or import statement of the spec. Each of these imports
+   the previous operational type-class, using the Coq backtick
+   notation `{Class} in the parameters of the type-class. For ops, the
+   type-class contains a single field whose type is the pretty-printed
+   Coq version of the Specware type of the op; for types, it contains
+   a single field of type Set; and for imports, the type-class
+   contains no fields, but has an additional import, again using the
+   `{Class} notation, of the operational type-class for the imported
+   spec. For example, the following is a spec and its sequence of
+   definitions that give its ops type-class:
 
-    2. A "partial instance" of this record type, i.e., a function that
-    takes in all the "holes" of a spec -- the undefined types,
-    operators, and proofs -- and builds an element of the given record
-    type.
+   Monoid = spec
+     type A
+     op zero : A
+     op plus (x:A) (y:A) : A
+     axiom unit_left is fa (x) plus zero x = x
+     axiom unit_right is fa (x) plus x zero = x
+     axiom assoc is fa (x,y,z) plus (plus x y) z = plus x (plus y z)
+   end-spec
 
-    Note that a Specware "axiom" is represented in a way similar to
-    the types and ops that are declared but not defined, as a proof
-    element of the record type that is not defined in the partial
-    instance, i.e., that is a "hole".
+   -->
 
-    To make the above easier to work with in Coq, these are defined in
-    a Coq module, of the same name as the spec, that contains:
+   Class Monoid__A : Type := { A : Set }.
+   Class Monoid__zero `{Monoid__A} : Type := { zero : A }.
+   Class Monoid__plus `{Monoid__zero} : Type := { plus : A -> A -> A }.
+   Class Monoid__ops `{Monoid__plus} : Type.
 
-    * A Coq parameter for each "hole" in the spec;
+   The axioms type-class is a single type-class of sort Prop
+   containing a field for each of the axioms of the spec. It imports
+   the ops type-class, so that it can refer to the ops and types of
+   the spec. For example, the Monoid spec above would be translated to
+   the following type-class:
 
-    * A Coq definition for each type, op, and proof (given with
-      specware pragmas) in the spec;
+   Class Monoid `{Monoid__ops} : Prop :=
+   {
+     unit_left : forall x, plus zero x = x;
+     unit_right : forall x, plus x zero = x;
+     assoc : forall x y z, plus (plus x y) z = plus x (plus y z)
+   }.
 
-    * A Coq Export statement for each imported spec (FIXME: this is
-      not yet supported); and
-
-    * A sub-module "Meta" that contains:
-
-      - An element "__type" equal to the record type of the spec;
-
-      - An element "__pinst" that gives the partial instance, i.e.,
-         where each type, op, and proof is bound to either its
-         parameter or its definition given in the module.
+   FIXME HERE: how to handle imports
 
 *)
 
@@ -1211,7 +1230,6 @@ def ppSpec coq_mod s =
    (* Create a 'terminal' class called 'sn_ops' -- it doesn't seem that we can define class aliases *)
    op_class_name <- return (sn ^ "_ops");
    ops_class <- return (ppCoqClass(string op_class_name, string (" `{" ^ last_class_name ^ "} "), string "Type", [(sn ^ "_triv", string "true")]));
-                       
 
    (* pretty-print the elements of the predicate class *) 
    spec_predicate_elems_pp <- filterMapM (ppPredicateSpecElem s) spec_elems;
