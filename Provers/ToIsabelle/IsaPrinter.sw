@@ -2794,7 +2794,7 @@ op opUsesFunctionDef? (c: Context, mainId: QualifiedId, fixity: Fixity, ty: MSTy
                                           | Fun(String _, _, _) -> true
                                           | Fun(Bool _, _, _) -> true
                                           | _ -> false)
-                   (getArgs lhs) ->
+                              (getArgs lhs) ->
                    true
                  | _ -> containsRefToOp?(rhs, mainId) )
             | _ -> true)
