@@ -869,7 +869,7 @@ SpecCalc qualifying spec
     in
     let s = mapSpec (translateOpRef   op_translator, 
 		     translateTypeRef type_translator, 
-		     translatePattern)
+		     translatePattern op_translator)
                     spc
     in
     {
@@ -901,7 +901,7 @@ SpecCalc qualifying spec
   op  translateQualifiedId : Translator -> QualifiedId -> QualifiedId
   op  translateTypeRef     : Translator -> MSType -> MSType
   op  translateOpRef       : OpTranslator -> MSTerm -> MSTerm
-  op  translatePattern     : MSPattern  -> MSPattern
+  op  translatePattern     : OpTranslator -> MSPattern  -> MSPattern
 
   def translateQualifiedId translator (qid as Qualified (q, id)) =
     case findAQualifierMap (translator, q,id) of
@@ -930,9 +930,17 @@ SpecCalc qualifying spec
       | Fun (Op (qid, fixity), srt, pos) ->
 	(let (new_qid, new_fixity) = translateOpRefInfo op_translator qid fixity in
 	 if new_qid = qid then op_term else Fun (Op (new_qid, new_fixity), srt, pos))
+      | Fun (Embedded qid, srt, pos) ->
+	(let (new_qid, _) = translateOpRefInfo op_translator qid Unspecified in
+	 if new_qid = qid then op_term else Fun (Embedded new_qid, srt, pos))
       | _ -> op_term
 
-  def translatePattern pat = pat
+  def translatePattern (op_translator: OpTranslator) (pat: MSPattern): MSPattern =
+    case pat of
+      | EmbedPat(qid, o_p, ty, pos) -> 
+        let (new_qid, _) = translateOpRefInfo op_translator qid Unspecified in
+	if new_qid = qid then pat else EmbedPat(new_qid, o_p, ty, pos)
+      | _ -> pat
 
   op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> MemoMonad SpecElements
   def translateSpecElements translators opt_renaming elements currentUID? =

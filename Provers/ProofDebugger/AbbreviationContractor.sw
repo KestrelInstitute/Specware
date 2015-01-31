@@ -73,7 +73,7 @@ spec
                               contractProductsInType t2)
     | RECORD(fS,tS) -> let tS1 = map contractProductsInType tS in
                        if fS = firstNProductFields (length tS) then
-                         embed PRODUCT tS1
+                         PRODUCT tS1
                        else RECORD (fS, tS1)
     | RESTR(t,r)    -> RESTR (contractProductsInType t,
                               contractProductsInExpr r)
@@ -127,7 +127,7 @@ spec
     | ARROW(t1,t2)  -> ARROW (contrType t1, contrType t2)
     | RECORD(fS,tS) -> RECORD (fS, map contrType tS)
     | RESTR(t,r)    -> RESTR (contrType t, contrExpr r)
-    | PRODUCT tS    -> embed PRODUCT (map contrType tS)
+    | PRODUCT tS    -> PRODUCT (map contrType tS)
 
   def contractExpr contr e =
     let contrType = contractType contr in  % these make the rest of the
@@ -142,48 +142,48 @@ spec
     | IF(e0,e1,e2)   -> IF (contrExpr e0, contrExpr e1, contrExpr e2)
     | IOTA t         -> IOTA (contrType t)
     | PROJECT(t,f)   -> PROJECT (contrType t, f)
-    | TRUE           -> embed TRUE
-    | FALSE          -> embed FALSE
-    | NOT            -> embed NOT
+    | TRUE           -> TRUE
+    | FALSE          -> FALSE
+    | NOT            -> NOT
     | NEG e          -> NEG (contrExpr e)
     | AND    (e1,e2) -> AND     (contrExpr e1, contrExpr e2)
     | OR     (e1,e2) -> OR      (contrExpr e1, contrExpr e2)
     | IMPLIES(e1,e2) -> IMPLIES (contrExpr e1, contrExpr e2)
-    | IFF            -> embed IFF
+    | IFF            -> IFF
     | EQV    (e1,e2) -> EQV     (contrExpr e1, contrExpr e2)
     | NEQ    (e1,e2) -> NEQ     (contrExpr e1, contrExpr e2)
-    | THE(v,t,e)     -> embed THE (v, contrType t, contrExpr e)
-    | FAq t          -> embed FAq  (contrType t)
-    | FA(v,t,e)      -> embed FA   (v, contrType t, contrExpr e)
-    | FAA(vS,tS,e)   -> embed FAA  (vS, map contrType tS, contrExpr e)
-    | EXq t          -> embed EXq  (contrType t)
-    | EX(v,t,e)      -> embed EX   (v, contrType t, contrExpr e)
-    | EXX(vS,tS,e)   -> embed EXX  (vS, map contrType tS, contrExpr e)
-    | EX1q t         -> embed EX1q (contrType t)
-    | EX1(v,t,e)     -> embed EX1  (v, contrType t, contrExpr e)
-    | DOT(e,t,f)     -> embed DOT (contrExpr e, contrType t, f)
-    | RECC(fS,tS)    -> embed RECC (fS, map contrType tS)
-    | REC(fS,tS,eS)  -> embed REC  (fS, map contrType tS, map contrExpr eS)
-    | TUPLE(tS,eS)   -> embed TUPLE (map contrType tS, map contrExpr eS)
+    | THE(v,t,e)     -> THE (v, contrType t, contrExpr e)
+    | FAq t          -> FAq  (contrType t)
+    | FA(v,t,e)      -> FA   (v, contrType t, contrExpr e)
+    | FAA(vS,tS,e)   -> FAA  (vS, map contrType tS, contrExpr e)
+    | EXq t          -> EXq  (contrType t)
+    | EX(v,t,e)      -> EX   (v, contrType t, contrExpr e)
+    | EXX(vS,tS,e)   -> EXX  (vS, map contrType tS, contrExpr e)
+    | EX1q t         -> EX1q (contrType t)
+    | EX1(v,t,e)     -> EX1  (v, contrType t, contrExpr e)
+    | DOT(e,t,f)     -> DOT (contrExpr e, contrType t, f)
+    | RECC(fS,tS)    -> RECC (fS, map contrType tS)
+    | REC(fS,tS,eS)  -> REC  (fS, map contrType tS, map contrExpr eS)
+    | TUPLE(tS,eS)   -> TUPLE (map contrType tS, map contrExpr eS)
     | RECUPDATER(fS,tS,fS1,tS1,fS2,tS2) ->
-      embed RECUPDATER
+      RECUPDATER
         (fS,  map contrType tS, fS1, map contrType tS1, fS2, map contrType tS2)
     | RECUPDATE(fS,tS,fS1,tS1,fS2,tS2,e1,e2) ->
-      embed RECUPDATE
+      RECUPDATE
         (fS,  map contrType tS, fS1, map contrType tS1, fS2, map contrType tS2,
          contrExpr e1, contrExpr e2)
-    | COND(t,brS)            -> embed COND (contrType t,
+    | COND(t,brS)            -> COND (contrType t,
                                             map (contractBranch contr) brS)
-    | CASE(t,t1,e,brS)       -> embed CASE (contrType t,
+    | CASE(t,t1,e,brS)       -> CASE (contrType t,
                                             contrType t1,
                                             contrExpr e,
                                             map (contractBranch contr) brS)
-    | LET(t,t1,vS,tS,p,e,e1) -> embed LET (contrType t, contrType t1, vS,
+    | LET(t,t1,vS,tS,p,e,e1) -> LET (contrType t, contrType t1, vS,
                                            map contrType tS, contrExpr p,
                                            contrExpr e, contrExpr e1)
-    | LETSIMP(t1,v,t,e,e1)   -> embed LETSIMP (t1, v, contrType t,
+    | LETSIMP(t1,v,t,e,e1)   -> LETSIMP (t1, v, contrType t,
                                                contrExpr e, contrExpr e1)
-    | LETDEF(t,vS,tS,eS,e)   -> embed LETDEF (contrType t, vS, map contrType tS,
+    | LETDEF(t,vS,tS,eS,e)   -> LETDEF (contrType t, vS, map contrType tS,
                                               map contrExpr eS, contrExpr e)
     % apply contraction:
     in contr e
@@ -222,19 +222,19 @@ spec
   def contractTrue e =
     let x:Variable = abbr 0 in
     if e = EQ (FN (x, BOOL, VAR x), FN (x, BOOL, VAR x))
-    then embed TRUE else e
+    then TRUE else e
 
   op contractFalse : Contraction
   def contractFalse e =
     let x:Variable = abbr 0 in
-    if e = EQ (FN (x, BOOL, VAR x), FN (x, BOOL, embed TRUE))
-    then embed FALSE else e
+    if e = EQ (FN (x, BOOL, VAR x), FN (x, BOOL, TRUE))
+    then FALSE else e
 
   op contractNot : Contraction
   def contractNot e =
     let x:Variable = abbr 0 in
-    if e = FN (x, BOOL, IF (VAR x, embed FALSE, embed TRUE))
-    then embed NOT else e
+    if e = FN (x, BOOL, IF (VAR x, FALSE, TRUE))
+    then NOT else e
 
   op contractNegation : Contraction
   def contractNegation = fn
@@ -261,7 +261,7 @@ spec
     let x:Variable = abbr 0 in
     let y:Variable = abbr 1 in
     if e = FN (x, BOOL, FN (y, BOOL, EQ (VAR x, VAR y)))
-    then embed IFF else e
+    then IFF else e
 
   op contractEquivalence : Contraction
   def contractEquivalence = fn
@@ -276,7 +276,7 @@ spec
   op contractDescription : Contraction
   def contractDescription = fn
     | e as APPLY (IOTA t, FN (v, mustBe_t, e0)) ->
-      if mustBe_t = t then embed THE (v, t, e0)
+      if mustBe_t = t then THE (v, t, e0)
       else e
     | e -> e
 
@@ -285,14 +285,14 @@ spec
     | e as FN (abbr 0,
                ARROW (t, BOOL),
                EQ (VAR (abbr 0), FN (abbr 1, mustBe_t, TRUE))) ->
-      if mustBe_t = t then embed FAq t
+      if mustBe_t = t then FAq t
       else e
     | e -> e
 
   op contractUniversalQuantification : Contraction
   def contractUniversalQuantification = fn
     | e as APPLY (FAq t, FN (v, mustBe_t, e0)) ->
-      if mustBe_t = t then embed FA (v, t, e0)
+      if mustBe_t = t then FA (v, t, e0)
       else e
     | e -> e
 
@@ -304,9 +304,9 @@ spec
   have been already contracted into an FAA. *)
   def contractMultiUniversalQuantification = fn
     | FA (v1, t1, FA (v2, t2, e)) ->
-      embed FAA (single v1 <| v2, single t1 <| t2, e)
+      FAA (single v1 <| v2, single t1 <| t2, e)
     | FA (v, t, FAA (vS, tS, e)) ->
-      embed FAA (v |> vS, t |> tS, e)
+      FAA (v |> vS, t |> tS, e)
     | e -> e
 
   op contractExistentialQuantifier : Contraction
@@ -315,14 +315,14 @@ spec
                ARROW (t, BOOL),
                NEG (FA (abbr 1, mustBe_t,
                     NEG (APPLY (VAR (abbr 0), VAR (abbr 1)))))) ->
-      if mustBe_t = t then embed EXq t
+      if mustBe_t = t then EXq t
       else e
     | e -> e
 
   op contractExistentialQuantification : Contraction
   def contractExistentialQuantification = fn
     | e as APPLY (EXq t, FN (v, mustBe_t, e0)) ->
-      if mustBe_t = t then embed EX (v, t, e0)
+      if mustBe_t = t then EX (v, t, e0)
       else e
     | e -> e
 
@@ -330,9 +330,9 @@ spec
   % a comment similar to op contractMultiUniversalQuantification applies here
   def contractMultiExistentialQuantification = fn
     | EX (v1, t1, EX (v2, t2, e)) ->
-      embed EXX (single v1 <| v2, single t1 <| t2, e)
+      EXX (single v1 <| v2, single t1 <| t2, e)
     | EX (v, t, EXX (vS, tS, e)) ->
-      embed EXX (v |> vS, t |> tS, e)
+      EXX (v |> vS, t |> tS, e)
     | e -> e
 
   op contractUniqueExistentialQuantifier : Contraction
@@ -344,20 +344,20 @@ spec
                         FA (abbr 2, mustAlsoBe_t,
                             IMPLIES (APPLY (VAR (abbr 0), VAR (abbr 2)),
                                      EQ (VAR (abbr 2), VAR (abbr 1))))))) ->
-      if mustBe_t = t && mustAlsoBe_t = t then embed EX1q t
+      if mustBe_t = t && mustAlsoBe_t = t then EX1q t
       else e
     | e -> e
 
   op contractUniqueExistentialQuantification : Contraction
   def contractUniqueExistentialQuantification = fn
     | e as APPLY (EX1q t, FN (v, mustBe_t, e0)) ->
-      if mustBe_t = t then embed EX1 (v, t, e0)
+      if mustBe_t = t then EX1 (v, t, e0)
       else e
     | e -> e
 
   op contractDottedProjection : Contraction
   def contractDottedProjection = fn
-    | APPLY (PROJECT (t, f), e) -> embed DOT (e, t, f)
+    | APPLY (PROJECT (t, f), e) -> DOT (e, t, f)
     | e -> e
 
   op contractRecordConstructor : Contraction
@@ -382,7 +382,7 @@ spec
         | _ ->  (outTS, e)
     in
     let def ANDn (eS:ExtExpressions) : ExtExpression =
-      if eS = empty then embed TRUE
+      if eS = empty then TRUE
       else if ofLength? 1 eS then theElement eS
       else  AND (head eS, ANDn (tail eS))
     in
@@ -396,11 +396,11 @@ spec
           let eS:ExtExpressions =
               list (fn(i:Nat) ->
                 if i < n then
-                  Some (EQ (embed DOT (VAR (abbr n), RECORD (fS,tS), fS@i),
+                  Some (EQ (DOT (VAR (abbr n), RECORD (fS,tS), fS@i),
                             VAR (abbr i)))
                 else None) in
           if descBody = ANDn eS then
-            embed RECC (fS, tS)
+            RECC (fS, tS)
           else e
         else e
       % since when we attempt this contraction we have already contracted
@@ -410,13 +410,13 @@ spec
           let eS:ExtExpressions =
               list (fn(i:Nat) ->
                 if i < n then
-                  Some (EQ (embed DOT (VAR (abbr n),
-                                       embed PRODUCT tS,
+                  Some (EQ (DOT (VAR (abbr n),
+                                       PRODUCT tS,
                                        prod (i+1)),
                             VAR (abbr i)))
                 else None) in
           if descBody = ANDn eS then
-            embed RECC (firstNProductFields (length tS), tS)
+            RECC (firstNProductFields (length tS), tS)
           else e
         else e
       | _ -> e
@@ -453,7 +453,7 @@ spec
         the contraction until we are processing the right (outermost)
         application. *)
         if length (tail eS) = length fS then
-          embed REC (fS, tS, tail eS)
+          REC (fS, tS, tail eS)
         else e
       | _ -> e
 
@@ -461,7 +461,7 @@ spec
   def contractTuple = fn
     | e as REC (fS, tS, eS) ->
       if fS = firstNProductFields (length fS)
-      then embed TUPLE (tS, eS) else e
+      then TUPLE (tS, eS) else e
     | e -> e
 
   op contractRecordUpdater : Contraction
@@ -475,29 +475,29 @@ spec
       let fS2 = removePrefix (fS_fS2, n) in
       let n1 = length fS1 in
       let n2 = length fS2 in
-      let t1 = embed RECORD (fS_fS1, tS_tS1) in
-      let t2 = embed RECORD (fS_fS2, tS_tS2) in
+      let t1 = RECORD (fS_fS1, tS_tS1) in
+      let t2 = RECORD (fS_fS2, tS_tS2) in
       let tS = longestCommonPrefix (tS_tS1, tS_tS2) in
       let tS1 = removePrefix (tS_tS1, length tS) in
       let tS2 = removePrefix (tS_tS2, length tS) in
       if eS = list (fn(i:Nat) ->
                 if i < n then
-                  Some (embed DOT (VAR (abbr 1), t2, fS@i))
+                  Some (DOT (VAR (abbr 1), t2, fS@i))
                 else if i < n+n1 then
-                  Some (embed DOT (VAR (abbr 0), t1, fS1@(i-n)))
+                  Some (DOT (VAR (abbr 0), t1, fS1@(i-n)))
                 else if i < n+n1+n2 then
-                  Some (embed DOT (VAR (abbr 1), t2, fS2@(i-n-n1)))
+                  Some (DOT (VAR (abbr 1), t2, fS2@(i-n-n1)))
                 else None) &&
          fS_fS1_fS2 = fS ++ fS1 ++ fS2 &&
          tS_tS1_tS2 = tS ++ tS1 ++ tS2 then
-        embed RECUPDATER (fS, tS, fS1, tS1, fS2, tS2)
+        RECUPDATER (fS, tS, fS1, tS1, fS2, tS2)
       else e
     | e -> e
 
   op contractRecordUpdate : Contraction
   def contractRecordUpdate = fn
     | APPLY (APPLY (RECUPDATER (fS, tS, fS1, tS1, fS2, tS2), e1), e2) ->
-      embed RECUPDATE (fS, tS, fS1, tS1, fS2, tS2, e1, e2)
+      RECUPDATE (fS, tS, fS1, tS1, fS2, tS2, e1, e2)
     | e -> e
 
   op contractBindingConditional : Contraction
@@ -545,12 +545,12 @@ spec
             let (mustBe_vS, mustBe_tS, mustBe_b) = viewAsEXX ifTest in 
             if mustBe_vS = vS && mustBe_tS = tS &&
                mustBe_b = b && mustBe_t = t then
-              embed COND (t, (vS, tS, b, e0) |> brS)
+              COND (t, (vS, tS, b, e0) |> brS)
             else e
           | None -> e)
       | _ ->
         (case processBranchResult e of
-          | Some (t, vS, tS, b, e0) -> embed COND (t, single (vS, tS, b, e0))
+          | Some (t, vS, tS, b, e0) -> COND (t, single (vS, tS, b, e0))
           | None -> e)
 
   op contractCaseFromCond : Contraction
@@ -590,7 +590,7 @@ spec
               the expansion to COND (it can only be determined from the
               expansion to nested CASE's, cf. LD). We arbitrarily pick type
               BOOL, assuming that the type will not be printed anyhow. *)
-              embed CASE (BOOL, t1, head eS (* = any element of eS *), brS)
+              CASE (BOOL, t1, head eS (* = any element of eS *), brS)
             else e
           | None -> e)
       | e -> e
@@ -610,7 +610,7 @@ spec
                  CASE (BOOL, mustBe_t1, VAR mustAlsoBe_v, brS)) ->
                        % previous op assigns BOOL as target type to CASE
                 if mustBe_v = v && mustAlsoBe_v = v && mustBe_t1 = t1 then
-                  embed CASE (t, t1, e0, brS)
+                  CASE (t, t1, e0, brS)
                               % we restore the correct target type t
                 else e
               | _ -> e
@@ -623,7 +623,7 @@ spec
     | e as CASE (t, t1, e0, brS) ->
       if ofLength? 1 brS then
         let (vS, tS, p, e1) = theElement brS in
-        embed LET (t, t1, vS, tS, p, e0, e1)
+        LET (t, t1, vS, tS, p, e0, e1)
       else e
     | e -> e
 
@@ -632,7 +632,7 @@ spec
     | e as LET (t, t1, vS, mustBe_single_t, mustBe_VAR_v, e0, e1) ->
       if ofLength? 1 vS && mustBe_VAR_v = VAR (theElement vS) &&
          mustBe_single_t = single t then
-        embed LETSIMP (t1, theElement vS, t, e0, e1)
+        LETSIMP (t1, theElement vS, t, e0, e1)
       else e
     | e -> e
 
@@ -644,7 +644,7 @@ spec
                 COND (PRODUCT mustAlsoBe_tS, brS), e0) ->
       if mustBe_tS = tS &&
          mustAlsoBe_tS = tS &&
-         mustBe_tupleVS = embed TUPLE (tS, map VAR vS) &&
+         mustBe_tupleVS = TUPLE (tS, map VAR vS) &&
          ofLength? 1 brS then
         let (mustBe_vS,
              mustBe_tS,
@@ -655,9 +655,9 @@ spec
               if mustBe_vS = vS &&
                  mustBe_tS = tS &&
                  mustAlsoBe_tS = tS &&
-                 mustBe_tupleVS = embed TUPLE (tS, map VAR vS) &&
-                 mustAlsoBe_tupleVS = embed TUPLE (tS, map VAR vS) then
-                embed LETDEF (t, vS, tS, eS, e0)
+                 mustBe_tupleVS = TUPLE (tS, map VAR vS) &&
+                 mustAlsoBe_tupleVS = TUPLE (tS, map VAR vS) then
+                LETDEF (t, vS, tS, eS, e0)
               else e
             | _ -> e
       else e

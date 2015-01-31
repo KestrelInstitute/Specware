@@ -433,14 +433,7 @@ type Proof.Proof
       | None -> UnQualified
       | Some qual -> qual
 
- op addQualifier (spc: Spec) (qid as Qualified(q,id): QualifiedId): QualifiedId =
-   if q = UnQualified
-     then case spc.qualifier of
-            | Some qual -> Qualified(qual,id)
-            | None -> qid
-     else qid
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  components of primary op def
  %%%  Any uses of these simply ignore any definitions after the
  %%%  first one, which (IMHO) is probably not a good thing to do,

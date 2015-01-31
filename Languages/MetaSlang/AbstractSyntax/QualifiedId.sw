@@ -33,6 +33,14 @@ op unQualifiedId? (id : QualifiedId) : Bool =
 
 op mainId (Qualified (_,main_id) : QualifiedId) : String = main_id
 
+op addQualifier (o_qual: Option Id) (qid as Qualified(q,id): QualifiedId): QualifiedId =
+   if q = UnQualified
+     then
+       case o_qual of
+         | None -> qid
+         | Some qual -> Qualified(qual,id)
+     else qid
+
 %% These are used by translation, morphism code
 op unqualified_Bool : QualifiedId = mkUnQualifiedId "Bool"           % used by translate
 op Bool_Bool        : QualifiedId = mkQualifiedId ("Bool", "Bool")   % used by translate

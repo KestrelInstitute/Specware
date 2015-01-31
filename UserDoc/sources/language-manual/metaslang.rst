@@ -264,35 +264,35 @@ combinations of assignments:
 .. code-block:: specware
 
    spec
-     type Outcome = | Positive | Negative
-     type Sign = | Positive | Zero | Negative
+     type Outcome = | O.Positive | O.Negative
+     type Sign = | S.Positive | S.Zero | S.Negative
      def whatAmI = Positive
    endspec
    
 
-Here there are two constructors ``Positive`` of different types, the
-type ``Outcome`` and the type ``Sign``. That by itself is fine, but
-when such "overloaded" constructors are used, the context must give
+Here there are two constructors ``O.Positive`` and ``S.Positive`` of different types, the
+type ``Outcome`` and the type ``Sign`` respectively. That by itself is fine, but
+when such "overloaded" constructors are used without a :token:`qualifier`, the context must give
 sufficient information which is meant. Here, the use of ``Positive``
-in the :token:`definition` for :token:`op` ``whatAmI`` leaves both
-possibilities open; as used it is
-*type-ambiguous*.
+in the :token:`definition` for :token:`op` ``whatAmI`` may refer to either ``O.Positive`` 
+or ``S.Positive``; as used it is *type-ambiguous*.
 |Metaslang| allows omitting type information provided that, given
 a type assignment to all :token:`local_type_variables` in scope, unique
 types for all typed constructs, such as :token:`expressions` and
 :token:`patterns`, can be inferred from the context.
 If no complete and unambiguous type-assignment can be made,
 the :token:`spec` is not accepted by the |Specware| system.
-Type-ambiguous :token:`expressions` can be disambiguated by using a
-:token:`type_annotation`, as described under 
+Type-ambiguous :token:`expressions` can be disambiguated either by using the 
+full qualified name or by using a :token:`type_annotation`, as described under 
 :ref:`Annotated-expressions <Annotated-expressions>`.
-In the example, the :token:`definition` of ``whatAmI`` can be disambiguated in either
+In the example, the :token:`definition` of ``whatAmI`` can be disambiguated in any
 of the following ways:
 
 .. code-block:: specware
 
    def whatAmI : Sign = Positive
    def whatAmI = Positive : Sign
+   def whatAmI = S.Positive
    
 
 Also, if the :token:`spec` elsewhere contains something along the lines of:
@@ -493,8 +493,7 @@ special meaning and must not be used for :token:`simple_names`:
    
 
 They each count as a single :token:`symbol`, and no whitespace is
-allowed inside any reserved symbol. Symbols beginning with ``\_``
-are reserved for use with X-Symbol, as described in the following section.
+allowed inside any reserved symbol.
 
 .. COMMENT:  ================================================================= 
 
@@ -507,8 +506,8 @@ written with non-alphabetic marks.
 Some |Metaslang| users follow the convention of using
 :token:`simple_names` that start with a capital letter for
 :token:`unit_identifiers` and :token:`type_names` and for
-:token:`constructors`, while :token:`simple_names` chosen for
-:token:`ops` and :token:`field_names` start with a lower-case
+:token:`constructor ops`, while :token:`simple_names` chosen for
+non-constructor :token:`ops` and :token:`field_names` start with a lower-case
 :token:`letter`. Both plain :token:`local_variables` and
 :token:`local_type_variables` are often chosen to be single lower-case
 :token:`letters`: ``x``, ``y``, ``z``, ``a``, ``b``, ``c``, with the
@@ -516,27 +515,7 @@ start of the alphabet preferred for
 :token:`local_type_variables`. :token:`Op_names` of predicates (that
 is, having some type *T* ``-> Bool``\ ) often end with the mark
 ``?``. These are just conventions that users are free to follow or
-ignore, but in particular some convention distinguishing
-:token:`constructors` from :token:`ops` and :token:`local_variables`
-is recommended.
-
-.. COMMENT:  ***************************************************************** 
-
-X-Symbol
-========
-
-X-Symbol is an |xemacs| package that allows ASCII strings to encode
-non-ASCII symbols. |Specware| files contain the ASCII strings, but
-when displayed in an XEmacs window with X-Symbol mode, the special
-symbol is shown. For example, the |Specware| symbol ``\_forall`` is
-displayed as |forall| and ``\_or`` is displayed as |or|. Many of the
-mathematical symbols have X-Symbol aliases, for example, ``fa`` and
-``\_forall`` (displayed |forall| by X-Symbol) are alternatives for
-universal quantification, and ``\_rightarrow`` (displayed |rarr| by
-X-Symbol) may be used anywhere where ``->`` is allowed. The user may
-use non-reserved X-Symbol tokens as symbol names. The available
-X-Symbols are listed under the X-Symbol menu in |xemacs| when X-Symbol
-mode is in effect.
+ignore.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -1727,8 +1706,8 @@ Sample :token:`new_type_definitions`:
 
 .. code-block:: specware
 
-   type Tree         a = | Leaf a | Fork (Tree a * Tree a)
-   type Bush         a = | Leaf a | Fork (Tree a * Tree a)
+   type Tree         a = | T.Leaf a | T.Fork (Tree a * Tree a)
+   type Bush         a = | B.Leaf a | B.Fork (Tree a * Tree a)
    type Z3 =  Nat / (fn (m, n) -> m rem 3 = n rem 3)
    
 
@@ -2550,7 +2529,7 @@ Type-sums
 .. productionlist::
   type_sum: `type_summand` { `type_summand` }*
   type_summand: "|" `constructor` [ `slack_type_descriptor` ]
-  constructor: `simple_name`
+  constructor: `name`
 
 Sample :token:`type_sum`:
 
@@ -2560,7 +2539,13 @@ Sample :token:`type_sum`:
    
 
 Restriction. The :token:`constructors` of a :token:`type_sum` must all
-be different :token:`simple_names`.
+have different :token:`simple_names` even if they have different :token:`qualifiers`, 
+so the following is illegal:
+
+.. code-block:: specware
+
+   | Start.Point XYpos | End.Point XYpos * XYpos
+ 
 
 Also, note that since a :token:`type_sum` is a
 :token:`new_type_descriptor`, it may appear only on the right hand
@@ -2585,34 +2570,30 @@ in which
 
 .. COMMENT:  ================================================================= 
 
-A :token:`type_sum` introduces a number of :token:`embedders`, one for
-each :token:`type_summand`. In the discussion, we omit the optional
-``embed`` keyword of the :token:`embedders`. The :token:`embedders`
-are similar to :token:`ops`, and are explained as if they were
-:token:`ops`, but note the Restriction specified under
-:ref:`Structors <Structors>`.
+A :token:`type_sum` introduces a number of :token:`constructor ops`, one for
+each :token:`type_summand`, along with implicit axioms described below.
 
 .. COMMENT:  ================================================================= 
 
 For a :token:`type_sum` *T* with :token:`type_summand` *C* *S*, in
 which *C* is a :token:`constructor` and *S* a
-:token:`type_descriptor`, the corresponding pseudo-:token:`op`
+:token:`type_descriptor`, the corresponding :token:`op`
 introduced is typed as follows:
 
 .. code-block:: specware
 
-   op *C* : *S* -> *T*
+   op C : S -> T
    
 
 It maps a value *v* of type *S* to the tagged value (*C*, *v*). If the
 :token:`type_summand` is a single
 *parameter-less*  :token:`constructor` (the
 :token:`slack_type_descriptor` is missing),
-the pseudo-:token:`op` introduced is typed as follows:
+the :token:`op` introduced is typed as follows:
 
 .. code-block:: specware
 
-   op *C* : *T*
+   op C : T
    
 
 It denotes the tagged value
@@ -2623,11 +2604,11 @@ inhabitant of the unit type (see under :ref:`Type-records <Type-records>`).
 
 The sum type denoted by the :token:`type_sum` then consists of the
 union of the ranges (for parameter-less constructors the values) of
-the pseudo-:token:`ops` for all constructors.
+the :token:`ops` for all constructors.
 
 .. COMMENT:  ================================================================= 
 
-The :token:`embedders` are individually, jointly and severally
+The :token:`constructor ops` are individually, jointly and severally
 *injective*,
 and jointly *surjective*.
 
@@ -2641,16 +2622,9 @@ of the appropriate type
 (to be omitted for parameter-less :token:`constructors`),
 the value of *C1* *v1* is only equal to
 *C2* *v2* when *C1* and *C2*
-are the same :token:`constructor` of the *same*
-sum type, and *v1* and *v2*
-(which then are either both absent, or else must have the
-same type) are both absent or are the same value.
-In other words, whenever the :token:`constructors` are different, or are from
-different :token:`type_sums`, or the values are different, the
+are the same :token:`constructor`, and *v1* and *v2* are both absent or are the same value.
+In other words, whenever the :token:`constructors` are different or the values are different, the
 results are different.
-(The fact that synonymous :token:`constructors` of different types
-yield different values already follows from the fact that
-values in the models are typed.)
 
 .. COMMENT:  ================================================================= 
 
@@ -2659,7 +2633,7 @@ Secondly, for any value *u* of any sum type, there is a
 appropriate type (to be omitted for parameter-less
 :token:`constructors`), such that the value of *C* *v* is *u*. In
 other words, all values of a sum type can be constructed with an
-:token:`embedder`.
+:token:`constructor op`.
 
 .. COMMENT:  ================================================================= 
 
@@ -2671,21 +2645,14 @@ For example, consider
      | Zero
      | Succ Peano
    
-   type Unique =
-     | Zero
-   
 
 This means that there is a value ``Zero`` of type ``Peano``, and
 further a function ``Succ`` that maps values of type ``Peano`` to type
 ``Peano``. Then ``Zero`` and ``Succ n`` are guaranteed to be
 different, and each value of type ``Peano`` is either ``Zero :
 Peano``, or expressible in the form ``Succ (n : Peano)`` for a
-suitable :token:`expression` ``n`` of type ``Peano``. The
-:token:`expressions` ``Zero : Peano`` and ``Zero : Unique`` denote
-different, entirely unrelated, values. (Note that ``Unique`` is
-*not*  a subtype of
-``Peano``.  Subtypes of a type can only be made with a
-:token:`type_restriction`, for instance as in
+suitable :token:`expression` ``n`` of type ``Peano``. Subtypes of a type 
+can only be made with a :token:`type_restriction`, for instance as in
 ``(Peano | embed? Zero)``.)
 For recursively defined :token:`type_sums`, see also the discussion
 under :ref:`Type-definitions <Type-definitions>`.
@@ -3172,9 +3139,7 @@ Disambiguation. A single :token:`simple_name` used as an
 scope of a :token:`local_variable_list` or :token:`variable_pattern`
 in which a synonymous :token:`local_variable` is introduced, and then
 it identifies the textually most recent introduction. Otherwise, the
-:token:`simple_name` is an :token:`op_name` or an :token:`embedder`;
-for the disambiguation between the latter two, see
-:ref:`Embedders <Embedders>`.
+:token:`simple_name` is an :token:`op_name`.
 
 .. COMMENT:  ================================================================= 
 
@@ -3487,13 +3452,6 @@ polymorphic, as the constructor ``None`` of
    type Option a = | Some a | None
    
 
-Further, overloaded :token:`constructors` have an ambiguous type. By
-annotating such polymorphic or type-ambiguous :token:`expressions`
-with a :token:`type_descriptor`, their type can be disambiguated,
-which is required unless an unambiguous type can already be inferred
-from the context. Annotation, even when redundant, can further help to
-increase clarity.
-
 .. COMMENT:  ***************************************************************** 
 
 Applications
@@ -3767,8 +3725,6 @@ disambiguated in the context.
             ** Overloaded :token:`ops`, when used as :token:`expressions`, have an ambiguous type.
             ** They may only be used as such when their type can be
             ** disambiguated in the context.
-            ** Unlike for :token:`constructors`, target-type-descriptor information is not used
-            ** for this disambiguation.
             ** For example, consider
             ** [[
             ** ||    op abs : Nat -> Nat
@@ -3852,10 +3808,6 @@ Sample :token:`bool_literals`:
 The type ``Bool`` has precisely two inhabitants, the values of
 ``true`` and ``false``.
 
-.. COMMENT: ====================================================================
-
-Note that ``true`` and ``false`` are not :token:`constructors`. So
-``embed true`` is ungrammatical.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -4421,7 +4373,7 @@ Structors
 =========
 
 .. productionlist::
-  structor: `projector` | `quotienter` | `chooser` | `embedder` | `embedding_test`
+  structor: `projector` | `quotienter` | `chooser` | `embedding_test`
 
 .. COMMENT:  *****************************************************************
             .. productionlist::
@@ -4429,8 +4381,7 @@ Structors
 
 The :token:`structors` are a medley of constructs, all having polymorphic
 or type-ambiguous function types and denoting special functions
-that go between structurally related types, such as
-the constructors of sum types and the destructors of product types.
+that go between structurally related types, the destructors of product types.
 
 .. COMMENT: ====================================================================
 
@@ -4683,62 +4634,6 @@ the same as that of the :token:`let_expression` ``let quotient[``\
 the intention of a :token:`chooser`. Note, however, the remarks on the
 proof obligations for :token:`quotient_patterns`.
 
-.. COMMENT:  ***************************************************************** 
-
-.. _Embedders:
-
-Embedders
----------
-
-.. productionlist::
-  embedder: [ embed ] `constructor`
-
-Sample :token:`embedders`:
-
-.. code-block:: specware
-
-   Nil
-   embed Nil
-   Cons
-   embed Cons
-   
-
-Disambiguation. If an :token:`expression` consists of a single
-:token:`simple_name`, which, in the context, is both the
-:token:`simple_name` of a :token:`constructor` and the
-:token:`simple_name` of an :token:`op` or a :token:`local_variable` in
-scope, then it is interpreted as the latter of the various
-possibilities. For example, in the context of
-
-.. code-block:: specware
-
-   type Answer = | yes | no
-   
-   op yes : Answer = no
-   
-   op which (a : Answer) : String = case a of
-     | yes -> "Yes!"
-     | no  -> "Oh, no!"
-   
-
-the value of ``which yes`` is ``"Oh, no!"``, since ``yes`` here is
-disambiguated as identifying the :token:`op` ``yes``, which has
-value ``no``. The interpretation as :token:`embedder` is forced by
-using the ``embed`` keyword: the value of ``which embed yes`` is
-``"Yes!"``. By using :token:`simple_names` that begin with a capital
-:token:`letter` for :token:`constructors`, and :token:`simple_names`
-that do not begin with a capital :token:`letter` for :token:`ops` and
-:token:`local_variables`, the risk of an accidental wrong
-interpretation can be avoided.
-
-.. COMMENT:  ================================================================= 
-
-The semantics of :token:`embedders` is described in the section on
-:ref:`Type-sums <Type-sums>`.
-The presence or absence of the keyword ``embed`` is not
-significant for the meaning of the construct (although it
-may be required for grammatical disambiguation, as described
-above).
 
 .. COMMENT:  ***************************************************************** 
 
@@ -4778,7 +4673,7 @@ where the wildcard ``_`` in the first :token:`branch` is omitted when
 
 .. COMMENT:  ================================================================= 
 
-In plain words, ``embed?`` *C*\ tests whether its sum-typed argument
+In plain words, ``embed?`` *C* tests whether its sum-typed argument
 has been constructed with the :token:`constructor` *C*. It is an error
 when *C* is not a constructor of the sum type.
 

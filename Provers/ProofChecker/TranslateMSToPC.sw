@@ -69,7 +69,7 @@ Translate qualifying spec
                      test? <- recursiveSumOfProducts? spc qid;
                      if test? then
                        let
-                         def idToOperation str = qidToOperation (mkUnQualifiedId str) (embed prefix)     % {{{
+                         def idToOperation str = qidToOperation (mkUnQualifiedId str) prefix     % {{{
                          def summandToOp summand =
                            case summand of
                              | (name, None) -> {
@@ -696,21 +696,21 @@ Translate qualifying spec
   op primNat : Nat -> PC_Expression
   def primNat n =
     if n = 0 then
-      OPI (qidToOperation (Qualified ("Integer","zero")) (embed prefix), [])
+      OPI (qidToOperation (Qualified ("Integer","zero")) prefix, [])
     else
-      (OPI (qidToOperation (Qualified ("Nat","succ")) (embed prefix), [])) @ (primNat (n - 1))
+      (OPI (qidToOperation (Qualified ("Nat","succ")) prefix, [])) @ (primNat (n - 1))
 
   % Construct an expression in the proof checker's abstract syntax that encodes the given string.
   op primString : String -> PC_Expression
   def primString str =
-    (OPI (qidToOperation (Qualified ("String","implode")) (embed prefix), [])) @ (primList charType (List.map primChar (explode str)))
+    (OPI (qidToOperation (Qualified ("String","implode")) prefix, [])) @ (primList charType (List.map primChar (explode str)))
 
   op charType : PC_Type
   def charType = TYPE (qidToTypeName (Qualified ("Char","Char")),empty)
 
   % Construct a expression in the proof checker's abstract syntax that encodes the given char.
   op primChar : Char -> PC_Expression
-  def primChar c = (OPI (qidToOperation (Qualified ("Char","chr")) (embed prefix),empty)) @ (primNat (ord c))
+  def primChar c = (OPI (qidToOperation (Qualified ("Char","chr")) prefix,empty)) @ (primNat (ord c))
 
   % Construct a expression in the proof checker's abstract syntax that encodes the given
   % list of elements of the given type.
@@ -785,7 +785,7 @@ Translate qualifying spec
   op convertFixity : MSFixity ->  PC_Fixity
   def convertFixity fxty =
     case fxty of
-      | Nonfix -> embed prefix
+      | Nonfix -> prefix
       | Infix _ -> infix
-      | Unspecified -> embed prefix
+      | Unspecified -> prefix
 endspec

@@ -1046,6 +1046,8 @@ type QIDorAll =
     | None -> let _ = writeLine("ERROR: Processing the given unit seems to have failed.") in false
     | Some uid ->
       %% let _ = writeLine ("uid.path:"^anyToString(uid.path)) in
+      let spc = explicateEmbeds spc in
+      let spc = removeImplicitConstructorOps spc in
       let path = uid.path in
       let hashSuffix = uid.hashSuffix in
       let dirs = butLast path in

@@ -10,14 +10,15 @@ SpecCalc qualifying spec
             (new_dfn   : MSType)
             (old_spec  : Spec)
             (pos       : Position)
+            (qualifyConstructorsWithTypeName?: Bool)
   : SpecCalc.Env Spec =
-  {(sp,_) <- addOrRefineType new_names new_dfn old_spec pos None true;
+  {(sp,_) <- addOrRefineType new_names new_dfn old_spec pos None true qualifyConstructorsWithTypeName?;
    return sp}
 
- op addQualifiersToCoProduct (spc: Spec) (ty: MSType): MSType =
+  op addQualifiersToCoProduct (o_qual: Option Id) (ty: MSType): MSType =
    case ty of
      | CoProduct(fields, a) ->
-       CoProduct(map (fn (qid, o_ty) -> (addQualifier spc qid, o_ty))fields, a)
+       CoProduct(map (fn (qid, o_ty) -> (addQualifier o_qual qid, o_ty))fields, a)
      | _ -> ty
 
  op addOrRefineType (new_names    : QualifiedIds)
@@ -26,15 +27,24 @@ SpecCalc qualifying spec
                     (pos          : Position)
                     (opt_next_elt : Option SpecElement)
                     (addOnly?     : Bool)
+                    (qualifyConstructorsWithTypeName?: Bool)
   : SpecCalc.Env (Spec * SpecElement) =
   % some of the names may refer to previously declared types,
   % some of which may be identical
   % Collect the info's for such references
   let new_names   = reverse (removeDuplicates new_names)  in % don't let duplicate names get into a typeinfo!
-  let new_names   = map (addQualifier old_spec) new_names in
-  let new_dfn     = mapType (id, addQualifiersToCoProduct old_spec, id) new_dfn in                        
-  let primaryName = head new_names                        in
-  let new_info    = {names = new_names, dfn = new_dfn}    in
+  let new_names   = map (addQualifier old_spec.qualifier) new_names in
+  let primaryName = head new_names in
+  let new_dfn     = case unpackType new_dfn of
+                      | (tvs, ty as CoProduct _) ->
+                        maybePiType(tvs, addQualifiersToCoProduct(if qualifyConstructorsWithTypeName?
+                                                                    then Some(mainId primaryName)
+                                                                  else old_spec.qualifier)
+                                           ty)
+                      | _ -> new_dfn
+  in
+  let new_info    = {names = new_names, dfn = new_dfn} in
+  let (new_tvs, _)   = unpackFirstTypeDef new_info in
   let old_infos = foldl (fn (old_infos,new_name) ->
                          case findTheType (old_spec, new_name) of
                            | Some info -> 
@@ -66,7 +76,6 @@ SpecCalc qualifying spec
          let combined_names = listUnion (old_info.names, new_names) in
 	 let combined_names = removeDuplicates combined_names       in % redundant?
 	 let (old_tvs, _)   = unpackFirstTypeDef old_info           in
-	 let (new_tvs, _)   = unpackFirstTypeDef new_info           in
          % TODO: for now at least, this is very literal -- maybe should test for alpha-equivalence.
          if equalTyVarSets? (new_tvs, old_tvs) then 
            let old_dfn = old_info.dfn in
@@ -142,8 +151,23 @@ SpecCalc qualifying spec
               else 
                 addElementBeforeOrAtEnd (sp, new_elt, opt_next_elt)
    in
-   return (sp, new_elt)
+   {sp <- addOpsForCoProduct sp primaryName new_dfn new_tvs;
+    return (sp, new_elt)}
    }
+
+ op addOpsForCoProduct (spc: Spec) (ty_qid: QualifiedId) (ty_dfn: MSType) (tvs: TyVars): SpecCalc.Env Spec =
+   case ty_dfn of
+     | CoProduct(fields, pos) ->
+       let coprod_ty_tm = mkBase(ty_qid, map mkTyVar tvs) in
+       foldM (fn spc -> fn (fld_qid, o_param_ty) ->
+                let op_ty = case o_param_ty of
+                              | None -> coprod_ty_tm
+                              | Some arg_ty -> Arrow(arg_ty, coprod_ty_tm, pos)
+                in
+                addOp [fld_qid] Nonfix false (maybePiTypedTerm(tvs, Some op_ty, Any pos)) spc pos)
+         spc fields
+     | Pi(tvs, ty, _) -> addOpsForCoProduct spc ty_qid ty tvs
+     | _ -> return spc
 
  %% called by evaluateSpecElem and LiftPattern
  op addOp (new_names : QualifiedIds)
@@ -169,7 +193,7 @@ SpecCalc qualifying spec
   % some of which may be identical
   % Collect the info's for such references
   let new_names   = reverse (removeDuplicates new_names)  in % don't let duplicate names get into an opinfo!
-  let new_names   = map (addQualifier old_spec) new_names in
+  let new_names   = map (addQualifier old_spec.qualifier) new_names in
   let primaryName = head new_names in
   let new_info    = {names  = new_names, 
                      fixity = new_fixity, 

@@ -48,6 +48,8 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
                         "transforming spec for C code generation...",
                         "------------------------------------------"]
  in
+ let ms_spec = explicateEmbeds ms_spec in
+ let ms_spec = removeImplicitConstructorOps ms_spec in
  let options = default_options in	% all transforms turned on
  SpecTransform.simplifyForExecution (ms_spec, options)
 

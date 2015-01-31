@@ -24,6 +24,10 @@
      * Clear unit cache
    - * **show** | **showx** [ *unit* ]
      * Process and print unit (normal or extended form)
+   - * **show** *unit* | ``.`` *name*
+     * Print ops, types, and claims with matching name in unit (``.`` means current unit)
+   - * **transform** [ *unit* ]
+     * Enter transform shell to transform unit
    - * **oblig**\ [**ations**] [*unit*]
      * Print the proof obligations of the unit
    - * **punits** | **lpunits** [*unit* [*target-file*]]
@@ -85,10 +89,7 @@ Units (specs, morphisms, diagrams, ...)
    - * **generate** [**c** | **java** | **lisp**] *spec*
         [**in** *filename* | **with** *options-spec*]
      * Generates C, Java, or Lisp code prove claim in spec
-   - * **prove** *claim* **in** *spec*
-       [**with** **snark**] [**using** {*claim*, ... }]
-       [**option** *proveroptions*]
-     * Proof-term
+  
 
 =======
 Names
@@ -116,9 +117,9 @@ Names
      * Bool-literal
    - * ``0`` | ``1`` | ...
      * Nat-literal
-   - * #\ *char-glyph* | ``#"``
+   - * #\ *Char-glyph*
      * Char-literal
-   - * "*char-glyph*..."
+   - * "*Char-glyph*..."
      * String-literal
    - * ``A`` | ... | ``Z`` |
        ``a`` | ... | ``z`` |
@@ -153,8 +154,8 @@ Declarations and Definitions
      * Type-definition
    - * **op** *op-name* [**infixl** | **infixr** *prio*] : [[*type-var*, ...]] *type*
      * Op-declaration; optional infix assoc/prio; optional polymorphic type parameters
-   - * **def** [[*type-var*, ...]] *op-name* [*pattern* ...] [: *type* ] = *expr*
-     * Op-definition; optional polymorphic type parameters; optional formal parameters
+   - * **op** [[*type-var*, ...]] *op-name* *pattern* ... : *type*  = *expr*
+     * Op-definition
    - * **axiom** | **theorem** | **conjecture** *name* **is** [[*type-var*, ...]] *expr*
      * Claim-definition; optional polymorphic type parameters
 
@@ -170,7 +171,7 @@ Types
 
    - * Syntax
      * Construct
-   - * ``| `` *constructor* [ *type* ] ``|`` ... ``|`` *constructor* [ *type* ]
+   - * ``|`` *constructor* [ *type* ] ``|`` ... ``|`` *constructor* [ *type* ]
      * Sum type
    - * *type* ``->`` *type*
      * Function type
@@ -202,9 +203,9 @@ Types
      * Lambda-form
    - * **case** *expr* **of** [|] *pattern* -> *expr* | ...
      * Case-expression
-   - * *letpattern* = *expr* **in** *expr*\
+   - * **let** *pattern* = *expr* **in** *expr*\
        
-       **let** *rec-let-binding* ... **in** *expr*
+       **let** *Rec-let-binding* ... **in** *expr*
      * Let-expression
    - * **def** *name* [*pattern* ...][: *type* ] = *expr*
      * Rec-let-binding; optional formal parameters
@@ -228,8 +229,6 @@ Types
      * List-display
    - * **project** | **quotient** | **choose** *expr*
      * Various structors
-   - * [**embed**] *constructor*
-     * Embedder
    - * **embed?** *constructor*
      * Embedding-test
 

@@ -407,6 +407,7 @@ Should we check to see if qid is in cod_map??
 	let dom_type = firstTypeDef dom_info in
 	case typeInnerType dom_type of
 	  | Any _ -> return ()
+          | CoProduct _ -> return ()
 	  | _ ->
 	    let dom_qid         = Qualified (dom_q, dom_id) in
 	    let translated_type = translateTypeViaSM (dom_type, typeMap, opMap) in

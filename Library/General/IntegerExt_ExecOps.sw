@@ -2,6 +2,7 @@
 that can be made executable. Of course, we cannot refine the others (e.g. minIn,
 which operates on a potentially infinite set). *)
 
+Integer qualifying
 spec
 
   import IntegerExt

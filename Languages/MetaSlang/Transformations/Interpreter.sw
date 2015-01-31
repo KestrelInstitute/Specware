@@ -87,7 +87,7 @@ spec
       | Record (("1", _)::_,_) -> false
       | Apply(Lambda _, _, _) -> false
       | Apply(Fun(Embed(nm,_),_,_), _, _) -> false
-      | Apply(Fun(Op(qid as Qualified(q, id), _), _, _), _, _) ->
+      | Apply(Fun(Op(qid as Qualified(q, id), _), ty, _), _, _) ->
         ~(id in? doneTraceOps || q in? dontTraceQualifiers)
       | _ -> true
 
@@ -214,7 +214,9 @@ spec
         (case findTheOpInterp (spc, qid) of
 	   | Some info ->
              %% Being suppressed is used here as a proxy for "has a non-constructive definition"
-	     (if definedOpInfo? info && ~(avoidExpanding? qid) then
+	     (if constructorOfType? spc qid ty
+                then Constant(qid,ty)
+              else if definedOpInfo? info && ~(avoidExpanding? qid) then
 		let (_,_,tm) = unpackFirstOpDef info in
                 if existsSubTerm (embed? The) tm
                   then Unevaluated t
@@ -275,6 +277,7 @@ spec
 	(case a of
 	  | QuotientVal(_,v,_) -> evalApply(cl,v,sb,spc,depth,trace?)
 	  | _ -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
+      | Constant(qid, ty) -> Constructor(qid, a, ty)
       | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth,trace?)
       | _ -> Unevaluated (mkApply(valueToTerm f,valueToTerm a))
 
@@ -289,8 +292,10 @@ spec
     let def default() = Unevaluated(mkApply(ft, valueToTerm a)) in
     case ft of
       | Fun(Embed(qid,true),ty,_) -> Constructor(qid,a,ty)
-      | Fun(Op(Qualified(spName,opName),_),_,_) ->
-        (if spName in? evalQualifiers
+      | Fun(Op(qid as Qualified(spName,opName),_),ty,_) ->
+        (if constructorOfType? spc qid ty
+           then Constructor(qid,a,ty)
+         else if spName in? evalQualifiers
 	  then (case a
 		  of RecordVal(fields) ->
 		     (if (forall? (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Bool"
@@ -488,10 +493,16 @@ spec
 	         (Match S) fields
 	     | _ -> DontKnow)
 	| EmbedPat(lbl,None,srt,_) -> 
-	  (case N of
-	     | Constant(lbl2,_) -> if lbl = lbl2 then Match S else NoMatch
-	     | Unevaluated _ -> DontKnow
-	     | _ -> NoMatch)
+	  (if constructorOp? spc lbl
+             then case N of
+                    | Constant(lbl2,_) -> if lbl = lbl2 then Match S else NoMatch
+                    | Unevaluated _ -> DontKnow
+                    | _ -> NoMatch
+           else let c_val = evalRec(mkOp(lbl, srt),[],spc,depth,trace?) in
+                case checkEquality(RecordVal[("1",c_val),("2",N)], S, spc, depth, trace?) of
+                  | None -> DontKnow
+                  | Some true -> Match S
+                  | Some false -> NoMatch)
 	| EmbedPat(lbl,Some p,srt,_) -> 
 	  (case N of 
 	     | Constructor(lbl2,N2,_) -> 
@@ -964,8 +975,8 @@ spec
       | String      s  -> mkString s
       | Bool        b  -> mkBool b
       | RecordVal   rm -> mkRecord(map (fn (id,x) -> (id,valueToTerm x)) rm)
-      | Constructor (id,arg,ty) -> mkApply(mkEmbed1(id,ty), valueToTerm arg)
-      | Constant    (id,ty) -> mkEmbed0(id,ty)
+      | Constructor (id,arg,ty) -> mkApply(mkOp(id,ty), valueToTerm arg)
+      | Constant    (id,ty) -> mkOp(id,ty)
 % TODO: restore these
       | QuotientVal (f,arg,srt_qid)  ->
         let argtm = valueToTerm arg in
@@ -1003,12 +1014,15 @@ spec
       | Fun (Char c,srt,pos) -> Char c
       | Fun (String s,srt,pos) -> String s
       | Record (flds,pos) -> RecordVal (map (fn (id,x) -> (id,termToValue x)) flds)
-      | Apply (Fun (Embed (id,b),srt,pos),t2,srt2) -> Constructor (id, termToValue t2,srt)
-      | Fun (Embed (id,b),srt,pos) -> Constant(id,srt)
+      | Apply (Fun (Op (id,_),srt,pos),t2,srt2) -> Constructor (id, termToValue t2,srt)
+      | Fun (Op (id,_),srt,pos) -> Constant(id,srt)
+      | Apply (Fun (Embed (id,_),srt,pos),t2,srt2) -> Constructor (id, termToValue t2,srt)
+      | Fun (Embed (id,_),srt,pos) -> Constant(id,srt)
       | _ -> Unevaluated term
 
- op dontReduceQualifiers: Ids = ["C", "New", "System"]
- op dontReduceQIds: QualifiedIds = [mkUnQualifiedId "uintOfMathInt2"]
+ op dontReduceQualifiers: Ids = ["System"]
+ op dontReduceQIds: QualifiedIds = [mkQualifiedId("C","uintConstant"), mkQualifiedId("C","uintOfMathInt"),
+                                    mkUnQualifiedId("mathIntOfUint2"), mkUnQualifiedId("uintOfMathInt2")]
 
  op dontReduceTerm?(tm: MSTerm): Bool =
    case tm of

@@ -33,7 +33,7 @@ MetaSlang qualifying spec
  %% location information and free variables for use in
  %% various transformation steps.
 
- type MetaSlang.ATerm b =
+ type ATerm b =
   | Apply        ATerm b * ATerm b                       * b
   | ApplyN       List (ATerm b)                          * b % Before elaborateSpec  %Remove
   | Record       List (Id * ATerm b)                     * b
@@ -73,7 +73,7 @@ MetaSlang qualifying spec
  type MetaSlang.AType b =
   | Arrow        AType b * AType b                   * b
   | Product      List (Id * AType b)                 * b
-  | CoProduct    List (QualifiedId * Option (AType b))        * b
+  | CoProduct    List (QualifiedId * Option (AType b)) * b
   | Quotient     AType b * ATerm b                   * b
   | Subtype      AType b * ATerm b                   * b
   | Base         QualifiedId * List (AType b)        * b  % Typechecker verifies that QualifiedId refers to some typeInfo.  The items in the list are the actuals of this type instantiation (if any).
@@ -380,13 +380,19 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op [b] unpackType (s : AType b) : TyVars * AType b =
    case s of
      | Pi (tvs, ty, _) -> (tvs, ty)
-     | And (tys, _) -> ([], s) %  fail ("unpackType: Trying to unpack an And of types.")
+     | And (tys, _) ->
+       (case filter (fn ty -> ~(anyType? ty)) tys of
+          | [] -> ([], s)
+          | ty1 :: _ -> unpackType ty1)
      | _ -> ([], s)
 
  op [b] typeTyVars (ty : AType b) : TyVars =
    case ty of
      | Pi (tvs, _, _) -> tvs
-     | And _ -> [] % fail ("typeTyVars: Trying to extract type vars from an And of types.")
+     | And (tys, _) ->
+       (case filter (fn ty -> ~(anyType? ty)) tys of
+          | [] -> []
+          | ty1 :: _ -> typeTyVars ty1)
      | _ -> []
 
  op [b] typeInnerType (ty : AType b) : AType b =
@@ -399,7 +405,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    case t of
      | Any _        -> true
      | Pi(_, ty, _) -> anyType? ty
-     | And(tys, _)  -> forall? anyType? tys  % I wonder if this should be exists? instead of forall?
+     | And(tys, _)  -> forall? anyType? tys
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2559,15 +2565,16 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
  op [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
    case term of
+     | Fun (Op (Qualified(q, "Nil"), _), ty, _) | listType? ty -> Some []
      | Fun (Embed (Qualified(q, "Nil"), false), ty, _) | listType? ty -> Some []
-     | Apply (Fun (Embed(Qualified(q, "Cons"), true), 
+     | Apply (Fun (Op(Qualified(q, "Cons"), _), 
 		   Arrow (Product ([("1", _), ("2", ty)], _), _, _), _),
 	      Record ([(_, t1), (_, t2)], _), _)
        | listType? ty
        -> (case isFiniteList t2 of
              | Some terms -> Some (t1 :: terms)
              | _ ->  None)
-     | ApplyN ([Fun (Embed (Qualified(q, "Cons"), true), 
+     | ApplyN ([Fun (Op (Qualified(q, "Cons"), _), 
 		     Arrow (Product ([("1", _), ("2",  ty1)], _),
 			    ty2, _), _),
 		Record ([(_, t1), (_, t2)], _), _], _)

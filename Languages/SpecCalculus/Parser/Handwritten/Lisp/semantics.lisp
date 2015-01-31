@@ -786,29 +786,29 @@ If we want the precedence to be optional:
 
 ;;; Temporarily put this here to enable bootstrap
 (defun StandardSpec::mkListN-3 (terms pos element_type) 
-  (let ((list_type (cons :|Base| (vector (cons :|Qualified| (cons "List" "List")) (list element_type) pos)))) 
+  (let ((list_type (cons :|Base| (vector (cons :|Qualified| (cons "List" "List")) (list element_type) pos)))
+        *print-pretty*) 
     (labels 
-      ((mkCons (x xs) 
-        (cons 
-         :|ApplyN| 
-         (cons 
-          (list 
+        ((mkCons (x xs) 
            (cons 
-            :|Fun| 
-            (vector 
-             (cons :|Embed| (cons (MetaSlang::mkQualifiedId-2 "List" "Cons") t)) 
-             (cons 
-              :|Arrow| 
-              (vector 
-               (cons :|Product| (cons (list (cons "1" element_type) (cons "2" list_type)) pos)) 
-               (cons :|Base| (vector (cons :|Qualified| (cons "List" "List1")) (list element_type) pos)) 
-               pos)) 
-             pos)) 
-           (cons :|Record| (cons (list (cons "1" x) (cons "2" xs)) pos))) 
-          pos)))) 
-      (List-Spec::foldr-1-1-1 
-       #'(lambda (apV) (mkCons (car apV) (cdr apV))) 
-       (cons :|Fun| (vector (cons :|Embed| (cons (MetaSlang::mkQualifiedId-2 "List" "Nil") nil)) list_type pos)) 
+            :|ApplyN| 
+            (cons 
+             (list 
+              (cons 
+               :|Fun| 
+               (vector 
+                (cons :|TwoNames| (vector "List" "Cons" '(:|Infix| (:|Right|) 24)))
+                (cons 
+                 :|Arrow| 
+                 (vector 
+                  (cons :|Product| (cons (list (cons "1" element_type) (cons "2" list_type)) pos)) 
+                  (cons :|Base| (vector (cons :|Qualified| (cons "List" "List")) (list element_type) pos)) 
+                  pos)) 
+                pos)) 
+              (cons :|Record| (cons (list (cons "1" x) (cons "2" xs)) pos))) 
+             pos)))) 
+      (List-Spec::foldr-1-1-1 #'(lambda (apV) (mkCons (car apV) (cdr apV))) 
+                              (cons :|Fun| (vector (cons  :|TwoNames| (vector "List" "Nil" '(:|Nonfix|))) list_type pos)) 
        terms))))
 
 (defun make-list-display (expressions l r)

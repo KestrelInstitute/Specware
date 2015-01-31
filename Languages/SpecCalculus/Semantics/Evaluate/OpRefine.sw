@@ -38,7 +38,7 @@ SpecCalc qualifying spec
          let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
          return (spc,Some next_el,[])}
       | Type(names, ty_defn) ->
-        {(spc,next_el) <- addOrRefineType names ty_defn spc pos opt_next_el false;
+        {(spc,next_el) <- addOrRefineType names ty_defn spc pos opt_next_el false false;
          let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
          return (spc,Some next_el,[])}
       | Pragma(prefix, body, postfix) ->

@@ -154,6 +154,7 @@ AnnSpecPrinter qualifying spec
    case term of
      | Fun (termOp, srt, _) -> 
        (case termOp of
+          | Op(Qualified("List", "Cons"), _) -> Infix (Right, 24)
 	  | Op (_, fixity) -> (case fixity of
 				 | Unspecified -> Nonfix
 				 | _ -> fixity)
@@ -233,6 +234,7 @@ AnnSpecPrinter qualifying spec
  
  op [a] stripQual (tm: ATerm a): ATerm a =
    case tm of
+     | Fun(Op(Qualified(_, "Cons"), _), s, a) -> Fun(Embed(mkUnQualifiedId "::", true), s, a)
      | Fun(Op(Qualified(_,opName),fx),s,a) | ~alwaysPrintQualifiers? -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
      | Fun(Embed(Qualified(_, "Cons"), true), s, a) -> Fun(Embed(mkUnQualifiedId "::", true), s, a)
      | _ -> tm
@@ -860,7 +862,7 @@ AnnSpecPrinter qualifying spec
        else 
 	 pp.fromString id
      | EmbedPat  (Qualified(_, "Nil"), None, ty, _) | listType?(ty) -> string "[]"
-     | EmbedPat  (Qualified(_, id), None, _, _) -> pp.fromString id
+     | EmbedPat  (qid, None, _, _) -> pp.ppOpId qid
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
@@ -895,9 +897,9 @@ AnnSpecPrinter qualifying spec
  %           prettysFill [ppPattern context ([0]++ path, false) p1, 
  %                        string " :: ", 
  %                        ppPattern context ([1]++ path, false) p2])
-     | EmbedPat (Qualified(_,id), Some pat, _(* srt *), _) -> 
+     | EmbedPat (qid, Some pat, _(* srt *), _) -> 
        enclose (enclose?, pp,
-		blockFill (0, (Cons ((0, pp.fromString id), 
+		blockFill (0, (Cons ((0, pp.ppOpId qid), 
                                      if singletonPattern pat then
                                        [(0, string " "), 
                                         (2, ppPattern context ([0]++ path, true, false) pat)]

@@ -586,9 +586,13 @@ PatternMatch qualifying spec
   *  of the pattern 
   *)
 
- op queryPat (pattern : MSPattern) : MSTerm -> MSTerm = 
+ op queryPat (pattern : MSPattern) (spc: Spec): MSTerm -> MSTerm = 
   case pattern of
-    | EmbedPat  (e,_,_, _) -> embedded e
+    | EmbedPat  (qid,o_p,ty, _) ->
+      if constructorOp? spc qid
+           || some? o_p                 % Not sure what to do in this case!!
+        then embedded qid
+        else equalToConstant(ty, mkOp(qid, ty))
     | NatPat    (n,     _) -> equalToConstant (natType,    mkNat    n)
     | CharPat   (c,     _) -> equalToConstant (charType,   mkChar   c)
     | BoolPat   (b,     _) -> equalToConstant (boolType,   mkBool   b)
@@ -650,7 +654,7 @@ PatternMatch qualifying spec
         | ((pat :: pats, cond, body), []) -> 
           %% create new drule:
 
-          let query                = queryPat pat trm in
+          let query                = queryPat pat ctx.spc trm in
           let pats_with_extractors = patDecompose pat in 
 
           %% pats_with_extractors is a list of patterns paired with extraction functions:

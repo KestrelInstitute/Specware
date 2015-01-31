@@ -93,9 +93,31 @@ op evaluateSpecElems (starting_spec : Spec) (se_terms : SpecElemTerms)
   %% op initialSpecInCat, which refers to the initial spec in the category of specs.
   (timestamp, depUIDs, imports_info) <- foldM checkImports (0, [], []) se_terms;
   imports_spec <- foldM doImport         starting_spec (reverse imports_info);
-  full_spec    <- foldM evaluateSpecElem imports_spec  se_terms;
+  full_spec    <- foldM (evaluateSpecElem (multiConstructorNames? se_terms)) imports_spec  se_terms;
   return (full_spec, timestamp, depUIDs)
   }
+
+op coProductNames (ty: MSType): Ids =
+  case unpackType ty of
+    | (_,  CoProduct(fields, a)) ->
+      mapPartial (fn (Qualified(q, id), _) -> if q = UnQualified then Some id else None) fields
+    | _ -> []
+
+op multiConstructorNames? (se_terms : SpecElemTerms): Bool =
+  exists? (fn se_tm ->
+           case se_tm of
+             | (Type (names, dfn), _) ->
+               let nms = coProductNames dfn in
+               nms ~= []
+                 && exists? (fn se_tm_i ->
+                              se_tm_i ~= se_tm
+                             && (case se_tm_i of
+                                   | (Type (names, dfn), _) ->
+                                     exists? (fn nm -> nm in? nms) (coProductNames dfn)
+                                   | _ -> false))
+                     se_terms
+             | _ -> false)
+    se_terms
 
 op checkImports (val         : (TimeStamp * UnitId_Dependency * List (SCTerm * Spec * Position)))
                 ((elem, pos) : SpecElemTerm)
@@ -133,15 +155,15 @@ op doImport (spc : Spec) (term : SCTerm, imported_spec : Spec, pos : Position) :
       return (term, imported_spec);
   mergeImport term imported_spec spc pos}
 
-op evaluateSpecElem (spc : Spec) ((elem, pos) : SpecElemTerm) : Env Spec =
+op evaluateSpecElem (qualifyConstructorsWithTypeName?: Bool) (spc : Spec) ((elem, pos) : SpecElemTerm) : Env Spec =
  case elem of
    | Import  terms                            -> return spc      % Already done
-   | Type    (names,       dfn)               -> addType names      dfn spc pos
+   | Type    (names,       dfn)               -> addType names dfn spc pos qualifyConstructorsWithTypeName?
    | Op      (names, fxty, refine?, dfn)      -> addOp   names fxty refine? dfn spc pos
 
-   | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((addQualifier spc name, tyVars, term, pos), spc)) 
-   | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((addQualifier spc name, tyVars, term, pos), spc))
-   | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((addQualifier spc name, tyVars, term, pos), spc))
+   | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((addQualifier spc.qualifier name, tyVars, term, pos), spc)) 
+   | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((addQualifier spc.qualifier name, tyVars, term, pos), spc))
+   | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((addQualifier spc.qualifier name, tyVars, term, pos), spc))
    | Claim   _                                -> error "evaluateSpecElem: unsupported claim type"
 
    | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, pos), spc))

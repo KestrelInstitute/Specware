@@ -61,7 +61,7 @@ spec
   op getTheoremBody(spc: Spec, qid: QualifiedId): Option MSTerm =
     case findPropertiesNamed(spc, qid) of
       | [] -> (warn("No Theorem with that name."); None)
-      | [(_, _, _, bod, _)] -> Some bod
+      | [(_, _, _, bod, _)] -> Some(TypedTerm(bod, boolType, termAnn bod))
       | (_, _, _, bod, _) :: _ -> (warn("Ambiguous theorem name."); Some bod)
 
   % Given a Spec `spc`, and the name of an op, return a list of

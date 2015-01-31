@@ -501,7 +501,7 @@ def fixateTwoNames (q_id_fixity : Id * Id * Fixity, explicit_fixity : Fixity)
 
 def resolveNameFromType(env, trm, id, ty, pos) =
   case mkEmbed0 (env, ty, id) of
-    | Some qid -> Fun (Embed (qid, false), checkType0 (env, ty), pos)
+    | Some qid -> Fun (Op (qid, Nonfix), checkType0 (env, ty), pos)
     | None -> 
   case mkEmbed1 (env, ty, trm, id, pos) of
     | Some term -> term
@@ -515,7 +515,7 @@ def resolveNameFromType(env, trm, id, ty, pos) =
 
 op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): MSTerms =
   case mkEmbed0 (env, ty, id) of
-    | Some qid -> [Fun (Embed (qid, false), checkType0 (env, ty), pos)]
+    | Some qid -> [Fun (Op (qid, Nonfix), checkType0 (env, ty), pos)]
     | None -> 
   case mkEmbed1 (env, ty, trm, id, pos) of
     | Some term -> [term]
@@ -530,7 +530,7 @@ op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Posi
 
 op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos: Position): Option MSTerm =
   case mkEmbed0 (env, ty, id) of
-    | Some qid -> Some(Fun (Embed (qid, false), checkType0 (env, ty), pos))
+    | Some qid -> Some(Fun (Op (qid, Nonfix), checkType0 (env, ty), pos))
     | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
 op checkOp (info: OpInfo, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
@@ -686,7 +686,8 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
              case tryResolveNameFromType(env, trm, id, ty, pos) of
                | Some t -> t
                | _ ->
-             case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, ty, pos) of
+             case findVarOrOps (env, id, pos) % ++ findConstrsWithName (env, trm, id, ty, pos)
+               of
                | terms as _::_ ->
                  %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes
                  % let _ = if id = "foldable?" then (writeLine("foldable?:"); app (fn tm -> writeLine(printTerm tm)) terms) else () in
@@ -1594,7 +1595,7 @@ op mkEmbed1 (env: LocalEnv, ty: MSType, trm: MSTerm, id: Id, pos: Position): Opt
                 let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
                 % let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
                 let _ = elaborateType(env, constr_ty, ty) in
-                Some (Fun (Embed (constructor_qid, true), constr_ty, pos))
+                Some (Fun (Op (constructor_qid, Nonfix), constr_ty, pos))
               else 
                 findId row
             | _ :: row -> findId row
@@ -1656,7 +1657,7 @@ op constrTerm(env: LocalEnv, id: Id, coprod_qid: QualifiedId, coprod_ty: MSType,
                  | _ -> v_ty
   in
   (case mkEmbed0 (env, id_ty, id) of
-     | Some qid -> Some (Fun (Embed (qid, false), checkType (env, id_ty), pos))
+     | Some qid -> Some (Fun (Op (qid, Nonfix), checkType (env, id_ty), pos))
      | None -> mkEmbed1 (env, id_ty, trm, id, pos))
 
 %% If id is the unique name of a constructor, use that constructor

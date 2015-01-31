@@ -790,6 +790,8 @@ op ppSpecElements (elts:SpecElements) (spc:Spec) : PPError WLPretty =
 
 op ppSpec (c: Context) (spc:Spec) : PPError WLPretty =
 %  let spc = adjustElementOrder spc in
+  let spc = explicateEmbeds spc in
+  let spc = removeImplicitConstructorOps spc in
   case (getEnv "SPECWARE4", ppSpecElements spc.elements spc ) of
     | (Some specware4, Good s) -> 
       Good (ppGr2Concat [ppString "(in-package \"ACL2\")",

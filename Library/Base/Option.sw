@@ -132,8 +132,8 @@ end-proof
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism
- type Option.Option \_rightarrow option
- Option.mapOption \_rightarrow map_option
+ type Option.Option -> option
+ Option.mapOption -> map_option
 end-proof
 
 (* Haskell Pragmas *)

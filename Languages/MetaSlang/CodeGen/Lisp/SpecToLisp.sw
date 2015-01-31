@@ -540,21 +540,24 @@ op [a] mkLTermOp (sp                   : Spec,
    | (Bool   b, ty, _) -> mkLBool   b
    | (Char   c, ty, _) -> mkLChar   c
      
-   | (Op (id, _), ty, _) ->
-     (case id of
+   | (f as Op (qid, _), ty, a) ->
+     (case qid of
         | Qualified ("TranslationBuiltIn", "mkFail") ->
           mkLApply(mkLOp "error",case optArgs of Some term -> mkLTermList(sp, default_package_name, varset, term))
         | _ ->
-          let arity = opArity (sp, id, ty) in
+      case constructorFun?(f, ty, sp) of
+        | Some cf -> mkLTermOp(sp, default_package_name, varset, (cf, ty, a), optArgs)
+        | None -> 
+          let arity = opArity (sp, qid, ty) in
           (case optArgs of
              | None ->
-               let pid = printPackageId (id, default_package_name) in
+               let pid = printPackageId (qid, default_package_name) in
                if functionType? (sp, ty) then
                  mkLUnaryFnRef (pid, arity, varset)
                else 
                  Const (Parameter pid)
              | Some term ->
-               mkLApplyArity (id, default_package_name, arity, varset, 
+               mkLApplyArity (qid, default_package_name, arity, varset, 
                               mkLTermList (sp, default_package_name, varset, term))))
      
    | (Embed (Qualified(_,id), true), ty, _) ->
@@ -1618,7 +1621,6 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
                         "------------------------------------------"]
  in
 
-
  %% Phase 1: Add stuff
 
  %% ==========================================================================================
@@ -1634,6 +1636,7 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  let spc = maybeSubstBaseSpecs substBaseSpecs?                     spc in
  let _   = maybeShowSpecIfVerbose substBaseSpecs? "substBaseSpecs" spc in
 
+ let spc = explicateEmbeds spc in       % Shouldn't really be necessary?
 
  %% Phase 2: Spec to Spec transforms
 

@@ -16,18 +16,18 @@ SpecCalc qualifying spec
 %  type RelativeUID
 
   type Value =
-    | Spec        Spec
-    | Morph       Morphism
-   %| Renaming    Renaming 
-    | SpecPrism   SpecPrism       % tentative
-    | SpecInterp  SpecInterp      % tentative
-    | Diag        SpecDiagram       
-    | Colimit     SpecInitialCocone 
-    | Proof       SCProof
-    | InProcess	  Mutex		  % Used for catching circular definitions
-    | UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
-   %| DiagMorph
-    | Other       OtherValue      % Used for extensions to Specware
+    | Value.Spec        Spec
+    | Value.Morph       Morphism
+   %| Value.Renaming    Renaming 
+    | Value.SpecPrism   SpecPrism       % tentative
+    | Value.SpecInterp  SpecInterp      % tentative
+    | Value.Diag        SpecDiagram       
+    | Value.Colimit     SpecInitialCocone 
+    | Value.Proof       SCProof
+    | Value.InProcess	  Mutex		  % Used for catching circular definitions
+    | Value.UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
+   %| Value.DiagMorph
+    | Value.Other       OtherValue      % Used for extensions to Specware
 
   type OtherValue                % Used for extensions to Specware
 

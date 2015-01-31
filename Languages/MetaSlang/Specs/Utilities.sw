@@ -2941,16 +2941,103 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
    case tm of
      | Fun(Embed (qid, _), _, _) -> Some(qid, [])
      | Apply(Fun(Embed(qid, _), _, _), _, _) -> Some(qid, [])
-     | Fun(Op(qid, _), _, _) ->
+     | Fun(f as Op(qid, _), ty, _) ->
        (case findTheOp(spc, qid) of
         | None -> None
         | Some info ->
+        case constructorFun?(f, ty, spc) of
+        | Some f -> Some(qid, [])
+        | None -> 
         let (_, _, dfn) = unpackFirstTerm info.dfn in
         case constructorTerm spc dfn of
         | None -> None
         | Some(id, qids) -> Some(id, qid :: qids))
      | _ -> None
 
+ op constructorOfType? (spc: Spec) (op_qid: QualifiedId) (ty: MSType): Bool =
+   let def checkIfCoProduct ty_qid =
+         case findTheType(spc, ty_qid) of
+           | None -> false
+           | Some ty_info ->
+         case unpackType(ty_info.dfn) of
+           | (_, CoProduct(fields, _)) ->
+             some?(findLeftmost (fn (fld_qid, _) -> op_qid = fld_qid) fields) 
+           | (_, Base(ty_qid1, _, _)) -> checkIfCoProduct ty_qid1
+           | (_, Subtype(Base(ty_qid1, _, _), _, _)) -> checkIfCoProduct ty_qid1
+           | _ -> false
+   in
+   case ty of
+     | Base(qid, _, _) -> checkIfCoProduct qid
+     | Arrow(_, Base(qid, _, _), _) -> checkIfCoProduct qid
+     | _ -> false
+
+ op constructorFun?(f: MSFun, ty: MSType, spc: Spec): Option(MSFun) =
+  case f of
+    | Op(op_qid, _) ->
+      let def checkIfCoProduct ty_qid =
+            case findTheType(spc, ty_qid) of
+              | None -> None
+              | Some ty_info ->
+            case unpackType(ty_info.dfn) of
+              | (_, CoProduct(fields, _)) ->
+                (case findLeftmost (fn (fld_qid, _) -> op_qid = fld_qid) fields of
+                   | Some(_, o_arg) -> Some(Embed(op_qid, some? o_arg))
+                   | None -> None)
+              | (_, Base(ty_qid1, _, _)) -> checkIfCoProduct ty_qid1
+              | (_, Subtype(Base(ty_qid1, _, _), _, _)) -> checkIfCoProduct ty_qid1
+              | _ -> None
+      in
+      (case ty of
+         | Base(qid, _, _) -> checkIfCoProduct qid
+         | Arrow(_, Base(qid, _, _), _) -> checkIfCoProduct qid
+         | _ -> None)
+    | (Embed _) -> Some f
+    | _ -> None
+
+ op explicateEmbed (spc: Spec) (tm: MSTerm): MSTerm =
+   case tm of
+    | Fun(Op(op_qid, _), ty, a) ->
+      let def checkIfCoProduct ty_qid =
+            case findTheType(spc, ty_qid) of
+              | None -> tm
+              | Some ty_info ->
+            case unpackType(ty_info.dfn) of
+              | (_, CoProduct(fields, _)) ->
+                (case findLeftmost (fn (fld_qid, _) -> op_qid = fld_qid) fields of
+                   | Some(_, o_arg) -> Fun(Embed(op_qid, some? o_arg), ty, a)
+                   | None -> tm)
+              | (_, Base(ty_qid1, _, _)) -> checkIfCoProduct ty_qid1
+              | (_, Subtype(Base(ty_qid1, _, _), _, _)) -> checkIfCoProduct ty_qid1
+              | _ -> tm
+      in
+      (case ty of
+         | Base(qid, _, _) -> checkIfCoProduct qid
+         | Arrow(_, Base(qid, _, _), _) -> checkIfCoProduct qid
+         | _ -> tm)
+    | _ -> tm
+
+ op explicateEmbeds (spc: Spec): Spec =
+   mapSpec (explicateEmbed spc, id, id) spc
+
+ op constructorOp? (spc: Spec) (qid: QualifiedId): Bool =
+   case findTheOp(spc, qid)of
+     | None -> false
+     | Some info ->
+       let (_, ty, _) = unpackFirstTerm info.dfn in
+       constructorOfType? spc qid ty
+
+ op removeImplicitConstructorOps (spc: Spec): Spec =
+   setElements(spc, filter (fn el ->
+                            case el of
+                              | Op(qid, _, _) ->
+                                ~(constructorOp? spc qid)
+                              | _ -> true)
+                      spc.elements)
+
+ op constructorFn?(spc: Spec) (tm: MSTerm): Bool =
+   case tm of
+     | Fun(f, ty, _) -> some?(constructorFun? (f, ty, spc))
+     | _ -> false
 
  type MatchResult = | Match MSVarSubst | NoMatch | DontKnow
 

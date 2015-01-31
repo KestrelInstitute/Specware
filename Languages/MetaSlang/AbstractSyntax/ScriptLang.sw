@@ -41,7 +41,6 @@ type Script =
     %%      function, position, return_position, name, type,         within,       value,        qualifier
   | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
   | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
-  | AddSemanticChecks(Bool * Bool * Bool)
   | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
   | Slice     (OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool))
   | Trace Bool

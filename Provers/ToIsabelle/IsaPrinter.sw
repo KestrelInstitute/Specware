@@ -65,9 +65,8 @@ op isaDirectoryName: String = "Isa"
 
  op getCurrentUID (c: Context): UnitId = let Some uid = c.currentUID in uid
 
-
- type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
- type ParentType = | Top | ArrowLeft | ArrowRight | Product | CoProduct
+ type ParentTerm = | TmTop | Nonfix | Infix Associativity * Nat
+ type ParentType = | TyTop | ArrowLeft | ArrowRight | Product | CoProduct
                    | Quotient | Subtype | Apply
 
  % def prGrConcat x = prGroup (prConcat x)
@@ -921,20 +920,20 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 
  % pretty-print an equality proposition / constraint
  op ppEquality (c: Context, lhs: MSTerm, rhs: MSTerm) : Pretty =
- ppTerm c Top (mkEquality(Any noPos,lhs,rhs))
+ ppTerm c TmTop (mkEquality(Any noPos,lhs,rhs))
 
  op ppLambdaEquality (c: Context, lhs: BindingTerm, rhs: BindingTerm) : Pretty =
- ppTerm c Top (mkEquality(Any noPos,mkMultiLambda lhs, mkMultiLambda rhs))
+ ppTerm c TmTop (mkEquality(Any noPos,mkMultiLambda lhs, mkMultiLambda rhs))
 
  % pretty-print an implication
  op ppImplication (c: Context, lhs: MSTerm, rhs: MSTerm) : Pretty =
- ppTerm c Top (mkImplies(lhs, rhs))
+ ppTerm c TmTop (mkImplies(lhs, rhs))
 
  % pretty-print an Isabelle fat arrow "==>" implication
  op ppBigImplication (c: Context, nonNorm: Bool, lhs: MSTerm, rhs: MSTerm) : Pretty =
    let def ppTm tm =
      if nonNorm then ppTermNonNorm c tm
-     else ppTerm c Top tm
+     else ppTerm c TmTop tm
    in
    prBreak 0 [ppTm lhs, string " \\<Longrightarrow> ", ppTm rhs]
 
@@ -1424,6 +1423,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
    (let rel_elements = filter isaElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
+    let spc = explicateEmbeds spc in
+    let spc = removeImplicitConstructorOps spc in
     % let _ = writeLine("1:\n"^printSpec spc) in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
@@ -1869,7 +1870,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                         map (fn (lhs, rhs) ->
                                let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
                                prConcat[prString "\"",
-                                        ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                        ppTerm c TmTop (mkEquality(Any noPos,lhs,rhs)),
                                         prString "\""])
                           cases)
                   op_qid_infos)
@@ -1884,7 +1885,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                      prString " :: \"",
                      (case fixity of
                         | Infix(assoc,prec) -> ppInfixType c ty   % Infix operators are curried in Isa
-                        | _ -> ppType c Top true ty),
+                        | _ -> ppType c TyTop true ty),
                      prString "\""]
                      ++ (case fixity of
                            | Infix(assoc,prec) ->
@@ -2377,12 +2378,12 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
 		  prString " = "]] ++
 		(map (fn (fldname, fldty) ->
 		      [ppToplevelName (mkNamedRecordFieldName c (mainId, fldname)),
-                       prString " :: ", ppType c Top false fldty])
+                       prString " :: ", ppType c TyTop false fldty])
 		 fields))
            | Subtype(superty, pred, _) | some? opt_prag ->
              let  (prf_pp,includes_prf_terminator?) = processOptPrag opt_prag in
              prLinesCat 2 ([[prString "typedef ", ppTyVars tvs, ppIdInfo aliases, prString " = \"",
-                             %if tvs = [] then ppTerm c Top pred
+                             %if tvs = [] then ppTerm c TmTop pred
                              %  else
                                  let spc = getSpec c in
                                  let pred_dom_ty = domain(spc, inferType(spc, pred)) in
@@ -2392,7 +2393,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                                          (prString x1, pred1)
                                        | _ -> (prString "x", pred)
                                  in
-                                 prConcat [prString "{", v_pp, prString ":: ", ppType c Top true pred_dom_ty,
+                                 prConcat [prString "{", v_pp, prString ":: ", ppType c TyTop true pred_dom_ty,
                                            prString ". ", ppTerm c Nonfix pred, prString " ", v_pp, prString "}"],
                              prString "\""]]
                            ++ prf_pp
@@ -2412,8 +2413,8 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                qidToIsaString (mkQualifiedId(rel_qual, rel_nm^"_equiv"))
              in
              let op_pretty =
-               ppTerm c Top (mkMultiLambda ([x, y],
-                                            mkAppl (rel, [mkVar x, mkVar y])))
+               ppTerm c TmTop (mkMultiLambda ([x, y],
+                                              mkAppl (rel, [mkVar x, mkVar y])))
              in
              blockAll(0,
                       [(0,
@@ -2422,7 +2423,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                             ppTyVars tvs,
                             tp_name_pretty,
                             prString " = "],
-                           [prString "\"", ppType c Top true superty, prString "\""],
+                           [prString "\"", ppType c TyTop true superty, prString "\""],
                            [prString " / "],
                            [prString "\"", op_pretty, prString "\""]]),
                        (2, prString "apply (simp only: equivp_def fun_eq_iff)"),
@@ -2450,7 +2451,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
 		 ppTyVars tvs,
 		 ppIdInfo aliases,
 		 prString " = "],
-		[prString "\"", ppType c Top true ty, prString "\""]]
+		[prString "\"", ppType c TyTop true ty, prString "\""]]
      else prBreakCat 2
 	    [[prString "typedecl ",
 	      ppTyVars tvs,
@@ -2662,7 +2663,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MSTerm) (ty: MSType) (opt
   let pp_cases = map (fn (lhs, rhs) ->
                         let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
                         prConcat[prString "\"",
-                                 ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                 ppTerm c TmTop (mkEquality(Any noPos,lhs,rhs)),
                                  prString "\""])
                    cases
   in
@@ -2672,7 +2673,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MSTerm) (ty: MSType) (opt
                      prString " :: \"",
                      (case fixity of
                         | Infix(assoc,prec) -> ppInfixType c ty   % Infix operators are curried in Isa
-                        | _ -> ppType c Top true ty),
+                        | _ -> ppType c TyTop true ty),
                      prString "\""]
                      ++ (case fixity of
                            | Infix(assoc,prec) ->
@@ -2696,7 +2697,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MSTerm) (ty: MSType) (opt
                       prString " :: \"",
                       (case fixity of
                         | Infix(assoc,prec) -> ppInfixType c ty   % Infix operators are curried in Isa
-                        | _ -> ppType c Top true ty),
+                        | _ -> ppType c TyTop true ty),
                       prString "\""]
                      ++ (case fixity of
                            | Infix(assoc,prec) ->
@@ -2838,7 +2839,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                 prString " :: \"",
                 (case fixity of
                   | Infix(assoc, prec) -> ppInfixType c ty   % Infix operators are curried in Isa
-                  | _ -> ppType c Top true ty),
+                  | _ -> ppType c TyTop true ty),
                 prString "\""]
              ++ (case fixity of
                    | Infix(assoc,prec) ->
@@ -2872,10 +2873,10 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
      | ([(lhs,rhs)], tuple?) ->
        % let _ = writeLine(printTerm lhs^"\n= "^printTerm rhs) in
        let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
-       if ~tuple? && existsSubTerm constructorTerm? lhs
+       if ~tuple? && existsSubTerm (constructorFn? (getSpec c)) lhs
          then prBreak 2 [prString "primrec ",
                           prString "\"",
-                          ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                          ppTerm c TmTop (mkEquality(Any noPos,lhs,rhs)),
                           prString "\""]
          else if recursive? % || tuple? % && ~(simpleHead? lhs))
              then
@@ -2924,7 +2925,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                   prLinesCat 0 (map (fn(lhs,rhs) ->
                                      let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
                                       [prString "\"",
-                                       ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                       ppTerm c TmTop (mkEquality(Any noPos,lhs,rhs)),
                                        prString "\""])
                                        cases)]
      | (cases,true) ->
@@ -2938,7 +2939,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                                          let (lhs, rhs) = ensureNotCurried(lhs, rhs) in
                                          let (lhs, rhs) = addExplicitTyping2(c, lhs, rhs) in
                                           [prString "\"",
-                                           ppTerm c Top (mkEquality(Any noPos, lhs, rhs)),
+                                           ppTerm c TmTop (mkEquality(Any noPos, lhs, rhs)),
                                            prString "\""])
                                        cases)]]
 
@@ -2998,12 +2999,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
             of None -> patToTerm(p1, ext, c)
              | Some(trm) -> Some trm)
 
- op constructorTerm?(tm: MSTerm): Bool =
-   case tm of
-     | Fun(Embed _, _, _) -> true
-     | _ -> false
-
- op primitiveArg?(tm: MSTerm): Bool =
+  op primitiveArg?(tm: MSTerm): Bool =
    case tm of
      | Apply(Fun(Embed _, _, _), arg, _) ->
        forall? (embed? Var) (MS.termToList arg)
@@ -3588,7 +3584,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    case (isFiniteList term) of
      | Some terms ->
        prConcat [prString "[",
-                 prPostSep 0 blockFill (prString ", ") (map (ppTerm c Top) terms),
+                 prPostSep 0 blockFill (prString ", ") (map (ppTerm c TmTop) terms),
                  prString "]"]
      | None ->
    let def prApply(term1, term2) =
@@ -3596,7 +3592,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | (Apply(Fun(Op(qid, _), _, _), t1, _), _) | reversedNonfixOp? c qid ->
           %% Reversed curried op, not infix
           let Some(isa_id,_,_,reversed,_) = specialOpInfo c qid in
-          enclose?(parentTerm ~= Top,
+          enclose?(parentTerm ~= TmTop,
                    prBreak 2 [prSymString isa_id,
                               prSpace,
                               ppTermEncloseComplex? c Nonfix term2,
@@ -3618,9 +3614,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | (Lambda (match, _),_) ->
           if nonCaseMatch? match
             then ppTerm c parentTerm (caseToIf(c, match, term2))
-            else enclose?(parentTerm ~= Top,
+            else enclose?(parentTerm ~= TmTop,
                           prBreakCat 0 [[prString "case ",
-                                         ppTerm c Top term2],
+                                         ppTerm c TmTop term2],
                                         [prString " of ",
                                          ppMatch c match]])
         | (Fun (Project p, ty1, _), _) ->
@@ -3643,7 +3639,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                          let c = c << {printTypes? = true} in
                          ppPattern c pattern (Some "") false,
                          prString ". "],
-                        [ppTerm c Top bod],
+                        [ppTerm c TmTop bod],
                         [prString "}"]]
         | (Fun(Op(qid,Infix _),f_ty,a), term2) ->
           let spc = getSpec c in
@@ -3665,9 +3661,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | _ ->
           (case infixOp? c term1 of    % Infix ops are translated uniformly to curried ops
              | Some infix_str ->
-               enclose?(parentTerm ~= Top,
+               enclose?(parentTerm ~= TmTop,
                         prLinearCat 0 [[prString "let (x,y) = ",
-                                        ppTerm c Top term2,
+                                        ppTerm c TmTop term2,
                                         prSpace],
                                        [prString "in x ",
                                         prSymString infix_str,
@@ -3712,7 +3708,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
           | _ ->                 
             prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
                        case term2 of
-                         | Record _ -> ppTerm c Top term2
+                         | Record _ -> ppTerm c TmTop term2
                          | _ -> prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 
    in
@@ -3727,14 +3723,14 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
           let recd_ty = range(spc, ty) in
           let recd_ty = normalizeType (spc, c.typeNameInfo, false, true, true) recd_ty in
           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
-          enclose?(parentTerm ~= Top,
+          enclose?(parentTerm ~= TmTop,
                    prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
                               let def ppField (x,y) =
                                      prConcat [prString (case recd_ty of
                                                            | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
                                                            | _ -> mkFieldName( x^"1")),
                                                prString " := ",
-                                               ppTerm c Top y]
+                                               ppTerm c TmTop y]
                               in
                               prConcat [lengthString(1, "\\<lparr>"),
                                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
@@ -3755,18 +3751,18 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              prApply (trm1, mkTuple[t1,t2])
            | (_, (Some pr_op, Nonfix, curried?, _)) ->
              if ~curried?
-               then enclose?(parentTerm ~= Top,
+               then enclose?(parentTerm ~= TmTop,
                              prConcat[pr_op,
-                                      enclose?(true, prLinearCat 0 [[ppTerm c Top t1, prString ", "],
-                                                                    [ppTerm c Top t2]])])
+                                      enclose?(true, prLinearCat 0 [[ppTerm c TmTop t1, prString ", "],
+                                                                    [ppTerm c TmTop t2]])])
              else
-             enclose?(parentTerm ~= Top,
+             enclose?(parentTerm ~= TmTop,
                       prLinearCat 2 [[pr_op,prSpace],
                                      [ppTermEncloseComplex? c Nonfix t1, prSpace,
                                       ppTermEncloseComplex? c Nonfix t2]])
            | (Nonfix, (Some pr_op, Infix (a, p), _, _)) ->
              prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
-           | (Top,    (Some pr_op, Infix (a, p), _, _)) ->
+           | (TmTop,    (Some pr_op, Infix (a, p), _, _)) ->
              prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
            | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) ->
              if p1 = p2
@@ -3786,7 +3782,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        (case fields of
           | [] -> prString "()"
           | ("1",_) :: _ ->
-            let def ppField (_,y) = ppTerm c Top y in
+            let def ppField (_,y) = ppTerm c TmTop y in
             prConcat [prString "(",
                       prPostSep 0 blockFill (prString ", ") (map ppField fields),
                       prString ")"]
@@ -3800,7 +3796,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                       | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
                                       | _ -> mkFieldName( x^"2")),
                             prString " = ",
-                            ppTerm c Top y]
+                            ppTerm c TmTop y]
             in
               prConcat [lengthString(1, "\\<lparr>"),
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
@@ -3809,7 +3805,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        prBreak 0 [prString "(THE ",
                   ppVarWithType c false var,
                   prString ". ",
-                  ppTerm c Top term,
+                  ppTerm c TmTop term,
                   prString ")"]
      | Bind (binder,vars,term,_) ->
        enclose?(case parentTerm of
@@ -3818,7 +3814,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                 prBreakCat 2 [[ppBinder binder,
                                prBreak 2 (addSeparator prSpace (map (ppVarWithType c (length vars > 1)) vars)),
                                prString ". "],
-                              [ppTerm c Top term]])
+                              [ppTerm c TmTop term]])
      | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
        prApply(Lambda([(p, trueTerm ,bod)], a), t)
      | Let (decls,term,_) ->
@@ -3826,7 +3822,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              prBreakCat 2 [[ppPattern c pattern (Some "") false,
                             prSpace],
                            [prString "= ",
-                            ppTerm c Top term]]
+                            ppTerm c TmTop term]]
        in
        enclose?(infix? parentTerm,
                 prLinear 0 [prLinear 0
@@ -3837,33 +3833,33 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                prString "in "],
                             %% For some reason Isabelle always wants a lambda in a let to be parenthesized
                             %% in all cases. This is conservative, but not too bad.
-                            ppTerm c (if parentTerm = Top then Nonfix else parentTerm) term])
+                            ppTerm c (if parentTerm = TmTop then Nonfix else parentTerm) term])
      | LetRec (decls,term,_) ->
        let def ppDecl (v,term) =
              prBreak 0 [%prString "def ",
                         ppVarWithoutType v,
                         prString " = ",
-                        ppTerm c Top term]
+                        ppTerm c TmTop term]
        in
        enclose?(infix? parentTerm,
                 prLinear 0 [prLinear 0
                               [prString "let",
                                prConcat[prLinear 0 (map ppDecl decls), prSpace],
                                prString "in "],
-                            ppTerm c (if infix? parentTerm then Top else parentTerm) term])
+                            ppTerm c (if infix? parentTerm then TmTop else parentTerm) term])
      | Var (v,_) -> ppVarWithoutType v
      | Fun (fun,ty,_) -> ppFun c parentTerm fun ty
 %      | Lambda ([(_, Fun (Bool true,  _, _), Fun (Bool true,  _, _))], _) ->
 %        prString "TRUE"                 % fnx. True
      | Lambda ([(_,_,_)],_) ->
        let (pats, bod) = unpackCurriedLambda term in
-       enclose?(parentTerm ~= Top,
+       enclose?(parentTerm ~= TmTop,
                 prBreakCat 2 [[lengthString(2, "\\<lambda> "),
                                let c = c << {printTypes? = true} in
                                prBreak 0 (addSeparator prSpace
                                              (map (fn pat -> ppPattern c pat (Some "") true) pats)),
                                prString ". "],
-                              [ppTerm c Top bod]])
+                              [ppTerm c TmTop bod]])
      | Lambda (match,_) ->
        let spc = getSpec c in
        let lam_ty = inferType(spc, term) in
@@ -3873,16 +3869,16 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | IfThenElse (pred,term1,term2,_) -> 
        enclose?(infix? parentTerm,
                 blockLinear (0,[(0,prConcat [prString "if ",
-                                             ppTerm c Top pred,
+                                             ppTerm c TmTop pred,
                                              prString " then "]),
-                                (2,ppTerm c Top term1),
+                                (2,ppTerm c TmTop term1),
                                 (-1,prString " else "),
-                                (2,ppTerm c Top term2)]))
+                                (2,ppTerm c TmTop term2)]))
      | Seq (terms,_) ->
-       %prPostSep 0 blockLinear (prString "; ") (map (ppTerm c Top) terms)
+       %prPostSep 0 blockLinear (prString "; ") (map (ppTerm c TmTop) terms)
        ppTerm c parentTerm (last terms)
      | TypedTerm (tm, ty, _) ->
-       enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top true ty]])
+       enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c TyTop true ty]])
      | mystery -> fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
 
@@ -3909,7 +3905,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  % Pretty-print a term that has not been normalized and that has not
  % have subtypes removed; this is true of terms in proofs
  op ppTermNonNorm (c: Context) (t: MSTerm) : Pretty =
-   ppTermNonNormCtx c Top t
+   ppTermNonNormCtx c TmTop t
 
  % Same as above, but with a parentTerm
  op ppTermNonNormCtx (c: Context) (parentTerm: ParentTerm) (tm: MSTerm) : Pretty =
@@ -3987,27 +3983,27 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 
  op ppVarWithType (c: Context) (parens?: Bool) ((id, ty): MSVar): Pretty =
    if printQuantifiersWithType? then
-     enclose?(parens?, prConcat [ppVarStr id, prString "::", ppType c Top true ty])
+     enclose?(parens?, prConcat [ppVarStr id, prString "::", ppType c TyTop true ty])
    else ppVarStr id
 
  op  ppVar : Context -> MSVar -> Pretty
  def ppVar c (id, ty) =
    prConcat [ppVarStr id,
              prString ":",
-             ppType c Top true ty]
+             ppType c TyTop true ty]
 
  %%% Top-level theorems use implicit quantification meta-level -> and lhs &&
  op  ppPropertyTerm : Context -> List String -> MSTerm -> Pretty
  def ppPropertyTerm c explicit_universals term =
    let (assmpts, concl) = parsePropertyTerm c explicit_universals term in
    let (assmpts, concl) = addExplicitTyping_n1(c, assmpts, concl) in
-   if assmpts = [] then ppTerm c Top concl
+   if assmpts = [] then ppTerm c TmTop concl
      else prLinear 0 [prConcat [lengthString(1, "\\<lbrakk>"),
                                 prPostSep 0 blockLinear (prString "; ")
-                                  (map (ppTerm c Top) assmpts),
+                                  (map (ppTerm c TmTop) assmpts),
                                 lengthString(2, "\\<rbrakk>"),
                                lengthString(5, " \\<Longrightarrow> ")],
-                      ppTerm c Top concl]
+                      ppTerm c TmTop concl]
 
  %% Like getConjuncts but only flattens one level
  op [a] getConjuncts1(t: ATerm a): List (ATerm a) =
@@ -4044,7 +4040,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let def ppCase (pattern, _, term) =
          prBreakCat 0 [[ppPattern c pattern None true,
                         lengthString(3, " \\<Rightarrow> ")],
-                       [ppTerm c Top term]]
+                       [ppTerm c TmTop term]]
    in
      (prSep (-3) blockAll (prString " | ") (map ppCase cases))
 
@@ -4148,7 +4144,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
            prBreak 0 [ppPattern c pat wildstr parens?
 %% Ignore restricted patterns for now (certainly for lambdas)
 %                       prString " | ",
-%                       ppTerm c Top term
+%                       ppTerm c TmTop term
                       ] %)
      | TypedPat (pat,ty,_) -> ppPattern c pat wildstr parens?
      | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
@@ -4208,7 +4204,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Op (qid as Qualified(_,opstr),_) ->
        (case infixFun? c fun of
           | Some infix_str ->
-            enclose?(parentTerm ~= Top,
+            enclose?(parentTerm ~= TmTop,
                      prConcat [lengthString(11, "\\<lambda> (x,y). x "),
                                prSymString infix_str,
                                prString " y"])
@@ -4329,9 +4325,9 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
      | Some(dom, rng) ->
        (case productTypes(getSpec c,dom) of
          | [arg1_ty,arg2_ty] ->
-           ppType c Top true (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
-         | _ -> ppType c Top true ty)
-     | _ -> ppType c Top true ty
+           ppType c TyTop true (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
+         | _ -> ppType c TyTop true ty)
+     | _ -> ppType c TyTop true ty
 
  op  ppType : Context -> ParentType -> Bool -> MSType -> Pretty
  def ppType c parent in_quotes? ty =
@@ -4363,7 +4359,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
        prString (name ^ (Nat.show uniqueId))
 
      | _ | ~in_quotes? ->
-       prConcat [prString "\"", ppType c Top true ty, prString "\""]
+       prConcat [prString "\"", ppType c TyTop true ty, prString "\""]
 
      | Base (qid,[ty],_) ->
        prBreak 0 [ppType c Apply in_quotes? ty,
@@ -4371,7 +4367,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
                   ppTypeQualifiedId c qid]
      | Base (qid,tys,_) ->
        prBreak 0 [prString " (",
-                  prPostSep 0 blockFill (prString ", ") (map (ppType c Top in_quotes?) tys),
+                  prPostSep 0 blockFill (prString ", ") (map (ppType c TyTop in_quotes?) tys),
                   prString ")",
                   ppTypeQualifiedId c qid]      | Arrow (ty1,ty2,_) ->
        enclose?(case parent of
@@ -4399,22 +4395,22 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
             let def ppField (x,y) =
             prLinearCat 2 [[prString (mkFieldName( x^"5")),
                             prString " :: "],
-                           [ppType c Top in_quotes? y]]
+                           [ppType c TyTop in_quotes? y]]
             in
               prBreak 2 [lengthString(1, "\\<lparr>"),
                          prPostSep 0 blockLinear(prString ", ") (map ppField fields),
                          lengthString(1, "\\<rparr>")])
      | Quotient (ty,term,_) ->
          prBreak 0 [prString "(",
-                    ppType c Top in_quotes? ty,
+                    ppType c TyTop in_quotes? ty,
                     prString " \\ ",
-                    ppTerm c Top term,
+                    ppTerm c TmTop term,
                     prString ")"]
      | Subtype (ty,term,_) ->
          prBreak 0 [prString "(",
-                    ppType c Top in_quotes? ty,
+                    ppType c TyTop in_quotes? ty,
                     prString " | ",
-                    ppTerm c Top term,
+                    ppTerm c TmTop term,
                     prString ")"]
 
      | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
@@ -4467,7 +4463,7 @@ def enclose?(encl? ,pp) =
 
 op ppTermEncloseComplex? (c: Context) (parentTerm: ParentTerm) (term: MSTerm): Pretty =
   let encl? = ~(isSimpleTerm? term) in
-  enclose?(encl?, ppTerm c (if encl? then Top else parentTerm) term)
+  enclose?(encl?, ppTerm c (if encl? then TmTop else parentTerm) term)
 
 def prSpace = prString " "
 

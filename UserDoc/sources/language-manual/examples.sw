@@ -24,8 +24,8 @@ type Map(a, b)
 %   type MyBool = Bool
 %   type MyWrapper a = a
 
-   type Tree         a = | Leaf a | Fork (Tree a * Tree a)
-   type Bush         a = | Leaf a | Fork (Tree a * Tree a)
+   type Tree         a = | T.Leaf a | T.Fork (Tree a * Tree a)
+   type Bush         a = | B.Leaf a | B.Fork (Tree a * Tree a)
 
 % Removed this one, since we don't want to advertise this syntax:
 %   type {Bush,Shrub} a = | Leaf a | Fork (Tree a * Tree a)

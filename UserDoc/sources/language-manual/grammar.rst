@@ -367,7 +367,7 @@ Type-sums
 .. productionlist::
   type_sum: `type_summand` { `type_summand` }*
   type_summand: "|" `constructor` [ `slack_type_descriptor` ]
-  constructor: `simple_name`
+  constructor: `name`
 
 .. COMMENT:  ***************************************************************** 
 
@@ -693,7 +693,7 @@ Structors
 =========
 
 .. productionlist::
-  structor: `projector` | `quotienter` | `chooser` | `embedder` | `embedding_test`
+  structor: `projector` | `quotienter` | `chooser` | `embedding_test`
 
 .. productionlist:: projector: project `field_selector`
 
@@ -701,9 +701,6 @@ Structors
   quotienter: quotient "[" `type_name` "]"
 
 .. productionlist:: chooser: choose "[" `type_name` "]"
-
-.. productionlist::
-  embedder: [ embed ] `constructor`
 
 .. productionlist:: embedding_test: embed? `constructor`
 

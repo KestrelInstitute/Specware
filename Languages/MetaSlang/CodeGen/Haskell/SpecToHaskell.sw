@@ -74,8 +74,8 @@ Haskell qualifying spec
    c.slicing? => qid in? c.needed_types
 
 
- type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
- type ParentType = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subtype | Apply
+ type ParentTerm = | Term.Top | Nonfix | Infix Associativity * Nat
+ type ParentType = | Type.Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subtype | Apply
 
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
@@ -509,6 +509,8 @@ Haskell qualifying spec
     % let _ = writeLine("0:\n"^printSpec spc) in
     %% Get rid of non-haskell pragmas
     %% let _ = writeLine(c.spec_name) in
+    let spc = explicateEmbeds spc in
+    let spc = removeImplicitConstructorOps spc in
     let spc = addExecutableDefs(spc, c.spec_name) in
     let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     % let _ = writeLine("0a:\n"^printSpecFlat( spc)^"\n") in
@@ -1722,11 +1724,6 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op unkownPatternVar?(t: MSTerm): Bool =
    case t of
      | Var(("_", _), _) -> true
-     | _ -> false
-
- op constructorTerm?(tm: MSTerm): Bool =
-   case tm of
-     | Fun(Embed _, _, _) -> true
      | _ -> false
 
  op primitiveArg?(tm: MSTerm): Bool =

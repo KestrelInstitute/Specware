@@ -900,6 +900,11 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  in
  let _ = showSpecIfVerbose "Original"                          spc in
 
+ %% These two transformations undo some of the recent changes to constructor handling and could
+ %% be removed if code generation is updated accordingly
+ let spc = explicateEmbeds spc in
+ let spc = removeImplicitConstructorOps spc in
+
  %% ==========================================================================================
  %% fetch toplevel types and op early, to avoid including anything incidentally added later
  %% ==========================================================================================
