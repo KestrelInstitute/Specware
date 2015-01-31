@@ -217,8 +217,10 @@ PrettyPrint qualifying spec
        (columns, lines, text,
         fn (indent : Nat, pretty : Pretty, text : Text) ->
           formatPretty
-          (columns, pretty,
-           addBreak (start + indent, newlines, text))))
+            (columns, pretty,
+             if lengthLast text - start - indent  < 2     % Don't break unless it gains more than 1 character
+               then text
+             else addBreak (start + indent, newlines, text))))
 
   op blockNone (_ (* newlines *) : Nat, lines : Lines) : Pretty =
     pretty
@@ -428,7 +430,7 @@ PrettyPrint qualifying spec
                      then
                      let [enabled,value,sos?] = 
                          StringUtilities.tokens
-                           (fn #: -> true | _ -> false) s
+                           (fn | #: -> true | _ -> false) s
                      in
                      let enabled = 
                          case enabled of "true" -> "t" | _ -> "nil"
@@ -476,7 +478,7 @@ PrettyPrint qualifying spec
                       axiom? = false,
                       readId? = false,
                       string = string^
-                               (String.translate (fn #" -> "\\\\\\\"" | ch -> Char.show ch) s)})
+                               (String.translate (fn | #" -> "\\\\\\\"" | ch -> Char.show ch) s)})
        in
        let {charPos,stack,readId?,axiom?,string} =
                   toStream (text,
