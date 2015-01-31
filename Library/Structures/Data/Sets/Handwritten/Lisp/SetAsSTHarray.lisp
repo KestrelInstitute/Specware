@@ -23,7 +23,7 @@
 (defun make-undo-pair (domain-value old-range-value)
   (cons domain-value old-range-value))
 
-(defparameter *set-as-undo-harray--initial-harray-size* 100)
+(defparameter *set-as-undo-harray--initial-harray-size* 50)
 (defparameter *set-as-undo-harray--rehash-size* 2.0)
 
 (defun set-as-undo-harray--initial-harray ()
