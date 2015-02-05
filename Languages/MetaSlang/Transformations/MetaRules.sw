@@ -211,19 +211,23 @@ op MSRule.expandRecordMerge (spc: Spec) (tm: TransTerm): Option MSTerm =
    if equalTerm?(tm, ntm) then None else Some ntm
 
 
-op caseEquality (t: MSTerm, vs: MSVars): Option(MSVars * QualifiedId * MSType * MSPattern * MSTerm * MSTerm) =
+op caseEquality (t: MSTerm, vs: MSVars, spc: Spec)
+     : Option(MSVars * QualifiedId * MSType * MSPattern * MSTerm * MSTerm) =
   let def checkConstrBind(e1, e2) =
         if ~(disjointVars?(freeVars e2, vs)) then None
         else
         case e1 of
-          | Apply(Fun(Embed(constr_qid, true), ty, _), v_tm, _) ->
-            let p_vs = freeVars v_tm in
-            if forall? (fn v -> inVars?(v, vs) && ~(isFree(v, e2))) p_vs
-              then
-                case termToPattern v_tm of
-                  | Some v_pat -> Some(p_vs, constr_qid, ty, v_pat, e2, e1)
-                  | None -> None
-            else None
+          | Apply(f, v_tm, _) ->
+            (case explicateEmbed spc f of
+               | Fun(Embed(constr_qid, true), ty, _) -> 
+                 let p_vs = freeVars v_tm in
+                 if forall? (fn v -> inVars?(v, vs) && ~(isFree(v, e2))) p_vs
+                   then
+                     case termToPattern v_tm of
+                       | Some v_pat -> Some(p_vs, constr_qid, ty, v_pat, e2, e1)
+                       | None -> None
+                 else None
+               | _ -> None)
           | _ -> None
   in
   case t of
@@ -268,6 +272,9 @@ op flattenExistsTerms (vs: MSVars, cjs: MSTerms, spc: Spec) : MSVars * MSTerms =
         case cj of
           | Apply(f as Fun(Equals, _, _), Record([("1", e1), ("2", e2)], a1), a0) ->
             (case (e1, e2) of
+               | (Apply(Fun(Op(id1, fx1), _, _), a1, _), Apply(Fun(Op(id2, fx2), _, _), a2, _)) | id1 = id2 && fx1 = fx2 ->
+                 let new_cj = mkEquality(inferType(spc, a1), a1, a2) in
+                 flattenConjunct(new_cj, vs, i)
                | (Apply(Fun(Embed(id1, a1?), _, _), a1, _), Apply(Fun(Embed(id2, a2?), _, _), a2, _)) | id1 = id2 && a1? = a2? ->
                  let new_cj = mkEquality(inferType(spc, a1), a1, a2) in
                  flattenConjunct(new_cj, vs, i)
@@ -293,7 +300,10 @@ op flattenExistsTerms (vs: MSVars, cjs: MSTerms, spc: Spec) : MSVars * MSTerms =
             let (e2, vs, ncjs, i) = flattenTerm(e2, vs, ncjs, i, false) in
             (Apply(f, Record([("1", e1), ("2", e2)], a1), a0), vs, ncjs, i)
           | Apply(f as Fun(Embed(_, true), _, _), t, a) ->
-            let (t, vs, ncjs, i) = flattenTerm(t, vs, ncjs, i, false) in
+            let (t, vs, ncjs, i) = flattenTerm(t, vs, ncjs, i,  ~(embed? Record t)) in
+            (Apply(f, t, a), vs, ncjs, i)
+          | Apply(f as Fun(Op(qid, _), ty, _), t, a) | constructorOfType? spc qid ty ->
+            let (t, vs, ncjs, i) = flattenTerm(t, vs, ncjs, i, ~(embed? Record t)) in
             (Apply(f, t, a), vs, ncjs, i)
           | Record(prs, a) ->
             let (prs, vs, ncjs, i) = foldr (fn ((id, ti), (prs, vs, ncjs, i)) ->
@@ -418,9 +428,9 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                | None -> None)
          | None ->
         %% (ex(x,y) <C=constructor> x = e && q x y) = (case e of C x -> ex(y) q x y | _ -> false)
-        case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
+        case findLeftmost (fn cj -> some?(caseEquality (cj, vs, spc))) cjs of
           | Some cj -> 
-            (case caseEquality(cj,vs) of
+            (case caseEquality(cj,vs,spc) of
                | Some (p_vs, constr_qid, f_ty, v_pat, s_tm, v_tm) ->
                  let new_vs = filter (fn v -> ~(inVars?(v, p_vs))) vs in
                  let constr_ty = range(spc, f_ty) in
