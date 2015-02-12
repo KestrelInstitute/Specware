@@ -58,7 +58,7 @@ CPrint qualifying spec
 
     | C_Problem msg -> 
       let _ = writeLine msg in
-      prettysNone [string msg, p]
+      prettysNone [strings ["\"", ppQuoteString msg, "\""], p]
 
     | mystery -> fail ("Unexpected type to print "^anyToString mystery)
 
@@ -235,7 +235,7 @@ CPrint qualifying spec
       
     | C_Problem msg ->
       let _ = writeLine msg in
-      prettysNone [string msg]
+      prettysNone [strings ["\"", ppQuoteString msg, "\""]]
 
     | _ -> fail "Unexpected expression" 
 
