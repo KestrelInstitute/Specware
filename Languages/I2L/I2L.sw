@@ -53,6 +53,9 @@ I2L qualifying spec
                 | I_Ref         I_Type            % ptr type
                 | I_Void
                 | I_Any
+                | I_Problem     String            % to avoid need for passing Option, error messages, etc.
+ 
+
   type I_Types = List I_Type
 
   type I_EnumField = String
@@ -124,6 +127,7 @@ I2L qualifying spec
                 | I_StructExpr     I_StructExprFields                        % create a structure using given names
                 | I_Project        I_TypedExpr * String                      % access a field   in a product/structure
                 | I_Select         I_TypedExpr * String                      % access a variant in a coproduct/union 
+                | I_Problem        String                                    % to avoid need for passing Option, error messages, etc.
 
   op I_True  : I_TypedExpr = {expr = I_Bool true,  typ = I_Primitive I_Bool, cast? = false} 
   op I_False : I_TypedExpr = {expr = I_Bool false, typ = I_Primitive I_Bool, cast? = false} 

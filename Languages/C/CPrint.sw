@@ -55,6 +55,11 @@ CPrint qualifying spec
     | C_Fn            (ts,     t) -> ppType (t, prettysNone [string " (*", p, string ") ", ppPlainTypes ts])
       
     | C_ConstField    -> ppBaseType  ("ConstField"    , p)
+
+    | C_Problem msg -> 
+      let _ = writeLine msg in
+      prettysNone [string msg, p]
+
     | mystery -> fail ("Unexpected type to print "^anyToString mystery)
 
  op ppConst (c : C_Const) : Pretty =
@@ -228,6 +233,10 @@ CPrint qualifying spec
                                                 else 
                                                   ppExpsCurly es]
       
+    | C_Problem msg ->
+      let _ = writeLine msg in
+      prettysNone [string msg]
+
     | _ -> fail "Unexpected expression" 
 
  %% Print non-atomic expressions in parens.

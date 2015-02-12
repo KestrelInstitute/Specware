@@ -89,6 +89,7 @@ C qualifying spec
     | C_Fn             C_Types * C_Type   % '(int, int) : int' etc.
 
     | C_ConstField
+    | C_Problem        String
 
   %% types commonly used when building signatures:
   %% TODO:  we abuse the naming conventions for op's to make these 
@@ -134,6 +135,7 @@ C qualifying spec
     | C_SizeOfType  C_Type                       % sizeof(int)
     | C_SizeOfExp   C_Exp                        % sizeof(x)
     | C_Field       C_Exps                       % TODO: ?
+    | C_Problem     String
 
   type C_Const =
     | C_Char   Char                                   % 'A'

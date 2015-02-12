@@ -817,7 +817,7 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
      
    | TyVar _ -> 
-     fail ("sorry, this version of the code generator doesn't support polymorphic types.")
+     (I_Problem ("unsupported type:"  ^ printType ms_ntype), false)
 
    % ----------------------------------------------------------------------
    % use the base types as given, assume that the original definition has been checked
@@ -841,9 +841,7 @@ op type2itype (ms_tvs  : TyVars,
      type2itype (ms_tvs, ms_type, ctxt)
      
    | _ ->
-     fail ("sorry, code generation doesn't support the use of this type:\n       "
-             ^ printType ms_type)
-
+     (I_Problem ("unsupported type:"  ^ printType ms_ntype), false)
 
 op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Option Int =
  case ms_term of
@@ -1453,6 +1451,10 @@ op term2expression_let (ms_pat : MSPattern,
    | VarPat ((id, ms_type), _) ->
      let (i_type, _) = type2itype ([], ms_type, unsetToplevel ctxt) in
      I_Let (id, i_type, i_def_exp, i_exp)
+     
+   | RecordPat (fields, _) ->
+     let x = printTerm (Let ([(ms_pat, ms_def)], ms_tm, noPos)) in
+     I_Problem ("unsupported Let binding of record or product: " ^ x)
      
    | _ -> 
      fail (mkInOpStr ctxt ^ "unsupported feature: this form of pattern cannot be used in a let:\n" 

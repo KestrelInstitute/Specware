@@ -557,9 +557,9 @@ op c4Type (ctxt : I2C_Context,
          (cspc, structtype)
          
        | _ -> 
-         (print typ;
-          % (cspc, Int)
-          fail ("sorry, no code generation implemented for that type."))
+         let x = "no code generation implemented for type " ^ anyToString typ in
+         (cspc, C_Problem x)
+
 
 op c4Types (ctxt  : I2C_Context, 
             cspc  : C_Spec, 
@@ -1042,6 +1042,9 @@ op c4Expression2 (ctxt                      : I2C_Context,
           
         | _ -> fail "Comma expression with no expressions?!")
      
+   | I_Problem msg ->
+     (cspc, block, C_Problem msg)
+
    | _ -> 
      (print expr;
       fail  "unimplemented case for expression.")
