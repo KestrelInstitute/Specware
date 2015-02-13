@@ -397,7 +397,8 @@ Full documentation will be available after autoloading the function."
 		"def"
 		"op"
 		"theorem"
-		"type")))
+		"type"
+                "refine")))
 
 (defvar sw:whitespace "\\(\n\\|\\s-\\)")
 
@@ -423,27 +424,8 @@ Full documentation will be available after autoloading the function."
 (defvar hs-marker-end-regexp)
 
 (when sw:use-hide-show
-  (defun add-to-list (list-var element &optional append)
-    "Add to the value of LIST-VAR the element ELEMENT if it isn't there yet.
-The test for presence of ELEMENT is done with `equal'.
-If ELEMENT is added, it is added at the beginning of the list,
-unless the optional argument APPEND is non-nil, in which case
-ELEMENT is added at the end.
-
-If you want to use `add-to-list' on a variable that is not defined
-until a certain package is loaded, you should put the call to `add-to-list'
-into a hook function that will be run only after loading the package.
-`eval-after-load' provides one way to do this.  In some cases
-other hooks, such as major mode hooks, can do the job."
-    (if (member element (symbol-value list-var))
-	(symbol-value list-var)
-      (set list-var
-	   (if append
-	       (append (symbol-value list-var) (list element))
-	     (cons element (symbol-value list-var))))))
-
   (setq hs-minor-mode-map nil)		; Force resetting in case of old version
-  (sw:load-specware-emacs-file "hideshow")
+  (require 'hideshow)
   (setq hs-allow-nesting t)
   (add-to-list 'hs-special-modes-alist
 	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\|#translate\\>\\|"
@@ -1622,7 +1604,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (forward-line 1))
     (goto-char (point-max))))
 
-(defvar sw:element-intro-regexp "^\\s-*\\(op\\|def\\|type\\|axiom\\|theorem\\|proof\\|#translate\\) ")
+(defvar sw:element-intro-regexp "^\\s-*\\(op\\|def\\|refine\\|type\\|axiom\\|theorem\\|proof\\|#translate\\) ")
 
 (defun sw:beginning-of-element ()
   (interactive "")
