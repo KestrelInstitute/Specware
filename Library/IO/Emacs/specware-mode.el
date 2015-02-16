@@ -398,61 +398,76 @@ Full documentation will be available after autoloading the function."
 		"op"
 		"theorem"
 		"type"
-                "refine")))
+                "refine"
+                "proof"
+                "#translate")))
 
 (defvar sw:whitespace "\\(\n\\|\\s-\\)")
 
 (defvar sw:basic-unit-intro-regexp "^\\(\\sw+\\)\\(\n\\|\\s-\\)*=\\s-*")
 
 (defvar sw:definition-intro-sexp
-  (concat "\\s-*\\(" sw:definition-introducing-words "\\)\\>"))
+  (concat "\\<\\(" sw:definition-introducing-words "\\)"))
 
 (defvar sw:definition-ending-sexp
-  (concat "^\\s-*\\(" sw:definition-introducing-words
+  (concat "\\<\\(" sw:definition-introducing-words
 	  "\\|end-?spec"
 	  "\\)\\>"))
 
 (defvar sw:def-ending-sexp		; Add "in" for def because of local definitions
-  (concat "^\\s-*\\(" sw:definition-introducing-words
-	  "\\|in"
+  (concat "\\<\\(" sw:definition-introducing-words
+	  "\\|\\<\\|in"
 	  "\\|end-?spec"
 	  "\\)\\>"))
 
-(defvar hs-minor-mode-map)
-(defvar hs-allow-nesting)
-(defvar hs-marker-begin-regexp)
-(defvar hs-marker-end-regexp)
+;; (defvar hs-minor-mode-map)
+;; (defvar hs-allow-nesting)
+;; (defvar hs-marker-begin-regexp)
+;; (defvar hs-marker-end-regexp)
 
 (when sw:use-hide-show
-  (setq hs-minor-mode-map nil)		; Force resetting in case of old version
-  (require 'hideshow)
+  ;(setq hs-minor-mode-map nil)		; Force resetting in case of old version
+  (load-library "hideshow")
   (setq hs-allow-nesting t)
   (add-to-list 'hs-special-modes-alist
-	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\|#translate\\>\\|"
+	       `(specware-mode ,(concat "\\(\\s(\\|\\<def\\>\\|"
 					sw:definition-intro-sexp
 					"\\|"
 					sw:basic-unit-intro-regexp
 					"\\|%{{{"
 					"\\)")
-                               "\\(\\s)\\|\\<end-proof|\\<#end\\|\\<end-?spec\\|%}}}\\)"
+                               "\\(\\<end-?spec\\|%}}}\\)"
 			       nil
 			       sw:forward-exp
-			       sw:adjust-begin
-			       )))
+			       nil      ;sw:adjust-begin
+			       ))
+  ;; (add-to-list 'hs-special-modes-alist
+  ;;              `(specware-mode ,(concat "\\(\\s(\\|\\<proof\\>\\|^#translate\\>\\|"
+  ;;       				sw:definition-intro-sexp
+  ;;       				"\\|"
+  ;;       				sw:basic-unit-intro-regexp
+  ;;       				"\\|%{{{"
+  ;;       				"\\)")
+  ;;                              nil ;"\\(\\s)\\|\\<end-proof|\\<#end\\|\\<end-?spec\\|%}}}\\)"
+  ;;       		       nil
+  ;;       		       sw:forward-exp
+  ;;       		       sw:adjust-begin
+  ;;       		       ))
+  )
 
 (defun sw:forward-exp (n)
   (interactive "p")
   (if (looking-at "#translate\\>")
       (sw:re-search-forward "#end")
     (if (looking-at "\\s-*proof\\>")
-      (sw:re-search-forward " end-proof\\>")
+      (sw:re-search-forward "\\<end-proof\\>")
       (if (looking-at sw:basic-unit-intro-regexp)
           (progn (forward-char 1)
                  (if (sw:re-search-forward sw:basic-unit-intro-regexp)
                      (progn (beginning-of-line))
                    (goto-char (point-max)))
                  (forward-comment -100)) ; Go backward until non-comment found
-        (if (looking-at "\\<def\\>")
+        (if (and (looking-at "\\<def\\>") (not (looking-back "\\<refine\\s-*")))
             (let ((beg-indentation (1+ (current-column))) ; 1+ just in case user indent by 1
                   (found-end nil))
               (while (not found-end)
@@ -467,12 +482,18 @@ Full documentation will be available after autoloading the function."
                     (goto-char (point-max)))))
               (forward-comment -100))
           (if (looking-at sw:definition-intro-sexp) ; other than def
-              (progn (end-of-line)
-                     (if (or (sw:re-search-forward sw:definition-ending-sexp)
-                             (sw:re-search-forward sw:basic-unit-intro-regexp))
-                         (progn (beginning-of-line))
-                       (goto-char (point-max)))
-                     (forward-comment -100)) ; Go backward until non-comment found
+              (let ((beg-indentation (1+ (current-column))) ; 1+ just in case user indent by 1
+                    (found-end nil))
+                (while (not found-end)
+                  (end-of-line)
+                  (if (or (sw:re-search-forward sw:definition-ending-sexp)
+                          (sw:re-search-forward sw:basic-unit-intro-regexp))
+                      (progn (forward-sexp -1)
+                             (if (and (<= (current-column) beg-indentation)
+                                      (not (looking-back"\\<let\\s-*")))
+                                 (setq found-end t)))
+                    (goto-char (point-max))))
+                (forward-comment -100))
             (if (looking-at hs-marker-begin-regexp)
                 (sw:scan-matching-patterns "%{{{" "\\(%{{{\\|%}}}\\)")
               (if (looking-at "(\\*")
@@ -556,11 +577,14 @@ Mode map
   (setq indent-tabs-mode nil)		; Don't use tabs when doing automatic indentation
   (if sw:use-x-symbol
       (x-symbol-mode t))
-  (when sw:use-hide-show
-    (hs-minor-mode t)
-    (setq hs-marker-begin-regexp "\\s-*%{{{")
-    (setq hs-marker-end-regexp "\\s-*%}}}"))
   (run-mode-hooks 'sw:specware-mode-hook))           ; Run the hook
+
+(when sw:use-hide-show
+  (add-hook 'sw:specware-mode-hook
+            (lambda ()
+              (hs-minor-mode 1)
+              (setq hs-marker-begin-regexp "\\s-*%{{{")
+              (setq hs-marker-end-regexp "\\s-*%}}}"))))
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
 
