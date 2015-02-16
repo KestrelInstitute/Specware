@@ -352,8 +352,8 @@
          (generic-files    (append '("Preface.el"
                                      "files.el"
                                      ;; "compile.el" ; obsolete
-                                     "hideshow.el"
-                                     "hideshow.elc"
+                                     ;; "hideshow.el"; part of emacs distribution
+                                     ;; "hideshow.elc"
                                      "augment-load-path.el"
                                      "specware_logo.xpm")
                                    x-files
