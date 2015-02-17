@@ -218,7 +218,7 @@ PrettyPrint qualifying spec
         fn (indent : Nat, pretty : Pretty, text : Text) ->
           formatPretty
             (columns, pretty,
-             if lengthLast text - start - indent  < 2     % Don't break unless it gains more than 1 character
+             if lengthLast text - start - indent  < 1     % Don't break unless it gains more than 1 character
                then text
              else addBreak (start + indent, newlines, text))))
 
