@@ -6,6 +6,8 @@ CPrint qualifying spec
  import C
  import /Languages/MetaSlang/Specs/Printer
 
+ op CNewline : Pretty = string "\n"
+
  op Specware.currentDeviceAsString : () -> String % defined in toplevel.lisp
 
  op ppBaseType (s : String, p : Pretty) : Pretty =
@@ -290,8 +292,7 @@ CPrint qualifying spec
           else
             s
   in
-  prettysAll [strings ["#include \"", s, "\""],
-              emptyPretty ()]     
+  prettysAll [strings ["#include \"", s, "\"\n"]]
 
  op ppVerbatim (s : String) : Pretty =
   strings [s]
@@ -333,8 +334,9 @@ CPrint qualifying spec
     | Enum   x -> ppEnumDefn   x
 
  op ppTypeDefn (s : String, t : C_Type) : Pretty =
-  let pp = blockAll (0, [(0, prettysNone [string "typedef ", ppVarDecl (s, t)]),
-                         (0, emptyPretty ())])
+  let pp = blockAll (0, [(0, prettysNone [string "typedef ", 
+                                          ppVarDecl (s, t), 
+                                          CNewline])])
   in
   case t of
     | C_Base ("Any", _) ->
@@ -346,19 +348,19 @@ CPrint qualifying spec
  op ppStructDefn (s : String, vds : C_VarDecls) : Pretty =
   blockAll (0, [(0, strings ["struct ", cId s, " {"]),
                 (2, ppVarDecls vds),
-                (0, string "};"),
+                (0, string "};\n"),
                 (0, emptyPretty ())])
   
  op ppUnionDefn (s : String, vds : C_VarDecls) : Pretty =
   blockAll (0, [(0, strings ["union ", cId s, " {"]),
                 (2, ppVarDecls vds),
-                (0, string "};"),
+                (0, string "};\n"),
                 (0, emptyPretty ())])
 
  op ppEnumDefn (s : String, tags : Strings) : Pretty =
   blockAll (0, [(0, strings ["enum ", cId s, " {"]),
                 (2, strings tags),
-                (0, string "};"),
+                (0, string "};\n"),
                 (0, emptyPretty ())])
 
 
@@ -370,8 +372,7 @@ CPrint qualifying spec
   %	emptyPretty()
   %    else
   blockAll (0, [(0, prettysNone ((if asHeader then [string "extern "] else []) 
-                                   ++ [ppVarDecl (s, t)])),
-                (0, emptyPretty ())])
+                                   ++ [ppVarDecl (s, t), CNewline]))])
                   
 
  op ppFn (s : String, ts : C_Types, t : C_Type) : Pretty =
@@ -380,8 +381,7 @@ CPrint qualifying spec
                | _ -> ppPlainTypes ts
   in
   blockAll (0, [(0, prettysNone [ppType (t, prettysFill [strings [" ", cId s, " "], args]),
-                                 string ";"]),
-                (0, emptyPretty ())])
+                                 string ";\n"])])
   
  op ppExps               (es : C_Exps) : Pretty = prettysLinearDelim ("(", ", ", ")") (map ppExp es)
  op ppExpsInOneline      (es : C_Exps) : Pretty = prettysNoneDelim   ("(", ", ", ")") (map (fn e -> ppExp_internal (e,true)) es)
@@ -393,13 +393,12 @@ CPrint qualifying spec
     ppVar asHeader (s,t) 
   else
     blockFill (0, [(0, prettysNone [ppType (t, strings [" ", cId s]), string " = "]),
-                   (2, prettysNone [ppExp e, string ";"]),
-                   (0, newline ())])
+                   (2, prettysNone [ppExp e, string ";", CNewline])])
 
  op ppVarDefnAsDefine (s : String, (* t *)_: C_Type, e : C_Exp) : Pretty =
   blockNone (0, [(0, prettysNone [string "#define ", string (cId s), string " "]),
                  (2, prettysNone [ppExpInOneLine e]),
-                 (0, newline ())])
+                 (0, CNewline)])
 
  op ppPlainBlock (vds : C_VarDecls1, ss : C_Stmts) : Pretty =
   if empty? vds then
@@ -429,22 +428,21 @@ CPrint qualifying spec
   in
   let decl = ppType (t, prettysFill [strings [" ", cId s, " "], args]) in
   if asHeader then
-    blockAll (0, [(0, prettysNone [decl, string ";"]),
-                  (0, emptyPretty ())])
+    blockAll (0, [(0, prettysNone [decl, string ";\n"])])
+
   else
     blockAll (0, [(0, prettysNone [decl, string " {"]),
                   (2, ppInBlock b),
-                  (0, string "}"),
-                  (0, emptyPretty ())])
+                  (0, string "}\n")])
 
  op ppAxiom (e : C_Exp) : Pretty =
-  prettysAll [ppExp e, emptyPretty (), emptyPretty ()]
+  prettysAll [ppExp e, CNewline]
 
  op section (title : String, ps : Prettys) : Prettys =
   if empty? ps then
     [] 
   else
-    emptyPretty () :: string title :: emptyPretty () :: ps
+    newline () :: string (title ^ "\n") :: newline () :: ps
 
  op ppSpec (s : C_Spec) : Pretty =
   ppSpec_internal false s 
@@ -500,26 +498,27 @@ CPrint qualifying spec
                 ++ section ("/* Variable definitions */", varDefns)
                 ++ section ("/* Function definitions */", fnDefns)
                 ++ section ("/* Axioms */",               axioms)
-                ++ [emptyPretty ()])
+                ++ [CNewline])
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op ppSpecAsHeader(name:String, s:C_Spec):Pretty =
   let defname = "__METASLANG_" ^ (map toUpperCase name) ^ "_H" in
-  prettysAll ([emptyPretty(),
+  prettysAll ([CNewline,
                strings [ "#ifndef ", defname ],
                strings [ "#define ", defname ],
                ppSpec s,
                string "#endif",
-               emptyPretty()])
+               CNewline])
 
  %---------------------------------------------------------------------------------
  op ppDeclsWithoutDefns(decls:C_FnDecls) : Pretty =
   case decls of
     | [] -> emptyPretty()
     | _ ->
-      prettysAll ([emptyPretty(), string "/* no code has been generated for the following functions: "]
-                    ++ (map ppFn decls) ++ [emptyPretty(), string "*/"])
+      prettysAll ([CNewline, string "/* no code has been generated for the following functions: "]
+                    ++ (map ppFn decls) 
+                    ++ [CNewline, string "*/"])
 
  %---------------------------------------------------------------------------------
 
