@@ -135,6 +135,7 @@ C qualifying spec
     | C_SizeOfType  C_Type                       % sizeof(int)
     | C_SizeOfExp   C_Exp                        % sizeof(x)
     | C_Field       C_Exps                       % TODO: ?
+    | C_Ignore                                   % similar to None, to avoid need for Option C_Exp
     | C_Problem     String
 
   type C_Const =

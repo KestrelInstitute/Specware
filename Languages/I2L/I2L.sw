@@ -117,7 +117,7 @@ I2L qualifying spec
                 | I_MapAccessDeref I_OpName * I_Type * (*projections:*) List String * I_TypedExprs
                 | I_IfExpr         I_TypedExpr * I_TypedExpr * I_TypedExpr
                 | I_Comma          I_TypedExprs
-                | I_Let            String * I_Type * I_TypedExpr * I_TypedExpr
+                | I_Let            String * I_Type * (Option I_TypedExpr) * I_TypedExpr * Bool % Bool indicates mv return
                 | I_UnionCaseExpr  I_TypedExpr * List I_UnionCase            % dispatch among variants of a coproduct/union
                 | I_Embedded       I_Selector * I_TypedExpr                  % test for a variant of a coproduct/union
                 | I_AssignUnion    I_Selector * Option I_TypedExpr           % set the variant field for a union
@@ -127,7 +127,10 @@ I2L qualifying spec
                 | I_StructExpr     I_StructExprFields                        % create a structure using given names
                 | I_Project        I_TypedExpr * String                      % access a field   in a product/structure
                 | I_Select         I_TypedExpr * String                      % access a variant in a coproduct/union 
+                | I_Null                                                     % for functions that return void
+
                 | I_Problem        String                                    % to avoid need for passing Option, error messages, etc.
+
 
   op I_True  : I_TypedExpr = {expr = I_Bool true,  typ = I_Primitive I_Bool, cast? = false} 
   op I_False : I_TypedExpr = {expr = I_Bool false, typ = I_Primitive I_Bool, cast? = false} 
@@ -399,8 +402,11 @@ I2L qualifying spec
       | I_Comma (       exps) -> 
         I_Comma (map mp exps)
 
-      | I_Let (s, t,    e1,    e2) -> 
-        I_Let (s, t, mp e1, mp e2)
+      | I_Let (s, t,    e1,    e2, mv?) -> 
+        I_Let (s, t, 
+               case e1 of Some e1 -> Some (mp e1) | _ -> None,
+               mp e2,
+               mv?)
 
       | I_UnionCaseExpr (   e, ucl) -> 
         let ucl = 

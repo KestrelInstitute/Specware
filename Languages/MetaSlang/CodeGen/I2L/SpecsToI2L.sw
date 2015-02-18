@@ -17,6 +17,8 @@ import /Languages/C/CUtils
 
 % op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
+op mv_ref (n : Nat) : String = "mv_ref_" ^ show n % references among multiple values
+
 type S2I_Context = {
                     specName        : String,             % not (yet) used
                     isTopLevel?     : Bool,               % not used
@@ -1073,10 +1075,24 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  case i_type of 
    | I_FunOrMap (i_types, i_rtype) ->
      if definedOpInfo? ms_info then
-       let ms_tm = firstOpDefInnerTerm ms_info         in
-      %let ms_tm = liftUnsupportedPattern (ms_tm, spc)    in  % must do this in prior pass before pattern match compilation
+       let ms_tm = firstOpDefInnerTerm ms_info             in
+      %let ms_tm = liftUnsupportedPattern (ms_tm, spc)     in  % must do this in a prior pass before pattern match compilation
        let (pnames, ms_body) = getParamNames (ctxt, ms_tm) in
        let i_types = alignTypes pnames i_types in
+       let (pnames, i_types, i_rtype) =
+           case i_rtype of
+             | I_Tuple fields ->
+               let (_, pnames, i_types) =
+                   foldl (fn ((n, pnames, i_types), i_r_field_type) ->
+                            let pname = mv_ref n in
+                            (n + 1, pnames <| pname, i_types <| I_Ref i_r_field_type))
+                         (0, pnames, i_types)
+                         fields
+               in
+               (pnames, i_types, I_Void)
+             | _ ->
+               (pnames, i_types, i_rtype)
+       in
        let i_decl  = {name       = id,
                       params     = zip (pnames, i_types),
                       returntype = i_rtype}
@@ -1267,7 +1283,7 @@ op term2expression_apply (ms_t1   : MSTerm,
  case getBuiltinExpr (ms_t1, ms_args, ctxt) of
    | Some i_expr -> i_expr
    | _ ->
-     let ms_orig_lhs = ms_t1 in
+     let ms_orig_fun = ms_t1 in
      let
      
         def getProjectionList (ms_tm, projids) =
@@ -1288,14 +1304,14 @@ op term2expression_apply (ms_t1   : MSTerm,
               % infer the type of the original lhs to get the real type of the map
               % taking all the projections into account
 
-              let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs)            in
-              let ms_lhs_type = unfoldToSpecials (ms_lhs_type, ctxt)             in
-              let i_lhs_type  = type2itype ([], ms_lhs_type, unsetToplevel ctxt) in
+              let ms_fun_type = inferType (ctxt.ms_spec, ms_orig_fun)            in
+              let ms_fun_type = unfoldToSpecials (ms_fun_type, ctxt)             in
+              let i_fun_type  = type2itype ([], ms_fun_type, unsetToplevel ctxt) in
               I_FunCall (i_varname, projections, i_exprs)
               
             | Fun (ms_fun, _, _) -> 
               term2expression_apply_fun (ms_fun, 
-                                         ms_orig_lhs, 
+                                         ms_orig_fun, 
                                          projections, 
                                          ms_t2, 
                                          ms_args, 
@@ -1318,7 +1334,7 @@ op term2expression_apply (ms_t1   : MSTerm,
      process_t1 (ms_t1, [])
      
 op term2expression_apply_fun (ms_fun      : MSFun, 
-                              ms_orig_lhs : MSTerm,
+                              ms_orig_fun : MSTerm,
                               projections : List Id, 
                               ms_t2       : MSTerm,
                               ms_args     : MSTerms,
@@ -1335,13 +1351,29 @@ op term2expression_apply_fun (ms_fun      : MSFun,
      in
      % infer the type of the original lhs to get the real type of the map
      % taking all the projections into account
-     let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs)            in
-     let ms_lhs_type = unfoldToSpecials (ms_lhs_type, ctxt)             in
-     let (i_lhs_type, _)  = type2itype ([], ms_lhs_type, unsetToplevel ctxt) in
+     let ms_fun_type = inferType (ctxt.ms_spec, ms_orig_fun)            in
+     let ms_fun_type = unfoldToSpecials (ms_fun_type, ctxt)             in
+     let (i_fun_type, _)  = type2itype ([], ms_fun_type, unsetToplevel ctxt) in
      %if isOutputOp varname then MapAccessDeref (varname, i_lhs_type, projections, exprs) else 
      if isVariable (ctxt, qid) then
-       I_MapAccess (i_fname, i_lhs_type, projections, i_exprs)
+       I_MapAccess (i_fname, i_fun_type, projections, i_exprs)
      else
+       let i_exprs =
+           case i_fun_type of
+             | I_FunOrMap (_, I_Tuple i_return_types) ->
+               let (_, i_mv_args) =
+                   foldl (fn ((n, mv_args), i_return_type) ->
+                            (n+1,
+                             mv_args <| {expr  = I_Var ("", mv_ref n),
+                                         typ   = i_return_type,
+                                         cast? = false}))
+                         (0, [])
+                         i_return_types
+               in
+               i_exprs ++ i_mv_args
+             | _ ->
+               i_exprs
+       in
        I_FunCall (i_fname, projections, i_exprs)
        
    | Embed (Qualified(_,id), _) ->
@@ -1393,14 +1425,14 @@ op term2expression_apply_fun (ms_fun      : MSFun,
        fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString ms_fun)
        
    | Embedded (Qualified(_,id)) -> 
-     let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs) in
+     let ms_fun_type = inferType (ctxt.ms_spec, ms_orig_fun) in
      let index =
-         case unfoldToArrow (ctxt.ms_spec, ms_lhs_type) of
+         case unfoldToArrow (ctxt.ms_spec, ms_fun_type) of
            | Arrow (ms_super_type, Bool, _) ->
              %% type of a predicate used to test for variants among a coproduct
              alt_index (id, ms_super_type, ctxt)
            | _ ->
-             let _ = writeLine ("Expected arrow type: " ^ printType ms_lhs_type) in
+             let _ = writeLine ("Expected arrow type: " ^ printType ms_fun_type) in
              0
      in
      let selector = {name = id, index = index} in
@@ -1431,34 +1463,79 @@ op term2expression_apply_fun (ms_fun      : MSFun,
      let _ = writeLine msg in
      I_Str msg
      
-op term2expression_let (ms_pat : MSPattern,
-                        ms_def : MSTerm,
-                        ms_tm  : MSTerm, 
-                        ctxt   : S2I_Context) 
+op term2expression_let (ms_pat   : MSPattern,
+                        ms_value : MSTerm,
+                        ms_body  : MSTerm, 
+                        ctxt     : S2I_Context) 
  : I_Expr =
+ let
+
+  def simple_mv? fields =
+    forall? (fn (_, pat) -> 
+               case pat of 
+                 | VarPat _ -> true 
+                 | _        -> false) 
+            fields
+ in
+
  % let's can only contain one pattern/term entry (see parser)
- let i_def_exp = term2expression (ms_def, ctxt) in
- let i_exp     = term2expression (ms_tm,  ctxt) in
+ let i_value = term2expression (ms_value,  ctxt) in
+ let i_body  = term2expression (ms_body,   ctxt) in
  
  case ms_pat of
 
    | WildPat _ ->
-     I_Comma [i_def_exp, i_exp]
+     I_Comma [i_value, i_body]
      
    | VarPat ((_, Product ([], _)), _) ->
-     I_Comma [i_def_exp, i_exp]
+     I_Comma [i_value, i_body]
      
    | VarPat ((id, ms_type), _) ->
      let (i_type, _) = type2itype ([], ms_type, unsetToplevel ctxt) in
-     I_Let (id, i_type, i_def_exp, i_exp)
+     I_Let (id, i_type, Some i_value, i_body, false)
      
    | RecordPat (fields, _) ->
-     let x = printTerm (Let ([(ms_pat, ms_def)], ms_tm, noPos)) in
-     I_Problem ("unsupported Let binding of record or product: " ^ x)
-     
+     let ms_val_type  = termType ms_value in
+     let (i_type, _)  = type2itype ([], ms_val_type, unsetToplevel ctxt) in
+     if simple_mv? fields then
+       case i_value.expr of
+         | I_FunCall (name, projections, args) ->
+           %% Because i_value was a call to a record-producing function,
+           %% it had extra mv_ref args added, which makes sense in other contexts.
+           %% In this context, we replace those args with refs to local vars.
+           let args       = removeSuffix (args, length fields) in
+           let i_var_refs = map (fn (_, (VarPat ((var_name, ms_type), _))) ->
+                                   let (i_type, _) = type2itype ([], ms_type, ctxt) in
+                                   {expr  = I_VarRef ("", var_name),
+                                    typ   = i_type,
+                                    cast? = false})
+                                fields
+           in
+           let i_call_with_added_ref_vars = I_FunCall (name, projections, args ++ i_var_refs) in
+           let i_call_with_added_ref_vars = i_value << {expr = i_call_with_added_ref_vars}    in
+           let i_body                     = I_Comma [i_call_with_added_ref_vars, i_body]      in
+           foldl (fn (body, (_, VarPat ((var_name, var_type), _))) ->
+                    let (field_i_type, native?) = type2itype ([], var_type, ctxt) in
+                    I_Let (var_name, 
+                           field_i_type,
+                           None,
+                           {expr = body, typ = I_Void, cast? = false},
+                           false))
+                 i_body
+                 (reverse fields)
+
+         | _ ->
+           let x = printTerm (Let ([(ms_pat, ms_value)], ms_body, noPos)) in
+           I_Problem ("The value that a record or product is bound to in a Let is not an application: " ^ x)
+     else
+       let x = printTerm (Let ([(ms_pat, ms_value)], ms_body, noPos)) in
+       I_Problem ("Some field in a record or product Let-binding is not a simple variable: " ^ x)
+
    | _ -> 
      fail (mkInOpStr ctxt ^ "unsupported feature: this form of pattern cannot be used in a let:\n" 
              ^ printPattern ms_pat)
+
+
      
 op term2expression_record (ms_fields : List (Id * MSTerm), 
                            _         : MSTerm, 
@@ -1466,7 +1543,26 @@ op term2expression_record (ms_fields : List (Id * MSTerm),
  : I_Expr = 
  if numbered? ms_fields then
    let i_exprs = map (fn (_, ms_tm) -> term2expression (ms_tm, ctxt)) ms_fields in
-   I_TupleExpr i_exprs
+   let (_, mv_assignments : I_Expr) =
+       foldl (fn ((n, assignments), (_, ms_tm)) -> 
+                let var_name    = mv_ref n                      in
+                let i_value     = term2expression (ms_tm, ctxt) in
+                let i_body      = {expr  = assignments,
+                                   typ   = I_Void,
+                                   cast? = false}
+                in
+                let assignments = I_Let (var_name, 
+                                         I_Void,
+                                         Some i_value,
+                                         i_body,
+                                         true)
+                in
+                (n - 1, assignments))
+             (length ms_fields - 1, I_Null)
+             (reverse ms_fields)
+   in
+   mv_assignments
+
  else
    let i_fields = map (fn (id, ms_tm) -> (id, term2expression (ms_tm, ctxt))) ms_fields in
    I_StructExpr i_fields

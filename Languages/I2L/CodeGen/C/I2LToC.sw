@@ -272,7 +272,10 @@ op c4FunDecl_internal (ctxt  : I2C_Context,
 
 op convertExprToReturnStmt (rtype : C_Type) (e : C_Exp) : C_Stmt =
  if rtype = C_Void then
-   C_Block ([], [C_Exp e, C_ReturnVoid])
+   if e = C_Ignore then
+     C_ReturnVoid
+   else
+     C_Block ([], [C_Exp e, C_ReturnVoid])
  else
    C_Return e
 
@@ -729,18 +732,38 @@ op c4Expression2 (ctxt                      : I2C_Context,
      
    | I_Builtin bexp -> c4BuiltInExpr (ctxt, cspc, block, bexp)
      
-   | I_Let (id, typ, idexpr, expr) ->
-     let (id, expr)                      = substVarIfDeclared (ctxt, id, decls, expr)     in
-     let (cspc, ctype)                   = c4Type (ctxt, cspc, typ)                       in
-     let (cspc, (decls, stmts), idcexpr) = c4RhsExpression (ctxt, cspc, block, idexpr)    in
-     let letvardecl                      = (id, ctype)                                    in
-     let optinit                         = None                                           in  % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None  ??
-     let letvardecl1                     = (id, ctype, optinit)                           in
-     let letsetexpr                      = getSetExpr (ctxt, C_Var (letvardecl), idcexpr) in
-     let block                           = (decls++[letvardecl1], stmts)                  in
-     let (cspc, block, cexpr)            = c4RhsExpression (ctxt, cspc, block, expr)      in
-     (cspc, block, C_Comma (letsetexpr, cexpr))
-     
+   | I_Let (id, typ, opt_idexpr, expr, mv_return?) ->
+     let (cspc, ctype) = c4Type (ctxt, cspc, typ)                       in
+     let letvardecl    = (id, ctype)                                    in
+     let optinit       = None                                           in % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None  ??   
+     let (id, expr)    = substVarIfDeclared (ctxt, id, decls, expr)     in
+     let letvardecl1   = (id, ctype, optinit)                           in
+     (case opt_idexpr of
+        | Some idexpr ->
+          let (cspc, (decls, stmts), idcexpr) = c4RhsExpression (ctxt, cspc, block, idexpr) in
+          let lhs_var                         = C_Var letvardecl                            in
+          let lhs                             = if mv_return? then 
+                                                  C_Unary (C_Contents, lhs_var)   
+                                                else
+                                                  lhs_var
+          in
+          let assignment                      = getSetExpr (ctxt, lhs, idcexpr)             in
+          let decls                           = if mv_return? then 
+                                                  decls 
+                                                else 
+                                                  decls++[letvardecl1]
+          in
+          let block                           = (decls, stmts)                              in
+          let (cspc, block, cexpr)            = c4RhsExpression (ctxt, cspc, block, expr)   in
+          (cspc, block, C_Comma (assignment, cexpr))
+        | _ ->
+          %% When we're processing a multiple-value let binding,
+          %% the variables are declared here, but are not set here.
+          %% Instead, refs to those vars are passed to a called function which sets them.
+          let block                           = (decls++[letvardecl1], stmts)               in
+          let (cspc, block, cexpr)            = c4RhsExpression (ctxt, cspc, block, expr)   in
+          (cspc, block, cexpr))
+
    | I_FunCall (vname, projections, exprs) ->
      processFunMap (fn e -> e) (vname, projections, exprs)
      
@@ -1041,6 +1064,9 @@ op c4Expression2 (ctxt                      : I2C_Context,
                 exprs
           
         | _ -> fail "Comma expression with no expressions?!")
+     
+   | I_Null ->
+     (cspc, block, C_Ignore)
      
    | I_Problem msg ->
      (cspc, block, C_Problem msg)
