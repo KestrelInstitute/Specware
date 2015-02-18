@@ -170,10 +170,29 @@ CPrint qualifying spec
  op ppExp          (e : C_Exp) : Pretty = ppExp_internal (e, false)
  op ppExpInOneLine (e : C_Exp) : Pretty = ppExp_internal (e, true)
 
- op ppExp_internal (e : C_Exp, inOneLine: Bool) : Pretty =
+ op ppExp_internal (exp : C_Exp, inOneLine: Bool) : Pretty =
+  let 
+    def ppExpRec (e : C_Exp) : Pretty =
+      %% Print non-atomic expressions in parens.
+      let pretty = ppExp_internal(e,inOneLine) in
+      %% we should compare precedences for e and exp, 
+      %% but this handles extreme cases of highest and lowest precdence
+      case e of
+        | C_Const _ -> pretty % atom
+        | C_Var   _ -> pretty
+        | C_Fn    _ -> pretty
+        | C_Unary (_, arg) -> 
+          (case arg of
+             | C_Var _ -> pretty % unary ops bind tightly around vars
+             | _ -> parens pretty)
+        | _ -> 
+          case exp of
+            | C_Binary (CSet, _, _) -> pretty % assignment binds very loosely
+            | _ -> parens pretty
+  in
   let prettysFill   = if inOneLine then prettysNone else prettysFill in
   let prettysLinear = if inOneLine then prettysNone else prettysLinear in
-  case e of
+  case exp of
 
     | C_Const      c            -> ppConst c
 
@@ -186,14 +205,14 @@ CPrint qualifying spec
       
     | C_Unary      (u, e)       -> prettysNone (if unaryPrefix? u then
                                                   [ppUnary u, 
-                                                   ppExpRec (e, inOneLine)]
+                                                   ppExpRec e]
                                                 else
-                                                  [ppExpRec (e, inOneLine), 
+                                                  [ppExpRec e, 
                                                    ppUnary u])
       
-    | C_Binary     (b, e1, e2)  -> prettysFill [ppExpRec (e1, inOneLine), 
+    | C_Binary     (b, e1, e2)  -> prettysFill [ppExpRec e1, 
                                                 ppBinary b, 
-                                                ppExpRec (e2, inOneLine)]
+                                                ppExpRec e2]
       
     | C_Cast       (t, e)       -> parens (prettysNone [parens (ppPlainType t), 
                                                         string " ", 
@@ -202,7 +221,7 @@ CPrint qualifying spec
     | C_EnumRef    e            -> string (cId e)
 
     | C_StructRef  (C_Unary (Contents, e), s) ->
-        prettysNone [ppExpRec (e, inOneLine), 
+        prettysNone [ppExpRec e,
                      strings ["->", cId s]]
       
     | C_StructRef  (e, s)       -> prettysNone [ppExp_internal (e, inOneLine), 
@@ -211,16 +230,16 @@ CPrint qualifying spec
     | C_UnionRef   (e, s)       -> prettysNone [ppExp_internal (e, inOneLine), 
                                                 strings [".", cId s]]
       
-    | C_ArrayRef   (e1, e2)     -> prettysNone [ppExpRec (e1, inOneLine), 
+    | C_ArrayRef   (e1, e2)     -> prettysNone [ppExpRec e1,
                                                 string "[", 
                                                 ppExp_internal (e2, inOneLine), 
                                                 string "]"]
       
-    | C_IfExp      (e1, e2, e3) -> prettysLinear [prettysNone [ppExpRec (e1, inOneLine), 
+    | C_IfExp      (e1, e2, e3) -> prettysLinear [prettysNone [ppExpRec e1,
                                                                string " ? "],
-                                                  prettysNone [ppExpRec (e2, inOneLine), 
+                                                  prettysNone [ppExpRec e2,
                                                                string " : "],
-                                                  ppExpRec (e3, inOneLine)]
+                                                  ppExpRec e3]
       
     | C_Comma      (e1, e2)     -> parens (prettysFill [ppExp_internal (e1, inOneLine), 
                                                         string ", ", 
@@ -241,15 +260,6 @@ CPrint qualifying spec
 
     | _ -> fail "Unexpected expression" 
 
- %% Print non-atomic expressions in parens.
-
- op ppExpRec (e : C_Exp, inOneLine : Bool) : Pretty =
-  case e of
-    | C_Const _ -> ppExp_internal(e,inOneLine)
-    | C_Var   _ -> ppExp_internal(e,inOneLine)
-    | C_Fn    _ -> ppExp_internal(e,inOneLine)
-    | _ -> parens (ppExp_internal(e,inOneLine))
-      
  op ppBlock   : C_Block -> Pretty
  op ppInBlock : C_Stmt  -> Pretty
 
