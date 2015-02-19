@@ -70,6 +70,12 @@ CurryUtils qualifying spec
                | _ -> Some(term, args, true))
     in aux(t, [])
 
+  op applicationOfQId? (qid: QualifiedId) (tm: MSTerm): Bool =
+    case tm of
+      | Fun(Op(qidi,_),_,_) ->  qidi = qid
+      | Apply(f, _, _) -> applicationOfQId? qid tm
+      | _ -> false
+
   op mkCurriedLambda(lam_pats: MSPatterns, bod: MSTerm): MSTerm =
     foldr (fn (pat, bod) -> mkLambda(pat, bod)) bod lam_pats
 

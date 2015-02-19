@@ -179,7 +179,8 @@ def maintainOpsCoalgebraically
          else
          case getStateVarAndPostCondn(ty, state_ty, spc) of
            | Some (result_var, deref?, post_cond)
-               | ~(containsRefToOp?(post_cond, intro_qid)) ->
+               % | ~(containsRefToOp?(post_cond, intro_qid)) 
+                 ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
              let result_tm = case deref? of
                                | Some (id, _) ->
@@ -202,7 +203,7 @@ def maintainOpsCoalgebraically
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let main_script = At(map Def (reverse qids),
                         Repeat(15, [ % Go to rhs of postcondition just added, unfold and simplify
-                                    Move [Search intro_id, Next],
+                                    Move [SearchPred (rhsApplication intro_qid)],
                                     mkSimplify[LeftToRight(mkContextQId "fn value")],
                                     Simplify1([reverseRuleSpec fold_rl,
                                                Omit(mkContextQId "fn value")] ++ rules),
@@ -217,6 +218,17 @@ def maintainOpsCoalgebraically
     print (scriptToString script^"\n"); 
     spc <- interpret(spc, script);
     return spc}}
+
+op SearchPred.rhsApplication (qid: QualifiedId) (tm: MSTerm, pt: PathTerm): Bool =
+  case tm of
+    | Apply(f, _, _) | applicationOfQId? qid f ->
+      (case (pathTermPath pt, grandParentTerm pt) of
+         | (1::1::_, Some(gpar_ptm)) ->    % Relies on representation of PathTerms
+           (case fromPathTerm gpar_ptm of
+              | Apply(Fun(Equals, _, _), _, _) -> true
+              | _ -> false)
+         | _ -> false)
+    | _ -> false
 
 op findHomomorphismFn(tm: MSTerm): Option QualifiedId =
   case tm of
@@ -429,12 +441,17 @@ op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
 
 op findSourceVar(cjs: MSTerms, state_var: MSVar, stored_qids: QualifiedIds): Option MSVar
 
+op mkCanonRecordOrSingle (fields : MSRecordFields) : MSTerm =
+  case fields of
+    | [("0", tm)] -> tm
+    | _ -> mkCanonRecord fields
+
 op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVar,
                             deref?: Option(Id * List(Id * MSPattern)), op_qid: QualifiedId,
                             spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
                             field_pairs: List(Id * MSType), result_ty: MSType)
      : MSTerm =
-   % let _ = writeLine("mdfuct: "^state_var.1^"\n"^printTerm post_condn) in
+   % let _ = writeLine("\nmdfuct: "^show op_qid^" "^state_var.1^"\n"^printTerm post_condn) in
    let params = case top_dfn of
                   | Lambda([(binds, p, o_bod)], a) ->
                     patVars binds
@@ -450,7 +467,9 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                    (id, tm))
               id_pat_prs)
    in
+   % let _ = (writeLine("state_id, result_tuple_info: "^state_id); writeLine(printTerm (mkRecord result_tuple_info))) in
    let def makeDef(tm: MSTerm, inh_cjs: MSTerms, seenQIds: QualifiedIds): MSTerm =
+         % let _ = writeLine("makeDef:\n"^printTerm tm) in
          case tm of
            | IfThenElse(p, q, r, a) ->
              IfThenElse(p, makeDef(q, inh_cjs, seenQIds), makeDef(r, inh_cjs, seenQIds), a)
@@ -458,7 +477,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
            | Apply(Lambda(matches, a1), e, a2) ->
              let n_matches = map (fn (p, c, bod) -> (p, c, makeDef(bod, inh_cjs, seenQIds))) matches in
              Apply(Lambda(n_matches, a1), e, a2) 
-           | Apply(Fun(And,_,_), Record([("1",t1), ("2",t2)],_),a) ->
+           | Apply(Fun(And,_,_), _, _) ->
              (let cjs = getExpandedConjuncts tm in
               let cjs = inh_cjs ++ cjs in
               case findLeftmost (fn cj -> case cj of
@@ -473,13 +492,13 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
               let state_res = case tryIncrementalize(state_rec_prs) of
                                 | (Some src_tm, inc_rec_prs) ->
                                   if inc_rec_prs = [] then src_tm
-                                  else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
-                                | (None, _) -> mkCanonRecord(state_rec_prs)
+                                  else mkRecordMerge(src_tm, mkCanonRecordOrSingle(inc_rec_prs))
+                                | (None, _) -> mkCanonRecordOrSingle(state_rec_prs)
               in
               % let _ = writeLine("makeDef: "^printTerm state_res) in
               if result_tuple_info = []
                 then state_res
-                else mkCanonRecord(if stored_qids = [] || exists? (fn (idi, _) -> idi = state_id) opt_rec_prs
+                else mkCanonRecordOrSingle(if stored_qids = [] || exists? (fn (idi, _) -> idi = state_id) opt_rec_prs
                                      then opt_rec_prs
                                    else (state_id, state_res) :: opt_rec_prs))
            | _ ->
@@ -493,10 +512,10 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                   (case tryIncrementalize(state_rec_prs) of
                      | (Some src_tm, inc_rec_prs) ->
                        if inc_rec_prs = [] then src_tm
-                       else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
-                     | (None, _) -> mkCanonRecord(state_rec_prs))
+                       else mkRecordMerge(src_tm, mkCanonRecordOrSingle(inc_rec_prs))
+                     | (None, _) -> mkCanonRecordOrSingle(state_rec_prs))
                 | ([], opt_rec_prs) ->
-                  mkCanonRecord(opt_rec_prs)
+                  mkCanonRecordOrSingle(opt_rec_prs)
                 | result -> (% writeLine(anyToPrettyString result);
                              warn("makeDefForUpdatingCoType: Unexpected kind of equality in "^show op_qid^"\n"
                                ^printTerm tm);
@@ -506,6 +525,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                    mkVar("Unrecognized_term", result_ty))
        def recordItemVal((state_itms: List(Id * MSTerm), result_itms: List(Id * MSTerm)), cj: MSTerm)
              : List(Id * MSTerm) * List(Id * MSTerm) =
+         % let _ = writeLine("recordItemVal:\n"^printTerm cj) in
          case cj of
            | Apply(Fun(Equals,_,_),
                    Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
@@ -515,11 +535,17 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                    Record([(_, rhs), (_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _))], _), _)
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, rhs) :: state_itms, result_itms)
+           | Apply(Fun(Equals,_,_), Record([(_, Var(v,_)), (_, rhs)], _), _)
+               | result_tuple_info = [] && equalVar?(state_var, v) ->
+             (("0", rhs) :: state_itms, result_itms)
            | Apply(Fun(Equals,_,_), Record([(_, lhs), (_, rhs)], _), _)
                | exists? (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs)) result_tuple_info ->
              let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs))
                                  result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
+           | Apply(Fun(Equals,_,_), Record([(_, lhs), (_, Var(v,_))], _), _)     % Reversed orientation of equality
+               | result_tuple_info = [] && equalVar?(state_var, v) ->
+             (("0", lhs) :: state_itms, result_itms)
            | Apply(Fun(Equals,_,_), Record([(_, rhs), (_, lhs)], _), _)     % Reversed orientation of equality
                | exists? (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs)) result_tuple_info ->
              let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs))
@@ -577,6 +603,9 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
          length p_state_itms = length q_state_itms
            && forall? (fn ((idp, _), (idq, _)) -> idp = idq) (zip(p_state_itms, q_state_itms))
        def tryIncrementalize(rec_prs: List(Id * MSTerm)): Option MSTerm * List(Id * MSTerm) =
+         case rec_prs of
+           | [("0", _)] -> (None, rec_prs)
+           | _ -> 
          let (opt_src_tm, result_prs) =
              foldl (fn ((opt_src_tm, result_prs), (id, tm)) ->
                       case tm of

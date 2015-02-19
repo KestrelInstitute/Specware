@@ -272,7 +272,8 @@ op flattenExistsTerms (vs: MSVars, cjs: MSTerms, spc: Spec) : MSVars * MSTerms =
         case cj of
           | Apply(f as Fun(Equals, _, _), Record([("1", e1), ("2", e2)], a1), a0) ->
             (case (e1, e2) of
-               | (Apply(Fun(Op(id1, fx1), _, _), a1, _), Apply(Fun(Op(id2, fx2), _, _), a2, _)) | id1 = id2 && fx1 = fx2 ->
+               | (Apply(Fun(Op(id1, fx1), ty1, _), a1, _), Apply(Fun(Op(id2, fx2), _, _), a2, _))
+                   | id1 = id2 && constructorOfType? spc id1 ty1 ->
                  let new_cj = mkEquality(inferType(spc, a1), a1, a2) in
                  flattenConjunct(new_cj, vs, i)
                | (Apply(Fun(Embed(id1, a1?), _, _), a1, _), Apply(Fun(Embed(id2, a2?), _, _), a2, _)) | id1 = id2 && a1? = a2? ->
@@ -424,7 +425,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                                       prf,
                                       if embed? VarPat v_pat || ~(embed? Bind new_ex)
                                         then "(auto simp add: Let_def prod.split_asm)"
-                                        else "(simp add: Let_def prod.split_asm, (metis surj_pair fst_conv snd_conv)+)"))
+                                        else "(simp add: Let_def prod.split_asm, ((metis surj_pair fst_conv snd_conv)+)?)"))
                | None -> None)
          | None ->
         %% (ex(x,y) <C=constructor> x = e && q x y) = (case e of C x -> ex(y) q x y | _ -> false)
