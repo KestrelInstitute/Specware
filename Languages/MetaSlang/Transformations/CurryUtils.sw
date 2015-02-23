@@ -73,7 +73,7 @@ CurryUtils qualifying spec
   op applicationOfQId? (qid: QualifiedId) (tm: MSTerm): Bool =
     case tm of
       | Fun(Op(qidi,_),_,_) ->  qidi = qid
-      | Apply(f, _, _) -> applicationOfQId? qid tm
+      | Apply(f, _, _) -> applicationOfQId? qid f
       | _ -> false
 
   op mkCurriedLambda(lam_pats: MSPatterns, bod: MSTerm): MSTerm =
