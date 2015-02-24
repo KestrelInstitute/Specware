@@ -254,40 +254,43 @@ CPrint qualifying spec
                                                 else 
                                                   ppExpsCurly es]
       
+    | C_Ignore                  -> string "" % shouldn't arrive here (see ppStmt) but doesn't hurt
+
     | C_Problem msg ->
       let _ = writeLine msg in
       prettysNone [strings ["\"", ppQuoteString msg, "\""]]
 
-    | _ -> fail "Unexpected expression" 
+    | _ -> fail ("Unexpected expression: " ^ anyToString exp)
 
  op ppBlock   : C_Block -> Pretty
  op ppInBlock : C_Stmt  -> Pretty
 
  op ppStmt (s : C_Stmt) : Pretty =
   case s of
-    | C_Exp e          -> prettysNone [ppExp e, string ";"]
-    | C_Block b        -> ppBlock b
-    | C_IfThen (e, s1) -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
-                                        (2, ppInBlock s1),
-                                        (0, string "}")])
-    | C_If (e, s1, s2) -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
-                                        (2, ppInBlock s1),
-                                        (0, string "} else {"),
-                                        (2, ppInBlock s2),
-                                        (0, string "}")])
-    | C_Return e       -> prettysNone [string "return ", ppExp e, string ";"]
-    | C_ReturnVoid     -> prettysNone [string "return;"]
-    | C_Break          -> string "break;"
-    | C_Nop            -> string ";"
-    | C_While (e, s)   -> blockAll (0, [(0, prettysNone [string "while (", ppExp e, string ") {"]),
-                                        (2, ppInBlock s),
-                                        (0, string "}")])
-    | C_Label s        -> strings [(*"label ", *)s, ":"] %% Changed by Nikolaj
-    | C_Goto s         -> strings ["goto ", cId s, ";"]
-    | C_Switch (e, ss) -> blockAll (0, [(0, prettysNone [string "switch (", ppExp e, string ") {"]),
-                                        (2, ppStmts ss),
-                                        (0, string "}")])
-    | C_Case c         -> prettysNone [string "case ", ppConst c, string ":"]
+    | C_Exp e           -> prettysNone [ppExp e, string ";"]
+    | C_Block b         -> ppBlock b
+    | C_IfThen (e, s1)  -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
+                                         (2, ppInBlock s1),
+                                         (0, string "}")])
+    | C_If (e, s1, s2)  -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
+                                         (2, ppInBlock s1),
+                                         (0, string "} else {"),
+                                         (2, ppInBlock s2),
+                                         (0, string "}")])
+    | C_Return C_Ignore -> string "return;"
+    | C_Return e        -> prettysNone [string "return ", ppExp e, string ";"]
+    | C_ReturnVoid      -> prettysNone [string "return;"]
+    | C_Break           -> string "break;"
+    | C_Nop             -> string ";"
+    | C_While (e, s)    -> blockAll (0, [(0, prettysNone [string "while (", ppExp e, string ") {"]),
+                                         (2, ppInBlock s),
+                                         (0, string "}")])
+    | C_Label s         -> strings [(*"label ", *)s, ":"] %% Changed by Nikolaj
+    | C_Goto s          -> strings ["goto ", cId s, ";"]
+    | C_Switch (e, ss)  -> blockAll (0, [(0, prettysNone [string "switch (", ppExp e, string ") {"]),
+                                         (2, ppStmts ss),
+                                         (0, string "}")])
+    | C_Case c          -> prettysNone [string "case ", ppConst c, string ":"]
     | _ -> fail "Unexpected statement" 
 
  op ppStmts (ss : C_Stmts) : Pretty =
