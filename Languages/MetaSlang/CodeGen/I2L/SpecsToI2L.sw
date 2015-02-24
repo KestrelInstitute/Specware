@@ -1084,11 +1084,6 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  let ctxt       = setCurrentOpType (qid, ctxt)                     in
  case i_type of 
    | I_FunOrMap (i_types, i_rtype) ->
-     let _ = writeLine("") in
-     let _ = writeLine(anyToString qid) in
-     let _ = writeLine("i_types: " ^ anyToString i_types) in
-     let _ = writeLine("i_type:  " ^ anyToString i_rtype) in
-     let _ = writeLine("") in
      if definedOpInfo? ms_info then
        let ms_tm = firstOpDefInnerTerm ms_info             in
       %let ms_tm = liftUnsupportedPattern (ms_tm, spc)     in  % must do this in a prior pass before pattern match compilation
