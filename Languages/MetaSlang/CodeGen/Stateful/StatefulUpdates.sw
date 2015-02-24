@@ -100,6 +100,9 @@ op make_updates_stateful (context : Context) : Spec =
                         let new_info = info << {dfn = new_dfn} in
                         insertAQualifierMap (new_ops, q, id, new_info)
                   in
+                  new_ops
+                | _ ->
+                  let _ = writeLine("WARNING: Stateful updates could not find op: " ^ show name) in
                   new_ops)
            spc.ops
            names_of_executable_ops

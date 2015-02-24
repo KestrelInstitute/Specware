@@ -743,28 +743,38 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
   
    | Arrow (ms_typ1, ms_typ2, _) ->
-     let ms_typ1 = unfoldToSpecials (ms_typ1, ctxt) in
-    %let ms_typ1 = unfoldToProduct (spc, ms_typ1) in
-     (case ms_typ1 of
-        | Product (ms_fields, _) ->
-          let i_types = map (fn (_, ms_type) -> 
-                              let ms_type = unfoldToSpecials (ms_type, ctxt) in
-                              let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
-                              i_type)
-                            ms_fields
-          in
-          let (i_typ, native?) = type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt) in
-          (I_FunOrMap (i_types, i_typ), native?)
-        | _ -> 
-          let (itype, native?) = type2itype (ms_tvs, ms_typ1, unsetToplevel ctxt) in
-          let dom_i_type =
-              case itype of
-                | I_Tuple i_types -> i_types
-                | i_typ           -> [i_typ]
-          in
-          let (rng_i_type, native?) = type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt) in
-          (I_FunOrMap (dom_i_type, rng_i_type), false))
-                       
+     let ms_typ1 = unfoldToProduct (ms_typ1, ctxt) in
+     let ms_typ2 = unfoldToProduct (ms_typ2, ctxt) in
+     let dom_i_types =
+         case unfoldToSpecials (ms_typ1, ctxt) of
+           | Product (ms_fields as (("1", _) :: _), _) ->
+             map (fn (_, ms_type) -> 
+                    let ms_type = unfoldToSpecials (ms_type, ctxt) in
+                    let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                    i_type)
+                 ms_fields
+
+           | _ -> 
+             let (itype, _) = type2itype (ms_tvs, ms_typ1, unsetToplevel ctxt) in
+             case itype of
+               | I_Tuple i_types -> i_types
+               | i_typ           -> [i_typ]
+     in
+     let rng_i_type =
+         case unfoldToSpecials (ms_typ2, ctxt) of
+           | Product (ms_fields as (("1", _) :: _), _) ->
+             I_Tuple (map (fn (_, ms_type) -> 
+                             let ms_type = unfoldToSpecials (ms_type, ctxt) in
+                             let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                             i_type)
+                          ms_fields)
+
+           | _ -> 
+             let (itype, _) = type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt) in
+             itype
+     in
+     let native? = false in % presumably there is no native arrow type
+     (I_FunOrMap (dom_i_types, rng_i_type), native?)
      
    % ----------------------------------------------------------------------
 
@@ -1074,6 +1084,11 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  let ctxt       = setCurrentOpType (qid, ctxt)                     in
  case i_type of 
    | I_FunOrMap (i_types, i_rtype) ->
+     let _ = writeLine("") in
+     let _ = writeLine(anyToString qid) in
+     let _ = writeLine("i_types: " ^ anyToString i_types) in
+     let _ = writeLine("i_type:  " ^ anyToString i_rtype) in
+     let _ = writeLine("") in
      if definedOpInfo? ms_info then
        let ms_tm = firstOpDefInnerTerm ms_info             in
       %let ms_tm = liftUnsupportedPattern (ms_tm, spc)     in  % must do this in a prior pass before pattern match compilation
@@ -1494,7 +1509,7 @@ op term2expression_let (ms_pat   : MSPattern,
      let (i_type, _) = type2itype ([], ms_type, unsetToplevel ctxt) in
      I_Let (id, i_type, Some i_value, i_body, false)
      
-   | RecordPat (fields, _) ->
+   | RecordPat (fields as (("1",_) :: _), _) ->
      let ms_val_type  = termType ms_value in
      let (i_type, _)  = type2itype ([], ms_val_type, unsetToplevel ctxt) in
      if simple_mv? fields then
