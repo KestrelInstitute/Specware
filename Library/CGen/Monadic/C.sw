@@ -1,4 +1,5 @@
-C qualifying spec
+(* FIXME: remove "C =" when finished debugging this spec... *)
+C = C qualifying spec
 
 import /Library/General/TwosComplementNumber
 import /Library/General/FunctionExt
@@ -443,7 +444,7 @@ type Type =
   | pointer Type        % pointer (to type)
   | array   Type * Nat  % array (of type of size)
   | void                % void
-  | funpointer Type * (List Type) % function (with return type and argument types)
+  | function Type * (List Type) % function (with return type and argument types)
 
 (* The following are the standard signed integer types [ISO 6.2.5/4] *)
 
@@ -699,7 +700,7 @@ type TypeName =
   | pointer TypeName
   | array   TypeName * Nat
   | void
-  | funpointer TypeName * (List TypeName)
+  | function TypeName * (List TypeName)
   % typedef name:
   | typedef Identifier
 
@@ -2084,52 +2085,6 @@ op checkProgram (prg:Program) : Option SymbolTable =
 execution) of C programs. *)
 
 
-%subsection (* Outcomes *)
-
-(* [ISO] prescribes the outcomes of certain computations, while leaving the
-outcomes of other computations undefined [ISO 3.4.3] or implementation-defined
-[ISO 3.4.1]. In our formalization, we collectively regard undefined and
-implementation-defined outcomes as errors, since we cannot prove anything
-about these outcomes.
-
-The syntactic constraints checked at compile time guarantee that certain
-situations will never occur at run time. An example of this kind of situation is
-referencing a variable that is not in scope. Thus, execution needs not deal with
-such situations, i.e. the semantics of the C constructs in [ISO] is only defined
-for those instances of the constructs that satisfy the compile-time checks.
-Correspondingly, our formalization could restrict the specification of execution
-to only the situations allowed by the compile-time checks. However, it seems
-simpler to specify execution in all situations, and have the Specware functions
-return a special error result to indicate that the situation should not arise if
-all the compile-time checks are satisfied. We can then prove that no error ever
-arises when all the compile-time checks (formalized earlier) are satisfied.
-
-emw4: We defer the low-level semantic definitions of C computations to
-a monad, which is defined externally to this spec. This monad must of
-course satisfy the monad laws, as specified by the monad spec
-/Library/Structures/Data/Monad, but must additionally provide features
-for error-reporting, for mutating some global state, and for
-representing non-terminating computations. These features are all
-specified in the following extensions of the monad spec.
-*)
-
-import /Library/Structures/Data/Monad/MonadError
-import /Library/Structures/Data/Monad/MonadState
-import /Library/Structures/Data/Monad/MonadNonTerm
-
-(* These specify a (potentially incomplete) list of possible sorts of
-erroneous outcomes, including runtime errors and non-standard behavior. *)
-op Err_error : Err
-op Err_nonstd : Err
-
-(* Conditionally raise an error *)
-op errorIf (condition:Bool) : Monad () =
-  if condition then raiseErr (Err_error) else return ()
-
-(* This defines the state type as the type State defined below *)
-type St = State
-
-
 %subsection (* Object designators *)
 
 (* Each object declaration in a program in our C subset introduces an object
@@ -2202,6 +2157,22 @@ type      IntWord = (Bits | ofLength?   int_bits)
 type     LongWord = (Bits | ofLength?  long_bits)
 type LongLongWord = (Bits | ofLength? llong_bits)
 
+(* (emw4) The text in [ISO 6.2.6.1] suggests that the representations
+of functions themselves is unspecified. (Technically, clause 1 says
+"The representations of all types are unspecified except as stated in
+this subclause" and does not state how functions are represented.) To
+represent this lack of representation, we declare but do not define
+the type FunctionRepr of representations of functions. Intuitively,
+elements of this type can be thought of as a sequence of machine code
+instructions in binary form. Later, we define the runFunction op,
+which runs a FunctionRepr by converting it into the computation that
+it actually performs, as well as the compileFunction op, that converts
+an AST representation of C syntax into a FunctionRepr. Our only
+requirement is that compiling and then running an AST is the same as
+interpreting the AST directly using the C semantics given below. *)
+
+type FunctionRepr
+
 (* The wording in [ISO 3.19] indicates that, conceptually, a value "includes" a
 type. Typical implementations only store "raw" bits inside objects [ISO 3.15],
 without explicit type information, but use the declared type of the object to
@@ -2228,6 +2199,9 @@ separate null pointer [ISO 6.3.2.3/3] value for each type [ISO 6.3.2.3/4].
 An array value consists of a list of values -- the elements of the array. We
 also include the type of the elements in our model of an array value.
 
+(emw4) A function value is a FunctionRepr (see the above discussion)
+along with its return type and input parameter types.
+
 When an object declared in automatic storage has no initializer, its initial
 value is indeterminate [ISO 6.7.9/10]. Unlike Java, C does not enforce that such
 objects are assigned a value before first use. Thus, at run time, we may be
@@ -2239,8 +2213,6 @@ values include their type, but no other information is predictably known.
 Even though some types may represent values in the same way, they are still
 separate types [ISO 6.2.5/14] and thus we use a different constructor for each
 different type. *)
-
-(* emw4: added function pointers *)
 
 type Value =
   |  char               Byte
@@ -2257,8 +2229,8 @@ type Value =
   | struct      Identifier * FiniteMap (Identifier, Value)
   | pointer     Type * ObjectDesignator
   | array       Type * List Value
-  | funpointer  Type * (List Type) * Identifier
   | nullpointer Type
+  | function    Type * (List Type) * FunctionRepr
   | undefined   Type
 
 (* There is an obvious mapping from values to types. Note that this includes
@@ -2280,7 +2252,7 @@ op typeOfValue (val:Value) : Type =
   | sllong _         -> sllong
   | struct (tag, _)  -> struct tag
   | pointer (ty, _)  -> pointer ty
-  | funpointer (ty, tys, _)  -> function (ty, tys)
+  | function (ty, tys, _)  -> function (ty, tys)
   | array (ty, vals) -> array (ty, length vals)
   | nullpointer ty   -> pointer ty
   | undefined ty     -> ty
@@ -2298,8 +2270,8 @@ op arithmeticValue? (val:Value) : Bool =
 op pointerValue? (val:Value) : Bool =
   embed? pointer (typeOfValue val)
 
-op funPointerValue? (val:Value) : Bool =
-  embed? funpointer (typeOfValue val)
+op functionValue? (val:Value) : Bool =
+  embed? function (typeOfValue val)
 
 op structValue? (val:Value) : Bool =
   embed? struct (typeOfValue val)
@@ -2310,87 +2282,8 @@ op arrayValue? (val:Value) : Bool =
 op scalarValue? (val:Value) : Bool =
   scalarType? (typeOfValue val)
 
-(* We can remove the constructors of integer values, and retrieve the bits that
-comprise them. It is an error to do that on non-integer values. If the value is
-an undefined integer, a non-standard outcome is produced. *)
 
-op bitsOfIntegerValue (val:Value) : OC Bits =
-  case val of
-  |  char  x -> ok x
-  | uchar  x -> ok x
-  | schar  x -> ok x
-  | ushort x -> ok x
-  | sshort x -> ok x
-  | uint   x -> ok x
-  | sint   x -> ok x
-  | ulong  x -> ok x
-  | slong  x -> ok x
-  | ullong x -> ok x
-  | sllong x -> ok x
-  | undefined ty -> if integerType? ty then nonstd else error
-  | _ -> error
-
-(* Given an integer type and bits of the type's size, we can create a value with
-those bits and that type. *)
-
-op valueOfBits
-   (bits:Bits, ty:Type | integerType? ty && length bits = typeBits ty) : Value =
-  the(val:Value) typeOfValue val = ty && bitsOfIntegerValue val = ok bits
-
-(* Each integer value encodes a mathematical integer. The outcome is an error if
-the value is not an integer, and non-standard if the value is undefined. *)
-
-op mathIntOfValue (val:Value) : OC Int =
-  {bits <- bitsOfIntegerValue val;
-   if unsignedIntegerType? (typeOfValue val) ||
-      plainCharsAreUnsigned && typeOfValue val = char then
-     ok (toNat bits)
-   else
-     ok (toInt bits)}
-
-(* A mathematical integer in the range of an integer type can be represented in
-that type. *)
-
-op valueOfMathInt
-   (i:Int, ty:Type | integerType? ty && i in? rangeOfIntegerType ty) : Value =
-  the(val:Value) typeOfValue val = ty && mathIntOfValue val = ok i
-
-(* Each scalar type has a "zero" value. For integers, it is the representation
-of the mathematical 0. For pointers, it is the null pointer. *)
-
-op zeroOfScalarType (ty:Type | scalarType? ty) : Value =
-  if integerType? ty then valueOfMathInt (0, ty) else nullpointer ty
-
-(* The zero of an integer type consists of all 0 bits. Note that, because of our
-environmental choices about the absence of padding bits and the two's complement
-representation of signed integers, the all-0-bits pattern is the only
-representation of the integer 0 values. In particular, two's complement do not
-have positive and negative zeros. *)
-
-theorem zero_of_integer_type_is_all_zeros is
-  fa(ty:Type) integerType? ty =>
-              bitsOfIntegerValue (zeroOfScalarType ty) =
-                ok (repeat B0 (typeBits ty))
-
-(* The following predicate tests whether a scalar value is 0 or not. The result
-is an error if the value is not scalar, and non-standard if it is undefined. *)
-
-op zeroScalarValue? (val:Value) : OC Bool =
-  if scalarValue? val then
-    if embed? undefined val then nonstd
-    else ok (ex(ty:Type) scalarType? ty && val = zeroOfScalarType ty)
-  else
-    error
-
-(* It is useful to introduce Specware constants for the signed ints 0 and 1,
-because they are returned by some operators, as formalized later. *)
-
-op int0 : Value = valueOfMathInt (0, sint)
-
-op int1 : Value = valueOfMathInt (1, sint)
-
-
-%subsection (* States *)
+%subsection (* Storage *)
 
 (* An object is a region of storage [ISO 3.15]. When the object has a name, that
 name identifies that region of storage. We introduce the notion of named storage
@@ -2437,17 +2330,110 @@ type Storage =
    automatic : List (List NamedStorage),
    outside   :          OutsideStorage}
 
+(* The following ops provide convenience in updating parts of the state. Using
+typical programming language terminology, we call each element of the outer list
+(of named storages that form the automatic storage) a 'frame' (this term is not
+used in [ISO]). *)
+
+(* FIXME HERE: figure out useful helper functions here (e.g.,
+pushAutomaticFrame and popAutomaticFrame) *)
+
+op updateStaticStorage (sstore:NamedStorage) : Monad () =
+  {storage <- getState ();
+   putState (storage << {static = sstore})}
+
+op updateStaticObject (name:Identifier, val:Value) : Monad () =
+  {storage <- getState ();
+   putState (update storage.static name val)}
+
+op updateAutomaticStorage (astore:List (List NamedStorage)) : Monad () =
+  {storage <- getState ();
+   putState (storage << {automatic = astore})}
+
+op updateAutomaticFrame
+   (f:Nat, frame:List NamedStorage |
+      f < length storage.automatic) : Monad () =
+  let newauto = update (storage.automatic, f, frame) in
+  updateAutomaticStorage (storage, newauto)
+
+op updateAutomaticObjects
+   (storage:Storage, f:Nat, o:Nat, objs:NamedStorage |
+    f < length storage.automatic &&
+    o < length (storage.automatic @ f)) : Storage =
+  let newframe = update (storage.automatic @ f, o, objs) in
+  updateAutomaticFrame (storage, f, newframe)
+
+op updateAutomaticObject
+   (storage:Storage, f:Nat, o:Nat, name:Identifier, val:Value |
+    f < length storage.automatic &&
+    o < length (storage.automatic @ f)) : Storage =
+  let newobjs = update (storage.automatic @ f @ o) name val in
+  updateAutomaticObjects (storage, f, o, newobjs)
+
+op updateOutsideStorage (storage:Storage, ostore:OutsideStorage) : Storage =
+  storage << {outside = ostore}
+
+op updateOutsideObject (storage:Storage, id:OutsideID, val:Value) : Storage =
+  updateOutsideStorage (storage, update storage.outside id val)
+
+
+%subsection (* Outcomes *)
+
+(* [ISO] prescribes the outcomes of certain computations, while leaving the
+outcomes of other computations undefined [ISO 3.4.3] or implementation-defined
+[ISO 3.4.1]. In our formalization, we collectively regard undefined and
+implementation-defined outcomes as errors, since we cannot prove anything
+about these outcomes.
+
+The syntactic constraints checked at compile time guarantee that certain
+situations will never occur at run time. An example of this kind of situation is
+referencing a variable that is not in scope. Thus, execution needs not deal with
+such situations, i.e. the semantics of the C constructs in [ISO] is only defined
+for those instances of the constructs that satisfy the compile-time checks.
+Correspondingly, our formalization could restrict the specification of execution
+to only the situations allowed by the compile-time checks. However, it seems
+simpler to specify execution in all situations, and have the Specware functions
+return a special error result to indicate that the situation should not arise if
+all the compile-time checks are satisfied. We can then prove that no error ever
+arises when all the compile-time checks (formalized earlier) are satisfied.
+
+emw4: We defer the low-level semantic definitions of C computations to
+a monad, which is defined externally to this spec. This monad must of
+course satisfy the monad laws, as specified by the monad spec
+/Library/Structures/Data/Monad, but must additionally provide features
+for error-reporting, for mutating some global state, and for
+representing non-terminating computations. These features are all
+specified in the following extensions of the monad spec. Note that, by
+leaving the actual monad the is being used abstract, we can
+instantiate it with different actual monads depending on the
+"computational features" we want to model; e.g., concurrency, file
+operations, etc. *)
+
+import /Library/Structures/Data/Monad/MonadError
+import /Library/Structures/Data/Monad/MonadState
+import /Library/Structures/Data/Monad/MonadNonTerm
+
+(* These specify a (potentially incomplete) list of possible sorts of
+erroneous outcomes, including runtime errors and non-standard behavior. *)
+op Err_error : Err
+op Err_nonstd : Err
+
+(* Conditionally raise an error *)
+op errorIf (condition:Bool) : Monad () =
+  if condition then raiseErr (Err_error) else return ()
+
+(* The state type of the monad is the Storage type defined above *)
+type St = Storage
+
+
 (* Besides storage, it is convenient to include in the state of a C program in
 our subset also a symbol table of type definitions, a symbol table of structure
 types, and information about functions (consisting of return type, typed
 parameters, and body). These are used to execute declarations at run time, as
 formalized later. *)
 
-FIXME HERE:
-- Make FunctionsInfo a list (instead of a finite function)
-- Make FunctionsInfo (and, presumably, also TypedefTable and StructTable) part of
-  the per-file declaration state, and not part of the global state for running a program
-- figure out how to handle initializers for global variables (or maybe we don't!)
+(* FIXME HERE: remove FunctionInfo and State from the below; this is
+what they used to look like:
 
 type FunctionInfo =
   {return     : Type,
@@ -2461,47 +2447,10 @@ type State =
    typedefs   : TypedefTable,
    structures : StructTable,
    functions  : FunctionsInfo}
+*)
 
-(* The following ops provide convenience in updating parts of the state. Using
-typical programming language terminology, we call each element of the outer list
-(of named storages that form the automatic storage) a 'frame' (this term is not
-used in [ISO]). *)
 
-op updateStaticStorage (state:State, sstore:NamedStorage) : State =
-  state << {storage = state.storage << {static = sstore}}
-
-op updateStaticObject (state:State, name:Identifier, val:Value) : State =
-  updateStaticStorage (state, update state.storage.static name val)
-
-op updateAutomaticStorage
-   (state:State, astore:List (List NamedStorage)) : State =
-  state << {storage = state.storage << {automatic = astore}}
-
-op updateAutomaticFrame
-   (state:State, f:Nat, frame:List NamedStorage |
-    f < length state.storage.automatic) : State =
-  let newauto = update (state.storage.automatic, f, frame) in
-  updateAutomaticStorage (state, newauto)
-
-op updateAutomaticObjects
-   (state:State, f:Nat, o:Nat, objs:NamedStorage |
-    f < length state.storage.automatic &&
-    o < length (state.storage.automatic @ f)) : State =
-  let newframe = update (state.storage.automatic @ f, o, objs) in
-  updateAutomaticFrame (state, f, newframe)
-
-op updateAutomaticObject
-   (state:State, f:Nat, o:Nat, name:Identifier, val:Value |
-    f < length state.storage.automatic &&
-    o < length (state.storage.automatic @ f)) : State =
-  let newobjs = update (state.storage.automatic @ f @ o) name val in
-  updateAutomaticObjects (state, f, o, newobjs)
-
-op updateOutsideStorage (state:State, ostore:OutsideStorage) : State =
-  state << {storage = state.storage << {outside = ostore}}
-
-op updateOutsideObject (state:State, id:OutsideID, val:Value) : State =
-  updateOutsideStorage (state, update state.storage.outside id val)
+%subsection (* Identifiers and Object Designators *)
 
 (* An object name denotes the object declared with that name in the innermost
 block that declares an object with that name. The following op returns the
@@ -2521,28 +2470,39 @@ is searched in the static storage, achieved by removing the automatic storage
 altogether in the recursive call. Since list indices are numbered from 0, we
 return the lengths of the lists minus 1 as the indices of a block scope. *)
 
-op scopeOfObject (state:State, name:Identifier) : OC ScopeDesignator =
-  let store = state.storage in
-  if empty? store.automatic then
-    if name in? domain store.static then ok file else error
-  else
-    let topframe = last store.automatic in
-    if empty? topframe then
-      scopeOfObject (updateAutomaticStorage (state, []), name)
-    else
-      if name in? domain (last topframe) then
-        ok (block (length store.automatic - 1, length topframe - 1))
-      else
-        let state' =
-            updateAutomaticFrame
-              (state, length store.automatic - 1, butLast topframe) in
-        scopeOfObject (state', name)
+(* FIXME HERE: should not be monadic; instead, should just search
+through the automatic storage and then the static storage *)
+op scopeOfObject (name:Identifier) : Monad ScopeDesignator =
+  {
+   store <- getState ();
+   if empty? store.automatic then
+     if name in? domain store.static then ok file else error
+   else
+     let topframe = last store.automatic in
+     if empty? topframe then
+       scopeOfObject (updateAutomaticStorage (state, []), name)
+     else
+       if name in? domain (last topframe) then
+         return (block (length store.automatic - 1, length topframe - 1))
+       else
+         
+         let state' =
+         updateAutomaticFrame
+         (state, length store.automatic - 1, butLast topframe) in
+         scopeOfObject (state', name)
+         }
+
+(* FIXME HERE *)
+end-spec
+
+blah = spec
+
 
 (* The following op returns the complete object designator for a named object,
 by pairing the name with the scope designator returned by the op above. It is an
 error if the object's scope is not found. *)
 
-op designatorOfObject (state:State, name:Identifier) : OC ObjectDesignator =
+op designatorOfObject (state:State, name:Identifier) : Monad ObjectDesignator =
   {scope <- scopeOfObject (state, name);
    ok (top (scope, name))}
 
@@ -2551,7 +2511,7 @@ must exist. When writing, the new value must have the same type as the old
 value. *)
 
 op readTopObject
-   (state:State, scope:ScopeDesignator, name:Identifier) : OC Value =
+   (state:State, scope:ScopeDesignator, name:Identifier) : Monad Value =
   let store = state.storage in
   case scope of
   | file ->
@@ -2568,7 +2528,7 @@ op readTopObject
 
 op writeTopObject
    (state:State, scope:ScopeDesignator, name:Identifier, newval:Value)
-   : OC State =
+   : Monad State =
   {oldval <- readTopObject (state, scope, name);
    errorIf (typeOfValue oldval ~= typeOfValue newval);
    case scope of
@@ -2579,14 +2539,14 @@ op writeTopObject
 must exist. When writing, the new value must have the same type as the old
 value. *)
 
-op readOutsideObject (state:State, id:OutsideID) : OC Value =
+op readOutsideObject (state:State, id:OutsideID) : Monad Value =
   let store = state.storage in
   if id in? domain store.outside then
     ok (store.outside @ id)
   else
     error
 
-op writeOutsideObject (state:State, id:OutsideID, newval:Value) : OC State =
+op writeOutsideObject (state:State, id:OutsideID, newval:Value) : Monad State =
   {oldval <- readOutsideObject (state, id);
    errorIf (typeOfValue oldval ~= typeOfValue newval);
    ok (updateOutsideObject (state, id, newval))}
@@ -2623,7 +2583,7 @@ structure or array. Finally, we recursively assign this new structure or array
 value to the super-object designator. The recursion eventually terminates with a
 top-level object. *)
 
-op readObject (state:State, obj:ObjectDesignator) : OC Value =
+op readObject (state:State, obj:ObjectDesignator) : Monad Value =
   case obj of
   | top (scope, name) ->
     readTopObject (state, scope, name)
@@ -2656,7 +2616,7 @@ op readObject (state:State, obj:ObjectDesignator) : OC Value =
        ok (undefined ty)
      | _ -> error}
 
-op writeObject (state:State, obj:ObjectDesignator, newval:Value) : OC State =
+op writeObject (state:State, obj:ObjectDesignator, newval:Value) : Monad State =
   case obj of
   | top (scope, name) ->
     writeTopObject (state, scope, name, newval)
@@ -2709,6 +2669,7 @@ op writeObject (state:State, obj:ObjectDesignator, newval:Value) : OC State =
        else
          error
      | _ -> error}
+
 
 (* A symbol table is essentially a compile-time summary/representation of the
 run-time state. The following op abstracts a state into a symbol table.
@@ -2944,6 +2905,8 @@ op invariants? (state:State) : Bool =
 
 %subsection (* Attachment and detachment of outside storage *)
 
+(* FIXME HERE: remove attachment and detachment *)
+
 (* When modeling the interaction of a program in our C subset with outside code,
 it is convenient to attach and detach outside storage to and from the state. If
 outside code calls a function in our C program, there will be an outside storage
@@ -3033,6 +2996,94 @@ theorem attachOutsideStorage_invariants is
     invariants? (attachOutsideStorage (state, ostore))
 
 
+%subsection (* Computations on integers *)
+
+(* FIXME: make sure these all make sense here.. (they were moved down
+from the "Values" section) *)
+
+(* We can remove the constructors of integer values, and retrieve the bits that
+comprise them. It is an error to do that on non-integer values. If the value is
+an undefined integer, a non-standard outcome is produced. *)
+
+op bitsOfIntegerValue (val:Value) : Monad Bits =
+  case val of
+  |  char  x -> ok x
+  | uchar  x -> ok x
+  | schar  x -> ok x
+  | ushort x -> ok x
+  | sshort x -> ok x
+  | uint   x -> ok x
+  | sint   x -> ok x
+  | ulong  x -> ok x
+  | slong  x -> ok x
+  | ullong x -> ok x
+  | sllong x -> ok x
+  | undefined ty -> if integerType? ty then nonstd else error
+  | _ -> error
+
+(* Given an integer type and bits of the type's size, we can create a value with
+those bits and that type. *)
+
+op valueOfBits
+   (bits:Bits, ty:Type | integerType? ty && length bits = typeBits ty) : Value =
+  the(val:Value) typeOfValue val = ty && bitsOfIntegerValue val = ok bits
+
+(* Each integer value encodes a mathematical integer. The outcome is an error if
+the value is not an integer, and non-standard if the value is undefined. *)
+
+op mathIntOfValue (val:Value) : Monad Int =
+  {bits <- bitsOfIntegerValue val;
+   if unsignedIntegerType? (typeOfValue val) ||
+      plainCharsAreUnsigned && typeOfValue val = char then
+     ok (toNat bits)
+   else
+     ok (toInt bits)}
+
+(* A mathematical integer in the range of an integer type can be represented in
+that type. *)
+
+op valueOfMathInt
+   (i:Int, ty:Type | integerType? ty && i in? rangeOfIntegerType ty) : Value =
+  the(val:Value) typeOfValue val = ty && mathIntOfValue val = ok i
+
+(* Each scalar type has a "zero" value. For integers, it is the representation
+of the mathematical 0. For pointers, it is the null pointer. *)
+
+op zeroOfScalarType (ty:Type | scalarType? ty) : Value =
+  if integerType? ty then valueOfMathInt (0, ty) else nullpointer ty
+
+(* The zero of an integer type consists of all 0 bits. Note that, because of our
+environmental choices about the absence of padding bits and the two's complement
+representation of signed integers, the all-0-bits pattern is the only
+representation of the integer 0 values. In particular, two's complement do not
+have positive and negative zeros. *)
+
+theorem zero_of_integer_type_is_all_zeros is
+  fa(ty:Type) integerType? ty =>
+              bitsOfIntegerValue (zeroOfScalarType ty) =
+                ok (repeat B0 (typeBits ty))
+
+(* The following predicate tests whether a scalar value is 0 or not. The result
+is an error if the value is not scalar, and non-standard if it is undefined. *)
+
+op zeroScalarValue? (val:Value) : Monad Bool =
+  if scalarValue? val then
+    if embed? undefined val then nonstd
+    else ok (ex(ty:Type) scalarType? ty && val = zeroOfScalarType ty)
+  else
+    error
+
+(* It is useful to introduce Specware constants for the signed ints 0 and 1,
+because they are returned by some operators, as formalized later. *)
+
+op int0 : Value = valueOfMathInt (0, sint)
+
+op int1 : Value = valueOfMathInt (1, sint)
+
+
+
+
+
 %subsection (* Conversions *)
 
 %subsubsection (* Integer conversions *)
@@ -3060,7 +3111,7 @@ in [ISO 6.3.1.3/2].
 
 If the new type is signed, the outcome is non-standard [ISO 6.3.1.3/3]. *)
 
-op convertInteger (val:Value, ty:Type | integerType? ty) : OC Value =
+op convertInteger (val:Value, ty:Type | integerType? ty) : Monad Value =
   {i <- mathIntOfValue val;
    if i in? rangeOfIntegerType ty then
      ok (valueOfMathInt (i, ty))
@@ -3137,7 +3188,7 @@ theorem convertInteger_no_change is
 from values to values: the value is converted to the type returned by op
 'promoteType'. *)
 
-op promoteValue (val:Value) : OC Value =
+op promoteValue (val:Value) : Monad Value =
   if integerValue? val then
     convertInteger (val, promoteType (typeOfValue val))
   else
@@ -3151,7 +3202,7 @@ expressed as a mapping from pairs of values to pairs of values: the original
 values are converted to two values of the type returned by op
 arithConvertTypes. *)
 
-op arithConvertValues (val1:Value, val2:Value) : OC (Value * Value) =
+op arithConvertValues (val1:Value, val2:Value) : Monad (Value * Value) =
   if arithmeticValue? val1 && arithmeticValue? val2 then
     let ty = arithConvertTypes (typeOfValue val1, typeOfValue val2) in
     {newval1 <- convertInteger (val1, ty);
@@ -3175,7 +3226,7 @@ The following op returns an error outcome if neither (i) nor (ii) apply, because
 the compile-time checks prevent that from happening. In conversion (ii), unless
 the pointer is null, the following op returns a non-standard outcome. *)
 
-op convertPointer (val:Value, ty:Type | embed? pointer ty) : OC Value =
+op convertPointer (val:Value, ty:Type | embed? pointer ty) : Monad Value =
   let ty0 = typeOfValue val in
   if compatibleTypes? (ty0, ty) then
     ok val
@@ -3208,7 +3259,7 @@ The following op captures the process of converting the value of the right
 operand of an assignment to the type of the left operand. An error occurs if
 none of the cases (i)-(v) above holds. *)
 
-op convertForAssignment (val:Value, ty:Type) : OC Value =
+op convertForAssignment (val:Value, ty:Type) : Monad Value =
   if arithmeticType? ty then
     convertInteger (val, ty)
   else if embed? struct ty && compatibleTypes? (typeOfValue val, ty) then
@@ -3228,7 +3279,7 @@ the evaluation of integer constants in terms of the value of the inferred type
 whose mathematical integer value is the one returned by op 'integerConstValue'.
 If the constant is too large to fit in a value, error is returned. *)
 
-op evaluateIntegerConstant (c:IntegerConstant) : OC Value =
+op evaluateIntegerConstant (c:IntegerConstant) : Monad Value =
   case checkIntegerConstant c of
   | Some ty -> ok (valueOfMathInt (integerConstantValue c, ty))
   | None -> error
@@ -3240,7 +3291,7 @@ op evaluateIntegerConstant (c:IntegerConstant) : OC Value =
 just returns the promoted operand [ISO 6.5.3.3/2]. Note that op 'promoteValue'
 returns an error if the value is not arithmetic. *)
 
-op operator_PLUS (val:Value) : OC Value =
+op operator_PLUS (val:Value) : Monad Value =
   promoteValue val
 
 (* The unary '-' operator requires an arithmetic operand [ISO 6.5.3.3/1] and
@@ -3253,7 +3304,7 @@ If the operand is unsigned, we follow the laws of arithmetic modulo MAX + 1
 If the operand is signed and its negative cannot be represented in the operand's
 type, the behavior is undefined [ISO 6.5/5]. *)
 
-op operator_MINUS (val:Value) : OC Value =
+op operator_MINUS (val:Value) : Monad Value =
   {val' <- promoteValue val;
    let ty = typeOfValue val' in
    let ok x = mathIntOfValue val' in
@@ -3269,7 +3320,7 @@ op operator_MINUS (val:Value) : OC Value =
 (* The '~' operator requires an integer operand [ISO 6.5.3.3/1] and returns the
 bitwise complement of the promoted operand [ISO 6.5.3.3/4]. *)
 
-op operator_NOT (val:Value) : OC Value =
+op operator_NOT (val:Value) : Monad Value =
   {val' <- promoteValue val;
    bits <- bitsOfIntegerValue val';
    ok (valueOfBits (Bits.not bits, typeOfValue val'))}
@@ -3278,7 +3329,7 @@ op operator_NOT (val:Value) : OC Value =
 signed int 1 or 0 depending on whether the operator compares equal or unequal to
 0 [ISO 6.5.3.3/5]. *)
 
-op operator_NEG (val:Value) : OC Value =
+op operator_NEG (val:Value) : Monad Value =
   {isZero <- zeroScalarValue? val;
    if isZero then ok int1 else ok int0}
 
@@ -3294,7 +3345,7 @@ If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 If the operands are signed and their product cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
-op operator_MUL (val1:Value, val2:Value) : OC Value =
+op operator_MUL (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
@@ -3320,7 +3371,7 @@ If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 If the operands are signed and their quotient cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
-op operator_DIV (val1:Value, val2:Value) : OC Value =
+op operator_DIV (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
@@ -3348,7 +3399,7 @@ If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 If the operands are signed and their remainder cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
-op operator_REM (val1:Value, val2:Value) : OC Value =
+op operator_REM (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
@@ -3374,7 +3425,7 @@ If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 If the operands are signed and their product cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
-op operator_ADD (val1:Value, val2:Value) : OC Value =
+op operator_ADD (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
@@ -3399,7 +3450,7 @@ If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 If the operands are signed and their product cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
-op operator_SUB (val1:Value, val2:Value) : OC Value =
+op operator_SUB (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
@@ -3427,7 +3478,7 @@ representable in E1's type, that is the resulting value; (ii) otherwise (i.e. E1
 is negative or E1 * 2^E2 is not representable), the behavior is undefined [ISO
 6.5.7/4]. *)
 
-op operator_SHL (val1:Value, val2:Value) : OC Value =
+op operator_SHL (val1:Value, val2:Value) : Monad Value =
   {val1' <- promoteValue val1;
    val2' <- promoteValue val2;
    let ty = typeOfValue val1' in
@@ -3463,7 +3514,7 @@ If E1 is unsigned, or if it signed and non-negative, the result is the integral
 part of the quotient E1 / 2^E2 [ISO 6.5.7/5]. Otherwise, the result is
 implementation-dependent [ISO 6.5.7/5]. *)
 
-op operator_SHR (val1:Value, val2:Value) : OC Value =
+op operator_SHR (val1:Value, val2:Value) : Monad Value =
   {val1' <- promoteValue val1;
    val2' <- promoteValue val2;
    let ty = typeOfValue val1' in
@@ -3493,25 +3544,25 @@ excludes pointer comparisons) [ISO 6.5.8/2], perform the usual arithmetic
 conversions [ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether
 the comparison is true or false [ISO 6.5.8/6]. *)
 
-op operator_LT (val1:Value, val2:Value) : OC Value =
+op operator_LT (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
    if x1 < x2 then ok int1 else ok int0}
 
-op operator_GT (val1:Value, val2:Value) : OC Value =
+op operator_GT (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
    if x1 > x2 then ok int1 else ok int0}
 
-op operator_LE (val1:Value, val2:Value) : OC Value =
+op operator_LE (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
    if x1 <= x2 then ok int1 else ok int0}
 
-op operator_GE (val1:Value, val2:Value) : OC Value =
+op operator_GE (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
@@ -3542,7 +3593,7 @@ comparing them.
 Note that the '!=' operator returns the "opposite" of the == operator, i.e. '!='
 returns 0 if '==' returns 1, and 1 if '==' returns 0. *)
 
-op operator_EQ (val1:Value, val2:Value) : OC Value =
+op operator_EQ (val1:Value, val2:Value) : Monad Value =
   if arithmeticValue? val1 && arithmeticValue? val2 then
     {(val1', val2') <- arithConvertValues (val1, val2);
      let x1 = mathIntOfValue val1' in
@@ -3562,7 +3613,7 @@ op operator_EQ (val1:Value, val2:Value) : OC Value =
   else
     error
 
-op operator_NE (val1:Value, val2:Value) : OC Value =
+op operator_NE (val1:Value, val2:Value) : Monad Value =
   {eq_result <- operator_EQ (val1, val2);
    if eq_result = int0 then ok int1 else ok int0}
 
@@ -3572,21 +3623,21 @@ arithmetic conversions [ISO 6.5.10/3, 6.5.11/3, 6.5.12/3], and return the
 bitwise AND [ISO 6.5.10/4], exclusive OR [ISO 6.5.11/4], and inclusive OR [ISO
 6.5.12/4] of their operands. *)
 
-op operator_AND (val1:Value, val2:Value) : OC Value =
+op operator_AND (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok bits1 = bitsOfIntegerValue val1' in
    let ok bits2 = bitsOfIntegerValue val2' in
    ok (valueOfBits (bits1 Bits.and bits2, ty))}
 
-op operator_XOR (val1:Value, val2:Value) : OC Value =
+op operator_XOR (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok bits1 = bitsOfIntegerValue val1' in
    let ok bits2 = bitsOfIntegerValue val2' in
    ok (valueOfBits (bits1 Bits.xor bits2, ty))}
 
-op operator_IOR (val1:Value, val2:Value) : OC Value =
+op operator_IOR (val1:Value, val2:Value) : Monad Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
    let ty = typeOfValue val1' in
    let ok bits1 = bitsOfIntegerValue val1' in
@@ -3618,7 +3669,7 @@ stored in the designated object. The following op coerces an expression result
 into a value -- if already a value, there is no change. In order to retrieve the
 value stored in an object, the op has a state argument. *)
 
-op expressionValue (state:State, res:ExpressionResult) : OC Value =
+op expressionValue (state:State, res:ExpressionResult) : Monad Value =
   case res of
   | object obj -> readObject (state, obj)
   | value val -> ok val
@@ -3626,7 +3677,7 @@ op expressionValue (state:State, res:ExpressionResult) : OC Value =
 (* It is convenient to lift the previous op to lists. *)
 
 op expressionValues
-   (state:State, ress:List ExpressionResult) : OC (List Value) =
+   (state:State, ress:List ExpressionResult) : Monad (List Value) =
   case ress of
   | [] -> ok []
   | res::ress ->
@@ -3639,7 +3690,7 @@ of an expression type is the type of the value of the expression result. The
 object flag is set iff the expression result is an object designator. *)
 
 op typeOfExpressionResult
-   (state:State, res:ExpressionResult) : OC ExpressionType =
+   (state:State, res:ExpressionResult) : Monad ExpressionType =
   {val <- expressionValue (state, res);
    ok {typE = typeOfValue val, object = embed? object res}}
 
@@ -3651,7 +3702,7 @@ value itself is a value, because as formalized later the evaluation of an
 expression never yields an array value as result, only an array designator. *)
 
 op convertToPointerIfArray
-   (state:State, res:ExpressionResult) : OC ExpressionResult =
+   (state:State, res:ExpressionResult) : Monad ExpressionResult =
   case res of
   | object obj ->
     {val <- readObject (state, obj);
@@ -3665,7 +3716,7 @@ op convertToPointerIfArray
 (* It is convenient to lift the previous op to lists. *)
 
 op convertToPointersIfArrays
-   (state:State, ress:List ExpressionResult) : OC (List ExpressionResult) =
+   (state:State, ress:List ExpressionResult) : Monad (List ExpressionResult) =
   case ress of
   | [] -> ok []
   | res::ress ->
@@ -3757,7 +3808,7 @@ i.e. i is 0 and thus the result is element j of the array, as expected.
 As explained earlier, the null pointer constant has type 'void*', and therefore
 it returns a null pointer to void. *)
 
-op evaluate (state:State, expr:Expression) : OC ExpressionResult =
+op evaluate (state:State, expr:Expression) : Monad ExpressionResult =
   case expr of
   | ident var -> 
     {obj <- designatorOfObject (state, var);
@@ -3995,7 +4046,7 @@ theorem expression_evaluation is
 after the other. *)
 
 op evaluateAll
-   (state:State, exprs:List Expression) : OC (List ExpressionResult) =
+   (state:State, exprs:List Expression) : Monad (List ExpressionResult) =
   case exprs of
   | [] -> ok []
   | expr::exprs ->
@@ -4011,7 +4062,7 @@ type name w.r.t. a state. Recall that a state includes a symbol table for type
 definitions: this is used to look up, and expand away, typedef names. This op is
 similar to op 'checkTypeName'. *)
 
-op expandTypeName (state:State, tyn:TypeName) : OC Type =
+op expandTypeName (state:State, tyn:TypeName) : Monad Type =
   case tyn of
   | typedef tdn ->
     (case state.typedefs tdn of
@@ -4055,7 +4106,7 @@ type not present in the state. It is also an error if there is some circularity
 in the structures, which could cause the op not to terminate. Recall that the
 non-circularity of the structures is part of the state invariants. *)
 
-op zeroOfType (state:State, ty:Type) : OC Value =
+op zeroOfType (state:State, ty:Type) : Monad Value =
   if ~ (invariants? state) then error else
   case ty of
   | void -> error
@@ -4073,7 +4124,7 @@ op zeroOfType (state:State, ty:Type) : OC Value =
      ok (array (ty0, repeat val0 n))}
   | ty -> ok (zeroOfScalarType ty)
 
-op zerosOfTypes (state:State, tys:List Type) : OC (List Value) =
+op zerosOfTypes (state:State, tys:List Type) : Monad (List Value) =
   if ~ (invariants? state) then error else
   case tys of
   | [] -> ok []
@@ -4096,7 +4147,7 @@ into automatic storage; if it has no initializer, its initial value is
 indeterminate [ISO 6.7.8/10]. Since object declarations in our C subset have no
 explicit initializer, we set the initial value to be undefined. *)
 
-op execObjectDeclaration (state:State, odecl:ObjectDeclaration) : OC State =
+op execObjectDeclaration (state:State, odecl:ObjectDeclaration) : Monad State =
   {ty <- expandTypeName (state, odecl.typE);
    zeroVal <- zeroOfType (state, ty);
    errorIf (odecl.name in? domain state.typedefs);
@@ -4134,7 +4185,7 @@ theorem object_declaration_execution is
 extended with information about the structure. *)
 
 op execMemberDeclarations
-   (state:State, decls:List MemberDeclaration) : OC TypedMembers =
+   (state:State, decls:List MemberDeclaration) : Monad TypedMembers =
   case decls of
   | [] -> ok empty
   | decl::decls ->
@@ -4146,7 +4197,7 @@ op execMemberDeclarations
      errorIf (mem in? domain tmembers);
      ok (update tmembers mem ty)}
 
-op execStructSpecifier (state:State, sspec:StructSpecifier) : OC State =
+op execStructSpecifier (state:State, sspec:StructSpecifier) : Monad State =
   let tag = sspec.tag in
   {errorIf (tag in? domain state.structures);
    tmembers <- execMemberDeclarations (state, sspec.members);
@@ -4172,7 +4223,7 @@ theorem structure_specifier_execution is
 (* When a type definition is encountered, the state of the program is extended
 with information about the structure. *)
 
-op execTypeDefinition (state:State, tdef:TypeDefinition) : OC State =
+op execTypeDefinition (state:State, tdef:TypeDefinition) : Monad State =
   let tyn = tdef.typE in
   let tdn = tdef.name in
   {ty <- expandTypeName (state, tyn);
@@ -4200,7 +4251,7 @@ theorem type_definition_execution is
 (* When a declaration is encountered, the state of the program is extended with
 the declaration. *)
 
-op execDeclaration (state:State, decl:Declaration) : OC State =
+op execDeclaration (state:State, decl:Declaration) : Monad State =
   case decl of
   | struct  sspec -> execStructSpecifier   (state, sspec)
   | object  odecl -> execObjectDeclaration (state, odecl)
@@ -4312,7 +4363,7 @@ arguments stored into the parameters, while at the same time checking that they
 match in number and types. *)
 
 op assignArgumentsToParameters
-   (state:State, tparams:TypedParameters, args:List Value) : OC NamedStorage =
+   (state:State, tparams:TypedParameters, args:List Value) : Monad NamedStorage =
   case tparams of
   | [] -> if args ~= [] then error else ok empty
   | tparam::tparams ->
@@ -4426,7 +4477,7 @@ type StatementResult =
  {state      : State,
   completion : StatementCompletion}
 
-op execStatement (state:State, stmt:Statement) : OC StatementResult =
+op execStatement (state:State, stmt:Statement) : Monad StatementResult =
   case stmt of
   | assign (expr1, expr2) ->
     {res1 <- evaluate (state, expr1);
@@ -4546,7 +4597,7 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
      let state'' = updateAutomaticFrame (res.state, f, butLast topframe') in
      ok (res << {state = undefinePointersInState (state'', f, Some b)})}
 
-op execBlockItems (state:State, items:List BlockItem) : OC StatementResult =
+op execBlockItems (state:State, items:List BlockItem) : Monad StatementResult =
   case items of
   | [] -> ok {state = state, completion = next}
   | item::items ->
@@ -4556,7 +4607,7 @@ op execBlockItems (state:State, items:List BlockItem) : OC StatementResult =
      else
        ok result}
 
-op execBlockItem (state:State, item:BlockItem) : OC StatementResult =
+op execBlockItem (state:State, item:BlockItem) : Monad StatementResult =
   case item of
   | declaration odecl ->
     {state' <- execObjectDeclaration (state, odecl);
@@ -4564,7 +4615,7 @@ op execBlockItem (state:State, item:BlockItem) : OC StatementResult =
   | statement stmt -> execStatement (state, stmt)
 
 op callFunction (state:State, name:Identifier, args:List Value)
-                : OC (State * Option Value) =
+                : Monad (State * Option Value) =
   case state.functions name of
   | None -> error
   | Some funinfo ->
@@ -4664,7 +4715,7 @@ theorem function_call is
 (* Executing a function definition incorporates the function into the state,
 similarly to other external declarations. *)
 
-op execParameterList (state:State, plist:ParameterList) : OC TypedParameters =
+op execParameterList (state:State, plist:ParameterList) : Monad TypedParameters =
   case plist of
   | [] -> ok []
   | pdecl::pdecls ->
@@ -4674,7 +4725,7 @@ op execParameterList (state:State, plist:ParameterList) : OC TypedParameters =
      errorIf (pdecl.name in? map (project name) tparams);
      ok ({typE = ty, name = pdecl.name} :: tparams)}
 
-op execFunctionDefinition (state:State, fun:FunctionDefinition) : OC State =
+op execFunctionDefinition (state:State, fun:FunctionDefinition) : Monad State =
   {rety <- expandTypeName (state, fun.return);
    errorIf (embed? array rety);
    errorIf (fun.name in? domain state.storage.static);
@@ -4705,7 +4756,7 @@ theorem function_definition_execution is
 
 (* We execute an external declaration as follows. *)
 
-op execExternalDeclaration (state:State, xdecl:ExternalDeclaration) : OC State =
+op execExternalDeclaration (state:State, xdecl:ExternalDeclaration) : Monad State =
   case xdecl of
   | function fdef -> execFunctionDefinition (state, fdef)
   | declaration decl -> execDeclaration (state, decl)
@@ -4729,7 +4780,7 @@ theorem external_declaration_execution is
 (* We execute a translation unit by executing its external declarations in
 order. *)
 
-op execTranslationUnit (state:State, tunit:TranslationUnit) : OC State =
+op execTranslationUnit (state:State, tunit:TranslationUnit) : Monad State =
   case tunit of
   | [] -> ok state
   | xdecl::xdecls ->
@@ -4764,7 +4815,7 @@ op emptyState : State =
    structures = empty,
    functions  = empty}
 
-op initState (prg:Program) : OC State =
+op initState (prg:Program) : Monad State =
   execTranslationUnit (emptyState, prg)
 
 theorem initState_no_outside_objects is
@@ -6707,33 +6758,33 @@ done
    simplify the proof - use a dummy theorem and the saved proof???            *)
 (******************************************************************************)
 theorem C___bitsOfIntegerValue_int_p:
-  "\<lbrakk>C__bitsOfIntegerValue val = C__OC__ok bits\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>C__bitsOfIntegerValue val = C__Monad__ok bits\<rbrakk> \<Longrightarrow> 
    C__integerType_p (C__typeOfValue val)"
    by (cases val, auto split: split_if_asm)
 
 lemma C___bitsOfIntegerValue_is_pos:
-   "C__bitsOfIntegerValue val = C__OC__ok a  \<Longrightarrow> a \<noteq> []"
+   "C__bitsOfIntegerValue val = C__Monad__ok a  \<Longrightarrow> a \<noteq> []"
  by (cases val, auto split: split_if_asm)
 
 lemma C__bitsOfIntegerValue_length:
   "\<lbrakk>C__typeBits (C__typeOfValue val) = len;
-    C__bitsOfIntegerValue val = C__OC__ok bits\<rbrakk>
+    C__bitsOfIntegerValue val = C__Monad__ok bits\<rbrakk>
   \<Longrightarrow> length bits = len"
   by (cases val, auto split: split_if_asm)
 
 lemma C__bitsOfIntegerValue_length2:
   "\<lbrakk>C__typeOfValue val = ty; 
-    C__bitsOfIntegerValue val = C__OC__ok bits\<rbrakk> \<Longrightarrow> 
+    C__bitsOfIntegerValue val = C__Monad__ok bits\<rbrakk> \<Longrightarrow> 
      length bits = C__typeBits ty"
   by (cases val, auto split: split_if_asm)
 
 lemma C__bitsOfIntegerValue_length3:
-  "\<lbrakk>C__bitsOfIntegerValue val = C__OC__ok bits\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>C__bitsOfIntegerValue val = C__Monad__ok bits\<rbrakk> \<Longrightarrow> 
     length bits = C__typeBits (C__typeOfValue val)"
   by (cases val, auto split: split_if_asm)
 
 lemma C___bitsOfIntegerValue_is_defined:
-   "C__bitsOfIntegerValue val = C__OC__ok a
+   "C__bitsOfIntegerValue val = C__Monad__ok a
       \<Longrightarrow> val \<noteq>  C__Value__undefined ty"
  by (cases val, simp_all split: split_if_asm)
 
@@ -6747,7 +6798,7 @@ lemmas C__bitsOfIntV =  C___bitsOfIntegerValue_int_p
 
 lemma C__toNat_in_range_char [simp]:
    "\<lbrakk>C__typeBits (C__typeOfValue val) = 8;
-     C__bitsOfIntegerValue val = C__OC__ok a;
+     C__bitsOfIntegerValue val = C__Monad__ok a;
      C__unsignedIntegerType_p (C__typeOfValue val) \<or>
         C__typeOfValue val = C__Type__char;
      C__plainCharsAreUnsigned\<rbrakk>
@@ -6759,7 +6810,7 @@ lemma C__toNat_in_range_char [simp]:
 
 lemma C__toNat_in_range_uchar [simp]:
   "\<lbrakk>C__typeBits (C__typeOfValue val) = 8;
-    C__bitsOfIntegerValue val = C__OC__ok a;
+    C__bitsOfIntegerValue val = C__Monad__ok a;
     C__unsignedIntegerType_p (C__typeOfValue val) \<or>
        C__plainCharsAreUnsigned \<and> C__typeOfValue val = C__Type__char\<rbrakk>
     \<Longrightarrow> int (toNat a)
@@ -6769,7 +6820,7 @@ lemma C__toNat_in_range_uchar [simp]:
 
 lemma C__toNat_in_range_ushort [simp]:
   "\<lbrakk>C__typeBits (C__typeOfValue val) = C__short_bits;
-    C__bitsOfIntegerValue val = C__OC__ok a;
+    C__bitsOfIntegerValue val = C__Monad__ok a;
     C__unsignedIntegerType_p (C__typeOfValue val) \<or>
        C__plainCharsAreUnsigned \<and> C__typeOfValue val = C__Type__char\<rbrakk>
     \<Longrightarrow> int (toNat a)
@@ -6780,7 +6831,7 @@ lemma C__toNat_in_range_ushort [simp]:
 
 lemma C__toNat_in_range_uint [simp]:
   "\<lbrakk>C__typeBits (C__typeOfValue val) = C__int_bits;
-    C__bitsOfIntegerValue val = C__OC__ok a;
+    C__bitsOfIntegerValue val = C__Monad__ok a;
     C__unsignedIntegerType_p (C__typeOfValue val) \<or>
        C__plainCharsAreUnsigned \<and> C__typeOfValue val = C__Type__char\<rbrakk>
     \<Longrightarrow> int (toNat a)
@@ -6792,7 +6843,7 @@ lemma C__toNat_in_range_uint [simp]:
 
 lemma C__toNat_in_range_ulong [simp]:
   "\<lbrakk>C__typeBits (C__typeOfValue val) = C__long_bits;
-    C__bitsOfIntegerValue val = C__OC__ok a;
+    C__bitsOfIntegerValue val = C__Monad__ok a;
     C__unsignedIntegerType_p (C__typeOfValue val) \<or>
        C__plainCharsAreUnsigned \<and> C__typeOfValue val = C__Type__char\<rbrakk>
     \<Longrightarrow> int (toNat a)
@@ -6804,7 +6855,7 @@ lemma C__toNat_in_range_ulong [simp]:
 
 lemma C__toNat_in_range_ullong [simp]:
   "\<lbrakk>C__typeBits (C__typeOfValue val) = C__llong_bits;
-    C__bitsOfIntegerValue val = C__OC__ok a;
+    C__bitsOfIntegerValue val = C__Monad__ok a;
     C__unsignedIntegerType_p (C__typeOfValue val) \<or>
        C__plainCharsAreUnsigned \<and> C__typeOfValue val = C__Type__char\<rbrakk>
     \<Longrightarrow> int (toNat a)
@@ -6841,13 +6892,13 @@ lemma C__valueOfBits_type [simp]:
 
 lemma C__valueOfBits_val [simp]:
   "\<lbrakk>C__integerType_p ty; length bits = C__typeBits ty\<rbrakk>
-  \<Longrightarrow> C__bitsOfIntegerValue (C__valueOfBits (bits, ty)) = C__OC__ok bits"
+  \<Longrightarrow> C__bitsOfIntegerValue (C__valueOfBits (bits, ty)) = C__Monad__ok bits"
  by (simp add: C__valueOfBits_def, rule the1I2, 
      rule C__valueOfBits_Obligation_the, auto)
 
 lemma C__valueOfBits_unique: 
   "\<lbrakk>length bits = C__typeBits ty; C__typeOfValue val = ty; 
-     C__bitsOfIntegerValue val = C__OC__ok bits
+     C__bitsOfIntegerValue val = C__Monad__ok bits
    \<rbrakk> \<Longrightarrow>  val = C__valueOfBits(bits,ty)"
   by (simp add: C__valueOfBits_def,
        rule the_equality [symmetric], simp,
@@ -6856,7 +6907,7 @@ lemma C__valueOfBits_unique:
 
 lemma C__valueOfBits_inv [simp]: 
   "\<lbrakk>length bits = C__typeBits ty; C__typeOfValue val = ty; 
-     C__bitsOfIntegerValue val = C__OC__ok bits
+     C__bitsOfIntegerValue val = C__Monad__ok bits
    \<rbrakk> \<Longrightarrow>  C__valueOfBits(bits, ty) = val"
   by (simp add: C__valueOfBits_unique [symmetric])
 
@@ -6943,104 +6994,104 @@ proof Isa C__mathIntOfValue_props
 lemma C__mathIntOfValue_char_u [simp]:
   "C__plainCharsAreUnsigned  \<Longrightarrow> 
      C__mathIntOfValue (C__Value__char bits)
-   = C__OC__ok (int (toNat (Rep_Bits__Byte bits)))"
+   = C__Monad__ok (int (toNat (Rep_Bits__Byte bits)))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_char_s [simp]:
   "C__plainCharsAreSigned  \<Longrightarrow> 
      C__mathIntOfValue (C__Value__char bits)
-   = C__OC__ok (TwosComplement__toInt (Rep_Bits__Byte bits))"
+   = C__Monad__ok (TwosComplement__toInt (Rep_Bits__Byte bits))"
   by (simp add: C__mathIntOfValue_def C__IntTypes C__plainCharsAreUnsigned_def)
 
 lemma C__mathIntOfValue_uchar [simp]:
   "C__mathIntOfValue (C__Value__uchar bits)
-   = C__OC__ok (int (toNat (Rep_Bits__Byte bits)))"
+   = C__Monad__ok (int (toNat (Rep_Bits__Byte bits)))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_schar [simp]:
   "C__mathIntOfValue (C__Value__schar bits)
-   = C__OC__ok (TwosComplement__toInt (Rep_Bits__Byte bits))"
+   = C__Monad__ok (TwosComplement__toInt (Rep_Bits__Byte bits))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_ushort [simp]:
   "C__mathIntOfValue (C__Value__ushort bits)
-   = C__OC__ok (int (toNat (Rep_C__ShortWord bits)))"
+   = C__Monad__ok (int (toNat (Rep_C__ShortWord bits)))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_sshort [simp]:
   "C__mathIntOfValue (C__Value__sshort bits)
-   = C__OC__ok (TwosComplement__toInt (Rep_C__ShortWord bits))"
+   = C__Monad__ok (TwosComplement__toInt (Rep_C__ShortWord bits))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_uint [simp]:
   "C__mathIntOfValue (C__Value__uint bits)
-   = C__OC__ok (int (toNat (Rep_C__IntWord bits)))"
+   = C__Monad__ok (int (toNat (Rep_C__IntWord bits)))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_sint [simp]:
   "C__mathIntOfValue (C__Value__sint bits)
-   = C__OC__ok (TwosComplement__toInt (Rep_C__IntWord bits))"
+   = C__Monad__ok (TwosComplement__toInt (Rep_C__IntWord bits))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_ulong [simp]:
   "C__mathIntOfValue (C__Value__ulong bits)
-   = C__OC__ok (int (toNat (Rep_C__LongWord bits)))"
+   = C__Monad__ok (int (toNat (Rep_C__LongWord bits)))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_slong [simp]:
   "C__mathIntOfValue (C__Value__slong bits)
-   = C__OC__ok (TwosComplement__toInt (Rep_C__LongWord bits))"
+   = C__Monad__ok (TwosComplement__toInt (Rep_C__LongWord bits))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_ullong [simp]:
   "C__mathIntOfValue (C__Value__ullong bits)
-   = C__OC__ok (int (toNat (Rep_C__LongLongWord bits)))"
+   = C__Monad__ok (int (toNat (Rep_C__LongLongWord bits)))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_sllong [simp]:
   "C__mathIntOfValue (C__Value__sllong bits)
-   = C__OC__ok (TwosComplement__toInt (Rep_C__LongLongWord bits))"
+   = C__Monad__ok (TwosComplement__toInt (Rep_C__LongLongWord bits))"
   by (simp add: C__mathIntOfValue_def C__IntTypes)
 
 lemma C__mathIntOfValue_is_defined [simp]:
-   "C__mathIntOfValue val = C__OC__ok a
+   "C__mathIntOfValue val = C__Monad__ok a
       \<Longrightarrow> val \<noteq>  C__Value__undefined ty"
-  by (simp add: C__mathIntOfValue_def C__bitsOfIntV split: C__OC.split_asm)
+  by (simp add: C__mathIntOfValue_def C__bitsOfIntV split: C__Monad.split_asm)
 
 lemma C__mathIntOfValue_int_p:
-   "C__mathIntOfValue val = C__OC__ok a
+   "C__mathIntOfValue val = C__Monad__ok a
     \<Longrightarrow> C__integerType_p (C__typeOfValue val)"
-  by (simp add: C__mathIntOfValue_def C__bitsOfIntV split: C__OC.split_asm)
+  by (simp add: C__mathIntOfValue_def C__bitsOfIntV split: C__Monad.split_asm)
 
 
 lemma C__mathIntOfValue_bits:
-  "\<lbrakk>C__mathIntOfValue x = C__OC__ok i\<rbrakk>
-    \<Longrightarrow> \<exists>bs. C__bitsOfIntegerValue x = C__OC__ok bs
+  "\<lbrakk>C__mathIntOfValue x = C__Monad__ok i\<rbrakk>
+    \<Longrightarrow> \<exists>bs. C__bitsOfIntegerValue x = C__Monad__ok bs
              \<and> length bs = C__typeBits (C__typeOfValue x)"
-   by (simp add: C__mathIntOfValue_def split: C__OC.split_asm,
+   by (simp add: C__mathIntOfValue_def split: C__Monad.split_asm,
        rule C__bitsOfIntegerValue_length2, simp_all)
 
 
 lemma C__mathIntOfValue_type:
-  "\<lbrakk>C__mathIntOfValue val = C__OC__ok i\<rbrakk>
+  "\<lbrakk>C__mathIntOfValue val = C__Monad__ok i\<rbrakk>
    \<Longrightarrow> i \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType (C__typeOfValue val))"
  apply (frule_tac C__mathIntOfValue_bits, auto,
         frule C___bitsOfIntegerValue_is_pos,
         frule C__mathIntOfValue_int_p,  drule sym,
         simp add: C__mathIntOfValue_def C__Range
-                split: C__OC.split_asm split_if_asm)
+                split: C__Monad.split_asm split_if_asm)
  apply (drule Bits__toNat_bound, simp)
  apply (frule TwosComplement__integer_range, simp add: TwosComplement_tcN)
 done
 
 lemma C__mathIntOfValue_inject_rule:
-  "\<lbrakk>C__mathIntOfValue x = C__OC__ok i; 
-    C__mathIntOfValue y = C__OC__ok i; 
+  "\<lbrakk>C__mathIntOfValue x = C__Monad__ok i; 
+    C__mathIntOfValue y = C__Monad__ok i; 
     C__typeOfValue x =  C__typeOfValue y\<rbrakk>
     \<Longrightarrow> x = y"
  apply (case_tac x, 
         auto simp add: C__mathIntOfValue_def C__BitTypes C__IntTypes
-                split: C__OC.split_asm split_if_asm)
+                split: C__Monad.split_asm split_if_asm)
  apply (case_tac y, auto simp add: C__IntTypes)
  apply (case_tac y, auto simp add: C__IntTypes)
  apply (case_tac y, auto simp add: C__IntTypes)
@@ -7056,15 +7107,15 @@ done
 
 
 lemma C__mathIntOfValue_inject_bits:
-   "\<lbrakk>C__bitsOfIntegerValue val = C__OC__ok bits;
+   "\<lbrakk>C__bitsOfIntegerValue val = C__Monad__ok bits;
      C__integerType_p (C__typeOfValue x);
      C__typeBits (C__typeOfValue x) =
      C__typeBits (C__typeOfValue val);
-     C__mathIntOfValue val = C__OC__ok a;
-     C__mathIntOfValue x = C__OC__ok a;
+     C__mathIntOfValue val = C__Monad__ok a;
+     C__mathIntOfValue x = C__Monad__ok a;
      a \<in> Rep_C__FiniteSetInt
               (C__rangeOfIntegerType (C__typeOfValue x))\<rbrakk>
-     \<Longrightarrow> C__bitsOfIntegerValue x = C__OC__ok bits"
+     \<Longrightarrow> C__bitsOfIntegerValue x = C__Monad__ok bits"
  apply (frule_tac x=x in C__mathIntOfValue_bits, auto)
  apply (frule C___bitsOfIntegerValue_is_pos,
         frule_tac val=x in C___bitsOfIntegerValue_is_pos,
@@ -7072,7 +7123,7 @@ lemma C__mathIntOfValue_inject_bits:
         cut_tac C__bitsOfIntegerValue_length2 [symmetric], 
         simp_all, rotate_tac -1, thin_tac "?P")
  apply (simp add: C__mathIntOfValue_def
-                split: C__OC.split_asm split_if_asm)
+                split: C__Monad.split_asm split_if_asm)
  apply clarsimp
  apply (clarsimp, cut_tac TwosComplement__toInt_nat, simp_all)
  apply (clarsimp, cut_tac i="toNat bs" in TwosComplement__toInt_nat, 
@@ -7081,19 +7132,19 @@ lemma C__mathIntOfValue_inject_bits:
 done
 
 lemma C__mathIntOfValue_extend:
-  "\<lbrakk>C__mathIntOfValue x = C__OC__ok i; 
-    C__mathIntOfValue y = C__OC__ok i; 
+  "\<lbrakk>C__mathIntOfValue x = C__Monad__ok i; 
+    C__mathIntOfValue y = C__Monad__ok i; 
     C__typeBits (C__typeOfValue x) < len;
     C__typeBits (C__typeOfValue y) = len;
-    C__bitsOfIntegerValue x = C__OC__ok bs;
-    C__bitsOfIntegerValue y = C__OC__ok bs2\<rbrakk>
+    C__bitsOfIntegerValue x = C__Monad__ok bs;
+    C__bitsOfIntegerValue y = C__Monad__ok bs2\<rbrakk>
     \<Longrightarrow> bs2 = List__extendLeft (bs, hd bs2, len)"
    apply (frule C___bitsOfIntegerValue_is_pos,
           drule C__bitsOfIntegerValue_length, simp,
           cut_tac C__bitsOfIntegerValue_length2 [symmetric], 
           simp_all, rotate_tac -1, thin_tac "?P")
    apply (clarsimp simp add: C__mathIntOfValue_def 
-                      split: C__OC.split_asm split_if_asm)
+                      split: C__Monad.split_asm split_if_asm)
    apply (cut_tac bs=bs2 in Bits__toNat_small_hd, simp_all,
           erule Bits__extendLeft_toNat, simp_all)
    apply (cut_tac TwosComplement__toInt_nat, simp_all del: length_greater_0_conv,
@@ -7124,7 +7175,7 @@ proof Isa valueOfMathInt_Obligation_the
   apply (rule C__valueOfBits_unique, simp_all,
          clarsimp simp add: C__mathIntOfValue_def  C__plainCharsAreUnsigned_def
                             C__bitsOfIntV
-                     split: C__OC.split_asm)
+                     split: C__Monad.split_asm)
   apply (rule_tac a="C__valueOfBits 
                      (TwosComplement__tcNumber (i, C__typeBits ty), ty)" in ex1I)
   apply (drule_tac C__signed_cases2, 
@@ -7133,7 +7184,7 @@ proof Isa valueOfMathInt_Obligation_the
   apply (rule C__valueOfBits_unique, simp_all,
          auto simp add: C__mathIntOfValue_def  C__plainCharsAreUnsigned_def
                             C__bitsOfIntV
-                     split: C__OC.split_asm)
+                     split: C__Monad.split_asm)
 end-proof
 
 
@@ -7159,13 +7210,13 @@ lemma C__valueOfMathInt_type [simp]:
 lemma C__valueOfMathInt_val [simp]:
   "\<lbrakk>C__integerType_p ty; 
     i \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)\<rbrakk> \<Longrightarrow> 
-    C__mathIntOfValue (C__valueOfMathInt (i,ty)) =  C__OC__ok i"
+    C__mathIntOfValue (C__valueOfMathInt (i,ty)) =  C__Monad__ok i"
   by (simp add: C__valueOfMathInt_def, rule the1I2, 
       auto simp add: C__valueOfMathInt_Obligation_the)
 
 lemma C__valueOfMathInt_unique:
   "\<lbrakk>i \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty);
-    C__typeOfValue x = ty; C__mathIntOfValue x = C__OC__ok i\<rbrakk>
+    C__typeOfValue x = ty; C__mathIntOfValue x = C__Monad__ok i\<rbrakk>
    \<Longrightarrow> x = C__valueOfMathInt (i, ty)"
  apply (simp add: C__valueOfMathInt_def, rule the1I2, 
         rule C__valueOfMathInt_Obligation_the, 
@@ -7182,7 +7233,7 @@ lemma C__valueOfMathInt_signed:
  by (simp add: C__valueOfMathInt_def, rule the1I2, 
      rule C__valueOfMathInt_Obligation_the, 
      auto simp add: C__mathIntOfValue_def C__Range  C__bitsOfIntV
-           split: C__OC.split_asm)
+           split: C__Monad.split_asm)
 
  
 lemma C__valueOfMathInt_unsigned:
@@ -7194,7 +7245,7 @@ lemma C__valueOfMathInt_unsigned:
  by (simp add: C__valueOfMathInt_def, rule the1I2, 
      rule C__valueOfMathInt_Obligation_the, 
      auto simp add: C__mathIntOfValue_def C__Range  C__bitsOfIntV
-             split: C__OC.split_asm,
+             split: C__Monad.split_asm,
      case_tac x, auto) 
 
 
@@ -7315,7 +7366,7 @@ proof Isa C__zero_of_integer_type_is_all_zeros
          simp_all add: C__zeroOfScalarType_Obligation_subtype 
                        C__scalarType_p_def  C__arithmeticType_p_def,
          erule conjE)
-  apply (simp add: C__mathIntOfValue_def split: C__OC.split_asm)
+  apply (simp add: C__mathIntOfValue_def split: C__Monad.split_asm)
   apply (frule C__bitsOfIntegerValue_length2, simp_all)
   apply (simp add: Bits__toNat_zero_val TwosComplement__toInt_zero_val
                   split: split_if_asm)
@@ -7335,7 +7386,7 @@ proof Isa updateStaticObject_Obligation_subtype
 (*********** move these up (dummy theorem) ************************************)
 
 lemma C__zeroScalarValue_1 [simp]:
-"C__zeroScalarValue_p C__int1 = C__OC__ok False"
+"C__zeroScalarValue_p C__int1 = C__Monad__ok False"
   apply (cut_tac  C__min_INT_MIN, cut_tac C__min_INT_MAX, cut_tac C__min_UINT_MAX,
          simp add: C__int1_def C__zeroScalarValue_p_def C__scalarValue_p_def
                    C__zeroOfScalarType_def C__scalarType_p_def
@@ -7348,7 +7399,7 @@ lemma C__zeroScalarValue_1 [simp]:
 done
 
 lemma C__zeroScalarValue_0 [simp]:
-"C__zeroScalarValue_p C__int0 = C__OC__ok True"
+"C__zeroScalarValue_p C__int0 = C__Monad__ok True"
   by (auto simp add: C__int0_def C__zeroScalarValue_p_def 
                      C__zeroOfScalarType_def C__scalarValue_p_def 
                      C__scalarType_p_def C__IntTypes
@@ -7532,14 +7583,14 @@ proof Isa C__convertInteger_zero_extension_Obligation_subtype0
 (******************************************************************************)
 lemma C__convertInteger_sint_sint [simp]:
   "C__convertInteger (C__Value__sint val, C__Type__sint)
-                      = C__OC__ok (C__Value__sint val)"
+                      = C__Monad__ok (C__Value__sint val)"
   by (simp add: C__convertInteger_def C__valueOfMathInt_signed C__IntTypes)
 
 lemma C__convertInteger_uchar_sint [simp]:
   "\<lbrakk>i < 2 ^ 8\<rbrakk> \<Longrightarrow> 
    C__convertInteger (C__Value__uchar (Bits__byte i), C__Type__sint)
    = 
-   C__OC__ok (C__Value__sint (Abs_C__IntWord
+   C__Monad__ok (C__Value__sint (Abs_C__IntWord
                 (TwosComplement__tcNumber (int i, C__int_bits))))"
   by (cut_tac C__min_INT_MIN, cut_tac C__min_INT_MAX, 
          simp add: C__convertInteger_def)
@@ -7547,73 +7598,73 @@ lemma C__convertInteger_uchar_sint [simp]:
 lemma C__convertInteger_uchar_uchar [simp]:
   "\<lbrakk>i < 2 ^ 8\<rbrakk> \<Longrightarrow> 
    C__convertInteger (C__Value__uchar (Bits__byte i), C__Type__uchar) 
-                      = C__OC__ok (C__Value__uchar (Bits__byte i))"
+                      = C__Monad__ok (C__Value__uchar (Bits__byte i))"
   by (simp add: C__convertInteger_def)
 
 lemma C__convertInteger_tcNumber_sint_uchar [simp]:
  "\<lbrakk>0 \<le> i; i < 2 ^ 8\<rbrakk> \<Longrightarrow>
    C__convertInteger (C__Value__sint (Abs_C__IntWord 
               (TwosComplement__tcNumber (i, C__int_bits))), C__Type__uchar)
-   = C__OC__ok (C__Value__uchar (Bits__byte (nat i)))"
+   = C__Monad__ok (C__Value__uchar (Bits__byte (nat i)))"
   by (cut_tac C__min_INT_MIN, cut_tac C__min_INT_MAX,
       simp add: C__convertInteger_def  C__Words C__MinMax 
                 TwosComplement_toInt_bits_pos)
 
 lemma  C__convertInteger_int_p:
-     "C__convertInteger (val, newty) = C__OC__ok newval
+     "C__convertInteger (val, newty) = C__Monad__ok newval
       \<Longrightarrow> C__integerType_p (C__typeOfValue val)"
   by (simp add: C__convertInteger_def C__mathIntOfValue_int_p
-           split: C__OC.split_asm)
+           split: C__Monad.split_asm)
 
 lemma  C__convertInteger_is_defined [simp]:
-     "C__convertInteger (val, newty) = C__OC__ok newval
+     "C__convertInteger (val, newty) = C__Monad__ok newval
       \<Longrightarrow> val \<noteq>  C__Value__undefined ty"
-  by (simp add:  C__convertInteger_def split: C__OC.split_asm)
+  by (simp add:  C__convertInteger_def split: C__Monad.split_asm)
 
 lemma C__convertInteger_type: 
-  "\<lbrakk>C__integerType_p ty; C__convertInteger(val, ty) = C__OC__ok newval\<rbrakk>
+  "\<lbrakk>C__integerType_p ty; C__convertInteger(val, ty) = C__Monad__ok newval\<rbrakk>
     \<Longrightarrow> C__typeOfValue newval = ty"
    apply (clarsimp simp add: C__convertInteger_def not_le 
-                      split: C__OC.split_asm split_if_asm)
+                      split: C__Monad.split_asm split_if_asm)
    apply (rule C__valueOfMathInt_type, simp,
           rule the1I2, rule C__convertInteger_Obligation_the, simp_all)
 done
 
 
 lemma C__convertInteger_val1: 
-  "\<lbrakk>C__integerType_p ty; C__convertInteger(val, ty) = C__OC__ok newval;
-    C__mathIntOfValue val = C__OC__ok i;
+  "\<lbrakk>C__integerType_p ty; C__convertInteger(val, ty) = C__Monad__ok newval;
+    C__mathIntOfValue val = C__Monad__ok i;
     i \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)\<rbrakk>
-    \<Longrightarrow>  C__mathIntOfValue newval = C__OC__ok i"
+    \<Longrightarrow>  C__mathIntOfValue newval = C__Monad__ok i"
    by (auto simp add: C__convertInteger_def)
 
 lemma C__convertInteger_val2: 
-  "\<lbrakk>C__integerType_p ty; C__convertInteger(val, ty) = C__OC__ok newval;
-    C__mathIntOfValue val = C__OC__ok i;
+  "\<lbrakk>C__integerType_p ty; C__convertInteger(val, ty) = C__Monad__ok newval;
+    C__mathIntOfValue val = C__Monad__ok i;
     i \<notin> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)\<rbrakk>
     \<Longrightarrow>  C__mathIntOfValue newval = 
-          C__OC__ok (THE z. z \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)
+          C__Monad__ok (THE z. z \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)
                       \<and> (\<exists>k. z = i + k * (C__maxOfIntegerType ty + 1)))"
    by (clarsimp simp add: C__convertInteger_def split: split_if_asm,
        rule the1I2, rule C__convertInteger_Obligation_the, simp_all)
 
 lemma C__convertInteger_unique1: 
   "\<lbrakk>i \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty);
-    C__typeOfValue val = ty; C__mathIntOfValue val = C__OC__ok i\<rbrakk>
-    \<Longrightarrow>   C__OC__ok val = C__convertInteger(val, ty)"
+    C__typeOfValue val = ty; C__mathIntOfValue val = C__Monad__ok i\<rbrakk>
+    \<Longrightarrow>   C__Monad__ok val = C__convertInteger(val, ty)"
   by (auto simp add: C__valueOfMathInt_unique C__convertInteger_def)
 
 
 lemma C__convertInteger_unique2: 
   "\<lbrakk>C__unsignedIntegerType_p ty 
       \<or> C__plainCharsAreUnsigned \<and> ty = C__Type__char;
-     C__mathIntOfValue val = C__OC__ok i;
+     C__mathIntOfValue val = C__Monad__ok i;
      i \<notin> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty);
      C__typeOfValue newval = ty; 
      C__mathIntOfValue newval = 
-      C__OC__ok (THE z. z \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)
+      C__Monad__ok (THE z. z \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)
                       \<and> (\<exists>k. z = i + k * (C__maxOfIntegerType ty + 1)))\<rbrakk>
-    \<Longrightarrow>   C__OC__ok newval = C__convertInteger(val, ty)"
+    \<Longrightarrow>   C__Monad__ok newval = C__convertInteger(val, ty)"
   apply (simp add: C__convertInteger_def split: split_if_asm)
   apply (subst C__valueOfMathInt_unique, simp_all)
   apply (rule the1I2, rule C__convertInteger_Obligation_the, simp_all)
@@ -7633,11 +7684,11 @@ lemma  C__convertInteger_zero_ext_len_aux:
   "\<lbrakk>len > 0; i < 2 ^ len; len < len2; C__typeBits ty2 = len2;
     C__integerType_p ty2 \<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue (C__valueOfMathInt (int i, ty2)) =
-         C__OC__ok (List__extendLeft (toBits (i, len), B0, len2))"
+         C__Monad__ok (List__extendLeft (toBits (i, len), B0, len2))"
    apply (clarsimp simp add:  C__valueOfMathInt_def,
           rule the1I2, rule C__valueOfMathInt_Obligation_the, simp_all)
    apply (auto simp add: C__mathIntOfValue_def 
-               split: C__OC.split_asm)
+               split: C__Monad.split_asm)
    apply (cut_tac C__bitsOfIntegerValue_length2, 
           simp_all split: split_if_asm)
    apply (rule Bits__extendLeft_to_len_nat, 
@@ -7648,11 +7699,11 @@ done
 lemma C__convertInteger_zero_ext_len_char:
   "\<lbrakk>C__plainCharsAreUnsigned; 8 < newlen;
      C__convertInteger (C__Value__char (Abs_Bits__Byte y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y = 8; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, B0, newlen))"
+       C__Monad__ok (List__extendLeft (y, B0, newlen))"
    apply (cut_tac bs=y in Bits__bits_surjective, auto)
    apply (frule_tac i=i in C__rangeOfIntegerType_int, 
           auto simp add: C__convertInteger_zero_ext_len_aux [symmetric]
@@ -7663,11 +7714,11 @@ done
 lemma C__convertInteger_zero_ext_len_uchar:
   "\<lbrakk> 8 < newlen;
      C__convertInteger (C__Value__uchar (Abs_Bits__Byte y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y = 8; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, B0, newlen))"
+       C__Monad__ok (List__extendLeft (y, B0, newlen))"
    apply (cut_tac bs=y in Bits__bits_surjective, auto)
    apply (frule_tac i=i in C__rangeOfIntegerType_int, 
           auto simp add: C__convertInteger_zero_ext_len_aux [symmetric]
@@ -7677,11 +7728,11 @@ done
 lemma C__convertInteger_zero_ext_len_ushort:
   "\<lbrakk> C__short_bits < newlen;
      C__convertInteger (C__Value__ushort (Abs_C__ShortWord y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y =  C__short_bits; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, B0, newlen))"
+       C__Monad__ok (List__extendLeft (y, B0, newlen))"
    apply (cut_tac bs=y in Bits__bits_surjective, auto)
    apply (frule_tac i=i in C__rangeOfIntegerType_int, 
           auto simp add: C__convertInteger_zero_ext_len_aux [symmetric]
@@ -7691,11 +7742,11 @@ done
 lemma C__convertInteger_zero_ext_len_uint:
   "\<lbrakk> C__int_bits < newlen;
      C__convertInteger (C__Value__uint (Abs_C__IntWord y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y =  C__int_bits; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, B0, newlen))"
+       C__Monad__ok (List__extendLeft (y, B0, newlen))"
    apply (cut_tac bs=y in Bits__bits_surjective, auto)
    apply (frule_tac i=i in C__rangeOfIntegerType_int, 
           auto simp add: C__convertInteger_zero_ext_len_aux [symmetric]
@@ -7706,11 +7757,11 @@ done
 lemma C__convertInteger_zero_ext_len_ulong:
   "\<lbrakk> C__long_bits < newlen;
      C__convertInteger (C__Value__ulong (Abs_C__LongWord y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y =  C__long_bits; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, B0, newlen))"
+       C__Monad__ok (List__extendLeft (y, B0, newlen))"
    apply (cut_tac bs=y in Bits__bits_surjective, auto)
    apply (frule_tac i=i in C__rangeOfIntegerType_int, 
           auto simp add: C__convertInteger_zero_ext_len_aux [symmetric]
@@ -7720,11 +7771,11 @@ done
 lemma C__convertInteger_zero_ext_len_ullong:
   "\<lbrakk> C__llong_bits < newlen;
      C__convertInteger (C__Value__ullong (Abs_C__LongLongWord y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y =  C__llong_bits; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, B0, newlen))"
+       C__Monad__ok (List__extendLeft (y, B0, newlen))"
    apply (cut_tac bs=y in Bits__bits_surjective, auto)
    apply (frule_tac i=i in C__rangeOfIntegerType_int, 
           auto simp add: C__convertInteger_zero_ext_len_aux [symmetric]
@@ -7772,7 +7823,7 @@ lemma  C__convertInteger_sign_ext_len_pos_aux:
   "\<lbrakk>len > 0; 0 \<le> i; len < len2; C__typeBits ty2 = len2;
     i \<in> TwosComplement__rangeForLength len; C__integerType_p ty2 \<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue (C__valueOfMathInt (i, ty2)) =
-         C__OC__ok (List__extendLeft (TwosComplement__tcNumber (i, len), B0, len2))"
+         C__Monad__ok (List__extendLeft (TwosComplement__tcNumber (i, len), B0, len2))"
    by  (simp add: TwosComplement_TC,
         frule_tac i="nat i" in C__convertInteger_zero_ext_len_aux,
         simp_all add: TwosComplement_tcN)
@@ -7839,10 +7890,10 @@ lemma  C__convertInteger_sign_ext_len_neg_aux:
     C__integerType_p ty2; i \<in> TwosComplement__rangeForLength len;
     i \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty2) \<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue (C__valueOfMathInt (i, ty2)) =
-         C__OC__ok (List__extendLeft (TwosComplement__tcNumber (i, len), B1, len2))"
+         C__Monad__ok (List__extendLeft (TwosComplement__tcNumber (i, len), B1, len2))"
    apply (clarsimp simp add:  C__valueOfMathInt_def,
           rule the1I2, rule C__valueOfMathInt_Obligation_the, simp_all)
-   apply (auto simp add: C__mathIntOfValue_def split: C__OC.split_asm)
+   apply (auto simp add: C__mathIntOfValue_def split: C__Monad.split_asm)
    apply (cut_tac C__bitsOfIntegerValue_length2, 
           simp_all split: split_if_asm)
    apply (simp add: TwosComplement_extendLeft_tcInt_neg2)
@@ -7856,7 +7907,7 @@ lemma C__convertInteger_sign_ext_len_neg_aux0:
     C__plainCharsAreUnsigned \<and> ty2 = C__Type__char\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue
             (C__valueOfMathInt (i + 2 ^ len2, ty2)) =
-           C__OC__ok
+           C__Monad__ok
             (List__extendLeft
               (TwosComplement__tcNumber (i, len),
                TwosComplement__sign (TwosComplement__tcNumber (i, len)),
@@ -7864,7 +7915,7 @@ lemma C__convertInteger_sign_ext_len_neg_aux0:
    apply (simp add:  C__valueOfMathInt_def,
           rule the1I2, rule C__valueOfMathInt_Obligation_the, simp_all)
    apply (frule C__convertInteger_sign_ext_range, simp_all, clarsimp)
-   apply (simp add: C__mathIntOfValue_def split: C__OC.split_asm split_if_asm)
+   apply (simp add: C__mathIntOfValue_def split: C__Monad.split_asm split_if_asm)
    apply (frule C__convertInteger_sign_ext_neg, simp_all,
           simp only: TwosComplement_sign_TC_neg, simp add: TwosComplement_TC)
    apply (rule TwosComplement__extendLeft_to_len_neg, simp_all add: C__bitsOfIntV C__Range)
@@ -7880,11 +7931,11 @@ done
 lemma C__convertInteger_sign_ext_len_char:
   "\<lbrakk>C__plainCharsAreSigned; 8 < newlen;
      C__convertInteger (C__Value__char (Abs_Bits__Byte y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y = 8; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
+       C__Monad__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
    apply (cut_tac bs=y in TwosComplement_surjective, auto,
           simp add: C__convertInteger_def C__Words split: split_if_asm)
    apply (case_tac "0 \<le> i",
@@ -7901,11 +7952,11 @@ done
 lemma C__convertInteger_sign_ext_len_schar:
   "\<lbrakk> C__signedIntegerType_p C__Type__schar; 8 < newlen;
      C__convertInteger (C__Value__schar (Abs_Bits__Byte y), newty) =
-     C__OC__ok newval;
+     C__Monad__ok newval;
      length y = 8; 
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
+       C__Monad__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
    apply (cut_tac bs=y in TwosComplement_surjective, auto,
           simp add: C__convertInteger_def C__Words split: split_if_asm)
    apply (case_tac "0 \<le> i",
@@ -7921,11 +7972,11 @@ lemma C__convertInteger_sign_ext_len_sint:
    "\<lbrakk>C__signedIntegerType_p C__Type__sint; 
      C__int_bits < C__typeBits newty;
      C__convertInteger (C__Value__sint (Abs_C__IntWord y), newty) =
-       C__OC__ok newval;
+       C__Monad__ok newval;
      length y = C__int_bits;
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
+       C__Monad__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
    apply (cut_tac bs=y in TwosComplement_surjective, auto,
           simp add: C__convertInteger_def C__Words split: split_if_asm)
    apply (case_tac "0 \<le> i",
@@ -7942,11 +7993,11 @@ lemma C__convertInteger_sign_ext_len_slong:
    "\<lbrakk>C__signedIntegerType_p C__Type__slong; 
      C__long_bits < C__typeBits newty;
      C__convertInteger (C__Value__slong (Abs_C__LongWord y), newty) =
-       C__OC__ok newval;
+       C__Monad__ok newval;
      length y = C__long_bits;
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
+       C__Monad__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
    apply (cut_tac bs=y in TwosComplement_surjective, auto,
           simp add: C__convertInteger_def C__Words split: split_if_asm)
    apply (case_tac "0 \<le> i",
@@ -7964,11 +8015,11 @@ lemma C__convertInteger_sign_ext_len_sshort:
    "\<lbrakk>C__signedIntegerType_p C__Type__sshort; 
      C__short_bits < C__typeBits newty;
      C__convertInteger (C__Value__sshort (Abs_C__ShortWord y), newty) =
-       C__OC__ok newval;
+       C__Monad__ok newval;
      length y = C__short_bits;
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
+       C__Monad__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
    apply (cut_tac bs=y in TwosComplement_surjective, auto,
           simp add: C__convertInteger_def C__Words split: split_if_asm)
    apply (case_tac "0 \<le> i",
@@ -7985,11 +8036,11 @@ lemma C__convertInteger_sign_ext_len_sllong:
    "\<lbrakk>C__signedIntegerType_p C__Type__sllong; 
      C__llong_bits < C__typeBits newty;
      C__convertInteger (C__Value__sllong (Abs_C__LongLongWord y), newty) =
-       C__OC__ok newval;
+       C__Monad__ok newval;
      length y = C__llong_bits;
      C__typeBits newty = newlen; C__integerType_p newty\<rbrakk>
     \<Longrightarrow> C__bitsOfIntegerValue newval =
-       C__OC__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
+       C__Monad__ok (List__extendLeft (y, TwosComplement__sign y, newlen))"
    apply (cut_tac bs=y in TwosComplement_surjective, auto,
           simp add: C__convertInteger_def C__Words split: split_if_asm)
    apply (case_tac "0 \<le> i",
@@ -8049,7 +8100,7 @@ end-proof
 
 proof Isa  C__convertInteger_truncation
    apply (simp add: C__convertInteger_def 
-                   split: C__OC.split_asm split_if_asm)
+                   split: C__Monad.split_asm split_if_asm)
    apply (clarsimp simp add:  C__valueOfMathInt_def, rule the1I2, 
           rule C__valueOfMathInt_Obligation_the, simp_all,
           cut_tac x=x in C__mathIntOfValue_bits, simp, clarsimp)
@@ -8066,7 +8117,7 @@ proof Isa  C__convertInteger_truncation
           cut_tac ty="C__typeOfValue x" in C__typeBits_pos,
           drule_tac s="length bs" in sym, simp)
    apply (clarsimp simp add: C__mathIntOfValue_def 
-                      split: C__OC.split_asm split_if_asm)
+                      split: C__Monad.split_asm split_if_asm)
    apply (simp add: zmod_int [symmetric] power2_int, rule toBits_mod2, simp_all)
    apply (rule  TwosComplement_mod2, simp_all)
 end-proof
@@ -8078,7 +8129,7 @@ end-proof
 proof Isa C__convertInteger_no_change
    apply (frule C__convertInteger_type, simp,
           simp add:  C__convertInteger_def 
-             split: C__OC.split_asm split_if_asm)
+             split: C__Monad.split_asm split_if_asm)
    apply (drule_tac t="newval" in sym, rotate_tac -1, erule ssubst,
           clarsimp simp add:  C__valueOfMathInt_def, rule the1I2, 
           rule C__valueOfMathInt_Obligation_the, simp_all, clarify)
@@ -8100,7 +8151,7 @@ proof Isa C__convertInteger_no_change
           cut_tac ty="C__typeOfValue x" in C__typeBits_pos,
           drule_tac s="length bs" in sym, simp)
    apply (clarsimp simp add: C__mathIntOfValue_def 
-                      split: C__OC.split_asm split_if_asm)
+                      split: C__Monad.split_asm split_if_asm)
    apply (cut_tac bs=bs and bits=bits and len="length bits"
           in TwosComplement_mod2,
           simp, simp, simp add: zmod_int [symmetric] power2_int, simp,
@@ -8148,7 +8199,7 @@ proof Isa C__convertForAssignment_Obligation_subtype
 
 lemma C__arithConvertValues_sint_sint [simp]:
   "C__arithConvertValues (C__Value__sint i1, C__Value__sint i2)
-   = C__OC__ok (C__Value__sint i1, C__Value__sint i2)"
+   = C__Monad__ok (C__Value__sint i1, C__Value__sint i2)"
  by (simp add: C__arithConvertValues_def C__arithmeticValue_p_def 
                C__arithConvertTypes_def  C__IntTypes)
 
@@ -8156,7 +8207,7 @@ lemma C__arithConvertValues_sint_sint [simp]:
 lemma C__arithConvertValues_uchar_sint [simp]:
   "\<lbrakk>i1 < 2 ^ 8\<rbrakk> \<Longrightarrow> 
    C__arithConvertValues (C__Value__uchar (Bits__byte i1), C__Value__sint i2)
-   = C__OC__ok 
+   = C__Monad__ok 
     (C__Value__sint (Abs_C__IntWord (TwosComplement__tcNumber (int i1, C__int_bits))),
      C__Value__sint i2)"
  by (simp add: C__arithConvertValues_def C__arithmeticValue_p_def 
@@ -8369,7 +8420,7 @@ end-proof
 proof Isa C__operator_SHL_Obligation_subtype0
   apply (subst C__bitsOfIntegerValue_length2, simp_all)
   apply (simp add: C__operator_SHL_def Let_def not_le not_less
-            split: C__OC.split_asm split_if_asm)
+            split: C__Monad.split_asm split_if_asm)
   apply (simp add: C__mathIntOfValue_def split: split_if_asm)
   apply (simp add: C__mathIntOfValue_def split: split_if_asm)
   defer defer
@@ -8416,7 +8467,7 @@ end-proof
 
 proof Isa  C__operator_AND_Obligation_subtype
   apply (auto simp add: C__arithConvertValues_def C__bitsOfIntV Let_def
-                 split: split_if_asm C__OC.split_asm)
+                 split: split_if_asm C__Monad.split_asm)
   apply (frule C__arithConvertValues_Obligation_subtype0, rotate_tac 3, simp)
   apply (frule_tac val=val1 in C__convertInteger_type, simp)
   apply (frule_tac val=val2 in C__convertInteger_type, simp)
@@ -8468,10 +8519,10 @@ declare C__evaluate.simps [simp del]
 
 lemma C__evaluate_simp1 [simp]: 
   "\<lbrakk>Map__finite_p (Rep_Map__FiniteMap (C__State__functions state));
-    C__designatorOfObject(state, var) =  C__OC__ok x\<rbrakk>
+    C__designatorOfObject(state, var) =  C__Monad__ok x\<rbrakk>
    \<Longrightarrow> 
     C__evaluate(state, C__Expression__ident var)
-    = C__OC__ok (C__ExpressionResult__object x)"
+    = C__Monad__ok (C__ExpressionResult__object x)"
  apply (simp add:  C__evaluate.simps)
 end-proof
 
@@ -8552,7 +8603,7 @@ lemma C__zeroOfType_simp1 [simp]:
     \<not> (C__invariants_p state) \<rbrakk>
    \<Longrightarrow> 
     C__zeroOfType(state, ty)
-    = C__OC__error"
+    = C__Monad__error"
  apply (simp add:  C__zeroOfType.simps)
 end-proof
 
