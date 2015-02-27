@@ -5,7 +5,7 @@
 % has an upper bound (not necessarily least); i.e., all the elements
 % in the set are, in a sense, compatible.
 
-spec
+CPO qualifying spec
 
   %%
   %% We start by defining Isabelle's sets. This duplicates some effort
@@ -96,13 +96,13 @@ spec
   % Isabelle morphism to map ISet and its associated operators to the
   % Isabelle set type
   proof Isa Thy_Morphism 
-    type ISet               -> set (setToPred, Collect)
-    iSetInter               -> \<inter> Left 70
-    reflexive?              -> refl
-    symmetric?              -> sym
-    antisymmetric?          -> antisym
-    transitive?             -> trans
-    equivalence?            -> equivalence
+    type CPO.ISet           -> set (setToPred, Collect)
+    CPO.iSetInter           -> \<inter> Left 70
+    CPO.reflexive?          -> refl
+    CPO.symmetric?          -> sym
+    CPO.antisymmetric?      -> antisym
+    CPO.transitive?         -> trans
+    CPO.equivalence?        -> equivalence
   end-proof
 
 
@@ -211,17 +211,17 @@ spec
 
   proof Isa leastUpperBound_unique
     proof -
-      assume po : "partialOrder_p r"
-      assume lub1_pf : "leastUpperBound_p r S lub1"
-      assume lub2_pf : "leastUpperBound_p r S lub2"
+      assume po : "CPO__partialOrder_p r"
+      assume lub1_pf : "CPO__leastUpperBound_p r S lub1"
+      assume lub2_pf : "CPO__leastUpperBound_p r S lub2"
       have asym : "antisym r"
-        by (insert po, simp add: partialOrder_p_def)
-      have ub1 : "upperBound_p r S lub1" by (insert lub1_pf, simp add: leastUpperBound_p_def)
-      have ub2 : "upperBound_p r S lub2" by (insert lub2_pf, simp add: leastUpperBound_p_def)
+        by (insert po, simp add: CPO__partialOrder_p_def)
+      have ub1 : "CPO__upperBound_p r S lub1" by (insert lub1_pf, simp add: CPO__leastUpperBound_p_def)
+      have ub2 : "CPO__upperBound_p r S lub2" by (insert lub2_pf, simp add: CPO__leastUpperBound_p_def)
       have r12 : "(lub1, lub2) \<in> r"
-        by (insert lub1_pf, insert ub2, simp add: leastUpperBound_p_def)
+        by (insert lub1_pf, insert ub2, simp add: CPO__leastUpperBound_p_def)
       have r21 : "(lub2, lub1) \<in> r"
-        by (insert lub2_pf, insert ub1, simp add: leastUpperBound_p_def)
+        by (insert lub2_pf, insert ub1, simp add: CPO__leastUpperBound_p_def)
       show "lub1 = lub2"
         by (insert r12, insert r21, insert asym, rule antisymD, assumption+)
     qed
@@ -229,22 +229,22 @@ spec
 
   proof Isa supremum_Obligation_the
     proof (rule ex_ex1I)
-      assume po : "partialOrder_p r"
-      assume dir : "directed_p r S"
-      assume disj : "cpo_p r \<and> nonempty_p S \<or> pointedCpo_p r"
-      show "\<exists> lub . leastUpperBound_p r S lub"
+      assume po : "CPO__partialOrder_p r"
+      assume dir : "CPO__directed_p r S"
+      assume disj : "CPO__cpo_p r \<and> CPO__nonempty_p S \<or> CPO__pointedCpo_p r"
+      show "\<exists> lub . CPO__leastUpperBound_p r S lub"
         apply (insert disj, insert dir)
-        by (auto simp add: cpo_p_def pointedCpo_p_def)
+        by (auto simp add: CPO__cpo_p_def CPO__pointedCpo_p_def)
       fix lub y
-      assume lub_lub : "leastUpperBound_p r S lub"
-      assume lub_y : "leastUpperBound_p r S y"
+      assume lub_lub : "CPO__leastUpperBound_p r S lub"
+      assume lub_y : "CPO__leastUpperBound_p r S y"
       show "lub = y"
-        by (insert po, insert lub_lub, insert lub_y, rule leastUpperBound_unique, auto)
+        by (insert po, insert lub_lub, insert lub_y, rule CPO__leastUpperBound_unique, auto)
     qed
   end-proof
 
   proof Isa eq_is_cpo_Obligation_subtype
-    apply (auto simp add: partialOrder_p_def preOrder_p_def)
+    apply (auto simp add: CPO__partialOrder_p_def CPO__preOrder_p_def)
     apply (simp add: refl_onI)
     apply (rule transI, auto)
     apply (rule antisymI, auto)
@@ -252,110 +252,110 @@ spec
   end-proof
 
   proof Isa eq_is_cpo
-    apply (auto simp add: cpo_p_def nonempty_p_def, rule exI)
+    apply (auto simp add: CPO__cpo_p_def CPO__nonempty_p_def, rule exI)
     proof -
       fix S x
       assume Sx : "setToPred S x"
-      assume dir : "directed_p {(x, y). x = y} S"
+      assume dir : "CPO__directed_p {(x, y). x = y} S"
       have Selems : "!! y . setToPred S y ==> x = y"
-        by (insert dir, simp add: directed_p_def, erule allE, erule allE, erule mp, simp add: Sx)
+        by (insert dir, simp add: CPO__directed_p_def, erule allE, erule allE, erule mp, simp add: Sx)
       have Seq : "S = { x }"
         by (rule set_eqI, auto simp add: Sx Selems)
-      have ub : "upperBound_p {(x, y). x = y} S x"
-        by (auto simp add: upperBound_p_def Seq)
-      show "leastUpperBound_p {(x, y). x = y} S x"
-        by (auto simp add: leastUpperBound_p_def ub upperBound_p_def Seq)
+      have ub : "CPO__upperBound_p {(x, y). x = y} S x"
+        by (auto simp add: CPO__upperBound_p_def Seq)
+      show "CPO__leastUpperBound_p {(x, y). x = y} S x"
+        by (auto simp add: CPO__leastUpperBound_p_def ub CPO__upperBound_p_def Seq)
     qed
   end-proof
 
   proof Isa pcpo_option_Obligation_subtype
-    apply (simp add: pointedCpo_p_def, rule allI, rule impI)
+    apply (simp add: CPO__pointedCpo_p_def, rule allI, rule impI)
     proof -
       fix S
-      assume cpo : "cpo_p r"
-      assume po : "partialOrder_p r"
-      assume dir : "directed_p (pcpo_option_fun r) S"
-      have lub_emp : "leastUpperBound_p (pcpo_option_fun r) {} None"
-        by (simp add: leastUpperBound_p_def pcpo_option_fun_def upperBound_p_def)
-      have lub_none : "leastUpperBound_p (pcpo_option_fun r) {None} None"
-        by (simp add: leastUpperBound_p_def pcpo_option_fun_def upperBound_p_def)
-      have dir_some : "directed_p r {x . Some x \<in> S}"
-        apply (insert dir, auto simp add: directed_p_def)
+      assume cpo : "CPO__cpo_p r"
+      assume po : "CPO__partialOrder_p r"
+      assume dir : "CPO__directed_p (CPO__pcpo_option_fun r) S"
+      have lub_emp : "CPO__leastUpperBound_p (CPO__pcpo_option_fun r) {} None"
+        by (simp add: CPO__leastUpperBound_p_def CPO__pcpo_option_fun_def CPO__upperBound_p_def)
+      have lub_none : "CPO__leastUpperBound_p (CPO__pcpo_option_fun r) {None} None"
+        by (simp add: CPO__leastUpperBound_p_def CPO__pcpo_option_fun_def CPO__upperBound_p_def)
+      have dir_some : "CPO__directed_p r {x . Some x \<in> S}"
+        apply (insert dir, auto simp add: CPO__directed_p_def)
         apply (erule allE, erule allE)
         proof -
           fix x y
           assume Sx : "setToPred S (Some x)"
           assume Sy : "setToPred S (Some y)"
           assume impl : "setToPred S (Some x) \<and> setToPred S (Some y)
-                         --> (\<exists>z. setToPred (pcpo_option_fun r) (Some x, z)
-                                \<and> setToPred (pcpo_option_fun r) (Some y, z))"
-          have ex_z : "\<exists>z. setToPred (pcpo_option_fun r) (Some x, z)
-                            \<and> setToPred (pcpo_option_fun r) (Some y, z)"
+                         --> (\<exists>z. setToPred (CPO__pcpo_option_fun r) (Some x, z)
+                                \<and> setToPred (CPO__pcpo_option_fun r) (Some y, z))"
+          have ex_z : "\<exists>z. setToPred (CPO__pcpo_option_fun r) (Some x, z)
+                            \<and> setToPred (CPO__pcpo_option_fun r) (Some y, z)"
             by (insert impl, insert Sx, insert Sy, erule mp, simp)
           obtain a where a_ok: "setToPred r (x,a) \<and> setToPred r (y,a)"
-            by (insert ex_z, erule exE, case_tac z, auto simp add: pcpo_option_fun_def)
+            by (insert ex_z, erule exE, case_tac z, auto simp add: CPO__pcpo_option_fun_def)
           show "\<exists> a . setToPred r (x,a) \<and> setToPred r (y,a)"
             by (insert a_ok, rule exI, assumption)
         qed
-      have lub_r : "nonempty_p {x . Some x \<in> S} ==>
-                       \<exists>x . leastUpperBound_p r {x . Some x \<in> S} x"
-        by (insert cpo, insert dir_some, auto simp add: cpo_p_def)
-      have lub_r_eq : "!! lub . nonempty_p {x . Some x \<in> S } ==>
-                         leastUpperBound_p r {x . Some x \<in> S} lub ==>
-                         leastUpperBound_p (pcpo_option_fun r) S (Some lub)"
-       proof (auto simp add: leastUpperBound_p_def)
+      have lub_r : "CPO__nonempty_p {x . Some x \<in> S} ==>
+                       \<exists>x . CPO__leastUpperBound_p r {x . Some x \<in> S} x"
+        by (insert cpo, insert dir_some, auto simp add: CPO__cpo_p_def)
+      have lub_r_eq : "!! lub . CPO__nonempty_p {x . Some x \<in> S } ==>
+                         CPO__leastUpperBound_p r {x . Some x \<in> S} lub ==>
+                         CPO__leastUpperBound_p (CPO__pcpo_option_fun r) S (Some lub)"
+       proof (auto simp add: CPO__leastUpperBound_p_def)
          fix lub x
-         assume nonemp : "nonempty_p {x . Some x \<in> S}"
-         assume ub_lub : "upperBound_p r {x. setToPred S (Some x)} lub"
-         assume lub_lub : "\<forall>x. upperBound_p r {x. setToPred S (Some x)} x --> setToPred r (lub, x)"
-         show "upperBound_p (pcpo_option_fun r) S (Some lub)"
-           by (insert ub_lub, auto simp add: upperBound_p_def pcpo_option_fun_def, case_tac x, auto)
-         assume ub_x : "upperBound_p (pcpo_option_fun r) S x"
+         assume nonemp : "CPO__nonempty_p {x . Some x \<in> S}"
+         assume ub_lub : "CPO__upperBound_p r {x. setToPred S (Some x)} lub"
+         assume lub_lub : "\<forall>x. CPO__upperBound_p r {x. setToPred S (Some x)} x --> setToPred r (lub, x)"
+         show "CPO__upperBound_p (CPO__pcpo_option_fun r) S (Some lub)"
+           by (insert ub_lub, auto simp add: CPO__upperBound_p_def CPO__pcpo_option_fun_def, case_tac x, auto)
+         assume ub_x : "CPO__upperBound_p (CPO__pcpo_option_fun r) S x"
          obtain a where some_a_in : "Some a \<in> S"
-           by (insert nonemp, auto simp add: nonempty_p_def)
-         have r_some_a_x : "setToPred (pcpo_option_fun r) (Some a, x)"
-           by (insert some_a_in, insert ub_x, auto simp add: upperBound_p_def)
+           by (insert nonemp, auto simp add: CPO__nonempty_p_def)
+         have r_some_a_x : "setToPred (CPO__pcpo_option_fun r) (Some a, x)"
+           by (insert some_a_in, insert ub_x, auto simp add: CPO__upperBound_p_def)
          obtain y where x_eq_some_y : "x = Some y"
-           by (insert r_some_a_x, case_tac x, auto simp add: pcpo_option_fun_def)
-         show "setToPred (pcpo_option_fun r) (Some lub, x)"
+           by (insert r_some_a_x, case_tac x, auto simp add: CPO__pcpo_option_fun_def)
+         show "setToPred (CPO__pcpo_option_fun r) (Some lub, x)"
            by (insert x_eq_some_y ub_x lub_lub, erule allE,
-               auto simp add: upperBound_p_def pcpo_option_fun_def)
+               auto simp add: CPO__upperBound_p_def CPO__pcpo_option_fun_def)
        qed
-      have dj : "S = {} | S = {None} | nonempty_p {x . Some x \<in> S}"
-        by (auto simp add: nonempty_p_def, case_tac xa, auto, case_tac x, auto)
-      obtain lub where islub : "leastUpperBound_p (pcpo_option_fun r) S lub"
+      have dj : "S = {} | S = {None} | CPO__nonempty_p {x . Some x \<in> S}"
+        by (auto simp add: CPO__nonempty_p_def, case_tac xa, auto, case_tac x, auto)
+      obtain lub where islub : "CPO__leastUpperBound_p (CPO__pcpo_option_fun r) S lub"
         by (insert dj, insert lub_r, insert lub_r_eq, insert lub_none, insert lub_emp, auto)
-      show "\<exists>lub . leastUpperBound_p (pcpo_option_fun r) S lub"
+      show "\<exists>lub . CPO__leastUpperBound_p (CPO__pcpo_option_fun r) S lub"
         by (rule exI, rule islub)
     qed
   end-proof
 
   proof Isa pcpo_option_Obligation_subtype0
-    proof (auto simp add: partialOrder_p_def preOrder_p_def)
+    proof (auto simp add: CPO__partialOrder_p_def CPO__preOrder_p_def)
       assume r_refl : "refl r"
       assume r_trans : "trans r"
       assume r_antisym : "antisym r"
-      show "refl (pcpo_option_fun r)"
-        by (insert r_refl, rule refl_onI, auto simp add: pcpo_option_fun_def,
+      show "refl (CPO__pcpo_option_fun r)"
+        by (insert r_refl, rule refl_onI, auto simp add: CPO__pcpo_option_fun_def,
             case_tac x, auto simp add: refl_onD)
-      show "trans (pcpo_option_fun r)"
-        by (insert r_trans, rule transI, auto simp add: pcpo_option_fun_def,
+      show "trans (CPO__pcpo_option_fun r)"
+        by (insert r_trans, rule transI, auto simp add: CPO__pcpo_option_fun_def,
             case_tac x, auto, case_tac y, auto, case_tac z, auto, rule transD, auto)
-      show "antisym (pcpo_option_fun r)"
-        by (insert r_antisym, rule antisymI, auto simp add: pcpo_option_fun_def,
+      show "antisym (CPO__pcpo_option_fun r)"
+        by (insert r_antisym, rule antisymI, auto simp add: CPO__pcpo_option_fun_def,
             case_tac x, auto, case_tac y, auto, case_tac y, auto, rule antisymD, auto)
     qed
   end-proof
 
   proof Isa pcpo_fun_Obligation_subtype
-    proof (simp add: pointedCpo_p_def, rule allI, rule impI)
+    proof (simp add: CPO__pointedCpo_p_def, rule allI, rule impI)
       fix S
-      assume lub_r : "\<forall>S. directed_p r S --> (\<exists>lub. leastUpperBound_p r S lub)"
-      assume po_r : "partialOrder_p r"
-      assume dir : "directed_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S"
-      def lub \<equiv> "\<lambda>a . The (leastUpperBound_p r { f a | f . setToPred S f })"
-      have ex_lub_a : "!!a . \<exists>lub_a . leastUpperBound_p r { f a | f . setToPred S f } lub_a"
-        proof (insert lub_r dir, erule allE, erule mp, auto simp add: directed_p_def)
+      assume lub_r : "\<forall>S. CPO__directed_p r S --> (\<exists>lub. CPO__leastUpperBound_p r S lub)"
+      assume po_r : "CPO__partialOrder_p r"
+      assume dir : "CPO__directed_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S"
+      def lub \<equiv> "\<lambda>a . The (CPO__leastUpperBound_p r { f a | f . setToPred S f })"
+      have ex_lub_a : "!!a . \<exists>lub_a . CPO__leastUpperBound_p r { f a | f . setToPred S f } lub_a"
+        proof (insert lub_r dir, erule allE, erule mp, auto simp add: CPO__directed_p_def)
           fix a f fa
           assume a1 : "\<forall> x y . setToPred S x \<and> setToPred S y -->
                          (\<exists>z. (\<forall>a. setToPred r (x a, z a))
@@ -367,25 +367,25 @@ spec
           show "\<exists>z. setToPred r (f a, z) \<and> setToPred r (fa a, z)"
             by (insert zf_pf, auto)
         qed
-      have lub_a : "\<forall>a . leastUpperBound_p r { f a | f . setToPred S f } (lub a)"
+      have lub_a : "\<forall>a . CPO__leastUpperBound_p r { f a | f . setToPred S f } (lub a)"
         proof (rule allI)
           fix a
-          obtain lub_a where lub_a_lub : "leastUpperBound_p r { f a | f . setToPred S f } lub_a"
+          obtain lub_a where lub_a_lub : "CPO__leastUpperBound_p r { f a | f . setToPred S f } lub_a"
             by (insert ex_lub_a, auto)
-          show "leastUpperBound_p r {f a |f. setToPred S f} (lub a)"
-            by (insert lub_a_lub po_r, simp add: lub_def partialOrder_p_def,
+          show "CPO__leastUpperBound_p r {f a |f. setToPred S f} (lub a)"
+            by (insert lub_a_lub po_r, simp add: lub_def CPO__partialOrder_p_def,
                 rule theI, auto, rule antisymD, assumption,
-                auto simp add: leastUpperBound_p_def)
+                auto simp add: CPO__leastUpperBound_p_def)
         qed
-      have lub_lub : "leastUpperBound_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S lub"
-        by (insert lub_a, auto simp add: leastUpperBound_p_def upperBound_p_def, metis)
-      show "\<exists> lub . leastUpperBound_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S lub"
+      have lub_lub : "CPO__leastUpperBound_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S lub"
+        by (insert lub_a, auto simp add: CPO__leastUpperBound_p_def CPO__upperBound_p_def, metis)
+      show "\<exists> lub . CPO__leastUpperBound_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S lub"
         by (rule exI, rule lub_lub)
     qed
   end-proof
 
   proof Isa pcpo_fun_Obligation_subtype0
-    proof (auto simp add: partialOrder_p_def preOrder_p_def)
+    proof (auto simp add: CPO__partialOrder_p_def CPO__preOrder_p_def)
       assume r_refl : "refl r"
       assume r_trans : "trans r"
       assume r_antisym : "antisym r"
@@ -396,6 +396,14 @@ spec
       show "antisymP (\<lambda>f1 f2. \<forall>a. setToPred r (f1 a, f2 a))"
         by (insert r_antisym, rule antisymI, auto simp add: antisymD)
     qed
+  end-proof
+
+  % FIXME HERE: prove this by introducing an inductive predicate for
+  % the "f-reachable" elements of type a including all elements
+  % reachable from bottom using zero or more applications of f and/or
+  % supremum. The supremum of this set must be a fixed-point of f.
+  proof Isa leastFP_Obligation_the
+    sorry
   end-proof
 
 end-spec

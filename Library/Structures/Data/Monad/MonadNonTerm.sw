@@ -3,24 +3,24 @@
 %%
 
 MonadNonTerm = Monad qualifying spec
-  import DomainTheory
+  import CPO
   import ../Monad
 
-  % The approximation ordering
-  op [a] approx_monad : PreOrder a -> PreOrder (Monad a)
+  % For any types A and B and any CPO on B, the type A -> Monad B is a
+  % PCPO; i.e., we can take least fixed-points at type A -> Monad B
+  op [a,b] monad_PCPO : CPO b -> PointedCPO (a -> Monad b)
 
-  % The type of continuous, i.e., monotonic, fixed-point functions
-  type fpFun (a, b) = { (r_b, f) : (PartialOrder b) * ((a -> Monad b) -> (a -> Monad b)) |
-                         monotonic? (approx_fun (approx_monad r_b),
-                                     approx_fun (approx_monad r_b)) f }
+  % A "fixed-point function" is a function for iteratively building up
+  % a monadic (A -> Monad B) function
+  type fpFun (a,b) = { tup : CPO b * ((a -> Monad b) -> (a -> Monad b)) |
+                       monotonic? (monad_PCPO tup.1, monad_PCPO tup.1) tup.2}
 
   % The monadic fixed-point combinator
-  op [a,b] mfix (f : fpFun (a, b)) : a -> Monad b
+  op [a,b] mfix (f : fpFun (a,b)) : a -> Monad b =
+    leastFP (monad_PCPO f.1, f.2)
 
-  % Theorem: mfix is a fixed-point up to approx, i.e., mfix f is an
-  % approximation of f (mfix f), meaning the latter is a
-  % possibly-more-defined version of the former
-  axiom mfix_eq is [a,b]
-    fa (f : fpFun (a,b)) approx_equiv (approx_fun (approx_monad f.1)) (mfix f, f.2 (mfix f))
+  % Theorem: mfix yields a fixed-point
+  theorem mfix_fp is [a,b]
+    fa (f : fpFun (a,b)) mfix f = f.2 (mfix f)
 
 end-spec
