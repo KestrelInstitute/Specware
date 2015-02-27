@@ -494,20 +494,23 @@ spec
 
   op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
     case top_term of
-      | TypedTerm(fn_tm, ty, _) | path ~= [] && last path = 1 ->
+      | TypedTerm(fn_tm, ty, _) ->
         let guard = ("lambda_guard", mkConj(lambdaGuards fn_tm)) in
-        (case varProjections(ty, spc) of
-           | Some(pred, var_projs as _ :: _)->
-             let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
-             let rng = range_*(spc, ty, true) in
-             let fn_val_tms = map (fn (v as (_, v_ty), proj?) ->
-                                     case proj? of
-                                       | None -> mkEquality(v_ty, mkVar v, result_tm)
-                                       | Some id1 -> mkEquality(v_ty, mkVar v, mkApply(mkProject(id1, rng, v_ty), result_tm)))
-                                var_projs                                                 
-             in
-             [guard, ("fn_value", mkConj fn_val_tms), ("new_postcondition", pred)]
-           | _ -> [guard])
+        (if path ~= [] && last path = 1
+           then
+             case varProjections(ty, spc) of
+               | Some(pred, var_projs as _ :: _)->
+                 let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+                 let rng = range_*(spc, ty, true) in
+                 let fn_val_tms = map (fn (v as (_, v_ty), proj?) ->
+                                         case proj? of
+                                           | None -> mkEquality(v_ty, mkVar v, result_tm)
+                                           | Some id1 -> mkEquality(v_ty, mkVar v, mkApply(mkProject(id1, rng, v_ty), result_tm)))
+                                    var_projs                                                 
+                 in
+                 [guard, ("fn_value", mkConj fn_val_tms), ("new_postcondition", pred)]
+               | _ -> [guard]
+         else [guard])
       | _ -> []
 
   op addContextToProof(prf: Proof, ptm: PathTerm, qid: QualifiedId, spc: Spec): Proof =
@@ -519,23 +522,21 @@ spec
   op rewriteDebug?: Bool = false
   op rewriteDepth: Nat = 6
 
-  %%
-  %% The following rules, up to interpretTerm, operate on PathTerms,
-  %% trying to refine them, where the top of the PathTerm is always
-  %% the definition of an op; specifically, the top of the PathTerm
-  %% always has the form TypedTerm(body,ty,_). If body satisfies the
-  %% anyTerm? predicate, then these operations attempt to refine the
-  %% post-conditions in ty, otherwise the attempt to refine body.
-  %%
-  %% The proof obligations involved mirror this split: if body1
-  %% satisfies the anyTerm? predicate, then TypedTerm(body1,ty1,_)
-  %% refines to TypedTerm(body2,ty2,_) iff body2 is syntactically
-  %% equivalent to body1 and postCond?(ty2)=>postCond?(ty1);
-  %% otherwise, the refinement requires that a proof that body1=body2.
-  %%
-  %% NOTE: implication proofs for refinement are "backwards" to the
-  %% equality proofs. This can mess you up if you aren't careful.
-  %%
+  
+  % The following rules, up to interpretTerm, operate on PathTerms, trying to refine them,
+  % where the top of the PathTerm is always the definition of an op; specifically, the top
+  % of the PathTerm always has the form TypedTerm(body,ty,_). If body satisfies the anyTerm?
+  % predicate, then these operations attempt to refine the post-conditions in ty, otherwise
+  % the attempt to refine body.
+  
+  % The proof obligations involved mirror this split: if body1 satisfies the anyTerm?
+  % predicate, then TypedTerm(body1,ty1,_) refines to TypedTerm(body2,ty2,_) iff body2 is
+  % syntactically equivalent to body1 and postCond?(ty2)=>postCond?(ty1); otherwise, the
+  % refinement requires that a proof that body1=body2.
+  
+  % NOTE: implication proofs for refinement are "backwards" to the equality proofs. This can
+  % mess you up if you aren't careful.
+  
 
   % prove_refinesEqualSubTerm(M,N,p,pf) proves that M can be refined
   % to N (according to the rules outlined above for refining
@@ -691,6 +692,15 @@ spec
       | Bool x -> Some(show x)
       | _ -> None
 
+   op ratorOfApply? (p_tm as (_, path): PathTerm): Bool =
+     case path of
+       | 0 :: _ ->
+         (case parentTerm p_tm of
+            | Some par_ptm ->
+              embed? Apply (fromPathTerm par_ptm)
+            | _ -> false)
+       | _ -> false
+
    op searchPred(s: String): MSTerm * PathTerm -> Bool =
     case s of
       | "if" -> (fn (t,_) -> embed? IfThenElse t)
@@ -706,13 +716,13 @@ spec
       | "ex" -> (fn (t,_) -> case t of
                                    | Bind(Exists, _, _, _) -> true
                                    | _ -> false)
-      | _ -> (fn (t,_) ->
+      | _ -> (fn (t,p_tm) ->
                 case t of
                   | Apply(Fun(f, _, _), _, _) ->
                     (case funString f of
                        | Some fn_str -> fn_str = s
                        | None -> false)
-                  | Fun(f, _, _) | ~(embed? Op f) ->
+                  | Fun(f, _, _) | ~(embed? Op f && ratorOfApply? p_tm) ->
                     (case funString f of
                        | Some fn_str -> fn_str = s
                        | None -> false)

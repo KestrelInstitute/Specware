@@ -2974,7 +2974,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
  op constructorFun?(f: MSFun, ty: MSType, spc: Spec): Option(MSFun) =
   case f of
     | Op(op_qid, _) ->
-      let def checkIfCoProduct ty_qid =
+      let def checkIfCoProductQId ty_qid =
             case findTheType(spc, ty_qid) of
               | None -> None
               | Some ty_info ->
@@ -2983,14 +2983,17 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                 (case findLeftmost (fn (fld_qid, _) -> op_qid = fld_qid) fields of
                    | Some(_, o_arg) -> Some(Embed(op_qid, some? o_arg))
                    | None -> None)
-              | (_, Base(ty_qid1, _, _)) -> checkIfCoProduct ty_qid1
-              | (_, Subtype(Base(ty_qid1, _, _), _, _)) -> checkIfCoProduct ty_qid1
+              | (_, Base(ty_qid1, _, _)) -> checkIfCoProductQId ty_qid1
+              | (_, Subtype(Base(ty_qid1, _, _), _, _)) -> checkIfCoProductQId ty_qid1
+              | _ -> None
+          def checkIfCoProduct ty =
+            case ty of
+              | Base(qid, _, _) -> checkIfCoProductQId qid
+              | Arrow(_, s_ty, _) -> checkIfCoProduct s_ty
+              | Subtype(s_ty, _, _) -> checkIfCoProduct s_ty
               | _ -> None
       in
-      (case ty of
-         | Base(qid, _, _) -> checkIfCoProduct qid
-         | Arrow(_, Base(qid, _, _), _) -> checkIfCoProduct qid
-         | _ -> None)
+      checkIfCoProduct ty
     | (Embed _) -> Some f
     | _ -> None
 
