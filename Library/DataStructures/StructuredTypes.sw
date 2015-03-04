@@ -1105,7 +1105,7 @@ end-proof
 proof isa L2S_tail
   apply(induct lst)
   apply(simp)
-  apply(simp add: L2S_Cons )
+  apply(simp add: L2S_Cons)
   apply(rule Set__subset_insert_same)
 end-proof
 
