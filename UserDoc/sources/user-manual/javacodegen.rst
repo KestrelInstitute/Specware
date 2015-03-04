@@ -32,12 +32,12 @@ translated into Java and the second spec term gives the option spec
             .. code-block:: specware
                let myspec = spec 
                 ...
-               endspec
+               end-spec
                in
                let myoptions = spec
                    def package = "com.mycompany.myapp"
                    ...
-               endspec
+               end-spec
                in
                generate java myspec with myoptions
             </para>
@@ -96,7 +96,7 @@ Example option spec:
      def imports = ["java.util.*"]
      def public = ["test2"]
      def basedir = "~/myjavaapps"
-   endspec
+   end-spec
    
 If no option spec is specified in the ``gen-java`` command, default
 values are used for all option parameters.
@@ -255,12 +255,12 @@ Accessing Java Constructors
            op new: () -> Vector
            op add: [a] Vector * a -> Vector
            op size: Vector -> Nat
-     endspec
+     end-spec
      Math qualifying spec
            op max: Integer * Integer -> Integer
            op min: Integer * Integer -> Integer
            ....
-     endspec
+     end-spec
 
   and then importing the specs into the application spec that uses it.
   Future versions of the Specware system will provide a utility to

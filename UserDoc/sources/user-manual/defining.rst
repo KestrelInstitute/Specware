@@ -107,7 +107,7 @@ containing the following text::
 
    spec
      type X
-   endspec
+   end-spec
    
 
 The absolute path of the file in the file system is
@@ -146,12 +146,12 @@ directory ``C:\users\me\specware``. The user creates a file named
 
    B = spec
      type Y
-   endspec
+   end-spec
    
    three = spec
      import B
      type Z
-   endspec
+   end-spec
    
 
 This file defines two specs, one declaring just a type ``Y``, the

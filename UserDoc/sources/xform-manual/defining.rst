@@ -11,7 +11,7 @@ To add an expression transformation that can be invoked from the
 transformation shell, add a new definition to the `MetaRules` spec
 found in `Languages/MetaSlang/Transformations/MetaRules`::
 
-    op testTransform (spc:Spec) (tm : MSTerm ) : Option MSTerm =
+    op testTransform (spc: Spec) (tm: MSTerm ) : Option MSTerm =
       let _ = writeLine "Pop quiz bub."
       in (Some tm)
 
@@ -36,7 +36,7 @@ other subterms of the currently focused term.
 After rebuilding Specware, this transform can be invoked from the
 transformation shell using the `apply` command::
 
-    at (someDef) { apply testTransform }
+    at someDef { testTransform }
 
 Transforming Specifications
 ###########################
@@ -108,7 +108,7 @@ simply add the extra arguments to the transformation in curried form::
     let _ = writeLine "Using transform on: " ^ printTerm tm
     in return spc
 
-  endspec
+  end-spec
 
 
 Integrating Transformations
@@ -130,7 +130,7 @@ manipulating specs::
 
     S0 = spec
       op inc : Nat -> Nat
-    endspec
+    end-spec
 
     S1 = transform S0 by { copySpec }
 

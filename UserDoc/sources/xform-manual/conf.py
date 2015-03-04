@@ -42,11 +42,11 @@ master_doc = 'index'
 # General information about the project.
 project = u'Specware Transformation Manual'
 copyright = u"""
-2001-2010 by Kestrel Development Corporation Copyright
-2001-2010 by Kestrel Technology LLC
+2001-2015 by Kestrel Development Corporation Copyright
+2001-2015 by Kestrel Technology LLC
 All rights reserved
 The name Specware® is a registered trademark of Kestrel Development Corporation
-2001-2012, Kestrel Institute
+2001-2015, Kestrel Institute
 """
 
 

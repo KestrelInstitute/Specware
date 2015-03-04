@@ -105,7 +105,7 @@ A model is an assignment of "types" to all the
 :token:`type_names` and of "typed" values to all the :token:`ops`
 declared -- explicitly or implicitly -- in the :token:`spec`.
 The notion of *value*  includes
-numbers, strings, arrays, functions, etcetera.
+numbers, strings, arrays, functions, et cetera.
 Each type has a set of "inhabitants", which are similar values.
 A typed value can be thought of as a pair (*T*, *V*),
 in which *T* is a type and *V* is a value that is an
@@ -128,7 +128,7 @@ For example, given this :token:`spec`:
      op next : Even -> Even
      axiom nextEffect is
        fa(x : Even) ~(next x = x)
-   endspec
+   end-spec
    
 
 one possible model (out of many!) is the assignment of
@@ -242,7 +242,7 @@ respecting combinations of assignments. For example, the following
    spec
      type Empty = | Just Empty
      op IdoNotExist : Empty
-   endspec
+   end-spec
    
 
 The explanation is that the :token:`type_definition` for ``Empty``
@@ -267,7 +267,7 @@ combinations of assignments:
      type Outcome = | O.Positive | O.Negative
      type Sign = | S.Positive | S.Zero | S.Negative
      def whatAmI = Positive
-   endspec
+   end-spec
    
 
 Here there are two constructors ``O.Positive`` and ``S.Positive`` of different types, the
@@ -397,10 +397,10 @@ equivalent:
      op next : Even -> Even
      axiom nextEffect is
        fa(x : Even) ~(next x = x)
-   endspec
+   end-spec
    
    spec type   Even op   next : Even -> Even axiom nextEffect
-   is fa(x : Even)~(next     x            = x)endspec
+   is fa(x : Even)~(next     x            = x)end-spec
    
 
 .. COMMENT:  ***************************************************************** 
@@ -748,13 +748,13 @@ Spec Forms
 ----------
 
 .. productionlist::
-  spec_form: spec { `declaration` }* endspec
+  spec_form: spec { `declaration` }* end-spec
 
 Sample :token:`spec_forms`:
 
 .. code-block:: specware
 
-   spec import Measures import Valuta endspec
+   spec import Measures, Value end-spec
    
 
 .. COMMENT:  ================================================================= 
@@ -841,7 +841,7 @@ Here is an illustration of the various possibilities:
      type Fruit.Date
      type Calendar.Date
      type Fruit.Basket = Apple * Pear * Date
-   endspec
+   end-spec
    
 
 In the definition of type ``Fruit.Basket`` we have three unqualified
@@ -860,7 +860,7 @@ ambiguous, and in fact an error. To correct the error, the employ of
 It is possible to give a qualification in one go to all
 :token:`simple_names` introduced in a :token:`spec`. If *Q* is a
 :token:`qualifier`, and *S* is a term denoting a :token:`spec`, then
-the term [[*Q* qualifying *S*]] denotes the same :token:`spec` as *S*,
+the term *Q* ``qualifying`` *S* denotes the same :token:`spec` as *S*,
 except that each introduction of an :token:`simple_name` *N* is
 replaced by an introduction of the :token:`qualified_name` \ *Q*\
 ``.``\ *N*\ \ . Employs that before referred to the unqualified
@@ -874,7 +874,7 @@ the qualified introduction. For example, the value of
      type Fruit.Apple
      type Fruit.Pear
      type Fruit.Basket = Apple * Pear
-   endspec
+   end-spec
    
 
 is the same as that of
@@ -886,7 +886,7 @@ is the same as that of
      type Fruit.Apple
      type Fruit.Pear
      type Fruit.Basket = Company.Apple * Fruit.Pear
-   endspec
+   end-spec
    
 
 .. COMMENT: ====================================================================
@@ -923,7 +923,7 @@ Sample :token:`spec_qualification`:
    
 
 Let *R* be the result of elaborating :token:`spec_term` *S*. Then the
-elaboration of \ *Q*\ ``qualifying``\ *S*\ \ , where *Q* is a
+elaboration of \ *Q* ``qualifying`` *S*\ \ , where *Q* is a
 :token:`qualifier`, is *R* with each unqualified :token:`type_name`,
 :token:`op_name` or :token:`claim_name` *N* introduced there replaced
 by the :token:`qualified_name` \ *Q*\ ``.``\ *N*\ \ . The same
@@ -938,7 +938,7 @@ For example, the elaboration of
    Buffer qualifying spec
      op size : Nat
      axiom LargeSize is size >= 1024
-   endspec
+   end-spec
    
 
 results in:
@@ -948,7 +948,7 @@ results in:
    spec
      op Buffer.size : Nat
      axiom Buffer.LargeSize is Buffer.size >= 1024
-   endspec
+   end-spec
    
 
 Because of the restriction on collisions, the following is illegal, as
@@ -960,7 +960,7 @@ the pre-existing (and distinct!) ``X.f``.
    X qualifying spec
      op  X.f : Nat
      def f = 3
-   endspec
+   end-spec
    
 
 .. COMMENT:  ***************************************************************** 
@@ -1050,7 +1050,7 @@ For example, the elaboration of
    translate spec
      type E
      op i : E
-   endspec by {
+   end-spec by {
      E +-> Counter,
      i +-> reset
    }
@@ -1063,7 +1063,7 @@ results in:
    spec
      type Counter
      op reset : Counter
-   endspec
+   end-spec
    
 
 To illustrate the use of :token:`wildcards`: The elaboration of
@@ -1073,7 +1073,7 @@ To illustrate the use of :token:`wildcards`: The elaboration of
    translate spec
      type M.Length
      op M.+ infixl 25 : M.Length * M.Length -> M.Length
-   endspec by {M._ +-> Measure._}
+   end-spec by {M._ +-> Measure._}
    
 
 results in this :token:`spec`:
@@ -1084,12 +1084,12 @@ results in this :token:`spec`:
      type Measure.Length
      op Measure.+ infixl 25 :
                Measure.Length * Measure.Length -> Measure.Length
-   endspec
+   end-spec
    
 
-A :token:`spec_qualification` \ *Q*\ ``qualifying``\ *S*\ is
-convenient shorthand for the :token:`spec_translation` ``translate``\
-*S*\ ``by {_ +->``\ *Q*\ ``._}``.
+A :token:`spec_qualification` *Q* ``qualifying`` *S* is
+convenient shorthand for the :token:`spec_translation` ``translate``
+*S* ``by {_ +->`` *Q*\ ``._}``.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -1109,7 +1109,7 @@ Sample :token:`spec_substitution`:
                           /Coll/LatticeWithTop {} ]
    
 
-The elaboration of :token:`spec_substitution` \ *S*\ ``[``\ *M*\ \ ]
+The elaboration of :token:`spec_substitution` *S*\ ``[``\ *M*\ \ ]
 yields the :token:`spec` *T* obtained as follows. Let :token:`spec`
 *R* be the result of elaborating *S*, and morphism *N* that of *M*.
 Let :token:`specs` *D* and *C* be the domain and codomain of *N*.
@@ -1155,13 +1155,13 @@ For example, assume we have:
      op tally : Counter -> Counter
      axiom Effect is
        fa (c : Counter) ~(tally c = c)
-   endspec
+   end-spec
    
    B = spec
      type Register = Nat
      def reset = 0
      def incr c = c+1
-   endspec
+   end-spec
    
    M = morphism A -> B {Counter +-> Register, tally +-> incr}
    
@@ -1170,7 +1170,7 @@ For example, assume we have:
      type Interval = {start: Counter, stop: Counter}
      op isEmptyInterval? : Interval -> Bool
      def isEmptyInterval? {start = x, stop = y} = (x = y)
-   endspec
+   end-spec
    
 
 Then the result of ``AA[M``\ ] is the same as that of this
@@ -1183,7 +1183,7 @@ Then the result of ``AA[M``\ ] is the same as that of this
      type Interval = {start: Register, stop: Register}
      op isEmptyInterval? : Interval -> Bool
      def isEmptyInterval? {start = x, stop = y} = (x = y)
-   endspec
+   end-spec
    
 
 .. COMMENT:  ***************************************************************** 
@@ -1245,10 +1245,10 @@ a :token:`unit_identifier` must yield a morphism.
 
 Restriction ("proof obligations"). Given :token:`spec_morphism`
 ``morphism`` *S* ``->`` *T* ``{`` *M*\ :sub:`1` ``+->`` *N*\ :sub:`1`,
-``...`` *M* :sub:`n` ``+->`` *N*\ :sub:`n` ``}`` let *R* be the result
+``...`` *M*\ :sub:`n` ``+->`` *N*\ :sub:`n` ``}`` let *R* be the result
 of elaborating *S*, and let *S'* be *R* with each occurrence of a
-:token:`name` *M*\ :sub:`i` replaced by *N* :sub:`i`.  The same rules
-apply as for :token:`spec_translation` ``translate``\ *S* ``by
+:token:`name` *M*\ :sub:`i` replaced by *N*\ :sub:`i`.  The same rules
+apply as for :token:`spec_translation` ``translate`` *S* ``by
 {``... ``}``, and the result *S'* must be well formed, with the
 exception that the restriction on :token:`spec_translations` requiring
 different :token:`type_names` or :token:`op_names` to be mapped to
@@ -1267,8 +1267,8 @@ For example, in
 
 .. code-block:: specware
 
-   S = spec endspec
-   T = spec type Bullion = (Char | isAlpha) endspec
+   S = spec end-spec
+   T = spec type Bullion = (Char | isAlpha) end-spec
    M = morphism S -> T {Bool +-> Bullion}
    
 
@@ -1280,13 +1280,13 @@ proper morphism. Further, in
    S = spec
          op f : Nat -> Nat
          axiom ff is fa(n:Nat) f(n) ~= f(n+1)
-       endspec
+       end-spec
    
    T = spec
          def f(n:Nat) = n*n rem 5
-       endspec
+       end-spec
    
-   M = morphism S -> T
+   M = morphism S -> T {}
    
 
 axiom ``ff`` does not follow from (the axiom implied by) the
@@ -1301,7 +1301,7 @@ Sample :token:`spec_morphism`:
    morphism A -> B {Counter +-> Register, tally +-> incr}
    
 
-The elaboration of :token:`spec_morphism` ``morphism``\ *S*\ ``->``\
+The elaboration of :token:`spec_morphism`\ ``morphism``\ *S*\ ``->``\
 *T*\ ``{``\ *M*\ ``}`` results in the morphism whose domain and
 codomain are the result of elaborating *S* and *T*, respectively, and
 whose mapping is given by the list of :token:`name_map_items` in *M*,
@@ -1347,8 +1347,8 @@ Restriction. In a :token:`diagram_term`, the first
 :token:`diagram_edge` must be unique (i.e., not be used more than once
 in that :token:`diagram_term`). Further, for each
 :token:`diagram_edge` \ *E*\ ``:``\ *ND*\ ``->``\ *NC*\ ``+->``\ *M*\
-\ , there must be :token:`diagram_nodes` \ *ND*\ ``+->``\ *D*\ and \
-*NC*\ ``+->``\ *C*\ of the :token:`diagram_term` such that, after
+\ , there must be :token:`diagram_nodes` \ *ND*\ ``+->``\ *D* and \
+*NC*\ ``+->``\ *C* of the :token:`diagram_term` such that, after
 elaboration, *M* is a morphism from *D* to *C*.
 
 Sample :token:`diagram_term`:
@@ -1500,7 +1500,7 @@ For example, the result of
             end
      def A.Z = String
      def b = toString
-   endspec
+   end-spec
    
 
 is this "expanded" :token:`spec`:
@@ -1512,7 +1512,7 @@ is this "expanded" :token:`spec`:
      op b : Nat -> A.Z
      def A.Z = String
      def b = toString
-   endspec
+   end-spec
    
 
 For this to be well formed, the imported :token:`specs` must be well
@@ -1598,7 +1598,7 @@ necessarily a model of *A* (after "forgetting" any
 :token:`simple_names` newly introduced by *B*). So *A* is then refined
 by *B*, and the morphism from *A* to *B* is known as the "import
 morphism". As it does not involve translation of :token:`type_names`
-or :token:`op_names`, it can be denoted by [[morphism *A* -> *B* {}]].
+or :token:`op_names`, it can be denoted by ``morphism`` *A* ``->`` *B* ``{}``.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -2221,15 +2221,13 @@ which in turn is equivalent to
    def o = fn (f, g) -> fn x -> f(g x)
    
 
-By
-
 .. COMMENT:  ====================== NOT YET ==================================
             ** using the transformation from infix to prefix if
             ** applicable, and
             ** repeating
                  ====================== TEY TON ================================== 
 
-this deparameterizing transformation for each
+By this deparameterizing transformation for each
 :token:`formal_parameter`, an equivalent unparameterized :token:`op_definition`
 is reached.
 The semantics is described in terms of such :token:`op_definitions`.
@@ -2431,7 +2429,7 @@ longer legal:
      op f : T -> Nat
      op q : T * T -> Bool
      op q_f (x : T / q) : Nat = let quotient[T / q] y = x in f y
-   endspec
+   end-spec
    
 
 but can be expressed legally as follows:
@@ -2444,7 +2442,7 @@ but can be expressed legally as follows:
      op q : T * T -> Bool
      type Q = T / q
      op q_f (x : Q) : Nat = let quotient[Q] y = x in f y
-   endspec
+   end-spec
    
 
 (The distinctions ":token:`slack_`", ":token:`tight_`" and
@@ -2957,8 +2955,8 @@ obligation that the value satisfies the predicate of the subtype.
 These coercions extend to composed types. For example, an
 :token:`expression` of type ``List PosNat`` may be used where a value
 of type ``List Nat`` is required. Conversely, an :token:`expression`
-of type ``List Nat`` may be used in a context requiring [[List
-PosNat]] if the corresponding proof obligation can be discharged,
+of type ``List Nat`` may be used in a context requiring ``List
+PosNat`` if the corresponding proof obligation can be discharged,
 namely that the value of the :token:`expression`, in its context,
 satisfies the predicate ``all posNat?`` testing whether all elements
 of a list of naturals are positive.
@@ -2988,8 +2986,8 @@ Restriction. In a :token:`type_comprehension` ``{``\ *P*\ ``:``\ *T*\
 :token:`type_restrictions` that is akin to the common mathematical
 notation for set comprehensions. The meaning of
 :token:`type_comprehension` ``{``\ *P*\ ``:``\ *T*\ ``|``\ *E*\ ``}``
-is the same as that of the :token:`type_restriction` [[(*T* | fn *P*
--> *E*)]]. So the meaning of the example :token:`type_comprehension`
+is the same as that of the :token:`type_restriction` ``(``\ *T* ``| fn`` *P*
+``->`` *E*\ ``)``. So the meaning of the example :token:`type_comprehension`
 above is ``(Nat | fn n -> even n)``.
 
 .. COMMENT:  ***************************************************************** 
@@ -3300,7 +3298,7 @@ Sample :token:`if_expression`:
 
 The value of an :token:`if_expression` ``if``\ *B*\ ``then``\ *T*\
 ``else``\ *F*\ is the same as that of the :token:`case_expression`
-[[case *B* of true -> (*T*) | false -> (*F*)]].
+``case`` *B* ``of true -> (``\ *T*\ ``) | false -> (``\ *F*\ ``)``.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -3784,7 +3782,7 @@ the environment.
 .. COMMENT: ====================================================================
 
 (There are no :token:`literals` for the base-library type ``Integer``\
-. For nonnegative integers, a :token:`nat_literal` can be used. For
+. For non-negative integers, a :token:`nat_literal` can be used. For
 negative integers, apply the unary base-library :token:`op` ``-``,
 which negates an integer: ``-1`` denote the negative integer ``-`` 1.)
 
@@ -3841,7 +3839,7 @@ Sample :token:`nat_literals`:
    
 
 The :token:`type_descriptor` ``Nat`` is, by definition, the subtype of
-``Integer`` restricted to the nonnegative integers 0, 1, 2,
+``Integer`` restricted to the non-negative integers 0, 1, 2,
 
 ... , which we identify with the natural numbers.
 The value of a :token:`nat_literal` composed entirely of
@@ -3867,7 +3865,7 @@ given
 
    Ned = spec 
      op N : Nat = 0x17B
-   endspec
+   end-spec
    
 
 the |Specware| Shell command ``show Ned`` will print as
@@ -3876,7 +3874,7 @@ the |Specware| Shell command ``show Ned`` will print as
 
    spec 
      op N : Nat = 379
-   endspec
+   end-spec
    
 
 .. COMMENT:  ***************************************************************** 
@@ -4335,7 +4333,7 @@ thereof, possibly qualified, as a sub-:token:`spec` (see under
        [a] fa (f : Monad a, g : Monad a)
          monadSeq (f, g) = monadBind (f, fn _ -> g)
    
-   endspec
+   end-spec
    
 
 (This :token:`spec` can be found, qualified with ``Monad``, in the library :token:`spec`
@@ -4401,7 +4399,7 @@ formed when any of the :token:`type_annotations` is omitted:
    spec
      def [a] p2 = project 2 : String *  a  ->  a
      def     q2 = project 2 : String * Nat -> Nat
-   endspec
+   end-spec
    
 
 .. COMMENT:  ***************************************************************** 

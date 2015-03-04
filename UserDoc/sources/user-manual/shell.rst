@@ -691,7 +691,7 @@ example, in the context of::
    spec
      def f x = 2*x+1
      def u = 6172
-   endspec
+   end-spec
 
 
 .. index::

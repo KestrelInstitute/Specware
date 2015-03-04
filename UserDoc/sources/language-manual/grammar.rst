@@ -139,7 +139,7 @@ Spec Forms
 
 
 .. productionlist::
-  spec_form: spec { `declaration` }* endspec
+  spec_form: spec { `declaration` }* end-spec
 
 .. COMMENT:  ***************************************************************** 
 

@@ -34,18 +34,18 @@ package name. For example, the Lisp code for the spec:
    Z qualifying spec
      def two: Nat = 2
      def add1(x:Nat): Nat = x + 1
-   endspec
+   end-spec
    
 
 is
 
 .. code-block:: common-lisp
 
-   (DEFPACKAGE "Z")
-   (IN-PACKAGE "Z")
+   (defpackage "Z")
+   (in-package "Z")
    
-   (DEFPARAMETER TWO 2)
-   (DEFUN ADD1 (X) (INTEGER-SPEC::+-2 X 1))
+   (defparameter two 2)
+   (defun add1 (x) (integer-spec::+-2 x 1))
    
 
 Arity and Currying Normalization

@@ -7,7 +7,9 @@
 
 .. |Metaslang| replace:: Metaslang
 
-.. |xemacs| replace:: XEmacs
+.. |xemacs| replace:: Emacs
+
+.. |emacs| replace:: Emacs
 
 .. |KI|  replace:: Kestrel Institute
 

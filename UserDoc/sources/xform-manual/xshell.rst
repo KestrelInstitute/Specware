@@ -30,21 +30,22 @@ which returns processing to the interactive |SShell| loop. Before
 handing back control to the |SShell|, the |XShell| reports the
 :token:`transformation_list` corresponding to the transformations
 performed, or "\ ``No transformations``\ " if none were performed. The
-command ``exit`` and its alias ``quit`` -- actually a |SShell|
-commands -- terminates the whole |Specware| session immediately,
+command ``exit`` and its alias ``quit`` -- actually |SShell|
+commands -- terminate the whole |Specware| session immediately,
 without reporting any transformations performed.
 
 Focus and navigation
 ####################
 
 Most transformations are only applied to a restricted part of the
-spec, called the (transformation) "focus". The focussing command
+spec, called the (transformation) `focus`. The 
+focusing command
 
 .. code-block:: specware
 
    at <op>
    
-puts the focus on the defining ``expression`` for an op.
+puts the focus on the defining expression for an op.
 
 It is possible to navigate by moving the focus around by issuing a
 move command
@@ -66,7 +67,7 @@ by
 
 .. code-block:: specware
 
-   op x : Nat = (1 + 2) * (if 3 = 4 then 5 else 6)
+   op x: Nat = (1 + 2) * (if 3 = 4 then 5 else 6)
    
 
 the subsequent effect of these navigation commands is as follows:
@@ -92,8 +93,8 @@ the subsequent effect of these navigation commands is as follows:
    (1 + 2) * (if 3 = 4 then 5 else 6)
    
 
-So ``first`` focusses on the first child of the
-*current*  focus that is an ``expression``, ``last`` focusses on the last child,
+So ``first`` focuses on the first child of the
+*current*  focus that is an ``expression``, ``last`` focuses on the last child,
 ``previous`` and ``next`` on the previous and next sibling, while ``widen``
 widens the focus to the encompassing ``expression``.
 The effect of ``search`` and ``reverse-search`` should be obvious.
@@ -109,11 +110,10 @@ equation. For example, the ``expression`` can be
 
 .. code-block:: specware
 
-   [a] fa (x : List a) x ++ [] = x
+   [a] fa (x: List a) x ++ [] = x
    
 
-In particular, all theorems in the Base library can be used having
-such a form.
+In particular, all theorems in the Base library can be used.
 
 The left-to-right rewrite command
 
@@ -156,43 +156,41 @@ definition can occur as an :token:`op_definition`, as in
 
 .. code-block:: specware
 
-   op [a] twice : (a -> a) -> (a -> a)
+   op [a] twice: (a -> a) -> a -> a
    def twice f x = f(f x)
    
 
-or in the form of an :token:`op_declaration` containing a defining
-``expression``, as in
+or in the equivalent form of an :token:`op_declaration`:
 
 .. code-block:: specware
 
-   op [a] twice (f : a -> a) : a -> a = fn x -> f(f( x))
-   
+   op [a] twice (f: a -> a) (x: a): a = f(f x)
 
-For the purpose of using this in (un)folding transformations, these
-are equivalent.
 
 The unfold command
+==================
 
 .. code-block:: specware
 
    unfold <op>
    
 
-"unfolds" one or more occurrences of :token:`op_name` ``<op>`` in the
-focus, replacing them by the ``expression`` defining ``<op>``. So the
-definition is used very much as if it was an axiom used by an ``lr``
+`unfolds` the first occurrence of :token:`op_name` ``<op>`` in the
+focus, replacing it by the ``expression`` defining ``<op>``. So the
+definition is used as if it were an axiom used by an ``lr``
 rewrite command. For example, in the context of a definition for op
 ``twice`` as above, ``unfold twice`` applied to the focus 
-``posNat? (twice pred n)`` results in ``posNat? (pred (pred n))``.
+``posNat?(twice pred n)`` results in ``posNat?(pred(pred n))``.
 
 The fold command
+================
 
 .. code-block:: specware
 
    fold <op>
    
 
-"folds" the first occurrence matching the defining expression for
+`folds` the first occurrence matching the defining expression for
 <op>, replacing it by <op>.
 
 Note. Folding may introduce circularity in definitions, and the result
@@ -211,7 +209,7 @@ The simplify command
    
 
 applies a rewriting simplifier with the supplied rules ``<r1>``
-``<r2>``\ , etcetera, which must be given in the form of rewrite
+``<r2>`` ``<r3>`` `` ...``\ , which must be given in the form of rewrite
 commands or (un)fold commands.
 
 For example, instead of giving a sequence of rewrite commands
@@ -220,7 +218,10 @@ For example, instead of giving a sequence of rewrite commands
 
    lr commutative_+
    lr neutral_+_0
-   
+   lr commutative_+
+   lr neutral_+_0
+   lr neutral_+_0
+
 
 a user can issue a single simplify command
 
@@ -234,6 +235,7 @@ to reapply all rules on the whole resulting new contents of the focus,
 as well as its repertoire of some standard simplification rules.
 
 The simplify-standard command
+=============================
 
 .. code-block:: specware
 
@@ -244,6 +246,7 @@ applies a standard simplifier, without additional rules. The keyword
 ``simp-standard`` may be abbreviated to ``ss``\ .
 
 The partial-evaluation command
+==============================
 
 .. code-block:: specware
 
@@ -255,13 +258,14 @@ expressions not containing unbound variables.
 The keyword ``partial-eval`` may be abbreviated to ``pe``.
 
 The abstract-common-subexpressions command
+==========================================
 
 .. code-block:: specware
 
    abstract-cse
    
 
-abstract common (repeated) subexpressions in the focus expression. For
+abstracts common (repeated) subexpressions in the focus expression. For
 example, applying it to
 
 .. code-block:: specware
@@ -279,8 +283,8 @@ results in
 
 The keyword ``abstract-cse`` may be abbreviated to ``cse``.
 
-Diverse
-#######
+Miscellaneous
+#############
 
 The undo command
 
@@ -289,7 +293,7 @@ The undo command
    undo <n>
    
 
-undoes the last ``<n>`` commands performed by the |Xshell| The ``<n>``
+undoes the last ``<n>`` commands performed by the |XShell| The ``<n>``
 parameter is optional, with default 1.
 
 The print-current-focus command

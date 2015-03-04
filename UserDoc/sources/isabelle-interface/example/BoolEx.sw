@@ -95,4 +95,4 @@ theorem normal_norm is
     apply(auto)
   end-proof
 
-endspec
+end-spec

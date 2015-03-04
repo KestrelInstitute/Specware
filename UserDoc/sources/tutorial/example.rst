@@ -102,7 +102,7 @@ So, we start with a spec for symbols (i.e., characters):
 
    Symbols = spec
      type Symbol
-   endspec
+   end-spec
    
 
 This is a very simple spec: it just consists of one type. This is
@@ -126,7 +126,7 @@ in. The polymorphic type ``List a`` is used to define words:
    Words = spec
      import Symbols
      type Word = List Symbol
-   endspec
+   end-spec
    
 
 The name of the spec is ``Words``. The spec imports ``Symbols``
@@ -152,7 +152,7 @@ So, we can define messages as follows:
    Messages = spec
      import Symbols
      type Message = List (Option Symbol)
-   endspec
+   end-spec
    
 
 At this point, we can define the notion of symbol matching: a symbol
@@ -168,7 +168,7 @@ be matched by any symbol. This is captured by the following spec:
      = case os of
          | Some s1 -> s = s1
          | None    -> true
-   endspec
+   end-spec
    
 
 The spec imports ``Symbols`` and extends it with an op
@@ -205,7 +205,7 @@ given position. Here is the spec:
      (fa(i:Nat) i < length wrd
         => symb_matches?(wrd@i, msg@(pos+i)))
    
-   endspec
+   end-spec
    
 
 First, the spec imports the specs for words, messages, and symbol
@@ -245,7 +245,7 @@ the concept of a match, as a pair consisting of a word and a position
    Matches = spec
      import Words
      type Match = {word : Word, position : Nat}
-   endspec
+   end-spec
    
 
 The type ``Match`` is defined to be a record with two components,
@@ -271,7 +271,7 @@ Finally, the spec for the whole application is the following:
         && (fa(pos) word_matches_at?(mtch.word,msg,pos)
               => pos >= mtch.position)
    
-   endspec
+   end-spec
    
 
 The spec imports ``WordMatching`` and ``Matches``, and declares an
@@ -334,13 +334,13 @@ put all the specs above inside a file ``MatchingSpecs.sw``:
 
    Symbols = spec
      type Symbols
-   endspec
+   end-spec
    
    ...
    
    FindMatches = spec
     ...
-   endspec
+   end-spec
    
 
 Unlike a traditional compiler, the interaction with |Specware| is
@@ -419,7 +419,7 @@ example, we can choose uppercase characters:
 
    Symbols = spec
      type Symbol = (Char | isUpperCase)
-   endspec
+   end-spec
    
 
 The built-in type ``Char`` is the type for characters. The built-in op
@@ -485,7 +485,7 @@ defines op ``word_matches_at?`` in an executable way:
        then false
        else word_matches_aux?(wrd, removePrefix(msg, pos))
    
-   endspec
+   end-spec
    
 
 Since the imported specs are not in the file
@@ -568,7 +568,7 @@ an executable way:
        []  
        wrds
    
-   endspec
+   end-spec
    
 
 Op ``find_matches`` makes use of the auxiliary op
@@ -907,7 +907,7 @@ files:
      if s = "" then []
        else s@0 :: explode(subFromTo(s,1,length s))
    
-   endspec
+   end-spec
    
 
 Since the translation is not defined on all strings, we introduce two
