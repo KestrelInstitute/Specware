@@ -30,7 +30,7 @@ spec
       | At(_,_,p) -> p
       | Command(_,_,p) -> p
 
-  def SpecCalc.evaluateTransform (spec_tm, transfm_steps, pragmas) pos =
+  def SpecCalc.evaluateTransform (spec_tm, transfm, pragmas) pos =
     {
      unitId <- getCurrentUID;
      print (";;; Elaborating transform at " ^ (uidToString unitId) ^ "\n");
@@ -39,9 +39,9 @@ spec
      case coercedSpecValue of
        | Spec spc ->
          {
-          steps <- mapM (makeScript spc) transfm_steps;
+          transfm <- makeScript spc transfm;
           tr_spc0 <- return (addImport ((spec_tm, spc), setElements(spc, []), pos));
-          tr_spc1 <- interpret(tr_spc0, Steps(steps));
+          tr_spc1 <- interpret(tr_spc0, transfm);
           tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
 	  return (Spec (markQualifiedStatus tr_spc2), spec_timestamp, spec_dep_UIDs)
 	  }
@@ -762,9 +762,9 @@ spec
       | Block(stmts, _) ->
         {commands <- mapM (makeScript spc) stmts;
          return (Steps commands)}
-      | Repeat(cnt, transforms, _) ->
-        {transfms <- mapM (makeScript spc) transforms;
-         return (Repeat(cnt, transfms))}
+      | Repeat(cnt, rpt_transfm, _) ->
+        {transfm <- makeScript spc rpt_transfm;
+         return (Repeat(cnt, transfm))}
 
       | At(qids, comm, _) ->
         {command <- makeScript spc comm;

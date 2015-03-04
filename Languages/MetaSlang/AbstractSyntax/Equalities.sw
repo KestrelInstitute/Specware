@@ -189,8 +189,8 @@ MetaSlang qualifying spec
             TypedTerm  (x2, s2,      _)) ->
            eqTerm? (x1, x2) && eqType? (s1, s2)
 
-         | (Transform  (t1s,         _),
-            Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
+         | (Transform  (t1,         _),
+            Transform  (t2,         _))  -> equalTransform?(t1, t2)
 
          | (Pi         (tvs1, tm1,   _), 
             Pi         (tvs2, tm2,   _)) ->
@@ -511,7 +511,7 @@ refine def equalTermAlpha? by {unfold MetaSlang.equalTerm?_alpha}
      | (Qual(s1, t1, _), Qual(s2, t2, _)) -> s1 = s2 && t1 = t2
      % | (SCTerm (sct1,_), SCTerm (sct2)) -> sameSCTerm?(sct1, sct2)
      | (Item(s1, t1, _), Item(s2, t2, _)) -> s1 = s2 && equalTransform?(t1, t2)
-     | (Repeat(cnt1, l1, _), Repeat(cnt2, l2, _)) -> cnt1 = cnt2 && equalTransformList?(l1, l2)
+     | (Repeat(cnt1, t1, _), Repeat(cnt2, t2, _)) -> cnt1 = cnt2 && equalTransform?(t1, t2)
      | (Tuple(l1, _), Tuple(l2, _)) -> equalTransformList?(l1, l2)
      | (Record(l1, _), Record(l2, _)) ->
        length l1 = length l1 && forall? (fn ((l1i,t1i),(l2i, t2i)) -> l1i = l2i && equalTransform?(t1i, t2i)) (zip(l1, l1))
@@ -588,8 +588,8 @@ refine def equalTermAlpha? by {unfold MetaSlang.equalTerm?_alpha}
      | (TypedTerm  (x1, s1,      _),
         TypedTerm  (x2, s2,      _)) -> equalTermStruct? (x1, x2)
 
-     | (Transform  (t1s,         _),
-        Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
+     | (Transform  (t1,         _),
+        Transform  (t2,         _))  -> equalTransform?(t1, t2)
 
      | (Pi         (tvs1, t1,    _), 
         Pi         (tvs2, t2,    _)) -> tvs1 = tvs2 && equalTermStruct? (t1, t2) % TODO: handle alpha equivalence

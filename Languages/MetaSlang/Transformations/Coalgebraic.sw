@@ -202,14 +202,16 @@ def maintainOpsCoalgebraically
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let main_script = At(map Def (reverse qids),
-                        Repeat(15, [ % Go to rhs of postcondition just added, unfold and simplify
-                                    Move [SearchPred (rhsApplication intro_qid)],
-                                    mkSimplify[LeftToRight(mkContextQId "fn value")],
-                                    Simplify1([reverseRuleSpec fold_rl,
-                                               Omit(mkContextQId "fn value")] ++ rules),
-                                    mkSimplify [Omit(mkContextQId "fn value")],
-                                    Simplify1(Omit(mkContextQId "fn value") :: rules),
-                                    mkSimplify(fold_rl :: rules)])) in
+                        Repeat(15,
+                               mkSteps
+                                 [ % Go to rhs of postcondition just added, unfold and simplify
+                                  Move [SearchPred (rhsApplication intro_qid)],
+                                  mkSimplify[LeftToRight(mkContextQId "fn value")],
+                                  Simplify1([reverseRuleSpec fold_rl,
+                                             Omit(mkContextQId "fn value")] ++ rules),
+                                  mkSimplify [Omit(mkContextQId "fn value")],
+                                  Simplify1(Omit(mkContextQId "fn value") :: rules),
+                                  mkSimplify(fold_rl :: rules)])) in
    let script = if traceMaintain? || trace?
                    then Steps[Trace true, main_script]
                  else main_script
@@ -285,7 +287,7 @@ def implementOpsCoalgebraically
                                      else [])
                                   ++ [At(map Def (reverse post_condn_qids),
                                          Repeat(15,
-                                                [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                                Steps [Move [Search r_o_id, ReverseSearchPred childOfConj],
                                                  mkSimplify(RLeibniz homo_fn_qid
                                                              :: LeftToRight assert_qid
                                                              :: rules)])),
@@ -293,7 +295,7 @@ def implementOpsCoalgebraically
                                          Steps[Move[SearchPred bodyOfFn?],
                                                Repeat
                                                  (15,
-                                                  [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                                  Steps[Move [Search r_o_id, ReverseSearchPred childOfConj],
                                                    mkSimplify(RLeibniz homo_fn_qid
                                                                 :: LeftToRight assert_qid
                                                                 :: rules)])])])

@@ -1165,8 +1165,8 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 ;;;  SC-OP-TRANSFORM
 ;;; ========================================================================
-(defun make-sc-transform (spec-term transforms pragmas l r)
-  (SpecCalc::mkTransform-4 spec-term transforms pragmas (make-pos l r)))
+(defun make-sc-transform (spec-term transform pragmas l r)
+  (SpecCalc::mkTransform-4 spec-term transform pragmas (make-pos l r)))
 
 (defun make-transform-name (name l r)
   (SpecCalc::mkTransformName-2 name (make-pos l r)))
@@ -1207,11 +1207,11 @@ If we want the precedence to be optional:
 (defun make-transform-at (qids transform l r)
   (SpecCalc::mkTransformAt-3 qids transform (make-pos l r)))
 
-(defun make-transform-repeat (count transforms l r)
+(defun make-transform-repeat (count transform l r)
   (SpecCalc::mkTransformRepeat-3 (if (equal count :unspecified)
                                      Script::defaultRepeatCount
                                    count)
-                                 transforms (make-pos l r)))
+                                 transform (make-pos l r)))
 
 (defun make-transform-command (name args l r)
   (SpecCalc::mkTransformCommand-3 name args (make-pos l r)))

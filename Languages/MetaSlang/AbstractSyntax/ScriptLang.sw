@@ -23,7 +23,7 @@ type Script =
   | AtTheorem (List Location * Script)
   | Move (List Movement)
   | Steps Scripts
-  | Repeat(Nat * Scripts)
+  | Repeat(Nat * Script)
   | Simplify (RuleSpecs * Nat)
   | Simplify1 (RuleSpecs)
   | SimpStandard
@@ -161,9 +161,8 @@ op ppScript(scr: Script): WLPretty =
   case scr of
     | Steps steps ->
       ppConcat[ppString "{", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)), ppString "}"]
-    | Repeat(cnt, steps) ->
-      ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
-               ppString "}"]
+    | Repeat(cnt, rpt_script) ->
+      ppConcat[ppString "repeat ", ppScript rpt_script]
     | At([loc], scr) ->
       ppIndent(ppConcat [ppString "at ", ppLoc loc,
                          ppNewline,
@@ -294,7 +293,7 @@ op printScript(scr: Script): () =
 op mkAt(qid: QualifiedId, steps: Scripts): Script = At([Def qid], mkSteps steps)
 op mkAtTheorem(qid: QualifiedId, steps: Scripts): Script = AtTheorem([Def qid], mkSteps steps)
 op mkSteps(steps: Scripts): Script = if length steps = 1 then head steps else Steps steps
-op mkRepeat(cnt: Nat, steps: Scripts): Script = Repeat(cnt, steps)
+op mkRepeat(cnt: Nat, rpt_script: Script): Script = Repeat(cnt, rpt_script)
 op maxRewrites: Nat = 100
 op mkSimplify(steps: RuleSpecs): Script = Simplify(steps, maxRewrites)
 op mkSimplify1(rules: RuleSpecs): Script = Simplify1 rules

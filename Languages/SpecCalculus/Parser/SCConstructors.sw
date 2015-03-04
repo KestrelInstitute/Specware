@@ -149,8 +149,8 @@ SCParser qualifying spec
  op mkSubstitute       (spec_term : SCTerm, sm_term : SCTerm, pragmas : ParserOptional SM_Pragmas, left : LCB, right : LCB) : SCTerm =
    SpecCalc.mkSubst     (spec_term, sm_term, defaultToNull pragmas, mkRegion left right)
  op mkOpRefine 	(spec_term : SCTerm, elements : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
- op mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm =
-    SpecCalc.mkTransform (spec_term, transforms, [], mkRegion left right)
+ op mkTransform 	(spec_term : SCTerm, transfm : TransformExpr, left : LCB, right : LCB) : SCTerm =
+    SpecCalc.mkTransform (spec_term, transfm, [], mkRegion left right)
 
  op mkTransformName   (name  : Id,         left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformName(name,  mkRegion left right)
  op mkTransformNumber (num   : Nat,        left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformNumber(num, mkRegion left right)

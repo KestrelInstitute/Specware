@@ -501,14 +501,14 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Spec transformation. Takes a spec and a transformation script.
 
- type TransformTerm = SCTerm * TransformExprs * SM_Pragmas
+ type TransformTerm = SCTerm * TransformExpr * SM_Pragmas
 
  op mkTransform (spec_term  : SCTerm, 
-                 transforms : TransformExprs,
+                 transfm    : TransformExpr,
                  pragmas    : SM_Pragmas, 
                  pos        : Position) 
   : SCTerm = 
-  (Transform (spec_term, transforms, pragmas), pos)
+  (Transform (spec_term, transfm, pragmas), pos)
 
  %% --------------------
 
@@ -524,7 +524,7 @@ SpecCalc qualifying spec
  op mkTransformItem    (mod:   String, te: TransformExpr, pos: Position) : TransformExpr = Item   (mod, te, pos)
  op mkTransformSlice   (root_ops: OpNames, root_types: TypeNames, cut_op?: OpName -> Bool, cut_type?: TypeName -> Bool, pos: Position): TransformExpr =
     Slice (root_ops, root_types, cut_op?, cut_type?, pos)
- op mkTransformRepeat  (cnt: Nat, transforms: TransformExprs, pos: Position): TransformExpr = Repeat (cnt, transforms, pos)
+ op mkTransformRepeat  (cnt: Nat, transfm: TransformExpr, pos: Position): TransformExpr = Repeat (cnt, transfm, pos)
  op mkTransformOptions (args: TransformExprs,             pos: Position) : TransformExpr = Options(args,       pos)
  op mkTransformTuple   (itms: TransformExprs,             pos: Position) : TransformExpr = Tuple  (itms,       pos)
  op mkTransformBlock   (comms: TransformExprs,            pos: Position) : TransformExpr = Block  (comms,      pos)

@@ -475,7 +475,7 @@ If we want the precedence to be optional:
           (:optional
            (:anyof
             (:tuple "=" (7 :EXPRESSION))
-            (:tuple "by" "{" (9 (:repeat* :TRANSFORM-STMT ";")) "}"))))
+            (:tuple "by" (9 :TRANSFORM-STMT)))))
   ;; args to make-op-elem are: 
   ;;  1 qualifiable-op-names 
   ;;  2 optional-fixity 
@@ -1696,11 +1696,11 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 (define-sw-parser-rule :SC-OP-TRANSFORM ()
   (:anyof
-   (:tuple "transform" (1 :SC-TERM) "by" "{"
-           (2 (:repeat* :TRANSFORM-STMT ";")) "}"
+   (:tuple "transform" (1 :SC-TERM) "by"
+           (2 :TRANSFORM-STMT)
            (3 (:repeat* :SM-PRAGMA)))
-   (:tuple (1 :SC-TERM) "{"
-           (2 (:repeat+ :TRANSFORM-STMT ";")) "}"
+   (:tuple (1 :SC-TERM) 
+           (2 :TRANSFORM-BLOCK)
            (3 (:repeat* :SM-PRAGMA))))
   (make-sc-transform 1 2 3 ':left-lcb ':right-lcb))
 
@@ -1799,7 +1799,7 @@ If we want the precedence to be optional:
   (make-transform-at 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-REPEAT ()
-  (:tuple "repeat" (:optional (1 :NUMBER)) "{" (2 (:repeat+ :TRANSFORM-STMT ";")) "}")
+  (:tuple "repeat" (:optional (1 :NUMBER)) (2 :TRANSFORM-STMT))
   (make-transform-repeat 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-PROC ()

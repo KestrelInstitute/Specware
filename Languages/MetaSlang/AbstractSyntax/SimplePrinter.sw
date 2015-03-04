@@ -243,8 +243,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppSep (ppString "; ") (map ppATerm terms)
 	  | TypedTerm (tm,srt,_) ->
 	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppAType srt]
-          | Transform (trs, _) ->
-            ppTransformExprs trs
+          | Transform (trfm, _) ->
+            ppTransformExpr trfm
           | And (tms, _) ->
             ppGrConcat [ppString "<AndTerms", ppBreak, ppString "  ",
                         ppNest 0 (ppSep ppBreak (map ppATerm tms)),
@@ -566,6 +566,6 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
       | mystery -> fail ("No match in ppAType with: '" ^ (anyToString mystery) ^ "'")
 
- op [a] ppTransformExprs(tre: List(ATransformExpr a)): WLPretty
+ op [a] ppTransformExpr(tre: ATransformExpr a): WLPretty
 
 endspec

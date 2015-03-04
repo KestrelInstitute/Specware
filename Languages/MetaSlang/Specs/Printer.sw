@@ -655,7 +655,7 @@ AnnSpecPrinter qualifying spec
 	        prettysFill [ppTerm context ([0]++ path, Top) t, 
 			     prettysNone[string ":", string " ", 
                                          ppType context ([1]++ path, Top) s]])
-          | Transform (ts, _) -> ppTransformExprs context.pp ts
+          | Transform (tfm, _) -> ppTransformExpr context.pp tfm
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
 	    let pp2 = ppTerm context (path, parentTerm) tm in
@@ -1902,8 +1902,7 @@ AnnSpecPrinter qualifying spec
     | SCTerm(sct, _) -> string (showSCTerm sct)
     | QuotedTerm(tm, _) -> prettysNone[string "`", string(printTerm tm), string "`"]
     | Item(nm, tre1, _) -> prettysNone[pp.ppOp nm, string " ", ppTransformExpr pp tre1]
-    | Repeat(cnt, tres, _) -> prettysNone[string "repeat",
-                                          ppList (ppTransformExpr pp) ("{", ", ", "}") tres]
+    | Repeat(cnt, r_tre, _) -> prettysNone[string "repeat", ppTransformExpr pp r_tre]
     | Tuple(tres, _) -> ppList (ppTransformExpr pp) ("(", ", ", ")") tres
     % | Record(prs, _) -> ppList (ppTransformExpr pp) ("{", ", ", "}") tres
     | Options(tres, _) -> ppList (ppTransformExpr pp) ("[", ", ", "]") tres

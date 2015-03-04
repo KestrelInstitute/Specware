@@ -50,7 +50,7 @@ MetaSlang qualifying spec
   | IfThenElse   ATerm b * ATerm b * ATerm b             * b
   | Seq          List (ATerm b)                          * b  %drop? parser could turn this into let?
   | TypedTerm    ATerm b * AType b                       * b
-  | Transform    List(ATransformExpr b)                  * b  % For specifying refinement by script.  Move to Spec?
+  | Transform    ATransformExpr b                        * b  % For specifying refinement by script.  Move to Spec?
   | Pi           TyVars * ATerm b                        * b  % for now, used only at top level of defn's
                                                               % Remove
   | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And 
@@ -171,7 +171,7 @@ MetaSlang qualifying spec
 
     | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
 
-    | Repeat    Nat * List (ATransformExpr a)    * a
+    | Repeat    Nat * ATransformExpr a           * a
     | Tuple     List (ATransformExpr a)          * a    % (..., ...)
     | Record    List (String * ATransformExpr a) * a    % {..., attr: val, ...}
     | Options   List (ATransformExpr a)          * a    % [..., ...]
@@ -429,9 +429,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | Apply(f, _, _)        -> anyTerm? f
      | _ -> false
 
- op [a] transformSteps?(t: ATerm a): Option(List(ATransformExpr a)) =
+ op [a] transformSteps?(t: ATerm a): Option(ATransformExpr a) =
    case t of
-     | Transform(steps, _)   -> Some steps
+     | Transform(transfm_stmt, _) -> Some transfm_stmt
      | Any _                 -> None
      | Pi(_, tm, _)          -> transformSteps? tm
      | TypedTerm(tm, _, _)   -> transformSteps? tm

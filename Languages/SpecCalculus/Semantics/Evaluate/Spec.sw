@@ -226,11 +226,11 @@ op applyOpRefinements (spc : Spec) : Env Spec =
                    let trps = unpackTypedTerms opinfo.dfn in
                    let (tvs, ty, dfn) = nthRefinement (trps, refine_num) in
                    (case transformSteps? dfn of
-                      | Some refine_steps ->
+                      | Some refine_stmt ->
                         let (_, _, prev_tm) = nthRefinement (trps, refine_num - 1) in
-                        {steps <- mapM (makeScript spc) refine_steps;
+                        {transfm_stmt <- makeScript spc refine_stmt;
                          % print("aor: " ^ scriptToString (Steps steps) ^ scriptToString (Steps steps1) ^ "\n");
-                         (tr_term, _, info) <- interpretTerm (spc, Steps steps, prev_tm, ty, qid, false);
+                         (tr_term, _, info) <- interpretTerm (spc, transfm_stmt, prev_tm, ty, qid, false);
                          new_dfn <- return (maybePiAndTypedTerm (replaceNthRefinement (trps, refine_num, (tvs, ty, tr_term))));
                          return (setOpInfo (spc, qid, opinfo << {dfn = new_dfn}))}
                       | _ -> return spc)

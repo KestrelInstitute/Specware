@@ -849,16 +849,16 @@ spec
           foldM (fn (path_term, tracing?, pf) -> fn s ->
                    interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, pf))
             (path_term, tracing?, pf) steps
-      | Repeat(cnt, steps) ->
+      | Repeat(cnt, rpt_script) ->
         if cnt < 1 then return(path_term, tracing?, pf)
         else
           {(new_path_term, tracing?, pf)
-             <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, pf);
+             <- interpretPathTerm(spc, rpt_script, path_term, qid, tracing?, true, pf);
            % print("repeat:\n"^printTerm(topTerm path_term)
            %       ^"\n"^printTerm(topTerm new_path_term)^"\n");
            if equalTerm?(topTerm new_path_term, topTerm path_term)
              then return (new_path_term, tracing?, pf)
-             else interpretPathTerm(spc, Repeat(cnt - 1, steps), new_path_term,
+             else interpretPathTerm(spc, Repeat(cnt - 1, rpt_script), new_path_term,
                                     qid, tracing?, allowFail?, pf)}
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");

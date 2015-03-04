@@ -79,9 +79,8 @@ case tre of
               ppString " ",
               ppATransformExpr transformexpr]
   | Slice        (opnames, typenames, f1, f2, _) -> ppString "(... slice term elided ...)"
-  | Repeat (cnt, transformexprs, _) -> ppConcat [ppString "repeat {",
-                                                 ppATransformExprs transformexprs,
-                                                 ppString "}"]
+  | Repeat (cnt, transformexpr, _) -> ppConcat [ppString "repeat ",
+                                                ppATransformExpr transformexpr]
   | Tuple   (transformexprs, _) -> ppConcat [ppString "(",
                                              ppATransformExprs transformexprs,
                                              ppString ")"]
@@ -138,13 +137,11 @@ case tre of
 		  ppString " by ",
 		  ppRenaming renaming]
 
-      | Transform (term, transformexprs, pragmas) ->
+      | Transform (term, transformexpr, pragmas) ->
         %% What are the pragmas?
         ppConcat [ppString "transform ",
 		  ppSCTerm term,
-		  ppString " by {",
-		  ppATransformExprs transformexprs,
-		  ppString "}"
+		  ppATransformExpr transformexpr
 		  ]
 
       | Let (decls, term) ->
