@@ -4170,8 +4170,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
       | None -> None
 
  op typeDef(qid: QualifiedId, spc: Spec): TyVars * MSType =
-   let Some info = AnnSpec.findTheType(spc,qid) in
-   unpackFirstTypeDef info
+   case AnnSpec.findTheType(spc,qid) of
+     | Some info ->
+       unpackFirstTypeDef info
+     | None ->
+       fail ("IsaPrinter.typeDef: could not find qid " ^ anyToString qid)
 
  op  ppBool : Bool -> Pretty
  def ppBool b =
