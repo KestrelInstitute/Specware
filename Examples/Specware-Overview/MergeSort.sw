@@ -86,23 +86,20 @@ MergeSort0 = spec
   theorem splitList_perm is
     fa(p:NatList) ~(length p < 2) => permutesTo?(p, (splitList p).1 ++ (splitList p).2)
 
+   theorem SolveDirectly is fa(p: NatList) directly_solvable? p => solution? p (solve_directly p)
  
-theorem SolveDirectly is fa(p: NatList) directly_solvable? p => solution? p (solve_directly p)
+  theorem Decompose is 
+    fa(p: NatList, p1: NatList, p2: NatList) 
+     ~(directly_solvable? p) && splitList p = (p1, p2) => smaller?(p1, p) && smaller?(p2, p)
  
-theorem Decompose is 
-  fa(p: NatList, p1: NatList, p2: NatList) 
-   ~(directly_solvable? p) && splitList p = (p1, p2) => smaller?(p1, p) && smaller?(p2, p)
+  theorem WellFounded is EndoRelation.wellFounded? smaller?
  
-theorem WellFounded is EndoRelation.wellFounded? smaller?
+  theorem Compose is 
+    fa(p: NatList, pa: NatList, pb: NatList, sa: NatList, sb: NatList) 
+     ~(directly_solvable? p) && splitList p = (pa, pb) 
+                             && solution? pa sa 
+                             && solution? pb sb => solution? p (mergeLists sa sb)
  
-theorem Compose is 
-  fa(p: NatList, pa: NatList, pb: NatList, sa: NatList, sb: NatList) 
-   ~(directly_solvable? p) && splitList p = (pa, pb) 
-                           && solution? pa sa 
-                           && solution? pb sb => solution? p (mergeLists sa sb)
- 
-
-
   proof Isa sorted_of_mergeLists
     apply(induct s1 s2 rule: mergeLists.induct)
     apply(simp add: mergeLists.simps)
@@ -189,7 +186,7 @@ end-proof
 
 end-spec
 
-M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, Problem +-> NatList, compose +-> mergeLists, decompose +-> splitList}
+M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, Problem +-> NatList, compose +-> mergeLists, decompose +-> splitList, smaller? +-> smaller?, directly_solvable? +-> directly_solvable?, solve_directly +-> solve_directly}
 
 
 MergeSort = DivideAndConquer#Algorithm[M]
