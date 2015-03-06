@@ -2105,59 +2105,49 @@ static and automatic storage are referred to by name, since each
 object in static and automatic storage corresponds to a, respectively,
 global or local variable. However, because of variable shadowing, the
 same name can refer to multiple objects. Thus, to form a unique
-reference to a named top-level object, we combine a variable name with
-a "scope designator" that 
+reference to a named top-level object, a variable name must be
+combined with a "scope designator" that specifies either global or
+local scope, corresponding to static or automatic variables,
+respectively. For local scope, the scope designator must additionally
+specify which local variable in which function on the dynamic call
+stack is being referred to. This is done by supplying a FrameId, which
+refers to a dynamic stack frame on the call stack, along with a
+natural number, which refers to the nesting depth of the lexical block
+containing the particular variable being referred to. For instance, in
+the C function
 
-FIXME HERE
+void foo (int x) {
+  int *y = &x;
+  {
+    void *x = bar ();
+    baz (x, y);
+    if (x > 0) { foo (x - 1); }
+  }
+}
 
-The "top-level" objects are the ones declared with a name. Their structure
-members and array elements are subobjects of those top-level objects. The
-top-level objects may be declared with file scope (i.e. outside any block) or
-with block scope (i.e. inside some block). Since a declaration in an inner block
-may hide a homonymous outer declaration, a name alone does not suffice to
-identify a top-level object at run time. However, a name alone suffices in each
-scope. So, we can identify a top-level object via (an indication of) a scope
-plus a name in that scope. As defined later in type 'Storage', at each point in
-time there is a list of lists of active block scopes, plus the outer file scope.
-Thus, we also introduce a notion of scope designator that designates either the
-file scope, or a block scope. A block scope is designated by two numbers, one
-that designates an element of the outer list, and one that designates an element
-of the inner list (the numbers are 0-based indices into the lists).
+the variable name "x" could refer to the formal int parameter, which
+is bound in the outer-most lexical scope, or it could refer to the
+void pointer in the inner lexical block. The call to baz in fact gets
+references to both of these x variables. By convention, the outer-most
+lexical block, which contains the formal int parameter, has number 0,
+while the inner block has number 1. Further, every call to foo
+generates its own dynamic stack frame, which contains two separate x
+variables.
+*)
 
-A program in our formalized C subset is a self-contained translation unit, in
-the sense that it cannot reference entities in other translation units (cf. op
-'checkProgram', which starts with an empty symbol table). However, other
-translation units may call functions defined by our formalized translation unit.
-If these functions have parameters of pointer type, the corresponding pointer
-arguments when the functions are called may well be pointers to (sub)objects
-declared in (or dynamically allocated by) those other translation units. Our
-formalized translation unit can operate on those "outside objects", so our model
-of storage (type 'Storage', defined later) includes a set of such outside
-objects. In our model, we use an infinite type of IDs to identify outside
-objects. This type is defined to be isomorphic to the natural numbers for
-simplicity, but the natural numbers are just IDs, not meant to be memory
-addresses.
-
-Given a top-level object designated by a scope designation plus a name, or an
-outside object designated by an ID, subobjects are designated by adding member
-names (for structures) and element indices (for arrays).
-
-Thus, we introduce the following notion of object designator as an unambiguous
-way to denote a (sub)object. *)
-
-(* FIXME HERE: describe the  *)
+type FrameID = | FrameID Nat
 
 type ScopeDesignator =
-  | file
-  | block Nat * Nat
+  | GlobalScope
+  | LocalScope FrameID * Nat
 
-type OutsideID = | outsideID Nat
+type OutsideID = | OutsideID Nat
 
 type ObjectDesignator =
-  | top       ScopeDesignator * Identifier
-  | outside   OutsideID
-  | member    ObjectDesignator * Identifier
-  | subscript ObjectDesignator * Nat
+  | OD_Top       ScopeDesignator * Identifier
+  | OD_Outside   OutsideID
+  | OD_Member    ObjectDesignator * Identifier
+  | OD_Subscript ObjectDesignator * Nat
 
 
 %subsection (* Values *)
