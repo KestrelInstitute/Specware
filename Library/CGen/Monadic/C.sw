@@ -2094,6 +2094,22 @@ the object, which can be independently written to via a suitable lvalue [ISO
 and they can be written independently via a suitable lvalue. This recursively
 applies to members and elements of structure members and array elements.
 
+(emw4) At the top level of this nesting are the global variables, the
+local (i.e., stack) variables, and the heap-allocated objects
+(returned by, e.g., malloc). These three classes of top-level objects
+correspond to the three sorts of storage in C (not including thread
+storage, which we do not support here): static storage for global
+variables, automatic storage for local (i.e., stack) variables, and
+allocated storage for heap-allocated objects. Top-level objects in
+static and automatic storage are referred to by name, since each
+object in static and automatic storage corresponds to a, respectively,
+global or local variable. However, because of variable shadowing, the
+same name can refer to multiple objects. Thus, to form a unique
+reference to a named top-level object, we combine a variable name with
+a "scope designator" that 
+
+FIXME HERE
+
 The "top-level" objects are the ones declared with a name. Their structure
 members and array elements are subobjects of those top-level objects. The
 top-level objects may be declared with file scope (i.e. outside any block) or
@@ -2128,6 +2144,8 @@ names (for structures) and element indices (for arrays).
 
 Thus, we introduce the following notion of object designator as an unambiguous
 way to denote a (sub)object. *)
+
+(* FIXME HERE: describe the  *)
 
 type ScopeDesignator =
   | file
