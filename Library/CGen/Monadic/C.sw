@@ -2,7 +2,6 @@
 C = C qualifying spec
 
 import /Library/General/TwosComplementNumber
-import /Library/General/FunctionExt
 import /Library/General/OptionExt
 import /Library/General/Stream
 
@@ -320,17 +319,16 @@ type Identifier = (String | identifier?)
 signed and unsigned integer types, the (plain) char type, structure
 types, pointer types, array types, and the void type. Each of the
 signed/unsigned short/int/long/longlong types can be denoted via
-multiple, equivalent combinations of type specifiers [ISO 6.7.2]. Even
-though certain types may have identical representations in an
-implementation, they are nevertheless different types [ISO
-6.2.5/14]. A structure type is denoted by its members, which are a
-sequence of field names and their types [ISO 6.2.5/20]. An array type
-includes the number of elements [ISO 6.2.5/20]; our C subset only
-includes array types with known size. *)
+multiple, equivalent combinations of type specifiers [ISO 6.7.2]; even
+though some of these types may have identical representations in an
+implementation, they are nevertheless different types [ISO 6.2.5/14].
+A structure type is denoted by its name [ISO 6.2.3], which is an
+identifier (we preclude anonymous structure types in this
+formalization). An array type includes the number of elements [ISO
+6.2.5/20]; our C subset only includes array types with known size. *)
 
 (* emw4: added function pointer types *)
 
-type StructMember = Identifier * Type
 type Type =
   | T_char                        %          char
   | T_uchar                       % unsigned char
@@ -343,7 +341,7 @@ type Type =
   | T_slong                       %   signed long
   | T_ullong                      % unsigned long long
   | T_sllong                      %   signed long long
-  | T_struct (List StructMember)  % structure
+  | T_struct Identifier           % structure
   | T_pointer Type                % pointer (to type)
   | T_array   Type * Nat          % array (of type of size)
   | T_void                        % void
@@ -601,9 +599,16 @@ not use type specifiers to model declarations in our abstract syntax.
 Abstracting from the concrete syntactic peculiarities of type names [ISO 6.7.7],
 we define a type name as follows. This is the same definition as type Type,
 extended with typedef names. Note that the recursion implies that we can form
-pointers and arrays of typedef names. *)
+pointers and arrays of typedef names.
 
-(* emw4: added function types *)
+(emw4) We also allow, in type names, structs to be referred to be name
+instead of just by their elements. HERE
+
+
+ *)
+
+(* In a type name, a struct can also be referred to by name *)
+type StructName = | NamedStruct Identifier
 
 type TypeName =
   % same as type Type:
@@ -679,20 +684,20 @@ type Declaration =
 
 %subsection (* Statements *)
 
-(* Our C subset features expression statements [ISO 6.8.3] that are (i) simple
+(* Our C subset features expression statements [ISO 6.8.3] that are: (i) simple
 assignment expressions [ISO 6.5.16.1] (whose left and right operands are
-expressions in our C subset), or (ii) simple assignment expressions whose left
+expressions in our C subset); (ii) simple assignment expressions whose left
 operand is an expression in our C subset but whose right operand is a function
-call [ISO 6.5.2.2], or (iii) function calls [ISO 6.5.2.2]. Cases (ii) and (iii)
+call [ISO 6.5.2.2]; or (iii) function calls [ISO 6.5.2.2]. Cases (ii) and (iii)
 are consolidated in constructor 'call' below, where the left operand is an
-optional expression (in our C subset) and the right operand consists of the name
-of a function plus a list of argument expressions. By modeling assignments and
-function calls as statements in our model (vs. expressions as in full C), we
-limit such expressions to occur at the top level (or second level from the top,
-in the case of a function call assigned to an expression), i.e. as expression
-statements. In particular, we exclude multiple assignments like 'a = b = ...'
-Note also that, by having function calls not be expressions in our subset, we
-maintain expressions free of side effects.
+optional expression (in our C subset) and the right operand consists of the
+function being called plus a list of argument expressions. By modeling
+assignments and function calls as statements in our model (vs. expressions as in
+full C), we limit such expressions to occur at the top level (or second level
+from the top, in the case of a function call assigned to an expression), i.e. as
+expression statements. In particular, we exclude multiple assignments like 'a =
+b = ...' Note also that, by having function calls not be expressions in our
+subset, we maintain expressions free of side effects.
 
 Besides these expression statements, our C subset includes 'if' selection
 statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while', 'do',
@@ -713,7 +718,7 @@ Besides statements, we only allow object declarations as block items [ISO
 
 type Statement =
   | S_assign Expression * Expression
-  | S_call   Option Expression * Identifier * List Expression
+  | S_call   Option Expression * Expression * List Expression
   | S_if     Expression * Statement * Option Statement
   | S_return Option Expression
   | S_while  Expression * Statement
@@ -722,8 +727,8 @@ type Statement =
   | S_block  List BlockItem
 
 type BlockItem =
-  | Block_declaration ObjectDeclaration
-  | Block_statement   Statement
+  | BlockItem_declaration ObjectDeclaration
+  | BlockItem_statement   Statement
 
 
 %subsection (* Function definitions *)
@@ -956,7 +961,8 @@ an ordered list of typed members, each of which is modeled as a pair
 of a member name and its type. A symbol table for structure specifiers
 associates typed members to structure tags (which are identifiers). *)
 
-type StructTable = FiniteMap (Identifier, List StructMember)
+type StructMembers = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
+type StructTable = FiniteMap (Identifier, StructMembers)
 
 (* A symbol table for objects is organized as a list that corresponds to the
 nesting of scopes. The head of the list corresponds to the file scope [ISO
@@ -1055,11 +1061,11 @@ op checkIntegerConstant (c:IntegerConstant) : Option Type =
 %subsubsection (* Types *)
 
 (* The following op checks whether a type is a structure type, and in that case
-it returns its members. *)
+it returns its struct name. *)
 
-op checkStructType (ty:Type) : Option (List StructMember) =
+op checkStructType (ty:Type) : Option Identifier =
   case ty of
-  | T_struct members -> Some members
+  | T_struct tag -> Some tag
   | _ -> None
 
 (* The following op checks whether a type is a pointer type, and in that case it
@@ -1358,14 +1364,16 @@ op checkExpression
        None}
   | E_member (expr, mem) ->
     {ety <- checkExpression (symtab, expr);
-     members <- checkStructType ety.typE;
-     ty <- members mem;
+     tag <- checkStructType ety.typE;
+     members <- symtab.structures tag;
+     ty <- fromAssocList members mem;
      Some {typE = ty, object = ety.object}}
   | E_memberp (expr, mem) ->
     {ety <- checkExpression (symtab, expr);
      ty <- checkPointerType ety.typE;
-     members <- checkStructType ty;
-     ty' <- members mem;
+     tag <- checkStructType ty;
+     members <- symtab.structures tag;
+     ty' <- fromAssocList members mem;
      Some {typE = ty', object = true}}
   | E_subscript (expr, expr') ->
     {ety <- checkExpression (symtab, expr);
@@ -1374,7 +1382,7 @@ op checkExpression
      check (integerType? ety'.typE);
      Some (exprTypeObject ty)}
   | E_nullconst ->
-    Some (exprTypeValue (pointer void))
+    Some (exprTypeValue (T_pointer T_void))
 
 (* It is useful, for later use, to lift op 'checkExpression' to a list of
 expressions. *)
@@ -1388,10 +1396,6 @@ op checkExpressions
      tys <- checkExpressions (symtab, exprs);
      Some (ty :: tys)}
 
-
-end-spec
-
-C2 = spec
 
 %subsubsection (* Type names *)
 
@@ -1410,31 +1414,31 @@ If it does, the type denoted by the type name is returned. *)
 
 op checkTypeName (symtab:SymbolTable, tyn:TypeName) : Option Type =
   case tyn of
-  | struct tag ->
+  | TN_struct tag ->
     {check (tag in? domain symtab.structures);
-     Some (struct tag)}
-  | pointer tyn ->
+     Some (T_struct tag)}
+  | TN_pointer tyn ->
     {ty <- checkTypeName (symtab, tyn);
-     Some (pointer ty)}
-  | array (tyn, n) ->
+     Some (T_pointer ty)}
+  | TN_array (tyn, n) ->
     {ty <- checkTypeName (symtab, tyn);
-     check (ty ~= void);
+     check (ty ~= T_void);
      check (n > 0);
-     Some (array (ty, n))}
-  | typedef id ->
+     Some (T_array (ty, n))}
+  | TN_typedef id ->
     symtab.typedefs id
-  |  char  -> Some  char
-  | uchar  -> Some uchar
-  | schar  -> Some schar
-  | ushort -> Some ushort
-  | sshort -> Some sshort
-  | uint   -> Some uint
-  | sint   -> Some sint
-  | ulong  -> Some ulong
-  | slong  -> Some slong
-  | ullong -> Some ullong
-  | sllong -> Some sllong
-  | void   -> Some void
+  |  TN_char  -> Some  T_char
+  | TN_uchar  -> Some T_uchar
+  | TN_schar  -> Some T_schar
+  | TN_ushort -> Some T_ushort
+  | TN_sshort -> Some T_sshort
+  | TN_uint   -> Some T_uint
+  | TN_sint   -> Some T_sint
+  | TN_ulong  -> Some T_ulong
+  | TN_slong  -> Some T_slong
+  | TN_ullong -> Some T_ullong
+  | TN_sllong -> Some T_sllong
+  | TN_void   -> Some T_void
 
 
 %subsubsection (* Declarations *)
@@ -1479,7 +1483,7 @@ op checkObjectDeclaration
   let tyn = odecl.typE in
   let objn = odecl.name in
   {ty <- checkTypeName (symtab, tyn);
-   check (ty ~= void);
+   check (ty ~= T_void);
    scopes <- Some symtab.objects;
    check (scopes ~= []);
    innermost <- Some (last scopes);
@@ -1502,7 +1506,7 @@ introduced earlier. The checking is done w.r.t. a symbol table that includes all
 the structure specifiers that precede the member declarations. *)
 
 op checkMemberDeclarations
-   (symtab:SymbolTable, decls:List MemberDeclaration) : Option TypedMembers =
+   (symtab:SymbolTable, decls:List MemberDeclaration) : Option StructMembers =
   case decls of
   | [] -> Some empty
   | decl::decls ->
@@ -1510,9 +1514,9 @@ op checkMemberDeclarations
     let mem = decl.name in
     {members <- checkMemberDeclarations (symtab, decls);
      ty <- checkTypeName (symtab, tyn);
-     check (ty ~= void);
-     check (mem nin? domain members);
-     Some (update members mem ty)}
+     check (ty ~= T_void);
+     check (mem nin? (unzip members).1);
+     Some ((mem,ty)::members)}
 
 (* The tags of structures form a name space [ISO 6.2.3] in our C subset, which
 has no unions or enumerations. The structure specifiers in our C subset have
@@ -1573,9 +1577,9 @@ the same time extending the symbol table. *)
 op checkDeclaration
    (symtab:SymbolTable, decl:Declaration) : Option SymbolTable =
   case decl of
-  | struct  sspec -> checkStructSpecifier   (symtab, sspec)
-  | object  odecl -> checkObjectDeclaration (symtab, odecl)
-  | typedef tdef  -> checkTypeDefinition    (symtab, tdef)
+  | Decl_struct  sspec -> checkStructSpecifier   (symtab, sspec)
+  | Decl_object  odecl -> checkObjectDeclaration (symtab, odecl)
+  | Decl_typedef tdef  -> checkTypeDefinition    (symtab, tdef)
 
 
 %subsubsection (* Statements *)
@@ -1600,6 +1604,10 @@ type StatementTypeElement = | next | return Type
 under different circumstances (e.g. an 'if' statement), in general a statement
 is assigned a (finite) set of the elementary types defined just above. We regard
 these sets as compile-time types for statements. *)
+
+end-spec
+
+C2 = spec
 
 type StatementType = FiniteSet StatementTypeElement
 
@@ -2183,6 +2191,7 @@ used in [ISO]). *)
 
 (* FIXME HERE: figure out useful helper functions here (e.g.,
 pushAutomaticFrame and popAutomaticFrame) *)
+(* FIXME HERE: move these after importing the monad below... *)
 
 op updateStaticStorage (sstore:NamedStorage) : Monad () =
   {storage <- getState ();
@@ -2258,6 +2267,9 @@ operations, etc. *)
 import /Library/Structures/Data/Monad/MonadError
 import /Library/Structures/Data/Monad/MonadState
 import /Library/Structures/Data/Monad/MonadNonTerm
+
+(* FIXME HERE: use "errors" more generally for non-local control transfer (e.g.,
+return statements) *)
 
 (* These specify a (potentially incomplete) list of possible sorts of
 erroneous outcomes, including runtime errors and non-standard behavior. *)
