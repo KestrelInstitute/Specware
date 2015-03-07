@@ -314,142 +314,45 @@ op identifier? (str:String) : Bool =
 type Identifier = (String | identifier?)
 
 
-%subsection (* Constants *)
-
-(* Our C subset only includes integer constants [ISO 6.4.4.1]. It has no
-floating [ISO 6.4.4.2], enumeration [ISO 6.4.4.3], or character [ISO 6.4.4.4]
-constants.
-
-A decimal constant is a sequence of one or more digits, not starting with 0. *)
-
-op decimalConstant? (str:String) : Bool =
-  let chars = explode str in
-  nonEmpty? chars &&
-  forall? digit? chars &&
-  head chars ~= #0
-
-(* An octal constant is a sequence of one or more octal digits (i.e. decimal
-except for 8 and 9), starting with 0. *)
-
-op octalDigit? (ch:Char) : Bool =
-  digit? ch && ch ~= #8 && ch ~= #9  % 0-7
-
-op octalConstant? (str:String) : Bool =
-  let chars = explode str in
-  nonEmpty? chars &&
-  forall? octalDigit? chars &&
-  head chars = #0
-
-(* A hexadecimal constant is a sequence of one or more hexadecimal digits (i.e.
-decimal plus a-f and A-F), prepended by the prefix 0x or 0X. *)
-
-op hexadecimalDigit? (ch:Char) : Bool =
-  digit? ch ||                               % 0-9
-  (ord #A <= ord ch && ord ch <= ord #F) ||  % A-F
-  (ord #a <= ord ch && ord ch <= ord #f)     % a-f
-
-op hexadecimalConstant? (str:String) : Bool =
-  ex(digits:String)
-    (str = "0x" ^ digits || str = "0X" ^ digits) &&  % prefix
-    (let chars = explode digits in
-    nonEmpty? chars &&
-    forall? hexadecimalDigit? chars)
-
-(* An integer constant has an optional suffix, which consists of an unsigned
-suffix and/or a long or long long suffix. *)
-
-op unsignedSuffix? (str:String) : Bool =
-  str = "u" || str = "U"
-
-op longSuffix? (str:String) : Bool =
-  str = "l" || str = "L"
-
-op longLongSuffix? (str:String) : Bool =
-  str = "ll" || str = "LL"
-
-(* The following op captures an optional unsigned suffix, i.e. either nothing
-(the empty string) or an unsigned suffix. This op does not directly correspond
-to any non-terminal symbol in the grammar in [ISO 6.4.4.1], but we introduce it
-for convenience. *)
-
-op signSuffix? (str:String) : Bool =
-  str = "" || unsignedSuffix? str
-
-(* Similarly, the following op captures an optional long or long suffix, i.e.
-either nothing (the empty string) or a long suffix or a long long suffix. This
-op does not directly correspond to any non-terminal symbol in the grammar in
-[ISO 6.4.4.1], but we introduce it for convenience. *)
-
-op lengthSuffix? (str:String) : Bool =
-  str = "" || longSuffix? str || longLongSuffix? str
-
-(* We can then say that an optional integer suffix consists of a sign suffix and
-a length suffix, in any order. Note that they can be both empty. *)
-
-op integerSuffix? (str:String) : Bool =
-  ex (ssuffix:String, lsuffix:String)
-    signSuffix? ssuffix &&
-    lengthSuffix? lsuffix &&
-    (str = ssuffix ^ lsuffix || str = lsuffix ^ ssuffix)
-
-(* Finally, we define an integer constant as a decimal, octal, or hexadecimal
-constant, followed by an optional integer suffix. *)
-
-op integerConstant? (str:String) : Bool =
-  ex (const:String, suffix:String)
-    str = const ^ suffix
-    &&
-    (decimalConstant?     const ||
-     octalConstant?       const ||
-     hexadecimalConstant? const)
-    &&
-    integerSuffix? suffix
-
-type IntegerConstant = (String | integerConstant?)
-
-(* We can easily remove the suffix of an integer constant, if any. *)
-
-op unsuffixedIntegerConstant (c:IntegerConstant) : String =
-  the(str:String)
-     (ex(suffix:String) c = str ^ suffix && integerSuffix? suffix)
-
-
 %subsection (* Types *)
 
-(* Our C subset features the following types [ISO 6.2.5]: the standard signed
-and unsigned integer types, the (plain) char type, structure types, pointer
-types, array types, and the void type. Each of the signed/unsigned
-short/int/long/longlong types can be denoted via multiple, equivalent
-combinations of type specifiers [ISO 6.7.2]. Even though certain types may have
-identical representations in an implementation, they are nevertheless different
-types [ISO 6.2.5/14]. A structure type is denoted by its tag, which is an
-identifier [ISO 6.2.3]. An array type includes the number of elements [ISO
-6.2.5/20]; our C subset only includes array types with known size. *)
+(* Our C subset features the following types [ISO 6.2.5]: the standard
+signed and unsigned integer types, the (plain) char type, structure
+types, pointer types, array types, and the void type. Each of the
+signed/unsigned short/int/long/longlong types can be denoted via
+multiple, equivalent combinations of type specifiers [ISO 6.7.2]. Even
+though certain types may have identical representations in an
+implementation, they are nevertheless different types [ISO
+6.2.5/14]. A structure type is denoted by its members, which are a
+sequence of field names and their types [ISO 6.2.5/20]. An array type
+includes the number of elements [ISO 6.2.5/20]; our C subset only
+includes array types with known size. *)
 
 (* emw4: added function pointer types *)
 
+type StructMember = Identifier * Type
 type Type =
-  | char                %          char
-  | uchar               % unsigned char
-  | schar               %   signed char
-  | ushort              % unsigned short
-  | sshort              %   signed short
-  | uint                % unsigned int
-  | sint                %   signed int
-  | ulong               % unsigned long
-  | slong               %   signed long
-  | ullong              % unsigned long long
-  | sllong              %   signed long long
-  | struct  Identifier  % structure
-  | pointer Type        % pointer (to type)
-  | array   Type * Nat  % array (of type of size)
-  | void                % void
-  | function Type * (List Type) % function (with return type and argument types)
+  | T_char                        %          char
+  | T_uchar                       % unsigned char
+  | T_schar                       %   signed char
+  | T_ushort                      % unsigned short
+  | T_sshort                      %   signed short
+  | T_uint                        % unsigned int
+  | T_sint                        %   signed int
+  | T_ulong                       % unsigned long
+  | T_slong                       %   signed long
+  | T_ullong                      % unsigned long long
+  | T_sllong                      %   signed long long
+  | T_struct (List StructMember)  % structure
+  | T_pointer Type                % pointer (to type)
+  | T_array   Type * Nat          % array (of type of size)
+  | T_void                        % void
+  | T_function Type * (List Type) % function (with return type and argument types)
 
 (* The following are the standard signed integer types [ISO 6.2.5/4] *)
 
 op standardSignedIntegerType? (ty:Type) : Bool =
-  ty = schar || ty = sshort || ty = sint || ty = slong || ty = sllong
+  ty = T_schar || ty = T_sshort || ty = T_sint || ty = T_slong || ty = T_sllong
 
 (* Our C subset has no extended signed integer types [ISO 6.2.5/4], so the
 signed integer types [ISO 6.2.5/4] coincide with the standard signed integer
@@ -460,7 +363,7 @@ op signedIntegerType? (ty:Type) : Bool = standardSignedIntegerType? ty
 (* The following are the standard unsigned integer types [ISO 6.2.5/6]. *)
 
 op standardUnsignedIntegerType? (ty:Type) : Bool =
-  ty = uchar || ty = ushort || ty = uint || ty = ulong || ty = ullong
+  ty = T_uchar || ty = T_ushort || ty = T_uint || ty = T_ulong || ty = T_ullong
 
 (* Our C subset has no extended unsigned integer types [ISO 6.2.5/6], so the
 unsigned integer types [ISO 6.2.5/6] coincide with the standard unsigned integer
@@ -478,18 +381,18 @@ op standardIntegerTypes? (ty:Type) : Bool =
 floating types. *)
 
 op basicType? (ty:Type) : Bool =
-  ty = char || signedIntegerType? ty || unsignedIntegerType? ty
+  ty = T_char || signedIntegerType? ty || unsignedIntegerType? ty
 
 (* The following are the character types [ISO 6.2.5/15]. *)
 
 op characterType? (ty:Type) : Bool =
-  ty = char || ty = uchar || ty = schar
+  ty = T_char || ty = T_uchar || ty = T_schar
 
 (* The following are the integer types [ISO 6.2.5/17]. Our C subset has no
 enumerated types. *)
 
 op integerType? (ty:Type) : Bool =
-  ty = char || signedIntegerType? ty || unsignedIntegerType? ty
+  ty = T_char || signedIntegerType? ty || unsignedIntegerType? ty
 
 (* The following are the real types [ISO 6.2.5/17]. Our C subset has no floating
 types. *)
@@ -504,41 +407,41 @@ op arithmeticType? (ty:Type) : Bool =
   integerType? ty
 
 (* The following are the derived types [ISO 6.2.5/20]. Our C subset has no
-union, no atomic, and no (explicit) function types. *)
+union and no atomic types. *)
 
 op derivedType? (ty:Type) : Bool =
-  embed? struct ty || embed? pointer ty || embed? array ty
+  embed? T_struct ty || embed? T_pointer ty || embed? T_array ty || embed? T_function ty
 
 (* The following are the scalar types [ISO 6.2.5/21]. *)
 
 op scalarType? (ty:Type) : Bool =
-  arithmeticType? ty || embed? pointer ty
+  arithmeticType? ty || embed? T_pointer ty
 
 (* The following are the aggregate types [ISO 6.2.5/21]. *)
 
 op aggregateType? (ty:Type) : Bool =
-  embed? struct ty || embed? array ty
+  embed? T_struct ty || embed? T_array ty
 
 (* In our C subset, all types are complete types [ISO 6.2.5/1] except void [ISO
 6.2.5/19]. *)
 
 op completeType? (ty:Type) : Bool =
-  ty ~= void
+  ty ~= T_void
 
 (* The following predicates are not explicitly defined in [ISO 6.2.5] but are
 useful in our formalization. *)
 
 op shortType? (ty:Type) : Bool =
-  ty = sshort || ty = ushort
+  ty = T_sshort || ty = T_ushort
 
 op intType? (ty:Type) : Bool =
-  ty = sint || ty = uint
+  ty = T_sint || ty = T_uint
 
 op longType? (ty:Type) : Bool =
-  ty = slong || ty = ulong
+  ty = T_slong || ty = T_ulong
 
 op llongType? (ty:Type) : Bool =
-  ty = sllong || ty = ullong
+  ty = T_sllong || ty = T_ullong
 
 (* Each integer type has a size in bits. *)
 
@@ -560,6 +463,25 @@ op compatibleTypes? (ty1:Type, ty2:Type) : Bool =
 
 op compositeType (ty1:Type, ty2:Type | compatibleTypes? (ty1, ty2)) : Type =
   ty1
+
+
+%subsection (* Constants *)
+
+(* Our C subset only includes integer constants [ISO 6.4.4.1]. It has no
+floating [ISO 6.4.4.2], enumeration [ISO 6.4.4.3], or character [ISO 6.4.4.4]
+constants.
+
+Rather than formalizing the string representation of a constant, we
+assume that conversion to and from strings is handled by the parser
+and/or pretty-printer, and so, in the abstract sytax formalized here,
+integer constants are just represented as Specware natural numbers.
+(Negative integer constants are written in C using the unary negation
+operator applied to positive integer constants.) How the constant is
+written, however, also affects the particular integer type that is
+selected for it [ISO 6.4.4.1], so we make the type explicit in integer
+constants as well. *)
+
+type IntegerConstant = Nat * (Type | integerType?)
 
 
 %subsection (* Unary operators *)
@@ -624,21 +546,21 @@ is explained later. We use a dedicated constructor for the null pointer constant
 modeling this null pointer constants. *)
 
 type Expression =
-  | ident     Identifier
-  | const     IntegerConstant
-  | unary     UnaryOp * Expression
-  | binary    Expression * BinaryOp * Expression
-  | cond      Expression * Expression * Expression * Type
-  | member    Expression * Identifier
-  | memberp   Expression * Identifier
-  | subscript Expression * Expression
-  | nullconst
+  | E_ident     Identifier
+  | E_const     IntegerConstant
+  | E_unary     UnaryOp * Expression
+  | E_binary    Expression * BinaryOp * Expression
+  | E_cond      Expression * Expression * Expression * Type
+  | E_member    Expression * Identifier
+  | E_memberp   Expression * Identifier
+  | E_subscript Expression * Expression
+  | E_nullconst
 
 (* In our C subset, the only null pointer constant [ISO 6.3.2.3/3] is '(void* )
 0', captured by constructor 'nullconst' above. *)
 
 op nullPointerConst? (expr:Expression) : Bool =
-  embed? nullconst expr
+  embed? E_nullconst expr
 
 
 %subsection (* Type names *)
@@ -685,24 +607,24 @@ pointers and arrays of typedef names. *)
 
 type TypeName =
   % same as type Type:
-  | char
-  | uchar
-  | schar
-  | ushort
-  | sshort
-  | uint
-  | sint
-  | ulong
-  | slong
-  | ullong
-  | sllong
-  | struct  Identifier
-  | pointer TypeName
-  | array   TypeName * Nat
-  | void
-  | function TypeName * (List TypeName)
+  | TN_char
+  | TN_uchar
+  | TN_schar
+  | TN_ushort
+  | TN_sshort
+  | TN_uint
+  | TN_sint
+  | TN_ulong
+  | TN_slong
+  | TN_ullong
+  | TN_sllong
+  | TN_struct  Identifier
+  | TN_pointer TypeName
+  | TN_array   TypeName * Nat
+  | TN_void
+  | TN_function TypeName * (List TypeName)
   % typedef name:
-  | typedef Identifier
+  | TN_typedef Identifier
 
 
 %subsection (* Declarations *)
@@ -750,9 +672,9 @@ type TypeDefinition =
 appear at the top level in a translation unit in our C subset. *)
 
 type Declaration =
-  | struct  StructSpecifier
-  | object  ObjectDeclaration
-  | typedef TypeDefinition
+  | Decl_struct  StructSpecifier
+  | Decl_object  ObjectDeclaration
+  | Decl_typedef TypeDefinition
 
 
 %subsection (* Statements *)
@@ -790,18 +712,18 @@ Besides statements, we only allow object declarations as block items [ISO
 6.8.2], not other kinds of declarations. *)
 
 type Statement =
-  | assign Expression * Expression
-  | call   Option Expression * Identifier * List Expression
-  | iF     Expression * Statement * Option Statement
-  | return Option Expression
-  | while  Expression * Statement
-  | do     Statement * Expression
-  | for    Option Statement * Option Expression * Option Statement * Statement
-  | block  List BlockItem
+  | S_assign Expression * Expression
+  | S_call   Option Expression * Identifier * List Expression
+  | S_if     Expression * Statement * Option Statement
+  | S_return Option Expression
+  | S_while  Expression * Statement
+  | S_do     Statement * Expression
+  | S_for    Option Statement * Option Expression * Option Statement * Statement
+  | S_block  List BlockItem
 
 type BlockItem =
-  | declaration ObjectDeclaration
-  | statement   Statement
+  | Block_declaration ObjectDeclaration
+  | Block_statement   Statement
 
 
 %subsection (* Function definitions *)
@@ -821,10 +743,10 @@ type ParameterList = List ParameterDeclaration
 list, and a body [ISO 6.7.6.3, 6.9.1]. *)
 
 type FunctionDefinition =
- {return     : TypeName,
-  name       : Identifier,
-  parameters : ParameterList,
-  body       : Statement}
+ {FD_return     : TypeName,
+  FD_name       : Identifier,
+  FD_parameters : ParameterList,
+  FD_body       : Statement}
 
 
 %subsection (* Translation units *)
@@ -838,8 +760,8 @@ external declaration is either a function definition or a declaration as defined
 earlier [ISO 6.9/1]. *)
 
 type ExternalDeclaration =
-  | function    FunctionDefinition
-  | declaration Declaration
+  | EDecl_function    FunctionDefinition
+  | EDecl_declaration Declaration
 
 type TranslationUnit = List ExternalDeclaration
 
@@ -876,31 +798,31 @@ as range of values.*)
 
 op minOfIntegerType (ty:Type | integerType? ty) : Int =
   case ty of
-  |  char  ->  CHAR_MIN
-  | uchar  ->         0
-  | schar  -> SCHAR_MIN
-  | ushort ->         0
-  | sshort ->  SHRT_MIN
-  | uint   ->         0
-  | sint   ->   INT_MIN
-  | ulong  ->         0
-  | slong  ->  LONG_MIN
-  | ullong ->         0
-  | sllong -> LLONG_MIN
+  |  T_char  ->  CHAR_MIN
+  | T_uchar  ->         0
+  | T_schar  -> SCHAR_MIN
+  | T_ushort ->         0
+  | T_sshort ->  SHRT_MIN
+  | T_uint   ->         0
+  | T_sint   ->   INT_MIN
+  | T_ulong  ->         0
+  | T_slong  ->  LONG_MIN
+  | T_ullong ->         0
+  | T_sllong -> LLONG_MIN
 
 op maxOfIntegerType (ty:Type | integerType? ty) : Int =
   case ty of
-  |  char  ->   CHAR_MAX
-  | uchar  ->  UCHAR_MAX
-  | schar  ->  SCHAR_MAX
-  | ushort ->  USHRT_MAX
-  | sshort ->   SHRT_MAX
-  | uint   ->   UINT_MAX
-  | sint   ->    INT_MAX
-  | ulong  ->  ULONG_MAX
-  | slong  ->   LONG_MAX
-  | ullong -> ULLONG_MAX
-  | sllong ->  LLONG_MAX
+  |  T_char  ->   CHAR_MAX
+  | T_uchar  ->  UCHAR_MAX
+  | T_schar  ->  SCHAR_MAX
+  | T_ushort ->  USHRT_MAX
+  | T_sshort ->   SHRT_MAX
+  | T_uint   ->   UINT_MAX
+  | T_sint   ->    INT_MAX
+  | T_ulong  ->  ULONG_MAX
+  | T_slong  ->   LONG_MAX
+  | T_ullong -> ULLONG_MAX
+  | T_sllong ->  LLONG_MAX
 
 op rangeOfIntegerType (ty:Type | integerType? ty) : FiniteSet Int =
   fn x:Int -> minOfIntegerType ty <= x && x <= maxOfIntegerType ty
@@ -913,60 +835,30 @@ corresponding unsigned/signed integer type. *)
 
 op correspondingUnsignedOf (ty:Type | signedIntegerType? ty) : Type =
   case ty of
-  | schar  -> uchar
-  | sshort -> ushort
-  | sint   -> uint
-  | slong  -> ulong
-  | sllong -> ullong
+  | T_schar  -> T_uchar
+  | T_sshort -> T_ushort
+  | T_sint   -> T_uint
+  | T_slong  -> T_ulong
+  | T_sllong -> T_ullong
 
 op correspondingSignedOf (ty:Type | unsignedIntegerType? ty) : Type =
   case ty of
-  | uchar  -> schar
-  | ushort -> sshort
-  | uint   -> sint
-  | ulong  -> slong
-  | ullong -> sllong
+  | T_uchar  -> T_schar
+  | T_ushort -> T_sshort
+  | T_uint   -> T_sint
+  | T_ulong  -> T_slong
+  | T_ullong -> T_sllong
 
 
 %subsubsection (* Values of integer constants *)
 
-(* The value of an integer constant [ISO 6.4.4.1/4] is known at compile time. It
-is a natural number.
+(* The value of an integer constant [ISO 6.4.4.1/4] is known at
+compile time. It is a natural number. As discussed above (see type
+IntegerConstant), we represent integer constants directly in our
+abstarct syntax as Specware natural numbers, so interpreting the value
+of an integer constant just returns this natural number. *)
 
-We start with the value of a digit, including hex(adecimal) digits. *)
-
-op digitValue (ch:Char | digit? ch) : Nat =
-  ord ch - ord #0
-
-op hexDigitValue (ch:Char | hexadecimalDigit? ch) : Nat =
-  if digit? ch then digitValue ch
-  else if isUpperCase ch then ord ch - ord #A + 10
-                         else ord ch - ord #a + 10
-
-(* The digits of a decimal, octal, or hexadecimal constant are in big endian
-format. So, we use the library op fromBigEndian with argument base 10, 8, and
-16. For hexadecimal constant, we need to remove the 2-character 0x/0X prefix
-first. *)
-
-op decimalConstantValue (str:String | decimalConstant? str) : Nat =
-  fromBigEndian (map digitValue (explode str), 10)
-
-op octalConstantValue (str:String | octalConstant? str) : Nat =
-  fromBigEndian (map digitValue (explode str), 8)
-
-op hexadecimalConstantValue (str:String | hexadecimalConstant? str) : Nat =
-  let digits = removePrefix (explode str, 2) in
-  fromBigEndian (map hexDigitValue digits, 16)
-
-(* To calculate the value of an integer constant, we remove the suffix (if any)
-and then we use one of the three ops just defined. Note that the suffix does not
-contribute to the value of the constant. *)
-
-op integerConstantValue (c:IntegerConstant) : Nat =
-  let unsuffixed:String = unsuffixedIntegerConstant c in
-       if decimalConstant? unsuffixed then     decimalConstantValue unsuffixed
-  else if   octalConstant? unsuffixed then       octalConstantValue unsuffixed
-  else                                     hexadecimalConstantValue unsuffixed
+op integerConstantValue (c:IntegerConstant) : Nat = c.1
 
 
 %subsubsection (* Integer conversion ranks *)
@@ -977,13 +869,13 @@ rank, and where the inner lists are ordered, within the outer list, with
 increasing ranks. *)
 
 op rankedTypes : List (List Type) =
-  [[char, uchar, schar],
-   [sshort, ushort],
-   [sint, uint],
-   [slong, ulong],
-   [sllong, ullong]]
+  [[T_char, T_uchar, T_schar],
+   [T_sshort, T_ushort],
+   [T_sint, T_uint],
+   [T_slong, T_ulong],
+   [T_sllong, T_ullong]]
 
-(* From that structure, we can easily define binary relations for
+(* From the above structure, we can easily define binary relations for
 equal/greater/smaller ranks. *)
 
 op rank_= (ty1:Type, ty2:Type) infixl 20 : Bool =
@@ -1015,8 +907,8 @@ expressed as a mapping from types to types. The result type is the type of the
 promoted value, given that the initial value has the argument type. *)
 
 op promoteType (ty:Type) : Type =
-  if ty rank_<= sint then
-    if rangeOfIntegerType ty <= rangeOfIntegerType sint then sint else uint
+  if ty rank_<= T_sint then
+    if rangeOfIntegerType ty <= rangeOfIntegerType T_sint then T_sint else T_uint
   else
     ty  % unchanged
 
@@ -1059,14 +951,12 @@ types to typedef names. *)
 
 type TypedefTable = FiniteMap (Identifier, Type)
 
-(* A structure type, introduced by a structure specifier, consists of typed
-members, modeled as a finite map from member names to their types. A symbol
-table for structure specifiers associates typed members to structure tags (which
-are identifiers). *)
+(* A structure type, introduced by a structure specifier, consists of
+an ordered list of typed members, each of which is modeled as a pair
+of a member name and its type. A symbol table for structure specifiers
+associates typed members to structure tags (which are identifiers). *)
 
-type TypedMembers = FiniteMap (Identifier, Type)
-
-type StructTable = FiniteMap (Identifier, TypedMembers)
+type StructTable = FiniteMap (Identifier, List StructMember)
 
 (* A symbol table for objects is organized as a list that corresponds to the
 nesting of scopes. The head of the list corresponds to the file scope [ISO
@@ -1143,75 +1033,21 @@ op check (b:Bool) : Option () =
 
 %subsubsection (* Constants *)
 
-(* Since u/U are not (hex) digits or the prefix 0x/0X, to test whether an
-integer constant includes an unsigned suffix it suffices to check whether an
-integer suffix occurs anywhere in the constant. Analogous reasoning applies to
-ll/LL long long suffixes. For the l/L long suffixes, we use the same test, after
-making sure that there are no long long suffixes, because l/L is a substring of
-ll/LL. *)
-
-op unsignedConstant? (c:IntegerConstant) : Bool =
-  ex (str1:String, u:String, str2:String)
-    c = str1 ^ u ^ str2 &&
-    unsignedSuffix? u
-
-op longLongConstant? (c:IntegerConstant) : Bool =
-  ex (str1:String, ll:String, str2:String)
-    c = str1 ^ ll ^ str2 &&
-    longLongSuffix? ll
-
-op longConstant? (c:IntegerConstant) : Bool =
-  ~ (longLongConstant? c) &&
-  (ex (str1:String, l:String, str2:String)
-     c = str1 ^ l ^ str2 &&
-     longSuffix? l)
-
-(* An integer constant must have a type into which the value of the constant
-fits [ISO 6.4.4.1/5]. The type is determined using the table in [ISO 6.4.4.1/5],
-which associates to each integer constant a list of candidate types, based on
-the suffixes and the base of the constant. The type of the constant is the first
-in the associated list into which the constant's value fits. The checking op for
-integer constants returns the type of the constant, or 'None' if the constant
-cannot be assigned any type. *)
-
-op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
-  let unsuffixed:String = unsuffixedIntegerConstant c in
-  let decimal?:Bool = decimalConstant? unsuffixed in
-  if ~ (unsignedConstant? c) &&
-     ~ (longConstant? c) &&
-     ~ (longLongConstant? c) then
-    if decimal? then [sint, slong, sllong]
-                else [sint, uint, slong, ulong, sllong, ullong]
-  else if unsignedConstant? c &&
-          ~ (longConstant? c) &&
-          ~ (longLongConstant? c)
-  then
-    [uint, ulong, ullong]
-  else if ~ (unsignedConstant? c) &&
-          longConstant? c then
-    if decimal? then [slong, sllong]
-                else [slong, ulong, sllong, ullong]
-  else if unsignedConstant? c &&
-          longConstant? c then
-    [ulong, ullong]
-  else if ~ (unsignedConstant? c) &&
-          longLongConstant? c then
-    if decimal? then [sllong]
-                else [sllong, ullong]
-  else
-    [ullong]
+(* An integer constant must have a type into which the value of the
+constant fits [ISO 6.4.4.1/5]. The type is determined using the table
+in [ISO 6.4.4.1/5], which associates to each integer constant a list
+of candidate types, based on the suffixes and the base of the
+constant. As discussed above (see the type IntegerConstant), our
+abstract syntax captures integer constants as Specware natural numbers
+paired with their C type. Thus, the checking performed here simply
+tests if the natural number of an integer constant fits in its
+prescribed type. The checking op for integer constants returns the
+type of the constant, or 'None' if the constant cannot be assigned any
+type. *)
 
 op checkIntegerConstant (c:IntegerConstant) : Option Type =
-  let tys = integerConstantCandidateTypes c in
-  let val:Nat = integerConstantValue c in
-  if (ex(i:Nat) i < length tys && (val:Int) in? rangeOfIntegerType (tys @ i))
-  then
-    let firstFitIndex:Nat = the(firstFitIndex:Nat)
-        firstFitIndex < length tys &&
-        (val:Int) in? rangeOfIntegerType (tys @ firstFitIndex) &&
-        (firstFitIndex = 0 ||  % first type in candidate list
-         (val: Int) nin? rangeOfIntegerType (tys @ (firstFitIndex - 1))) in
-    Some (tys @ firstFitIndex)
+  if (integerConstantValue c) in? (rangeOfIntegerType c.2) then
+    Some c.2
   else
     None
 
@@ -1219,11 +1055,11 @@ op checkIntegerConstant (c:IntegerConstant) : Option Type =
 %subsubsection (* Types *)
 
 (* The following op checks whether a type is a structure type, and in that case
-it returns its tag. *)
+it returns its members. *)
 
-op checkStructType (ty:Type) : Option Identifier =
+op checkStructType (ty:Type) : Option (List StructMember) =
   case ty of
-  | struct tag -> Some tag
+  | T_struct members -> Some members
   | _ -> None
 
 (* The following op checks whether a type is a pointer type, and in that case it
@@ -1231,7 +1067,7 @@ returns its referenced type. *)
 
 op checkPointerType (ty:Type) : Option Type =
   case ty of
-  | pointer ty0 -> Some ty0
+  | T_pointer ty0 -> Some ty0
   | _ -> None
 
 (* The following op checks whether a type is an array type, and in that case it
@@ -1239,7 +1075,7 @@ returns its element type and its size. *)
 
 op checkArrayType (ty:Type) : Option (Type * Nat) =
   case ty of
-  | array (ty0, n) -> Some (ty0, n)
+  | T_array (ty0, n) -> Some (ty0, n)
   | _ -> None
 
 (* The following op checks whether a type is a pointer or array type, and in
@@ -1247,8 +1083,8 @@ that case it returns the referenced or array type. *)
 
 op checkPointerOrArrayType (ty:Type) : Option Type =
   case ty of
-  | pointer ty0 -> Some ty0
-  | array (ty0, _) -> Some ty0
+  | T_pointer ty0 -> Some ty0
+  | T_array (ty0, _) -> Some ty0
   | _ -> None
 
 
@@ -1392,13 +1228,13 @@ void*. *)
 op checkExpression
    (symtab:SymbolTable, expr:Expression) : Option ExpressionType =
   case expr of
-  | ident var ->
+  | E_ident var ->
     {ty <- objectTypeInSymTab (symtab, var);
      Some (exprTypeObject ty)}
-  | const c ->
+  | E_const c ->
     {ty <- checkIntegerConstant c;
      Some (exprTypeValue ty)}
-  | unary (uop, expr) ->
+  | E_unary (uop, expr) ->
     {ety <- checkExpression (symtab, expr);
      ty <- Some ety.typE;
      case uop of
@@ -1413,14 +1249,14 @@ op checkExpression
         Some (exprTypeValue (promoteType ty))}
      | NEG ->
        {check (scalarType? ty);
-        Some (exprTypeValue sint)}
+        Some (exprTypeValue T_sint)}
      | ADDR ->
        {check ety.object;
-        Some (exprTypeValue (pointer ty))}
+        Some (exprTypeValue (T_pointer ty))}
      | STAR ->
        {ty0 <- checkPointerType ty;
         Some (exprTypeObject ty0)}}
-  | binary (expr1, bop, expr2) ->
+  | E_binary (expr1, bop, expr2) ->
     {ety1 <- checkExpression (symtab, expr1);
      ety2 <- checkExpression (symtab, expr2);
      ty1 <- Some ety1.typE;
@@ -1449,30 +1285,30 @@ op checkExpression
         Some (exprTypeValue (promoteType ty1))}
      | LT ->
        {check (realType? ty1 && realType? ty2);
-        Some (exprTypeValue sint)}
+        Some (exprTypeValue T_sint)}
      | GT ->
        {check (realType? ty1 && realType? ty2);
-        Some (exprTypeValue sint)}
+        Some (exprTypeValue T_sint)}
      | LE ->
        {check (realType? ty1 && realType? ty2);
-        Some (exprTypeValue sint)}
+        Some (exprTypeValue T_sint)}
      | GE ->
        {check (realType? ty1 && realType? ty2);
-        Some (exprTypeValue sint)}
+        Some (exprTypeValue T_sint)}
      | EQ ->
        {check
           (arithmeticType? ty1 && arithmeticType? ty2 ||
-           embed? pointer ty1 && embed? pointer ty2 &&
+           embed? T_pointer ty1 && embed? T_pointer ty2 &&
            (compatibleTypes? (ty1, ty2) ||
-            ty1 = pointer void || ty2 = pointer void));
-        Some (exprTypeValue sint)}
+            ty1 = T_pointer T_void || ty2 = T_pointer T_void));
+        Some (exprTypeValue T_sint)}
      | NE ->
        {check
           (arithmeticType? ty1 && arithmeticType? ty2 ||
-           embed? pointer ty1 && embed? pointer ty2 &&
+           embed? T_pointer ty1 && embed? T_pointer ty2 &&
            (compatibleTypes? (ty1, ty2) ||
-            ty1 = pointer void || ty2 = pointer void));
-        Some (exprTypeValue sint)}
+            ty1 = T_pointer T_void || ty2 = T_pointer T_void));
+        Some (exprTypeValue T_sint)}
      | AND ->
        {check (integerType? ty1 && integerType? ty2);
         Some (exprTypeValue (arithConvertTypes (ty1, ty2)))}
@@ -1484,11 +1320,11 @@ op checkExpression
         Some (exprTypeValue (arithConvertTypes (ty1, ty2)))}
      | LAND ->
        {check (scalarType? ty1 && scalarType? ty2);
-        Some (exprTypeValue sint)}
+        Some (exprTypeValue T_sint)}
      | LOR ->
        {check (scalarType? ty1 && scalarType? ty2);
-        Some (exprTypeValue sint)}}
-  | cond (expr1, expr2, expr3, ty) ->
+        Some (exprTypeValue T_sint)}}
+  | E_cond (expr1, expr2, expr3, ty) ->
     {ety1 <- checkExpression (symtab, expr1);
      ety2 <- checkExpression (symtab, expr2);
      ety3 <- checkExpression (symtab, expr3);
@@ -1499,11 +1335,11 @@ op checkExpression
      if arithmeticType? ty2 && arithmeticType? ty3 &&
         ty = arithConvertTypes (ty2, ty3) then
        Some (exprTypeValue ty)
-     else if embed? struct ty2 && embed? struct ty3 then
+     else if embed? T_struct ty2 && embed? T_struct ty3 then
        {check (ty2 = ty3);
         check (ty = ty2);
         Some (exprTypeValue ty)}
-     else if embed? pointer ty2 && embed? pointer ty3 then
+     else if embed? T_pointer ty2 && embed? T_pointer ty3 then
        if compatibleTypes? (ty2, ty3) then
          {check (ty = compositeType (ty2, ty3));
           Some (exprTypeValue ty)}
@@ -1513,33 +1349,31 @@ op checkExpression
        else if nullPointerConst? expr3 then
          {check (ty = ty2);
           Some (exprTypeValue ty)}
-       else if ty2 = pointer void || ty3 = pointer void then
-         {check (ty = pointer void);
+       else if ty2 = T_pointer T_void || ty3 = T_pointer T_void then
+         {check (ty = T_pointer T_void);
           Some (exprTypeValue ty)}
        else
          None
      else
        None}
-  | member (expr, mem) ->
+  | E_member (expr, mem) ->
     {ety <- checkExpression (symtab, expr);
-     tag <- checkStructType ety.typE;
-     members <- symtab.structures tag;
+     members <- checkStructType ety.typE;
      ty <- members mem;
      Some {typE = ty, object = ety.object}}
-  | memberp (expr, mem) ->
+  | E_memberp (expr, mem) ->
     {ety <- checkExpression (symtab, expr);
      ty <- checkPointerType ety.typE;
-     tag <- checkStructType ty;
-     members <- symtab.structures tag;
+     members <- checkStructType ty;
      ty' <- members mem;
      Some {typE = ty', object = true}}
-  | subscript (expr, expr') ->
+  | E_subscript (expr, expr') ->
     {ety <- checkExpression (symtab, expr);
      ety' <- checkExpression (symtab, expr');
      ty <- checkPointerOrArrayType ety.typE;
      check (integerType? ety'.typE);
      Some (exprTypeObject ty)}
-  | nullconst ->
+  | E_nullconst ->
     Some (exprTypeValue (pointer void))
 
 (* It is useful, for later use, to lift op 'checkExpression' to a list of
@@ -1554,6 +1388,10 @@ op checkExpressions
      tys <- checkExpressions (symtab, exprs);
      Some (ty :: tys)}
 
+
+end-spec
+
+C2 = spec
 
 %subsubsection (* Type names *)
 
@@ -2110,7 +1948,7 @@ combined with a "scope designator" that specifies either global or
 local scope, corresponding to static or automatic variables,
 respectively. For local scope, the scope designator must additionally
 specify which local variable in which function on the dynamic call
-stack is being referred to. This is done by supplying a FrameId, which
+stack is being referred to. This is done by supplying a FrameID, which
 refers to a dynamic stack frame on the call stack, along with a
 natural number, which refers to the nesting depth of the lexical block
 containing the particular variable being referred to. For instance, in
@@ -2223,23 +2061,23 @@ separate types [ISO 6.2.5/14] and thus we use a different constructor for each
 different type. *)
 
 type Value =
-  |  char               Byte
-  | uchar               Byte
-  | schar               Byte
-  | ushort         ShortWord
-  | sshort         ShortWord
-  | uint             IntWord
-  | sint             IntWord
-  | ulong           LongWord
-  | slong           LongWord
-  | ullong      LongLongWord
-  | sllong      LongLongWord
-  | struct      Identifier * FiniteMap (Identifier, Value)
-  | pointer     Type * ObjectDesignator
-  | array       Type * List Value
-  | nullpointer Type
-  | function    Type * (List Type) * FunctionRepr
-  | undefined   Type
+  |  V_char               Byte
+  | V_uchar               Byte
+  | V_schar               Byte
+  | V_ushort         ShortWord
+  | V_sshort         ShortWord
+  | V_uint             IntWord
+  | V_sint             IntWord
+  | V_ulong           LongWord
+  | V_slong           LongWord
+  | V_ullong      LongLongWord
+  | V_sllong      LongLongWord
+  | V_struct      Identifier * FiniteMap (Identifier, Value)
+  | V_pointer     Type * ObjectDesignator
+  | V_array       Type * List Value
+  | V_nullpointer Type
+  | V_function    Type * (List Type) * FunctionRepr
+  | V_undefined   Type
 
 (* There is an obvious mapping from values to types. Note that this includes
 undefined values, because at run time they are still C values -- we just do not
@@ -2247,23 +2085,23 @@ know what they are exactly. *)
 
 op typeOfValue (val:Value) : Type =
   case val of
-  |  char  _         ->  char
-  | uchar  _         -> uchar
-  | schar  _         -> schar
-  | ushort _         -> ushort
-  | sshort _         -> sshort
-  | uint   _         -> uint
-  | sint   _         -> sint
-  | ulong  _         -> ulong
-  | slong  _         -> slong
-  | ullong _         -> ullong
-  | sllong _         -> sllong
-  | struct (tag, _)  -> struct tag
-  | pointer (ty, _)  -> pointer ty
-  | function (ty, tys, _)  -> function (ty, tys)
-  | array (ty, vals) -> array (ty, length vals)
-  | nullpointer ty   -> pointer ty
-  | undefined ty     -> ty
+  |  V_char  _         ->  char
+  | V_uchar  _         -> uchar
+  | V_schar  _         -> schar
+  | V_ushort _         -> ushort
+  | V_sshort _         -> sshort
+  | V_uint   _         -> uint
+  | V_sint   _         -> sint
+  | V_ulong  _         -> ulong
+  | V_slong  _         -> slong
+  | V_ullong _         -> ullong
+  | V_sllong _         -> sllong
+  | V_struct (tag, _)  -> struct tag
+  | V_pointer (ty, _)  -> pointer ty
+  | V_function (ty, tys, _)  -> function (ty, tys)
+  | V_array (ty, vals) -> array (ty, length vals)
+  | V_nullpointer ty   -> pointer ty
+  | V_undefined ty     -> ty
 
 (* We lift some of the predicates that classify types to predicates that
 classify values. Note that undefined values of the correct types are
