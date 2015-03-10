@@ -83,6 +83,7 @@ op make_Language (s : String) : Language =
 type Sections = List Section
 type Section = | Verbatim  String
                | Imports   Imports
+               | CImports  Imports        % imports to be printed at start of .c 
                | Morphism  Translations
                | Natives   Natives
                | Generated
@@ -135,11 +136,31 @@ op make_Imports_Section (imports : Imports)
  : Section = 
  Imports imports
 
+op make_CImports_Section (imports : Imports)
+ : Section = 
+ CImports imports
+
 op extractImports (lms : LanguageMorphisms) : Imports =
  foldl (fn (all_imports, lm) ->
           foldl (fn (all_imports, section) ->
                    case section of
                      | Imports imports -> all_imports ++ imports
+                     | _ -> all_imports)
+                all_imports
+                lm.sections)
+       []
+       lms
+
+op extractHImports (lms : LanguageMorphisms) : Imports =
+ %% -import => HImports
+ extractImports lms
+
+op extractCImports (lms : LanguageMorphisms) : Imports =
+ %% -cimport => CImports
+ foldl (fn (all_imports, lm) ->
+          foldl (fn (all_imports, section) ->
+                   case section of
+                     | CImports imports -> all_imports ++ imports
                      | _ -> all_imports)
                 all_imports
                 lm.sections)

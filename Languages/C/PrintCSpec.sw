@@ -23,13 +23,13 @@ op printCSpec (c_spec : C_Spec, filename : String) : () =
 
   let id_dfn           = ("Patched_PrismId", C_String, C_Const (C_Str basename)) in
 
-  let h_spec           = addHeader    (h_spec, basename)   in
-  let h_spec           = addTrailer   (h_spec, basename)   in
- %let h_spec           = addConstDefn (h_spec, id_dfn)     in  
+  let h_spec           = addHeader      (h_spec, basename)   in
+  let h_spec           = addTrailer     (h_spec, basename)   in
+ %let h_spec           = addConstDefn   (h_spec, id_dfn)     in  
 
-  let c_spec           = addHeader    (c_spec, basename)   in
-  let c_spec           = addTrailer   (c_spec, basename)   in
-  let c_spec           = addInclude   (c_spec, h_filename) in
+  let c_spec           = addHeader      (c_spec, basename)   in
+  let c_spec           = addTrailer     (c_spec, basename)   in
+  let c_spec           = prefixCInclude (c_spec, h_filename) in  % import of .h file comes first
   let c_spec = if flattenSpec? then flattenSpec c_spec else c_spec in
   let _ = printCSpecAsHeaderToFile (h_spec, h_filename) in
   let _ = printCSpecToFile         (c_spec, c_filename) in

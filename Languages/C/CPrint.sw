@@ -469,7 +469,9 @@ CPrint qualifying spec
   %let typeDefns = topTypeTypeDefns s.typeDefns in
   % let _ = writeLine "Toptype done..." in
   let headers              = map ppComment             s.headers              in
-  let includes             = map ppInclude             s.includes             in
+  let hincludes            = map ppInclude             s.hincludes            in
+  let cincludes            = map ppInclude             s.cincludes            in
+  let includes             = hincludes ++ cincludes                           in % one of the two will be the empty list
   let verbatims            = map ppVerbatim            s.verbatims            in    
   let defines              = map ppDefine              s.defines              in
   let constDefns           = map ppVarDefnAsDefine     s.constDefns           in

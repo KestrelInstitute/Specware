@@ -11,7 +11,7 @@ C qualifying spec
      trailers             : Strings,
 
      %% these go into .h file:
-     includes             : Strings,         % the .c file will merely include the .h file, which includes all other files
+     hincludes            : Strings,         % the .c file will always include the .h file
      verbatims            : Strings,
      defines	          : C_Defines,
      constDefns           : C_VarDefns,      % constant expressions defined by #define's
@@ -20,6 +20,7 @@ C qualifying spec
      structUnionTypeDefns : C_StructUnionTypeDefns,
 
      %% these go into .c file:
+     cincludes            : Strings,         
      axioms               : C_Exps,          % ??
      varDefns             : C_VarDefns,      % constant expressions computable at compile-time
      fnDefns              : C_FnDefns

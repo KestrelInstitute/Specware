@@ -84,6 +84,7 @@
 (define-lm-parser-rule :Section 
     (:anyof :Verbatim_Section
             :Imports_Section
+            :CImports_Section
             :Morphism_Section
             :Generated_Section 
             :Natives_Section))
@@ -103,6 +104,10 @@
 (define-lm-parser-rule :Imports_Section 
     (:tuple :KW_Import (1 :Imports))
   (LM::make_Imports_Section 1))  
+
+(define-lm-parser-rule :CImports_Section 
+    (:tuple :KW_CImport (1 :Imports))
+  (LM::make_CImports_Section 1))  
 
 (define-lm-parser-rule :Imports 
     :Pathnames)
@@ -139,7 +144,10 @@
     :SimpleName)
   
 (define-lm-parser-rule :KW_Import
-    (:anyof "-import" "-include"))
+    (:anyof "-import" "-include" "-himport" "-hinclude"))
+
+(define-lm-parser-rule :KW_CImport
+    (:anyof "-cimport" "-cinclude"))
 
 ;;; ========================================================================
 ;;;  Morphism

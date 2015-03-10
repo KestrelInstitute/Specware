@@ -9,7 +9,8 @@ CUtils qualifying spec
    name                 = name,
    headers              = [],
    trailers             = [],
-   includes             = [],
+   hincludes            = [],
+   cincludes            = [],
    verbatims            = [],
    defines              = [],
    constDefns           = [],
@@ -25,7 +26,9 @@ CUtils qualifying spec
  op renameCSpec             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {name                 = cString X}                       
  op addHeader               (cspc : C_Spec, X : String)                 : C_Spec = cspc << {headers              = cspc.headers              ++ [X]}
  op addTrailer              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {trailers             = cspc.trailers             ++ [X]}
- op addInclude              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {includes             = cspc.includes             ++ [X]}
+ op addHInclude             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {hincludes            = cspc.hincludes            ++ [X]}
+ op prefixCInclude          (cspc : C_Spec, X : String)                 : C_Spec = cspc << {cincludes            = [X]            ++ cspc.cincludes}
+ op addCInclude             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {cincludes            = cspc.cincludes            ++ [X]}
  op addVerbatim             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {verbatims            = cspc.verbatims            ++ [X]}
  op addDefine               (cspc : C_Spec, X : C_Define)               : C_Spec = cspc << {defines              = cspc.defines              ++ [X]}
  op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
@@ -223,7 +226,8 @@ CUtils qualifying spec
            name                 = cspc1.name,
            headers              = cspc1.headers  ++ cspc2.headers,
            trailers             = cspc1.trailers ++ cspc2.trailers,
-           includes             = concatnewEq (cspc1. includes,   cspc2.includes),
+           hincludes            = concatnewEq (cspc1. hincludes,  cspc2.hincludes),
+           cincludes            = concatnewEq (cspc1. cincludes,  cspc2.cincludes),
            verbatims            = cspc1.verbatims ++ cspc2.verbatims,
            defines              = concatnewEq (cspc1. defines,    cspc2.defines),
            constDefns           = concatnewEq (cspc1. constDefns, cspc2.constDefns),
@@ -1059,12 +1063,13 @@ CUtils qualifying spec
   %% vars will be printed as "extern"
   %% varDefns will be printed as "extern"
   %% fnDefns will be printed as "extern"
-  cspc << {axioms   = [],
-           varDefns = [],
-           fnDefns  = []}
+  cspc << {cincludes = [],
+           axioms    = [],
+           varDefns  = [],
+           fnDefns   = []}
 
  op extractCSpec (cspc : C_Spec) : C_Spec =
-  cspc << {includes             = [], % will later include .h file, which in turn includes other files
+  cspc << {hincludes            = [], 
            defines              = [],
            verbatims            = [],
            constDefns           = [],

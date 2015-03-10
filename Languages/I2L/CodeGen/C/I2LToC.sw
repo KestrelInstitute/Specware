@@ -55,8 +55,10 @@ op generateC4ImpUnit (impunit : I_ImpUnit, slice : Slice) : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
  let xcspc    = emptyCSpec "" in
  let lm_data  = slice.lm_data in
- let includes      = extractImports   lm_data.lms in
- let include_strs  = map printImport  includes    in
+ let hincludes     = extractHImports  lm_data.lms in
+ let cincludes     = extractCImports  lm_data.lms in
+ let hinclude_strs = map printImport  hincludes   in
+ let cinclude_strs = map printImport  cincludes   in
  let verbatims     = extractVerbatims lm_data.lms in
  let type_defines  = foldl (fn (defines, trans) ->
                               case trans.target of 
@@ -87,7 +89,8 @@ op generateC4ImpUnit (impunit : I_ImpUnit, slice : Slice) : C_Spec =
 
  let cspc = emptyCSpec impunit.name in
  let cspc = addBuiltIn (ctxt, cspc) in
- let cspc = foldl (fn (cspc, include)  -> addInclude       (cspc, include))       cspc include_strs           in
+ let cspc = foldl (fn (cspc, include)  -> addHInclude      (cspc, include))       cspc hinclude_strs          in
+ let cspc = foldl (fn (cspc, include)  -> addCInclude      (cspc, include))       cspc cinclude_strs          in
  let cspc = foldl (fn (cspc, verbatim) -> addVerbatim      (cspc, verbatim))      cspc verbatims.pre          in
  let cspc = foldl (fn (cspc, define)   -> addDefine        (cspc, define))        cspc defines                in
  let cspc = foldl (fn (cspc, typedef)  -> c4TypeDefinition (ctxt, cspc, typedef)) cspc impunit.decls.typedefs in
