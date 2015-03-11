@@ -280,6 +280,31 @@ op typeinfo2typedef (qid     : QualifiedId,
      | _ ->
        let i_typename = qid2TypeName qid in
        let (itype, native?) = type2itype (ms_tvs, ms_type, ctxt) in
+       let itype =
+           case itype of
+             | I_Struct fields ->
+               %%  The fields here have been alphabetized for internal use, but we wish to
+               %%  print the C code using the original unalphabetized field order.
+               %%  To that end, we had mkTypeSpecElem (in Types.sw) save the original order
+               %%  in a global hashtable accessible via getOrginalFieldOrders 
+   
+               let original_field_order = getOrginalFieldOrders qid in
+
+               let unalphabetized_fields = 
+                   foldl (fn (restored_fields, field_name) ->
+                            case findLeftmost (fn pair -> pair.1 = field_name) fields of
+                              | Some field ->
+                                restored_fields <| field
+                              | _ ->
+                                %% this should never happen...
+                                let _ = writeLine("INTERNAL ERROR:  For type " ^ show qid ^ ", could not find field: " ^ field_name) in
+                                restored_fields)
+                         []
+                         original_field_order
+               in
+               I_Struct unalphabetized_fields
+             | _ -> itype
+       in
        Some (i_typename, itype, native?)
  else
    None 

@@ -182,6 +182,35 @@ SpecCalc qualifying spec
   : SpecElemTerm =
   (Pragma (prefix, body, postfix), pos)
 
+ %% The following two functions are defined using hand-written lisp code in 
+ %%  Languages/SpecCalculus/Parser/Handwritten/Lisp/semantics.lisp
+ %% They store and retrieve information in a hash-table not visisble to
+ %%  Specware execpt through this interface:
+
+ %% Note: The alphabetized field_names value passed to setOrginalFieldOrders 
+ %%       is replaced by the original alphabetized list before being saved,
+ %%       using transient information available to the parser code.
+ %%       (See Languages/SpecCalculus/Parser/Handwritten/Lisp/semantics.lisp)
+
+ op setOrginalFieldOrders (name : TypeName, field_names : List Id) : () % ad hoc
+ op getOrginalFieldOrders (name : TypeName) : List Id                   % ad hoc
+
+ op rememberOrginalFieldOrdersForCGen (name : TypeName, dfn : MSType) : () =
+  let inner_dfn =
+      case dfn of
+        | Pi  (_, dfn,   _) -> dfn
+        | And (dfn :: _, _) -> dfn
+        | _                 -> dfn
+  in
+  case inner_dfn of
+    | Product (fields, _) ->
+      let field_names = map (fn (field_name, _) -> field_name) fields in
+      %% let _ = writeLine("Save order for " ^ anyToString name) in
+      %% let _ = writeLine("fields: " ^ anyToString field_names) in
+      setOrginalFieldOrders (name, field_names)
+    | _ ->
+      ()
+
  op mkTypeSpecElem (names : TypeNames, 
                     tvs   : TyVars, 
                     defs  : MSTypes,
@@ -193,6 +222,10 @@ SpecCalc qualifying spec
         | [dfn] -> maybePiType (tvs, dfn)
         | _     -> And (map (fn srt -> maybePiType (tvs, srt)) defs, 
                         pos)
+  in
+  let _ = map (fn name -> 
+                 rememberOrginalFieldOrdersForCGen (name, dfn)) 
+              names 
   in
   (Type (names, dfn), pos)
 

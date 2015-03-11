@@ -310,6 +310,33 @@
 ;;;  TYPE-DEFINITION
 ;;; ------------------------------------------------------------------------
 
+;;; communication hacks:
+(defvar *original-field-orders* (make-hash-table :test 'equal))
+(defvar *original-field-order*)
+(defvar *alphabetized-field-order*)
+
+(defun SpecCalc::setOrginalFieldOrders-2 (qid field_names)
+
+  ;; This is called by mkTypeSpecElem in Types.sw
+  ;;
+  ;; Note: The original unalphabetized ordering of field names existed only 
+  ;;       transiently before an alphabetized version was placed into  a
+  ;;       Product type, so the field_names arriving here have been alphabetized.
+  ;;
+  ;;       We recover the original unalphabetized list via two transient global
+  ;;       variables stored by make-type-record, 
+
+  ;; If record appears inside a product, the recorded information will apply
+  ;; to that inner record, not the parent product, so we ignore it.
+  ;; We test for that by comparing the alphabetized names.
+  (when (equal field_names *alphabetized-field-order*) 
+    (setq field_names *original-field-order*))
+
+  (setf (gethash qid *original-field-orders*) field_names))
+
+(defun SpecCalc::getOrginalFieldOrders (qid)
+  (gethash qid *original-field-orders*))
+
 (defun make-type-definition (qualifiable-type-names optional-tvs type l r)
   (let* ((tvs      (if (eq :unspecified optional-tvs) nil optional-tvs))
 	 (names    (remove-duplicates qualifiable-type-names :test 'equal :from-end t))
@@ -511,7 +538,23 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-type-record (field-types l r)
+
+  ;; Note: The original unalphabetized ordering of field names exists only 
+  ;;       transiently here before the alphabetized order is placed into 
+  ;;       a Product type.  
+  ;; 
+  ;;       So by the time we could associate these fields with a name in
+  ;;       make-type-def, we would have only that alphabetized list.
+  ;;
+  ;;       We thus transiently store both the original and translated lists
+  ;;       in global vars, allowing setOrginalFieldOrders-2 (called by 
+  ;;       make-type-def) to convert the alphabetized list of field names 
+  ;;       back into the original list of field names, to be stored for 
+  ;;       later use by C generation.
+
+  (setq *original-field-order* (mapcar #'car field-types))  ;; communication hack
   (let ((alphabetical-field-types (sort field-types #'(lambda (x y) (string< (car x) (car y))))))
+    (setq *alphabetized-field-order* (mapcar #'car alphabetical-field-types)) ;; communication hack
     (cons :|Product|
           (cons alphabetical-field-types
                 (make-pos l r)))))
