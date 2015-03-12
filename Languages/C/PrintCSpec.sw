@@ -39,7 +39,7 @@ op printCSpec (c_spec : C_Spec, filename : String) : () =
 
   let c_spec           = addHeader      (c_spec, dir_and_basename)           in
   let c_spec           = addTrailer     (c_spec, dir_and_basename)           in
-  let c_spec           = prefixCInclude (c_spec, basename ^ ".c")            in
+  let c_spec           = prefixCInclude (c_spec, basename ^ ".h")            in
   let c_spec           = if flattenSpec? then flattenSpec c_spec else c_spec in
 
   let _ = printCSpecAsHeaderToFile (h_spec, h_filename) in
