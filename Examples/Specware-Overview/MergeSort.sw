@@ -7,7 +7,7 @@ Sorting = spec
     case lst of
       | [] -> true
       | hd::[] -> true
-%%FIXME: I want to write this, but I get an Isabelle error:
+%%TODO: I want to write this, but I get an Isabelle error:
 %%    | hd::(rest as next::_) -> (hd <= next) && sorted? rest
       | hd::next::rest -> (hd <= next) && sorted? (next::rest)
 
@@ -186,15 +186,18 @@ end-proof
 
 end-spec
 
-M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, Problem +-> NatList, compose +-> mergeLists, decompose +-> splitList, smaller? +-> smaller?, directly_solvable? +-> directly_solvable?, solve_directly +-> solve_directly}
+M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, 
+                                                    Problem +-> NatList,
+                                                    compose +-> mergeLists,
+                                                    decompose +-> splitList,
+                                                    smaller? +-> smaller?,
+                                                    directly_solvable? +-> directly_solvable?, 
+                                                    solve_directly +-> solve_directly}
 
 
 MergeSort = DivideAndConquer#Algorithm[M]
 
-% %% override the hook from DivideAndConquer#Algorithm
-% %% TODO: prevent it from being carried over?
-% proof Isa Solution__Predicate_of_solve end-proof
-
+%% Termination proof for solve:
 proof Isa solve ()
   by (pat_completeness, auto)
   termination
@@ -203,3 +206,21 @@ proof Isa solve ()
   apply (metis Decompose mem_Collect_eq)
   apply (metis Decompose mem_Collect_eq)
 end-proof
+
+%% FIXME: the theorem Solution__Predicate_of_solve seems to be
+%% incorrectly present in the Isabelle translation of MergeSort
+%% (Isa/MergeSort.thy).  It mentions Problem__Predicate and
+%% Solution__Predicate, which are not defined in that Isabelle theory.
+%% This theorem seems to be incorrectly carried over from the abstract
+%% DivideAndConquer theory.
+
+%% TODO: Finish this proof (FIXME: really we should get it for free
+%% from the spec substitution, but that may require specs to be
+%% translated to locales).  Here we attempt to override the proof
+%% pragma of the same name from DivideAndConquer#Algorithm.  
+proof Isa solution_solve
+  sorry
+end-proof
+
+
+
