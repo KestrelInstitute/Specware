@@ -312,8 +312,8 @@
 
 ;;; communication hacks:
 (defvar *original-field-orders* (make-hash-table :test 'equal))
-(defvar *original-field-order*)
-(defvar *alphabetized-field-order*)
+(defvar *original-field-order* nil)
+(defvar *alphabetized-field-order* nil)
 
 (defun SpecCalc::setOrginalFieldOrders-2 (qid field_names)
 
