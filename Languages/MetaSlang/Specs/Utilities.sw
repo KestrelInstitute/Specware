@@ -774,9 +774,14 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
  % ----------------------------------------------------------------------
 
- op  mkConjecture: QualifiedId * TyVars * MSTerm -> SpecElement
- def mkConjecture(qid,tvs,fm) =
+ op mkConjecture(qid: QualifiedId, tvs: TyVars, fm: MSTerm): SpecElement =
    Property(Conjecture,qid,tvs,fm,noPos)
+
+ op mkTheorem(qid: QualifiedId, tvs: TyVars, fm: MSTerm): SpecElement =
+   Property(Theorem,qid,tvs,fm,noPos)
+
+ op mkAxiom(qid: QualifiedId, tvs: TyVars, fm: MSTerm): SpecElement =
+   Property(Axiom,qid,tvs,fm,noPos)
 
  %% Remove op definitions, axioms, and theorems from a spec.
 
