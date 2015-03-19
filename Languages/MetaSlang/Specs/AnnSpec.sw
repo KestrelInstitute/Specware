@@ -1151,7 +1151,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
        pty1 = pty2 && qid1 = qid2 && tvs1 = tvs2 && equalTerm?(bod1, bod2)
      | (Comment(str1, _), Comment(str2, _)) -> str1 = str2
      | (Pragma(stra1, strb1, strc1, _), Pragma(stra2, strb2, strc2, _)) ->
-       stra1 = strb2 && strb1 = strb2 && strc1 = strc2
+       stra1 = stra2 && strb1 = strb2 && strc1 = strc2
      | _ -> false
 
  op [a] addElementsAfter(spc: ASpec a, new_elements: ASpecElements a, old_element: ASpecElement a): ASpec a =
