@@ -141,6 +141,33 @@ SpecCalc qualifying spec
     in 
     mapTerm (translateTerm, translateType, id) tm
 
+op SM_PragmaToElement (pragma as ((s1, s2, s3), pos): SM_Pragma): SpecElement =
+  Pragma(s1, s2, s3, pos)
+
+op addMorphismTheorems (cod_spc: Spec) (sm: Morphism): Spec =
+  let opFixityMap = addOpFixity cod_spc sm.opMap in
+  let new_theorems =
+        foldrSpecElements (fn (el, new_theorems) ->
+			   case el of
+			     | Property(_, name, tyvars, fm, _) ->
+			       let new_fm = translateTerm (fm, sm.typeMap, opFixityMap) in
+			       if existsSpecElement?
+				    (fn el ->
+				     case el of
+				       | Property(_,_,tvs,fm1,_) ->
+				         tyvars = tvs && equivTerm? cod_spc (new_fm,fm1)
+				       | _ -> false)
+				    cod_spc.elements
+			       then new_theorems
+			       else mkTheorem(name, tyvars, new_fm) :: new_theorems
+                           | Pragma(s1, s2, s3, _) | ~(existsSpecElement? (fn eli -> equalSpecElement?(eli, el)) cod_spc.elements) ->
+                             el :: new_theorems
+			   | _ -> new_theorems)
+          [] sm.dom.elements
+  in
+  let sm_pragma_elts = map SM_PragmaToElement sm.pragmas in
+  setElements(cod_spc, cod_spc.elements ++ sm_pragma_elts ++ new_theorems )
+
   op specObligations : Spec * SCTerm -> Spec % Result was Env Spec, but can there be errors, etc.?
   def specObligations (spc, spcTerm) = 
     %% So far only does type conditions (for subtypes

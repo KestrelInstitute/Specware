@@ -7,7 +7,7 @@ import /Library/Legacy/DataStructures/ListUtilities  % for listUnion
 import Translate                                     % for auxTranslateSpec
 import SpecUnion                                     % for specUnion
 import /Languages/MetaSlang/Specs/SubtractSpec       % for subtractSpec
-import /Languages/SpecCalculus/AbstractSyntax/SCTerm % SCTerm
+import /Languages/SpecCalculus/Semantics/Evaluate/Obligations % SCTerm addMorphismTheorems
 import /Languages/MetaSlang/CodeGen/DebuggingSupport % compressWhiteSpace
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -79,7 +79,7 @@ op auxApplySpecMorphismSubstitution (sm    : Morphism)
                                     (pos   : Position)
  : SpecCalc.Env Spec =
  if sm.dom = spc then
-   return sm.cod 
+   return (addMorphismTheorems sm.cod sm)
  else
    %% Warning: this assumes that dom_spec is a subspec of spc
    %%    S' = M(S - dom(M)) U cod(M)
@@ -142,6 +142,7 @@ op auxApplySpecMorphismSubstitution (sm    : Morphism)
     new_spec <- return (removeVarOpCaptures    new_spec);
     %% new_spec <- return (compressDefs           new_spec);
     new_spec <- complainIfAmbiguous new_spec pos;
+    new_spec <- return(addMorphismTheorems new_spec sm);
     return new_spec
     }
 
