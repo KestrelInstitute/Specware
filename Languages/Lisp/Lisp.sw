@@ -238,33 +238,32 @@ op ppTerm (t : LispTerm) : PrettyPrint.Pretty =
                         (Cons (ppTerm t, List.map ppTerm ts))
 
    | If (p, c, a) ->
-     prettysLinearDelim ("(if ", " ", ")")
-                        [ppTerm p, ppTerm c, ppTerm a]
+     prLines 2 [prLines 4 [prConcat[string "(if ", ppTerm p], ppTerm c], prConcat [ppTerm a, string ")"]]
 
    | IfThen (p, c) ->
      prettysLinearDelim ("(if ", " ", ")")
                         [ppTerm p, ppTerm c]
 
    | Let (ss, ts, t) ->
-     blockFill (0, [(0, prettysAllDelim
-                       ("(let (", "", ") ")
-                       (ListPair.map (fn (s, t) ->
-                                        prettysFillDelim
-                                        ("(", " ", ")")
-                                        [string s, ppTerm t])
-                                     (ss, ts))),
-                    (2, prettysNone [ppTerm t, string ")"])])
+     blockAll (0, [(0, prettysAllDelim
+                      ("(let (", "", ") ")
+                      (ListPair.map (fn (s, t) ->
+                                       prettysFillDelim
+                                       ("(", " ", ")")
+                                       [string s, ppTerm t])
+                         (ss, ts))),
+                   (2, prettysNone [ppTerm t, string ")"])])
 
    | Letrec (ss, ts, t) ->
      blockFill (0, [(0, string "(labels "),
                     (2, prettysAllDelim
                        ("(", "", ") ")
                        (ListPair.map (fn (s, Lambda (args, decls, body)) ->
-                                        prettysFillDelim
+                                        prettysAllDelim
                                         ("(", " ", ")")
-                                        [string s,
-                                         prettysLinearDelim ("(", " ", ")")
-                                                            (List.map string args),
+                                        [prConcat[string s, string " ",
+                                                  prettysLinearDelim ("(", " ", ")")
+                                                    (map string args)],
                                          prettysAll ((List.map ppDecl decls) ++ [prettysNone [ppTerm body]])
                                          ])
                                      (ss, ts))),
@@ -287,14 +286,12 @@ op ppOpDefn (s : String, term : LispTerm) : PrettyPrint.Pretty =
    blockFill (0, [(0, string comment), (0, PrettyPrint.newline ())])
  else
    case term of
-     | Lambda (args, decls, body) -> 
-       blockFill (0, [(0, string "(defun "),
-                      (0, string s),
-                      (0, prettysLinearDelim (" (", " ", ") ")
-	                                     (List.map string args)),
-                      (2, prettysAll ((List.map ppDecl decls) ++ 
-                                        [prettysNone [ppTerm body, string ")"]])),
-                      (0, PrettyPrint.newline ())])
+     | Lambda (args, decls, body) ->
+       prLines 2 [prBreak 2 [string "(defun ", string s,
+                             prettysLinearDelim (" (", " ", ") ")
+                               (map string args)],
+                  prettysAll ((map ppDecl decls) ++ [prettysNone [ppTerm body, string ")"]]),
+                  emptyPretty()]
      | _ -> 
        blockFill (0, [(0, string "(defparameter "),
                       (0, string s),
