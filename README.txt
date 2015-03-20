@@ -47,6 +47,15 @@ work.
 
 Notes:
 
+You may need to set an Isabelle environment variable so that Isabelle
+understands references to $SPECWARE4 (TODO: Under what circumstances
+is this needed?  Maybe on Mac but not on Linux?).  You can put
+something like this line:
+export SPECWARE4=$HOME/Specware 
+into the file:
+~/.isabelle/Isabelle2014/etc/settings
+in your home directory.
+
 Errors in launching Specware may be displayed in the "mini-buffer" in
 Emacs.
 
