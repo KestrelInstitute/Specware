@@ -421,9 +421,9 @@ Full documentation will be available after autoloading the function."
 	  "\\)\\>"))
 
 ;; (defvar hs-minor-mode-map)
-;; (defvar hs-allow-nesting)
-;; (defvar hs-marker-begin-regexp)
-;; (defvar hs-marker-end-regexp)
+(defvar hs-allow-nesting)
+(defvar hs-marker-begin-regexp)
+(defvar hs-marker-end-regexp)
 
 (when sw:use-hide-show
   ;(setq hs-minor-mode-map nil)		; Force resetting in case of old version
