@@ -2348,19 +2348,19 @@ op scopeOfObject (name:Identifier) : Monad ScopeDesignator =
                          FrameID (length other_frames), top_frame) }
 
 
-(* FIXME HERE *)
-end-spec
-
-blah = spec
-
-
 (* The following op returns the complete object designator for a named object,
 by pairing the name with the scope designator returned by the op above. It is an
 error if the object's scope is not found. *)
 
-op designatorOfObject (state:State, name:Identifier) : Monad ObjectDesignator =
-  {scope <- scopeOfObject (state, name);
-   ok (top (scope, name))}
+op designatorOfObject (name:Identifier) : Monad ObjectDesignator =
+  {scope <- scopeOfObject (name);
+   return (OD_Top (scope, name))}
+
+
+(* FIXME HERE *)
+end-spec
+
+blah = spec
 
 (* The following ops read and write the value of a top-level object. The object
 must exist. When writing, the new value must have the same type as the old
