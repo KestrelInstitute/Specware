@@ -600,11 +600,6 @@ Abstracting from the concrete syntactic peculiarities of type names [ISO 6.7.7],
 we define a type name as follows. This is the same definition as type Type,
 extended with typedef names. Note that the recursion implies that we can form
 pointers and arrays of typedef names.
-
-(emw4) We also allow, in type names, structs to be referred to be name
-instead of just by their elements. HERE
-
-
  *)
 
 (* In a type name, a struct can also be referred to by name *)
@@ -1091,6 +1086,14 @@ op checkPointerOrArrayType (ty:Type) : Option Type =
   case ty of
   | T_pointer ty0 -> Some ty0
   | T_array (ty0, _) -> Some ty0
+  | _ -> None
+
+(* The following op checks whether a type is an function type, and in that case
+it returns its return type and its parameter types. *)
+
+op checkFunType (ty:Type) : Option (Type * List Type) =
+  case ty of
+  | T_function (ty0, tys) -> Some (ty0, tys)
   | _ -> None
 
 
@@ -1598,16 +1601,12 @@ expression, or 'void' if it has no expression. The special 'next' compile-time
 "type" is assigned to statements like assignments, which do not return but
 instead transfer control to the next statement. *)
 
-type StatementTypeElement = | next | return Type
+type StatementTypeElement = | STp_next | STp_return Type
 
 (* Since a statement may contain multiple 'return' statements that are executed
 under different circumstances (e.g. an 'if' statement), in general a statement
 is assigned a (finite) set of the elementary types defined just above. We regard
 these sets as compile-time types for statements. *)
-
-end-spec
-
-C2 = spec
 
 type StatementType = FiniteSet StatementTypeElement
 
@@ -1680,70 +1679,71 @@ compile-time type, because it does not return any value. *)
 op assignableTypes? (left:Type, right:Type) : Bool =
   arithmeticType? left && arithmeticType? right
   ||
-  embed? struct left && embed? struct right && compatibleTypes? (left, right)
+  embed? T_struct left && embed? T_struct right && compatibleTypes? (left, right)
   ||
-  embed? pointer left &&
-  embed? pointer right &&
+  embed? T_pointer left &&
+  embed? T_pointer right &&
   (compatibleTypes? (left, right) ||
-   left  = pointer void ||
-   right = pointer void)
+   left  = T_pointer T_void ||
+   right = T_pointer T_void)
   ||
   (ex (ty:Type, n:Nat)
-     right = array (ty, n) &&
-     compatibleTypes? (left, pointer ty)) % turn array to pointer
+     right = T_array (ty, n) &&
+     compatibleTypes? (left, T_pointer ty)) % turn array to pointer
 
 op checkStatement (symtab:SymbolTable, stmt:Statement) : Option StatementType =
   case stmt of
-  | assign (expr, expr') ->
+  | S_assign (expr, expr') ->
     {ety <- checkExpression (symtab, expr);
      ety' <- checkExpression (symtab, expr');
      check ety.object;
      ty <- Some ety.typE;
      ty' <- Some ety'.typE;
      check (assignableTypes? (ty, ty'));
-     Some (single next)}
-  | call (expr?, fun, exprs) ->
-    {(rety, tparams) <- symtab.functions fun;
+     Some (single STp_next)}
+  | S_call (expr?, fun, exprs) ->
+    {ety <- checkExpression (symtab, fun);
+     (rety, tparams) <- checkFunType ety.typE;
      etys <- checkExpressions (symtab, exprs);
      check (length etys = length tparams);
      check (fa(i:Nat) i < length etys =>
-              assignableTypes? ((tparams @ i).typE, (etys @ i).typE));
-     check (rety = void => expr? = None);
+              assignableTypes? ((tparams @ i), (etys @ i).typE));
+     check (rety = T_void => expr? = None);
      case expr? of
      | Some expr ->
        {ety <- checkExpression (symtab, expr);
         check ety.object;
         check (assignableTypes? (ety.typE, rety));
-        Some (single next)}
-     | None -> Some (single next)}
-  | iF (expr, thenBranch, Some elseBranch) ->
+        Some (single STp_next)}
+     | None -> Some (single STp_next)}
+  | S_if (expr, thenBranch, Some elseBranch) ->
     {ety <- checkExpression (symtab, expr);
      sty <- checkStatement (symtab, thenBranch);
      sty' <- checkStatement (symtab, elseBranch);
      check (scalarType? ety.typE);
      Some (sty \/ sty')}
-  | iF (expr, thenBranch, None) ->
-    checkStatement (symtab, (iF (expr, thenBranch, Some (block []))))
-  | return (Some expr) ->
+  | S_if (expr, thenBranch, None) ->
+    checkStatement (symtab, (S_if (expr, thenBranch, Some (S_block []))))
+  | S_return (Some expr) ->
     {ety <- checkExpression (symtab, expr);
-     Some (single (return ety.typE))}
-  | return None ->
-    Some (single (return void))
-  | while (expr, body) ->
-    {ety <- checkExpression (symtab, expr);
-     check (scalarType? ety.typE);
-     checkStatement (symtab, body)}
-  | do (body, expr) ->
+     Some (single (STp_return ety.typE))}
+  | S_return None ->
+    Some (single (STp_return T_void))
+  | S_while (expr, body) ->
     {ety <- checkExpression (symtab, expr);
      check (scalarType? ety.typE);
      checkStatement (symtab, body)}
-  | for (first?, expr?, third?, body) ->
+  | S_do (body, expr) ->
+    {ety <- checkExpression (symtab, expr);
+     check (scalarType? ety.typE);
+     checkStatement (symtab, body)}
+  | S_for (first?, expr?, third?, body) ->
     {case first? of
      | Some first ->
-       {check (embed? assign first || embed? call first);
+       {check (embed? S_assign first || embed? S_call first);
         checkStatement (symtab, first)}
      | None ->
-       Some (single next);
+       Some (single STp_next);
      case expr? of
      | Some expr ->
        {ety <- checkExpression (symtab, expr);
@@ -1752,33 +1752,33 @@ op checkStatement (symtab:SymbolTable, stmt:Statement) : Option StatementType =
        check true;
      case third? of
      | Some third ->
-       {check (embed? assign third || embed? call third);
+       {check (embed? S_assign third || embed? S_call third);
         checkStatement (symtab, third)}
      | None ->
-       Some (single next);
+       Some (single STp_next);
      checkStatement (symtab, body)}
-  | block items ->
+  | S_block items ->
     let symtab' = symtab << {objects = symtab.objects ++ [empty]} in
     checkBlockItems (symtab', items)
 
 op checkBlockItems
    (symtab:SymbolTable, items:List BlockItem) : Option StatementType =
   case items of
-  | [] -> Some (single next)
+  | [] -> Some (single STp_next)
   | item::items ->
     {(sty, symtab') <- checkBlockItem (symtab, item);
      if empty? items then Some sty
      else
        {sty' <- checkBlockItems (symtab', items);
-        Some (sty - next \/ sty')}} 
+        Some (sty - STp_next \/ sty')}} 
 
 op checkBlockItem
    (symtab:SymbolTable, item:BlockItem) : Option (StatementType * SymbolTable) =
   case item of
-  | declaration odecl ->
+  | BlockItem_declaration odecl ->
     {symtab' <- checkObjectDeclaration (symtab, odecl);
-     Some (single next, symtab')}
-  | statement stmt ->
+     Some (single STp_next, symtab')}
+  | BlockItem_statement stmt ->
     {sty <- checkStatement (symtab, stmt);
      Some (sty, symtab)}
 
@@ -1844,7 +1844,7 @@ information about the function. *)
 op checkParameterDeclaration
    (symtab:SymbolTable, pdecl:ParameterDeclaration) : Option TypedParameter =
   {ty <- checkTypeName (symtab, pdecl.typE);
-   check (ty ~= void);
+   check (ty ~= T_void);
    Some {typE = ty, name = pdecl.name}}
 
 op checkParameterList
@@ -1859,29 +1859,29 @@ op checkParameterList
 
 op assignableReturnTypes? (left:Type, right:Type) : Bool =
   assignableTypes? (left, right) ||
-  left = void && right = void
+  left = T_void && right = T_void
 
 op checkFunctionDefinition
    (symtab:SymbolTable, fun:FunctionDefinition) : Option SymbolTable =
-  {rety <- checkTypeName (symtab, fun.return);
-   check (~ (embed? array rety));
-   check (fa(i:Nat) i < length fun.parameters =>
-            ~ (embed? array (fun.parameters @ i).typE));
-   check (fa(scope) scope in? symtab.objects => fun.name nin? domain scope);
-   check (fun.name nin? domain symtab.typedefs);
-   check (fun.name nin? domain symtab.functions);
-   tparams <- checkParameterList (symtab, fun.parameters);
+  {rety <- checkTypeName (symtab, fun.FD_return);
+   check (~ (embed? T_array rety));
+   check (fa(i:Nat) i < length fun.FD_parameters =>
+            ~ (embed? TN_array (fun.FD_parameters @ i).typE));
+   check (fa(scope) scope in? symtab.objects => fun.FD_name nin? domain scope);
+   check (fun.FD_name nin? domain symtab.typedefs);
+   check (fun.FD_name nin? domain symtab.functions);
+   tparams <- checkParameterList (symtab, fun.FD_parameters);
    let pnames = map (project name) tparams in
    let ptys = map (project typE) tparams in
    let newscope = fromAssocList (zip (pnames, ptys)) in
    let symtab' = symtab << {objects = symtab.objects ++ [newscope]} in
-   case fun.body of
-   | block items ->
+   case fun.FD_body of
+   | S_block items ->
      {sty <- checkBlockItems (symtab', items);
-      check (rety ~= void => next nin? sty);
-      check (fa(ty) return ty in? sty => assignableReturnTypes? (rety, ty));
+      check (rety ~= T_void => STp_next nin? sty);
+      check (fa(ty) STp_return ty in? sty => assignableReturnTypes? (rety, ty));
       Some (symtab
-            << {functions = update symtab.functions fun.name (rety, tparams)})}
+            << {functions = update symtab.functions fun.FD_name (rety, tparams)})}
    | _ -> None}
 
 
@@ -1892,8 +1892,8 @@ op checkFunctionDefinition
 op checkExternalDeclaration
    (symtab:SymbolTable, xdecl:ExternalDeclaration) : Option SymbolTable =
   case xdecl of
-  | function fdef -> checkFunctionDefinition (symtab, fdef)
-  | declaration decl -> checkDeclaration (symtab, decl)
+  | EDecl_function fdef -> checkFunctionDefinition (symtab, fdef)
+  | EDecl_declaration decl -> checkDeclaration (symtab, decl)
 
 (* We check a translation unit by checking its external declarations in
 order. *)
@@ -2093,22 +2093,22 @@ know what they are exactly. *)
 
 op typeOfValue (val:Value) : Type =
   case val of
-  |  V_char  _         ->  char
-  | V_uchar  _         -> uchar
-  | V_schar  _         -> schar
-  | V_ushort _         -> ushort
-  | V_sshort _         -> sshort
-  | V_uint   _         -> uint
-  | V_sint   _         -> sint
-  | V_ulong  _         -> ulong
-  | V_slong  _         -> slong
-  | V_ullong _         -> ullong
-  | V_sllong _         -> sllong
-  | V_struct (tag, _)  -> struct tag
-  | V_pointer (ty, _)  -> pointer ty
-  | V_function (ty, tys, _)  -> function (ty, tys)
-  | V_array (ty, vals) -> array (ty, length vals)
-  | V_nullpointer ty   -> pointer ty
+  |  V_char  _         ->  T_char
+  | V_uchar  _         -> T_uchar
+  | V_schar  _         -> T_schar
+  | V_ushort _         -> T_ushort
+  | V_sshort _         -> T_sshort
+  | V_uint   _         -> T_uint
+  | V_sint   _         -> T_sint
+  | V_ulong  _         -> T_ulong
+  | V_slong  _         -> T_slong
+  | V_ullong _         -> T_ullong
+  | V_sllong _         -> T_sllong
+  | V_struct (tag, _)  -> T_struct tag
+  | V_pointer (ty, _)  -> T_pointer ty
+  | V_function (ty, tys, _)  -> T_function (ty, tys)
+  | V_array (ty, vals) -> T_array (ty, length vals)
+  | V_nullpointer ty   -> T_pointer ty
   | V_undefined ty     -> ty
 
 (* We lift some of the predicates that classify types to predicates that
@@ -2122,16 +2122,16 @@ op arithmeticValue? (val:Value) : Bool =
   arithmeticType? (typeOfValue val)
 
 op pointerValue? (val:Value) : Bool =
-  embed? pointer (typeOfValue val)
+  embed? T_pointer (typeOfValue val)
 
 op functionValue? (val:Value) : Bool =
-  embed? function (typeOfValue val)
+  embed? T_function (typeOfValue val)
 
 op structValue? (val:Value) : Bool =
-  embed? struct (typeOfValue val)
+  embed? T_struct (typeOfValue val)
 
 op arrayValue? (val:Value) : Bool =
-  embed? array (typeOfValue val)
+  embed? T_array (typeOfValue val)
 
 op scalarValue? (val:Value) : Bool =
   scalarType? (typeOfValue val)
@@ -2176,8 +2176,9 @@ while the objects declared with block scope have automatic storage duration [ISO
 6.2.4/5].
 
 We model the static storage as a named storage, and the automatic storage as a
-list of lists of named storages. We also have an outside storage for outside
-objects. *)
+list of dynamic function calls from innermost to outermost, where each function
+call itself has a list, from innermost to outermost, of named storages for each
+block. We also have an outside storage for outside objects. *)
 
 type Storage =
   {static    :            NamedStorage,
@@ -2188,48 +2189,6 @@ type Storage =
 typical programming language terminology, we call each element of the outer list
 (of named storages that form the automatic storage) a 'frame' (this term is not
 used in [ISO]). *)
-
-(* FIXME HERE: figure out useful helper functions here (e.g.,
-pushAutomaticFrame and popAutomaticFrame) *)
-(* FIXME HERE: move these after importing the monad below... *)
-
-op updateStaticStorage (sstore:NamedStorage) : Monad () =
-  {storage <- getState ();
-   putState (storage << {static = sstore})}
-
-op updateStaticObject (name:Identifier, val:Value) : Monad () =
-  {storage <- getState ();
-   putState (update storage.static name val)}
-
-op updateAutomaticStorage (astore:List (List NamedStorage)) : Monad () =
-  {storage <- getState ();
-   putState (storage << {automatic = astore})}
-
-op updateAutomaticFrame
-   (f:Nat, frame:List NamedStorage |
-      f < length storage.automatic) : Monad () =
-  let newauto = update (storage.automatic, f, frame) in
-  updateAutomaticStorage (storage, newauto)
-
-op updateAutomaticObjects
-   (storage:Storage, f:Nat, o:Nat, objs:NamedStorage |
-    f < length storage.automatic &&
-    o < length (storage.automatic @ f)) : Storage =
-  let newframe = update (storage.automatic @ f, o, objs) in
-  updateAutomaticFrame (storage, f, newframe)
-
-op updateAutomaticObject
-   (storage:Storage, f:Nat, o:Nat, name:Identifier, val:Value |
-    f < length storage.automatic &&
-    o < length (storage.automatic @ f)) : Storage =
-  let newobjs = update (storage.automatic @ f @ o) name val in
-  updateAutomaticObjects (storage, f, o, newobjs)
-
-op updateOutsideStorage (storage:Storage, ostore:OutsideStorage) : Storage =
-  storage << {outside = ostore}
-
-op updateOutsideObject (storage:Storage, id:OutsideID, val:Value) : Storage =
-  updateOutsideStorage (storage, update storage.outside id val)
 
 
 %subsection (* Outcomes *)
@@ -2271,17 +2230,64 @@ import /Library/Structures/Data/Monad/MonadNonTerm
 (* FIXME HERE: use "errors" more generally for non-local control transfer (e.g.,
 return statements) *)
 
-(* These specify a (potentially incomplete) list of possible sorts of
-erroneous outcomes, including runtime errors and non-standard behavior. *)
-op Err_error : Err
-op Err_nonstd : Err
+(* These are all the non-local exits (FIXME: document them!) *)
+type Monad.Err =
+    | Err_error
+    | Err_nonstd
+    | Err_return (Option Value)
+    | Err_nonterm
 
 (* Conditionally raise an error *)
 op errorIf (condition:Bool) : Monad () =
-  if condition then raiseErr (Err_error) else return ()
+  if condition then raiseErr Err_error else return ()
 
 (* The state type of the monad is the Storage type defined above *)
-type St = Storage
+type Monad.St = Storage
+
+
+(* Monadic helper functions for manipulating the storage *)
+
+op updateStaticObject (name:Identifier, val:Value) : Monad () =
+  {storage <- getState;
+   putState (storage << {static = update storage.static name val})}
+
+op pushOuterFrame (frame:NamedStorage) : Monad () =
+  {storage <- getState;
+   putState (storage << {automatic = [frame] :: storage.automatic})}
+
+op popOuterFrame : Monad () =
+  {storage <- getState;
+   case storage.automatic of
+     | [] -> raiseErr Err_error
+     | top::rest -> putState (storage << {automatic = rest})}
+
+op pushInnerFrame (frame:NamedStorage) : Monad () =
+  {storage <- getState;
+   case storage.automatic of
+     | [] -> raiseErr Err_error
+     | top::rest -> putState (storage << {automatic = (frame::top)::rest})}
+
+op popInnerFrame : Monad () =
+  {storage <- getState;
+   case storage.automatic of
+     | [] -> raiseErr Err_error
+     | (top::rest_inner)::rest_outer ->
+       putState (storage << {automatic = rest_inner::rest_outer})}
+
+(*
+op updateAutomaticObject
+   (storage:Storage, f:Nat, o:Nat, name:Identifier, val:Value |
+    f < length storage.automatic &&
+    o < length (storage.automatic @ f)) : Storage =
+  let newobjs = update (storage.automatic @ f @ o) name val in
+  updateAutomaticObjects (storage, f, o, newobjs)
+*)
+
+op updateOutsideStorage (storage:Storage, ostore:OutsideStorage) : Storage =
+  storage << {outside = ostore}
+
+op updateOutsideObject (storage:Storage, id:OutsideID, val:Value) : Storage =
+  updateOutsideStorage (storage, update storage.outside id val)
 
 
 (* Besides storage, it is convenient to include in the state of a C program in
@@ -2313,42 +2319,34 @@ type State =
 (* An object name denotes the object declared with that name in the innermost
 block that declares an object with that name. The following op returns the
 designator of the innermost scope that declares an object with the argument
-name. It is an error if no object with the given name is declared in any scope.
+name. Its arguments are the name itself, the current static storage, the FrameID
+of the current function call in the dynamic stack, and a list of block scopes in
+the current function call. It is an error if no object with the given name is
+declared in any scope. *)
 
-If there is no automatic storage, the object is searched in the static storage,
-whose objects have file scope. Otherwise, the object is searched in the topmost
-(i.e. last) frame, starting with the innermost block. Objects in other frames
-cannot be referenced because they are not in scope.
+(* FIXME: update the above documentation to this new definition... *)
 
-Note that the recursive call to the following op is made with a storage whose
-top frame's innermost scope has been removed, reflecting the search from inner
-to outer scope. If the op is called with an empty frame, it means that the
-object has not been found in any block scope of the topmost frame, and thus it
-is searched in the static storage, achieved by removing the automatic storage
-altogether in the recursive call. Since list indices are numbered from 0, we
-return the lengths of the lists minus 1 as the indices of a block scope. *)
+op scopeOfObject_H (name:Identifier, static:NamedStorage,
+                    cur_frame:FrameID, blocks:List NamedStorage)
+   : Monad ScopeDesignator =
+  case blocks of
+    | [] ->
+      if name in? domain static then return GlobalScope
+      else raiseErr Err_error
+    | block :: blocks' ->
+      if name in? domain block then
+        return (LocalScope (cur_frame, length blocks'))
+      else
+        scopeOfObject_H (name, static, cur_frame, blocks')
 
-(* FIXME HERE: should not be monadic; instead, should just search
-through the automatic storage and then the static storage *)
 op scopeOfObject (name:Identifier) : Monad ScopeDesignator =
-  {
-   store <- getState ();
-   if empty? store.automatic then
-     if name in? domain store.static then ok file else error
-   else
-     let topframe = last store.automatic in
-     if empty? topframe then
-       scopeOfObject (updateAutomaticStorage (state, []), name)
-     else
-       if name in? domain (last topframe) then
-         return (block (length store.automatic - 1, length topframe - 1))
-       else
-         
-         let state' =
-         updateAutomaticFrame
-         (state, length store.automatic - 1, butLast topframe) in
-         scopeOfObject (state', name)
-         }
+   {st <- getState;
+    case st.automatic of
+      | [] -> raiseErr Err_error
+      | top_frame :: other_frames ->
+        scopeOfObject_H (name, st.static,
+                         FrameID (length other_frames), top_frame) }
+
 
 (* FIXME HERE *)
 end-spec
