@@ -1,4 +1,4 @@
-(* FIXME: remove "C =" when finished debugging this spec... *)
+(* FIXME HERE: remove "C =" when finished debugging this spec... *)
 C = C qualifying spec
 
 import /Library/General/TwosComplementNumber
@@ -2185,10 +2185,11 @@ type Storage =
    automatic : List (List NamedStorage),
    outside   :          OutsideStorage}
 
-(* The following ops provide convenience in updating parts of the state. Using
-typical programming language terminology, we call each element of the outer list
-(of named storages that form the automatic storage) a 'frame' (this term is not
-used in [ISO]). *)
+
+(* To operate on storages in a general and elegant way, we map each object
+   designator to a lens on storages *)
+
+
 
 
 %subsection (* Outcomes *)
@@ -2227,9 +2228,6 @@ import /Library/Structures/Data/Monad/MonadError
 import /Library/Structures/Data/Monad/MonadState
 import /Library/Structures/Data/Monad/MonadNonTerm
 
-(* FIXME HERE: use "errors" more generally for non-local control transfer (e.g.,
-return statements) *)
-
 (* These are all the non-local exits (FIXME: document them!) *)
 type Monad.Err =
     | Err_error
@@ -2237,9 +2235,13 @@ type Monad.Err =
     | Err_return (Option Value)
     | Err_nonterm
 
+(* The error and "non-standard" computations *)
+op [a] error : Monad a = raiseErr Err_error
+op [a] nonstd : Monad a = raiseErr Err_nonstd
+
 (* Conditionally raise an error *)
 op errorIf (condition:Bool) : Monad () =
-  if condition then raiseErr Err_error else return ()
+  if condition then error else return ()
 
 (* The state type of the monad is the Storage type defined above *)
 type Monad.St = Storage
@@ -2247,32 +2249,36 @@ type Monad.St = Storage
 
 (* Monadic helper functions for manipulating the storage *)
 
-op updateStaticObject (name:Identifier, val:Value) : Monad () =
+op readStaticObject (name:Identifer) : Monad Value =
+  {store <- getState;
+   if name in? domain store.static then
+     return (store.static @ name)
+   else
+     error}
+
+op writeStaticObject (name:Identifier, val:Value) : Monad () =
   {storage <- getState;
    putState (storage << {static = update storage.static name val})}
 
-op pushOuterFrame (frame:NamedStorage) : Monad () =
-  {storage <- getState;
-   putState (storage << {automatic = [frame] :: storage.automatic})}
+op readAutoObject (frame_id : FrameID, block_num : Nat, name : Identifier) : Monad Value =
+  {store <- getState;
+   frame <-
+     (case frame of
+        | FrameID frame_num ->
+          if frame_num < length store.automatic
+          then store.automatic @ frame_num
+          else error);
+   block <- if block_num < length frame then frame @ block_num else error;
+   if name in? domain block then
+     return (block @ Name)
+   else
+     error
 
-op popOuterFrame : Monad () =
-  {storage <- getState;
-   case storage.automatic of
-     | [] -> raiseErr Err_error
-     | top::rest -> putState (storage << {automatic = rest})}
-
-op pushInnerFrame (frame:NamedStorage) : Monad () =
-  {storage <- getState;
-   case storage.automatic of
-     | [] -> raiseErr Err_error
-     | top::rest -> putState (storage << {automatic = (frame::top)::rest})}
-
-op popInnerFrame : Monad () =
-  {storage <- getState;
-   case storage.automatic of
-     | [] -> raiseErr Err_error
-     | (top::rest_inner)::rest_outer ->
-       putState (storage << {automatic = rest_inner::rest_outer})}
+op writeAutoObject (frame_id:FrameID, block_num:Nat, name:Identifier, val:Value) : Monad () =
+  {store <- getState;
+   new_auto <-
+     ;
+   putState (store << {automatic = new_auto})
 
 (*
 op updateAutomaticObject
@@ -2282,6 +2288,31 @@ op updateAutomaticObject
   let newobjs = update (storage.automatic @ f @ o) name val in
   updateAutomaticObjects (storage, f, o, newobjs)
 *)
+
+
+
+op pushOuterFrame (frame:NamedStorage) : Monad () =
+  {storage <- getState;
+   putState (storage << {automatic = [frame] :: storage.automatic})}
+
+op popOuterFrame : Monad () =
+  {storage <- getState;
+   case storage.automatic of
+     | [] -> error
+     | top::rest -> putState (storage << {automatic = rest})}
+
+op pushInnerFrame (frame:NamedStorage) : Monad () =
+  {storage <- getState;
+   case storage.automatic of
+     | [] -> error
+     | top::rest -> putState (storage << {automatic = (frame::top)::rest})}
+
+op popInnerFrame : Monad () =
+  {storage <- getState;
+   case storage.automatic of
+     | [] -> error
+     | (top::rest_inner)::rest_outer ->
+       putState (storage << {automatic = rest_inner::rest_outer})}
 
 op updateOutsideStorage (storage:Storage, ostore:OutsideStorage) : Storage =
   storage << {outside = ostore}
@@ -2317,14 +2348,12 @@ type State =
 %subsection (* Identifiers and Object Designators *)
 
 (* An object name denotes the object declared with that name in the innermost
-block that declares an object with that name. The following op returns the
+block that declares an object with that name. The following ops return the
 designator of the innermost scope that declares an object with the argument
 name. Its arguments are the name itself, the current static storage, the FrameID
 of the current function call in the dynamic stack, and a list of block scopes in
 the current function call. It is an error if no object with the given name is
 declared in any scope. *)
-
-(* FIXME: update the above documentation to this new definition... *)
 
 op scopeOfObject_H (name:Identifier, static:NamedStorage,
                     cur_frame:FrameID, blocks:List NamedStorage)
@@ -2332,7 +2361,7 @@ op scopeOfObject_H (name:Identifier, static:NamedStorage,
   case blocks of
     | [] ->
       if name in? domain static then return GlobalScope
-      else raiseErr Err_error
+      else error
     | block :: blocks' ->
       if name in? domain block then
         return (LocalScope (cur_frame, length blocks'))
@@ -2342,7 +2371,7 @@ op scopeOfObject_H (name:Identifier, static:NamedStorage,
 op scopeOfObject (name:Identifier) : Monad ScopeDesignator =
    {st <- getState;
     case st.automatic of
-      | [] -> raiseErr Err_error
+      | [] -> error
       | top_frame :: other_frames ->
         scopeOfObject_H (name, st.static,
                          FrameID (length other_frames), top_frame) }
@@ -2357,39 +2386,23 @@ op designatorOfObject (name:Identifier) : Monad ObjectDesignator =
    return (OD_Top (scope, name))}
 
 
-(* FIXME HERE *)
-end-spec
-
-blah = spec
-
 (* The following ops read and write the value of a top-level object. The object
 must exist. When writing, the new value must have the same type as the old
 value. *)
 
-op readTopObject
-   (state:State, scope:ScopeDesignator, name:Identifier) : Monad Value =
-  let store = state.storage in
+op readTopObject (scope:ScopeDesignator, name:Identifier) : Monad Value =
   case scope of
-  | file ->
-    if name in? domain store.static then
-      ok (store.static @ name)
-    else
-      error
-  | block (f, o) ->
-    let objs = store.automatic @ f @ o in
-    if name in? domain objs then
-      ok (objs @ name)
-    else
-      error
+    | GlobalScope -> readStaticObject name
+    | LocalScope (frame_id, block_num) ->
+      readAutoObject frame_id block_num name
+HERE
 
-op writeTopObject
-   (state:State, scope:ScopeDesignator, name:Identifier, newval:Value)
-   : Monad State =
-  {oldval <- readTopObject (state, scope, name);
+op writeTopObject (scope:ScopeDesignator, name:Identifier, newval:Value) : Monad () =
+  {oldval <- readTopObject (scope, name);
    errorIf (typeOfValue oldval ~= typeOfValue newval);
    case scope of
-   | file -> ok (updateStaticObject (state, name, newval))
-   | block (f, o) -> ok (updateAutomaticObject (state, f, o, name, newval))}
+     | GlobalScope -> updateStaticObject (name, newval)
+     | LocalScope (f, o) -> updateAutomaticObject (f, o, name, newval)}
 
 (* The following ops read and write the value of an outside object. The object
 must exist. When writing, the new value must have the same type as the old
@@ -2406,6 +2419,11 @@ op writeOutsideObject (state:State, id:OutsideID, newval:Value) : Monad State =
   {oldval <- readOutsideObject (state, id);
    errorIf (typeOfValue oldval ~= typeOfValue newval);
    ok (updateOutsideObject (state, id, newval))}
+
+(* FIXME HERE *)
+end-spec
+
+blah = spec
 
 (* The following ops read and write the value of the designated object.
 
