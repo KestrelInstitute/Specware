@@ -164,6 +164,8 @@ accepted in lieu of prompting."
 ;(defun insert-negation () (interactive) (insert "¬"))
 ;(defun insert-emptyset () (interactive) (insert "Ø"))
 
+(defvar x-symbol-mode)
+
 (defun sw:x-symbol-toggle ()
   (customize-set-variable 'sw:use-x-symbol (not sw:use-x-symbol))
   (unless (eq sw:use-x-symbol x-symbol-mode)
@@ -427,7 +429,7 @@ Full documentation will be available after autoloading the function."
 
 (when sw:use-hide-show
   ;(setq hs-minor-mode-map nil)		; Force resetting in case of old version
-  (load-library "hideshow")
+  (require 'hideshow)
   (setq hs-allow-nesting t)
   (add-to-list 'hs-special-modes-alist
 	       `(specware-mode ,(concat "\\(\\s(\\|\\<def\\>\\|"
@@ -2306,50 +2308,30 @@ qualifier: }")
 	(t
 	 (switch-to-buffer name)
 	 (buffer-disable-undo)
-	 ;; #### This is a temporary fix until wid-edit gets fixed right.
-	 ;; We don't do everything that widget-button-click does -- i.e.
-	 ;; we don't change the link color on button down -- but that's
-	 ;; not important.
-	 ;; (add-local-hook
-	 ;;  'mouse-track-click-hook
-	 ;;  #'(lambda (event count)
-	 ;;      (cond
-	 ;;       ((widget-event-point event)
-	 ;;        (let* ((pos (widget-event-point event))
-	 ;;               (button (get-char-property pos 'button)))
-	 ;;          (when button
-	 ;;            (widget-apply-action button event)
-	 ;;            t))))))
-	 (set-specifier left-margin-width about-left-margin (current-buffer))
-	 (set (make-local-variable 'widget-button-face) 'about-specware-link-face)
+	 ;(set-specifier left-margin-width about-left-margin (current-buffer))
 	 nil)))
 
-(defun about-specware-center (string-or-glyph)
-  (let ((n (- (startup-center-spaces string-or-glyph) about-left-margin)))
+(defun about-specware-center (str)
+  (let ((n (- (length str) about-left-margin)))
     (make-string (if (natnump n) n 0) ?\ )))
 
 (defun about-specware-finish-buffer ()
-  (widget-insert "\n")
-  (widget-create 'link
-		 :help-echo "Bury this buffer"
-		 :action (lambda (widget event)
-			   (if event
-			       ;; For some reason,
-			       ;; (bury-buffer (event-buffer event))
-			       ;; doesn't work.
-			       (with-selected-window (event-window event)
-				 (bury-buffer))
-			     (bury-buffer)))
-		 :tag "Bury")
-  (widget-insert " this buffer and return to previous.\n")
+  (goto-char (point-max))
+  (insert "\n\n\n")
+  (insert-button "Bury"
+                                        ;  'face 'Bold
+                                        ;  'help-echo "mouse-1, see Specware Web Page"
+                 'action (lambda (_button) (bury-buffer))
+                 'follow-link t)
+  (insert " this buffer and return to previous.\n")
+  (center-line)
   (use-local-map (make-sparse-keymap))
-  (set-keymap-parent (current-local-map) widget-keymap)
   (local-set-key "q" 'bury-buffer)
   (local-set-key "l" 'bury-buffer)
   (local-set-key " " 'scroll-up)
   (local-set-key [backspace] 'scroll-down)
   (local-set-key "\177" 'scroll-down)
-  (widget-setup)
+ ; (widget-setup)
   (goto-char (point-min))
   (read-only-mode)
   (set-buffer-modified-p nil))
@@ -2358,14 +2340,20 @@ qualifier: }")
   "Describe the Specware System"
   (interactive)
   (unless (about-specware-get-buffer "*About Specware*")
-    (set-glyph-image specware-logo
-		     "./specware_logo.xpm"
-		     'global 'x)
-    (widget-insert (about-specware-center specware-logo))
-    (widget-create 'default
-		   :format "%t"
-		   :tag-glyph specware-logo)
-    (widget-insert "\n\n")
+    (let* ((image-width (and specware-logo (car (image-size specware-logo))))
+           (fill-column (window-width)))
+      (when (> fill-column image-width)
+	;; Center the image in the window.
+	(insert (propertize " " 'display
+			    `(space :align-to (+ center (-1.0 . ,specware-logo)))))
+
+	;; Insert the image with a help-echo and a link.
+	(make-button (prog1 (point) (insert-image specware-logo)) (point)
+		     'face 'default
+		     'help-echo "mouse-1, RET: Browse http://www.specware.org/"
+		     'action (lambda (_button) (goto-specware-web-page))
+		     'follow-link t)
+	(insert "\n\n")))
     (when (inferior-lisp-running-p)
       (let* ((specware-major-version (sw:eval-in-lisp "cl-user::*Specware-Major-Version*"))
 	     (specware-minor-version (sw:eval-in-lisp "cl-user::*Specware-Minor-Version*"))
@@ -2375,26 +2363,32 @@ qualifier: }")
 				       specware-major-version
 				       specware-minor-version
 				       specware-patch-number)))
-	(widget-insert (about-specware-center specware-version))
-	(widget-create 'link :help-echo "Specware Version Release Notes"
-		       :action 'goto-specware-release-notes
-		       :button-prefix ""
-		       :button-suffix ""
-		       specware-version)))
-    (widget-insert "\n\n")
-    (widget-create 'link :help-echo "Specware Web Page"
-		   :action 'goto-specware-web-page
-		   :button-prefix ""
-		   :button-suffix ""
-		   "Specware")
-    (widget-insert " is a leading-edge automated software development system 
+        (insert "\n\n")
+        (insert (about-specware-center specware-version))
+	(insert specware-version)
+        (center-line)
+        ;; (insert "\n\n")
+        ;; (make-button (prog1 (point) (insert "Specware Release Notes ") (insert specware-version)) (point)
+	;; 	     'face 'bold
+	;; 	     'help-echo "mouse-2, see Specware Version Release Notes"
+	;; 	     'action (lambda (_button) (goto-specware-release-notes))
+	;; 	     'follow-link t)
+        ;; (center-line)
+        ))
+    (insert "\n\n")
+    (insert-button "Specware"
+                   'face 'about-specware-link-face
+                   'action 'goto-specware-web-page
+                   'follow-link t)
+    (insert " is a leading-edge automated software development system 
 that allows users to precisely specify the desired functionality of 
 their applications and to generate provably correct code based on 
 these requirements. At the core of the design process in Specware 
 lies stepwise refinement, in which users begin with a simple, abstract 
 model of their problem and iteratively refine this model until it 
 uniquely and concretely describes their application.")
-    (widget-insert "\n")
+    (center-line -7)
+    (insert "\n")
     (about-specware-finish-buffer)
     (goto-char (point-min))
     (forward-line 1)))
