@@ -34,7 +34,7 @@ Test = spec
    if s = "" then []
      else s@0 :: explode(subFromTo(s,1,length s))
 
-endspec
+end-spec
 
 Data = spec
   import Test, /Library/Legacy/Utilities/System
@@ -45,10 +45,10 @@ Data = spec
      "RESIDE", "REVEAL", "SECRET", "SODIUM",
      "SPECIES", "VESTIGE", "WALNUT", "YOGURT"]
 
-  def main(): () =
+  op main(): () =
     let results = test_find_matches(msg,words) in
     app (fn {position,word} ->
            writeLine("Word "^word^" matches at "^ show position))
       results
     
-endspec
+end-spec

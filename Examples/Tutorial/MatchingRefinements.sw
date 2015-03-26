@@ -99,7 +99,7 @@ op find_matches(msg: Message, wrds: List Word): List Match =
     []  
     wrds
 
-endspec
+end-spec
 
 
 FindMatches_Ref0 = morphism MatchingSpecs#FindMatches ->
