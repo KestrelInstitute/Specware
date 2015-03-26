@@ -222,5 +222,13 @@ proof Isa solution_solve
   sorry
 end-proof
 
+%% Top-level spec of what we want:
+MergeSortSpec = spec 
+  import Sorting
+  op mergeSort (lst : List Nat) : List Nat
+  axiom mergeSort_correct is
+    fa(x: List Nat) sorted? (mergeSort x) && permutesTo?(x, mergeSort x)
+end-spec
 
-
+%% The proof of the axiom should follow from the proof of correctness of the solver in spec MergeSort.
+final = morphism MergeSortSpec -> MergeSort {mergeSort +-> solve}
