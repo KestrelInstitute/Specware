@@ -127,7 +127,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
  op freshRule(context: Context, rule as {name,rule_spec,opt_proof,sym_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule =
-     % let _ = (writeLine("freshRule: "); printRule rule) in
+      let _ = (writeLine("freshRule: "); printRule rule) in
      let (freshTerm,freshType,freeVars',tyVMap,tsp) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
      rule << {lhs  = freshTerm lhs,
@@ -472,13 +472,15 @@ op simpleRwTerm?(t: MSTerm): Bool =
 
  type Direction = | LeftToRight | RightToLeft | Either
 
- op compatibleDirection?(e1: MSTerm, e2: MSTerm, condition: Option MSTerm, lr?: Bool, dirn: Direction, subst: MSVarSubst): Bool =
+ op compatibleDirection?(e1: MSTerm, e2: MSTerm, condition: Option MSTerm, lr?: Bool, dirn: Direction,
+                         allowUnboundVars?: Bool, subst: MSVarSubst): Bool =
    case dirn of
-     | LeftToRight ->  lr? && ~(hasUnboundVars?(e2, e1, condition, subst))
-     | RightToLeft -> ~lr? && ~(hasUnboundVars?(e1, e2, condition, subst))
+     | LeftToRight ->  lr? && (allowUnboundVars? || ~(hasUnboundVars?(e2, e1, condition, subst)))
+     | RightToLeft -> ~lr? && (allowUnboundVars? || ~(hasUnboundVars?(e1, e2, condition, subst)))
      | Either -> if lr? then    % constantTerm? e2 &&
-                           ~(hasUnboundVars?(e2, e1, condition, subst))
-                  else simpleRwTerm? e1 && ~(varTerm? e2) && ~(hasUnboundVars?(e1, e2, condition, subst))
+                           (allowUnboundVars? || ~(hasUnboundVars?(e2, e1, condition, subst)))
+                  else simpleRwTerm? e1 && ~(varTerm? e2)
+                    && (allowUnboundVars? || ~(hasUnboundVars?(e1, e2, condition, subst)))
 
  op contextRuleDirection(rs: RuleSpec): Option Direction =
    case rs of
@@ -503,7 +505,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     condition : Option MSTerm,
                     subterm?  : Bool)   % If we are at a subterm of the original theorem
    : List RewriteRule =
-   % let _ = writeLine("assertRules "^anyToString dirn^": "^printTerm term) in
+    let _ = writeLine("assertRules "^anyToString dirn^": "^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let free_vs = fvs ++ free_vs in
    let subst = S ++ subst in
@@ -582,9 +584,11 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     opt_proof = o_prf,   sym_proof = false,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = free_vs, trans_fn = None})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, true, dirn, subst) ->
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_)
+         | compatibleDirection?(e1, e2, condition, true, dirn, context.allowUnboundVars?, subst) ->
        equalityRules(e1, e2, true, o_prf)
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, false, dirn, subst) ->
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_)
+         | compatibleDirection?(e1, e2, condition, false, dirn, context.allowUnboundVars?, subst) ->
        equalityRules(e1, e2, false, o_prf)
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
        assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,tyvars,free_vs,subst,condition, true)

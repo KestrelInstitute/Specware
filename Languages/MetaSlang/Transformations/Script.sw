@@ -802,8 +802,9 @@ spec
                          backwardChainDepth     : Nat,         % # of backward chaining of rule conditions
                          conditionResultLimit   : Nat,         % Limit on # of different rewrites of condition
                          termSizeLimit          : Nat,         % Limit on size of transformed term
-                         expansionFactor        : Nat          % Limit on expansion in term size*)
+                         expansionFactor        : Nat,         % Limit on expansion in term size*)
                                                                % (ignored unless termSizeLimit = 0)
+                         allowUnboundVars?      : Bool         % Allow result to contain unmatched pattern vars
                          }
 
   op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: TransOpName) (rules: RuleSpecs)
@@ -828,7 +829,8 @@ spec
                      termSizeLimit           = if options.termSizeLimit > 0 then options.termSizeLimit
                                                else if options.expansionFactor > 0
                                                  then options.expansionFactor * termSize (fromPathTerm path_term)
-                                                 else context.termSizeLimit}
+                                                 else context.termSizeLimit,
+                     allowUnboundVars?       = options.allowUnboundVars?}
     in
     % let _ = printContextOptions context in
     if options.noSideEffects?

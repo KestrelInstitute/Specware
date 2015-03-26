@@ -39,7 +39,8 @@ HigherOrderMatching qualifying spec
         maxDepth                : Nat,
         backwardChainMaxDepth   : Nat,
         conditionResultLimit    : Nat,
-        termSizeLimit           : Nat
+        termSizeLimit           : Nat,
+        allowUnboundVars?       : Bool
       }
 
   op withSpec infixl 17 : Context * Spec -> Context
@@ -1743,7 +1744,8 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
         maxDepth                = maxDepth,
         backwardChainMaxDepth   = backwardChainMaxDepth,
         conditionResultLimit    = conditionResultLimit,
-        termSizeLimit           = termSizeLimit     % Should be computed
+        termSizeLimit           = termSizeLimit,     % Should be computed
+        allowUnboundVars?       = false
       }
  
  op printContextOptions(context: Context): () =
@@ -1755,7 +1757,8 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
     writeLine("maxDepth: "^show context.maxDepth);
     writeLine("backwardChainMaxDepth: "^show context.backwardChainMaxDepth);
     writeLine("conditionResultLimit: "^show context.conditionResultLimit);
-    writeLine("termSizeLimit: "^show context.termSizeLimit))
+    writeLine("termSizeLimit: "^show context.termSizeLimit);
+    writeLine("allowUnboundVars?: "^show context.allowUnboundVars?))
 
  % Set the topTerm for matching; also sets the function for generating
  % fresh names, to choose names not in topTerm
