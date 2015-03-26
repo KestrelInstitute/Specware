@@ -127,7 +127,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
  op freshRule(context: Context, rule as {name,rule_spec,opt_proof,sym_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule =
-      let _ = (writeLine("freshRule: "); printRule rule) in
+     % let _ = (writeLine("freshRule: "); printRule rule) in
      let (freshTerm,freshType,freeVars',tyVMap,tsp) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
      rule << {lhs  = freshTerm lhs,
@@ -505,7 +505,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     condition : Option MSTerm,
                     subterm?  : Bool)   % If we are at a subterm of the original theorem
    : List RewriteRule =
-    let _ = writeLine("assertRules "^anyToString dirn^": "^printTerm term) in
+   % let _ = writeLine("assertRules "^anyToString dirn^": "^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let free_vs = fvs ++ free_vs in
    let subst = S ++ subst in
