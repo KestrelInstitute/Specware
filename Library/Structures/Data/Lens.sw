@@ -17,9 +17,9 @@ Lens qualifying spec
     fa (a,b1,b2) l.lens_set (l.lens_set a b1) b2 = l.lens_set a b2
 
   (* The bundled type of lenses *)
-  type Lens (a,b) = { l : RawLens (a,b) |
-                       satisfies_get_put l && satisfies_put_get l && satisfies_put_put l }
-
+  type Lens (a,b) =
+    { l : RawLens (a,b) |
+       satisfies_get_put l && satisfies_put_get l && satisfies_put_put l }
 
   (* Lenses compose, in the expected way *)
   op [a,b,c] lens_compose (l1:Lens(a,b), l2:Lens(b,c)) : Lens(a,c) =
@@ -29,10 +29,4 @@ Lens qualifying spec
 
   (* FIXME: prove the subtyping constraints! *)
 
-
-  (* We can even compose lenses that return option types *)
-  op [a,b,c] lens_compose_opt (l1:Lens(a,Option b), l2:Lens(b,Option c)) : Lens(a,Option c) =
-    {lens_get = (fn a -> l2.lens_get (l1.lens_get a)),
-     lens_set = (fn a -> fn c ->
-                   l1.lens_set a (l2.lens_set (l1.lens_get a) c))}
 end-spec

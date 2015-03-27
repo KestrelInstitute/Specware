@@ -2186,12 +2186,6 @@ type Storage =
    outside   :          OutsideStorage}
 
 
-(* To operate on storages in a general and elegant way, we map each object
-   designator to a lens on storages *)
-
-
-
-
 %subsection (* Outcomes *)
 
 (* [ISO] prescribes the outcomes of certain computations, while leaving the
@@ -2247,9 +2241,40 @@ op errorIf (condition:Bool) : Monad () =
 type Monad.St = Storage
 
 
+% subsection (* Operations on storages *)
+
+(* To operate on storages in a general and elegant way, we map each object
+   designator to a "monadic lens", i.e., to a pair of mondic getter and setter
+   functions for that particular designator. These are built up by composing
+   monadic lenses for the different storage components. *)
+import /Library/Structures/Data/MLens
+
+(* Lenses for the static, automatic, and external storage *)
+op staticStorageLens : MLens ((), NamedStorage) =
+   {mlens_get = fn () -> {storage <- getState; return storage.static},
+    mlens_set = fn () -> fn new_static ->
+      {storage <- getState;
+       putState (storage << {static = new_static})}}
+
+op autoStorageLens : MLens ((), List (List NamedStorage)) =
+   {mlens_get = fn () -> {storage <- getState; return storage.automatic},
+    mlens_set = fn () -> fn new_auto ->
+      {storage <- getState;
+       putState (storage << {automatic = new_auto})}}
+
+op externalStorageLens : MLens ((), OutsideStorage) =
+   {mlens_get = fn () -> {storage <- getState; return storage.outside},
+    mlens_set = fn () -> fn new_outside ->
+      {storage <- getState;
+       putState (storage << {outside = new_outside})}}
+
+end-spec
+
+blah2 = spec
+
 (* Monadic helper functions for manipulating the storage *)
 
-op readStaticObject (name:Identifer) : Monad Value =
+op readStaticObject (name:Identifier) : Monad Value =
   {store <- getState;
    if name in? domain store.static then
      return (store.static @ name)
@@ -2263,22 +2288,24 @@ op writeStaticObject (name:Identifier, val:Value) : Monad () =
 op readAutoObject (frame_id : FrameID, block_num : Nat, name : Identifier) : Monad Value =
   {store <- getState;
    frame <-
-     (case frame of
+     (case frame_id of
         | FrameID frame_num ->
           if frame_num < length store.automatic
-          then store.automatic @ frame_num
+          then return (store.automatic @ frame_num)
           else error);
-   block <- if block_num < length frame then frame @ block_num else error;
+   block <- if block_num < length frame then return (frame @ block_num) else error;
    if name in? domain block then
-     return (block @ Name)
+     return (block @ name)
    else
-     error
+     error}
 
+(*
 op writeAutoObject (frame_id:FrameID, block_num:Nat, name:Identifier, val:Value) : Monad () =
   {store <- getState;
    new_auto <-
      ;
    putState (store << {automatic = new_auto})
+*)
 
 (*
 op updateAutomaticObject
