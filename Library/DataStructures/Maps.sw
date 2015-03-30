@@ -884,6 +884,7 @@ Maps_extended = Map qualifying spec
         map_compose3(mapFromNR(n,f1),mapFromNR(n,f2),mapFromNR(n,f3))
         = mapFromNR(n, fn(i:Nat)-> (f1 i, f2 i, f3 i))
 
+% profligate version:       = (update m n (x,y,z))
   theorem map_compose3_update is [B,C,D]
      fa(m:Map(Nat,B*C*D),n:Nat,x:B,y:C,z:D)
         map_compose3(update (map_project31 m) n x, 

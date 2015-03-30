@@ -15,6 +15,12 @@ spec
   import Maps#Maps_extended  
   import STBase              
 
+theorem simplify_gt0 is
+  fa(x:Nat) (x + 1 > x) = true
+
+theorem simplify_gt1 is
+  fa(x:Nat) (1 + x > x) = true
+
 %% TODO: Move these to Library/General/ListFacts:
 
 theorem right_unit_of_concat is [a]
@@ -28,6 +34,12 @@ theorem @@_of_empty is [a]
 
 theorem in_of_empty is [a]
   fa(lst:List a, x:a) x in? [] = false
+
+theorem length_of_Nil is [a]
+  length (Nil:List a) = 0
+
+theorem length_of_Cons is [a]
+  fa(lst:List a, x:a) length(x::lst) = 1 + length lst
 
 theorem diff_of_empty_2 is [a]
   fa(lst:List a) diff(lst, []) = lst
@@ -186,14 +198,14 @@ theorem distribute_concat_over_if is [a]
                   | [] -> l2
                   | hd::tl -> Cons (hd, tl ++ l2))
 
-
-% % use this only under careful control
-% %TODO seems completely wrong.
-%   theorem commutativity_of_++ is [E]
-%     fa(x:List E,y: List E)( x ++ y = y ++ x )
-
 % Note: theorem length_of_cons has been moved to
 % /Library/Base/List.sw (so use List.length_of_cons).
+
+  theorem length_of_tail is [a]
+    fa(lst:List a) (~(lst=[]) => length (tail lst) = (length lst) - 1)
+
+  theorem length_of_singleton is [a]
+    fa(lst:List a) (~(lst=[]) => (length lst = 1) = (tail lst = Nil))
 
 % ----------------------------------------------------------------
 
@@ -612,7 +624,6 @@ end-proof
     %%       empty_set
     %%       lst)
 
-
 proof Isa -verbatim
 (* trying to sneak in this lemma:*)
   theorem ndL2S_Obligation_subtype0_helper: 
@@ -676,6 +687,10 @@ end-proof
       ( ((ndL2S lst) subset (domain cm))
       => ((ndL2S lst) -- (CM2S cm)) = (ndL2S (filter (fn(x:{x:a | x in? lst})->  ~(TMApply(cm,x))) lst)) )
 
+  theorem lift_ndL2S_over_if is [a]
+   fa(x:List a,y:List a,p:Bool)
+     ((if p then ndL2S x else ndL2S y) = ndL2S(if p then x else y))
+
 
 
 
@@ -689,11 +704,20 @@ end-proof
   theorem L2B_Nil is [a]
      fa(al:List a) (al=Nil) =  (L2B(al) = (empty_bag:Bag a))
 
+  theorem L2B_Nil1 is [a]
+     L2B(Nil) = (empty_bag:Bag a)
+
+  theorem L2B_nonempty is [a]
+     fa(al:List a) (~(nonEmpty? al)) =  (L2B(al) = (empty_bag:Bag a))
+
   theorem L2B_Nil_alt is [a]
      (L2B(Nil: List a) = (empty_bag:Bag a))
 
   theorem L2B_Cons is [a]
     fa(y:a,lst:List a) ( L2B(Cons(y,lst)) = bag_insert(y, L2B lst) )
+
+  theorem L2B_length is [a]
+    fa(lst:List a) ( length(lst) = bag_size(L2B lst) )
 
   theorem L2B_delete1 is [a]
     fa(y:a,lst:List a) ( L2B(delete1(y,lst)) = bag_delete(y, L2B lst) )
@@ -807,16 +831,19 @@ end-proof
 *)
 
   theorem M2F_update is [a,b]
+      fa(m:Map(a,b),x:a,y,bdefault:b) %,S:Set a) 
+        M2F((update m x y),bdefault) = (fn x0 -> if x0=x
+                                                   then  y
+                                                 else M2F(m,bdefault) x0)
+
+  theorem M2F_TMApply is [a,b]
       fa(m:Map(a,b),x:a,y:b,bdefault:b) 
-        M2F((update m x y),bdefault) = (fn(x0:a)-> if x0=x
-                                        then  y
-                                        else M2F(m,bdefault) x0)
+        x in? domain(m) => (M2F(m,bdefault) x) = TMApply(m,x)
 
   theorem M_iso_F is [a,b]
-    fa(mp:Map(a,b),bdefault:b, S:Set a,n:a -> b) 
-      (M2F(mp, bdefault) = (fn x | x in? S -> n x)) 
-     = (             mp = (F2M S (fn x | x in? S -> n x)))
-
+     fa(mp:Map(a,b),bdefault:b, S:Set a,n) 
+       (M2F(mp, bdefault) = (fn x | x in? S -> n x)) 
+       = (             mp = (F2M S (fn x | x in? S -> n x)))
 
 (* ------- MM2F: homomorphism from Map-of-Map to Function-to-Set --------------- *)
 
