@@ -1,5 +1,5 @@
 (* FIXME HERE: remove "C =" when finished debugging this spec... *)
-C = C qualifying spec
+C1 = C qualifying spec
 
 import /Library/General/TwosComplementNumber
 import /Library/General/OptionExt
@@ -1940,27 +1940,24 @@ the object, which can be independently written to via a suitable lvalue [ISO
 and they can be written independently via a suitable lvalue. This recursively
 applies to members and elements of structure members and array elements.
 
-(emw4) At the top level of this nesting are the global variables, the
-local (i.e., stack) variables, and the heap-allocated objects
-(returned by, e.g., malloc). These three classes of top-level objects
-correspond to the three sorts of storage in C (not including thread
-storage, which we do not support here): static storage for global
-variables, automatic storage for local (i.e., stack) variables, and
-allocated storage for heap-allocated objects. Top-level objects in
-static and automatic storage are referred to by name, since each
-object in static and automatic storage corresponds to a, respectively,
-global or local variable. However, because of variable shadowing, the
-same name can refer to multiple objects. Thus, to form a unique
-reference to a named top-level object, a variable name must be
-combined with a "scope designator" that specifies either global or
-local scope, corresponding to static or automatic variables,
-respectively. For local scope, the scope designator must additionally
-specify which local variable in which function on the dynamic call
-stack is being referred to. This is done by supplying a FrameID, which
-refers to a dynamic stack frame on the call stack, along with a
-natural number, which refers to the nesting depth of the lexical block
-containing the particular variable being referred to. For instance, in
-the C function
+(emw4) At the top level of this nesting are the global variables, the local
+(i.e., stack) variables, and the heap-allocated objects (returned by, e.g.,
+malloc). These three classes of top-level objects correspond to the three sorts
+of storage [ISO 6.2.4] in C (not including thread storage, which we do not
+support here): static storage for global variables, automatic storage for local
+(i.e., stack) variables, and allocated storage for heap-allocated objects.
+Top-level objects in static and automatic storage are referred to by name, since
+each object in static and automatic storage corresponds to a, respectively,
+global or local variable. However, because of variable shadowing, the same name
+can refer to multiple objects. Thus, to form a unique reference to a named
+top-level object, a variable name must be combined with a "scope designator"
+that specifies either global or local scope, corresponding to static or
+automatic variables, respectively. For local scope, the scope designator must
+additionally specify which local variable in which function on the dynamic call
+stack is being referred to. This is done by supplying a FrameID, which refers to
+a dynamic stack frame on the call stack, along with a natural number, which
+refers to the nesting depth of the lexical block containing the particular
+variable being referred to. For instance, in the C function
 
 void foo (int x) {
   int *y = &x;
@@ -1971,15 +1968,20 @@ void foo (int x) {
   }
 }
 
-the variable name "x" could refer to the formal int parameter, which
-is bound in the outer-most lexical scope, or it could refer to the
-void pointer in the inner lexical block. The call to baz in fact gets
-references to both of these x variables. By convention, the outer-most
-lexical block, which contains the formal int parameter, has number 0,
-while the inner block has number 1. Further, every call to foo
-generates its own dynamic stack frame, which contains two separate x
-variables.
-*)
+the variable name "x" could refer to the formal int parameter, which is bound in
+the outer-most lexical scope, or it could refer to the void pointer in the inner
+lexical block. The call to baz in fact gets references to both of these x
+variables, one through the intermediate variable y. By convention, the
+outer-most lexical block, which contains the formal int parameter, has number 0;
+the outer-most scope of the function body, which contains variable 1, has number
+1; and the inner block, with the second declaration of a variable named x has
+number 2. Further, every call to foo generates its own dynamic stack frame,
+which contains two separate x variables.
+
+Note that this numbering scheme is equivalent to deBruijn levels, not deBruijn
+indices. We use deBruijn levels because they do not vary as more inner scopes
+are added: block 0 always refers to the scope containing the formal parameters,
+no matter what scopes are intervening. *)
 
 type FrameID = | FrameID Nat
 
@@ -1987,29 +1989,20 @@ type ScopeDesignator =
   | GlobalScope
   | LocalScope FrameID * Nat
 
-type OutsideID = | OutsideID Nat
+type AllocatedID = | AllocatedID Nat
 
 type ObjectDesignator =
   | OD_Top       ScopeDesignator * Identifier
-  | OD_Outside   OutsideID
+  | OD_Allocated   AllocatedID
   | OD_Member    ObjectDesignator * Identifier
   | OD_Subscript ObjectDesignator * Nat
 
 
 %subsection (* Values *)
 
-(* The sizes of 'short's, 'int's, 'long's, and 'long long's are captured by the
-ops 'short_bits', 'int_bits', 'long_bits', and 'llong_bits' introduced and
-explained earlier. We introduce Specware types for words (i.e. bit lists) of the
-corresponding sizes. These words are interpreted in big endian format in our
-model. Since our C subset is type-safe, it does not actually matter whether the
-words are interpreted in big or little endian format, so long as they are
-treated consistently thoughout the model. *)
-
-type    ShortWord = (Bits | ofLength? short_bits)
-type      IntWord = (Bits | ofLength?   int_bits)
-type     LongWord = (Bits | ofLength?  long_bits)
-type LongLongWord = (Bits | ofLength? llong_bits)
+(* We represent integers in values with a tagged integer type *)
+type TypedInt = { ty_i : Type * Int |
+                   integerType? ty_i.1 && ty_i.2 in? rangeOfIntegerType ty_i.1 }
 
 (* (emw4) The text in [ISO 6.2.6.1] suggests that the representations
 of functions themselves is unspecified. (Technically, clause 1 says
@@ -2069,17 +2062,7 @@ separate types [ISO 6.2.5/14] and thus we use a different constructor for each
 different type. *)
 
 type Value =
-  |  V_char               Byte
-  | V_uchar               Byte
-  | V_schar               Byte
-  | V_ushort         ShortWord
-  | V_sshort         ShortWord
-  | V_uint             IntWord
-  | V_sint             IntWord
-  | V_ulong           LongWord
-  | V_slong           LongWord
-  | V_ullong      LongLongWord
-  | V_sllong      LongLongWord
+  |  V_int        TypedInt
   | V_struct      Identifier * FiniteMap (Identifier, Value)
   | V_pointer     Type * ObjectDesignator
   | V_array       Type * List Value
@@ -2093,23 +2076,13 @@ know what they are exactly. *)
 
 op typeOfValue (val:Value) : Type =
   case val of
-  |  V_char  _         ->  T_char
-  | V_uchar  _         -> T_uchar
-  | V_schar  _         -> T_schar
-  | V_ushort _         -> T_ushort
-  | V_sshort _         -> T_sshort
-  | V_uint   _         -> T_uint
-  | V_sint   _         -> T_sint
-  | V_ulong  _         -> T_ulong
-  | V_slong  _         -> T_slong
-  | V_ullong _         -> T_ullong
-  | V_sllong _         -> T_sllong
-  | V_struct (tag, _)  -> T_struct tag
-  | V_pointer (ty, _)  -> T_pointer ty
+  | V_int (ty, _)            -> ty
+  | V_struct (tag, _)        -> T_struct tag
+  | V_pointer (ty, _)        -> T_pointer ty
   | V_function (ty, tys, _)  -> T_function (ty, tys)
-  | V_array (ty, vals) -> T_array (ty, length vals)
-  | V_nullpointer ty   -> T_pointer ty
-  | V_undefined ty     -> ty
+  | V_array (ty, vals)       -> T_array (ty, length vals)
+  | V_nullpointer ty         -> T_pointer ty
+  | V_undefined ty           -> ty
 
 (* We lift some of the predicates that classify types to predicates that
 classify values. Note that undefined values of the correct types are
@@ -2157,10 +2130,10 @@ the value stored into an object always coincides with the type of the object. *)
 type NamedStorage = FiniteMap (Identifier, Value)
 
 (* As mentioned in the comments for type 'ObjectDesignator', our model of
-storage includes outside objects, which are identified by the IDs introduced
+storage includes allocated objects, which are identified by the IDs introduced
 earlier. *)
 
-type OutsideStorage = FiniteMap (OutsideID, Value)
+type AllocatedStorage = FiniteMap (AllocatedID, Value)
 
 (* As mentioned in the comments for type 'ObjectDesignator', at each point in
 time the file scope is active, along with a list of lists of block scopes. The
@@ -2178,12 +2151,17 @@ while the objects declared with block scope have automatic storage duration [ISO
 We model the static storage as a named storage, and the automatic storage as a
 list of dynamic function calls from innermost to outermost, where each function
 call itself has a list, from innermost to outermost, of named storages for each
-block. We also have an outside storage for outside objects. *)
+block. As discussed above (see type FrameID and ObjectDesignator), we refer to
+scopes in the automatic storage (at both levels, dynamic function calls and the
+blocks within a dynamic function call) by deBruijn levels, where the outermost
+scope has level 0; thus, to find the Nth scope (at either level) in a list, the
+Nth element *from the end* of the list by be used. We also have an allocated
+storage for allocated objects. *)
 
 type Storage =
-  {static    :            NamedStorage,
+  {static    : NamedStorage,
    automatic : List (List NamedStorage),
-   outside   :          OutsideStorage}
+   allocated : AllocatedStorage}
 
 
 %subsection (* Outcomes *)
@@ -2227,7 +2205,7 @@ type Monad.Err =
     | Err_error
     | Err_nonstd
     | Err_return (Option Value)
-    | Err_nonterm
+    | Err_unimplemented
 
 (* The error and "non-standard" computations *)
 op [a] error : Monad a = raiseErr Err_error
@@ -2240,6 +2218,15 @@ op errorIf (condition:Bool) : Monad () =
 (* The state type of the monad is the Storage type defined above *)
 type Monad.St = Storage
 
+(* The map function for monads; FIXME: should be in a standard library spec
+   somewhere... *)
+op mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
+   case l of
+     | [] -> return []
+     | x :: xs' ->
+       {new_x <- f x;
+        new_xs <- mapM f xs';
+        return (new_x :: new_xs)}
 
 % subsection (* Operations on storages *)
 
@@ -2249,91 +2236,167 @@ type Monad.St = Storage
    monadic lenses for the different storage components. *)
 import /Library/Structures/Data/MLens
 
-(* Lenses for the static, automatic, and external storage *)
-op staticStorageLens : MLens ((), NamedStorage) =
-   {mlens_get = fn () -> {storage <- getState; return storage.static},
-    mlens_set = fn () -> fn new_static ->
-      {storage <- getState;
-       putState (storage << {static = new_static})}}
+(* type MLens.Monad a = Monad a *)
 
-op autoStorageLens : MLens ((), List (List NamedStorage)) =
-   {mlens_get = fn () -> {storage <- getState; return storage.automatic},
-    mlens_set = fn () -> fn new_auto ->
-      {storage <- getState;
-       putState (storage << {automatic = new_auto})}}
+(* The "easy" monadic lens, corresponding to the getState and putState
+   non-proper morphisms in our state monad *)
+op storageLens : MLens ((), Storage) =
+   {mlens_get = fn () -> getState,
+    mlens_set = fn () -> putState }
 
-op externalStorageLens : MLens ((), OutsideStorage) =
-   {mlens_get = fn () -> {storage <- getState; return storage.outside},
-    mlens_set = fn () -> fn new_outside ->
-      {storage <- getState;
-       putState (storage << {outside = new_outside})}}
+(* Lenses for the fields of a Storage *)
+op storageStaticFieldLens : MLens (Storage,NamedStorage) =
+   {mlens_get = fn s -> return s.static,
+    mlens_set = fn s -> fn v -> return (s << {static=v})}
+op storageAutomaticFieldLens : MLens (Storage,List (List NamedStorage)) =
+   {mlens_get = fn s -> return s.automatic,
+    mlens_set = fn s -> fn v -> return (s << {automatic=v})}
+op storageAllocatedFieldLens : MLens (Storage,AllocatedStorage) =
+   {mlens_get = fn s -> return s.allocated,
+    mlens_set = fn s -> fn v -> return (s << {allocated=v})}
 
-end-spec
+(* Composing the above with storageLens gives us monadic lenses for the three
+   "current" storage classes *)
+op staticStorageLens : MLens ((),NamedStorage) =
+   mlens_compose (storageLens, storageStaticFieldLens)
+op automaticStorageLens : MLens ((),List (List NamedStorage)) =
+   mlens_compose (storageLens, storageAutomaticFieldLens)
+op allocatedStorageLens : MLens ((),AllocatedStorage) =
+   mlens_compose (storageLens, storageAllocatedFieldLens)
 
-blah2 = spec
+(* Build a lens for the scope corrersponding to a ScopeDesignator *)
+op scopeDesignatorLens (d:ScopeDesignator) : MLens ((),NamedStorage) =
+   case d of
+     | GlobalScope -> staticStorageLens
+     | LocalScope (FrameID frame_id, block_id) ->
+       mlens_compose (automaticStorageLens,
+                      mlens_compose
+                        (mlens_of_list_rindex (frame_id, error, error),
+                         mlens_of_list_rindex (block_id, error, error)))
 
-(* Monadic helper functions for manipulating the storage *)
+(* Build a lens for the struct fields of a Value.
 
-op readStaticObject (name:Identifier) : Monad Value =
-  {store <- getState;
-   if name in? domain store.static then
-     return (store.static @ name)
-   else
-     error}
+   NOTE: structFieldsLens does *not* do auto-vivification for the structure
+   fields of uninitialized structs; i.e., if the "get" function is applied to an
+   undefined object, it is an error, and "get" does *not* return a mapping that
+   assigns undefined objects to all the fields. (The "Deep" semantics this file
+   was derived from did do auto-vivification.) In order to support
+   auto-vivification, structFieldsLens would need not only the field typing
+   information associated with a named structure type, but it would also need
+   the "get" function to actually modify the undefined struct object into a
+   defined object where all its fields are undefined objects, otherwise it
+   violates the monadic lens laws (specifically, the get-put law). It is
+   possible to modify structFieldsLens to do this auto-vivification by giving it
+   the "upstream" lens, so that the "get" function can modify the given struct
+   value, but it is much easier to just never allow undefined struct objects to
+   begin with. *)
+op structFieldsLens : MLens (Value,FiniteMap (Identifier, Value)) =
+   {mlens_get = fn v -> case v of
+                          | V_struct (_, fields) -> return fields
+                          | _ -> error,
+    mlens_set =
+      fn v -> fn fields -> case v of
+                             | V_struct (ident,_) ->
+                               return (V_struct (ident, fields))
+                             | _ -> error}
 
-op writeStaticObject (name:Identifier, val:Value) : Monad () =
+(* Build a lens for an array elements of a Value. Does not do auto-vivification
+   for undefined objects. (See the comments for structFieldsLens, above.) *)
+op arrayElementsLens : MLens (Value, List Value) =
+   {mlens_get = fn v -> case v of
+                          | V_array (_, fields) -> return fields
+                          | _ -> error,
+    mlens_set =
+      fn v -> fn fields -> case v of
+                             | V_array (tp,_) ->
+                               return (V_array (tp, fields))
+                             | _ -> error}
+
+(* Build a lens for the object corrersponding to an ObjectDesignator *)
+op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
+   case d of
+     | OD_Top (scope_d, ident) ->
+       mlens_compose (scopeDesignatorLens scope_d,
+                      mlens_of_key (ident, error, error))
+     | OD_Allocated a_id ->
+       mlens_compose (allocatedStorageLens,
+                      mlens_of_key (a_id, error, error))
+     | OD_Member (d', ident) ->
+       mlens_compose (objectDesignatorLens d',
+                      mlens_compose (structFieldsLens,
+                                     mlens_of_key (ident, error, error)))
+     | OD_Subscript (d', i) ->
+       mlens_compose (objectDesignatorLens d',
+                      mlens_compose (arrayElementsLens,
+                                     mlens_of_list_index (i, error, error)))
+
+(* Helper functions for reading from and writing to designated objects *)
+op readObject (d:ObjectDesignator) : Monad Value =
+   (objectDesignatorLens d).mlens_get ()
+op writeObject (d:ObjectDesignator, v:Value) : Monad () =
+   (objectDesignatorLens d).mlens_set () v
+
+(* FIXME: shouldn't need storageStaticPlusTopFrameLens or identInScopeLens *)
+
+(* Lens to combine the top frame of the automatic storage with the static
+   storage, in order to get the current scope for looking up identifiers; note
+   that it is an error to call "set" with a list whose length is different than
+   the length of the list returned by "get" on the storage *)
+op storageStaticPlusTopFrameLens : MLens (Storage, List NamedStorage) =
+   {mlens_get =
+      fn s -> case s.automatic of
+                | [] -> return [s.static]
+                | top_frame :: _ -> return (top_frame ++ [s.static]),
+    mlens_set =
+      fn s -> fn v -> case s.automatic of
+                        | [] ->
+                          if length v = 1 then
+                            return (s << {static = last v})
+                          else error
+                        | top_frame :: rest_frames ->
+                          if length v = length top_frame + 1 then
+                            return (s << {static = last v, automatic = butLast v :: rest_frames})
+                          else error}
+
+(* Lens to look up and/or set the value of an identifier in a scope list; we
+   define the get and set functions separately, as recursive functions *)
+op identInScopeGet (id:Identifier) (scope:List NamedStorage) : Monad Value =
+   case scope of
+     | [] -> error
+     | top :: scope' ->
+       (case top id of
+          | Some v -> return v
+          | None -> identInScopeGet id scope')
+op identInScopeSet (id:Identifier) (scope:List NamedStorage) (v:Value) : Monad (List NamedStorage) =
+   case scope of
+     | [] -> error
+     | top :: scope' ->
+       (case top id of
+          | Some v -> return (update top id v :: scope')
+          | None -> {res <- identInScopeSet id scope' v;
+                     return (top :: res)})
+op identInScopeLens (id:Identifier) : MLens (List NamedStorage, Value) =
+   {mlens_get = identInScopeGet id, mlens_set = identInScopeSet id}
+
+
+(* Push and pop functions for manipulating the automatic storage stack; the push
+   functions all return the id for the newly-pushed element *)
+op pushOuterFrame (frame:NamedStorage) : Monad FrameID =
   {storage <- getState;
-   putState (storage << {static = update storage.static name val})}
-
-op readAutoObject (frame_id : FrameID, block_num : Nat, name : Identifier) : Monad Value =
-  {store <- getState;
-   frame <-
-     (case frame_id of
-        | FrameID frame_num ->
-          if frame_num < length store.automatic
-          then return (store.automatic @ frame_num)
-          else error);
-   block <- if block_num < length frame then return (frame @ block_num) else error;
-   if name in? domain block then
-     return (block @ name)
-   else
-     error}
-
-(*
-op writeAutoObject (frame_id:FrameID, block_num:Nat, name:Identifier, val:Value) : Monad () =
-  {store <- getState;
-   new_auto <-
-     ;
-   putState (store << {automatic = new_auto})
-*)
-
-(*
-op updateAutomaticObject
-   (storage:Storage, f:Nat, o:Nat, name:Identifier, val:Value |
-    f < length storage.automatic &&
-    o < length (storage.automatic @ f)) : Storage =
-  let newobjs = update (storage.automatic @ f @ o) name val in
-  updateAutomaticObjects (storage, f, o, newobjs)
-*)
-
-
-
-op pushOuterFrame (frame:NamedStorage) : Monad () =
-  {storage <- getState;
-   putState (storage << {automatic = [frame] :: storage.automatic})}
-
+   putState (storage << {automatic = [frame] :: storage.automatic});
+   return (FrameID (length storage.automatic))}
 op popOuterFrame : Monad () =
   {storage <- getState;
    case storage.automatic of
      | [] -> error
      | top::rest -> putState (storage << {automatic = rest})}
-
-op pushInnerFrame (frame:NamedStorage) : Monad () =
+op pushInnerFrame (frame:NamedStorage) : Monad Nat =
   {storage <- getState;
    case storage.automatic of
      | [] -> error
-     | top::rest -> putState (storage << {automatic = (frame::top)::rest})}
-
+     | top::rest ->
+       {putState (storage << {automatic = (frame::top)::rest});
+        return (length top)}}
 op popInnerFrame : Monad () =
   {storage <- getState;
    case storage.automatic of
@@ -2341,20 +2404,13 @@ op popInnerFrame : Monad () =
      | (top::rest_inner)::rest_outer ->
        putState (storage << {automatic = rest_inner::rest_outer})}
 
-op updateOutsideStorage (storage:Storage, ostore:OutsideStorage) : Storage =
-  storage << {outside = ostore}
-
-op updateOutsideObject (storage:Storage, id:OutsideID, val:Value) : Storage =
-  updateOutsideStorage (storage, update storage.outside id val)
-
-
 (* Besides storage, it is convenient to include in the state of a C program in
 our subset also a symbol table of type definitions, a symbol table of structure
 types, and information about functions (consisting of return type, typed
 parameters, and body). These are used to execute declarations at run time, as
 formalized later. *)
 
-(* FIXME HERE: remove FunctionInfo and State from the below; this is
+(* FIXME: remove FunctionInfo and State from the below; this is
 what they used to look like:
 
 type FunctionInfo =
@@ -2413,576 +2469,55 @@ op designatorOfObject (name:Identifier) : Monad ObjectDesignator =
    return (OD_Top (scope, name))}
 
 
-(* The following ops read and write the value of a top-level object. The object
-must exist. When writing, the new value must have the same type as the old
-value. *)
-
-op readTopObject (scope:ScopeDesignator, name:Identifier) : Monad Value =
-  case scope of
-    | GlobalScope -> readStaticObject name
-    | LocalScope (frame_id, block_num) ->
-      readAutoObject frame_id block_num name
-HERE
-
-op writeTopObject (scope:ScopeDesignator, name:Identifier, newval:Value) : Monad () =
-  {oldval <- readTopObject (scope, name);
-   errorIf (typeOfValue oldval ~= typeOfValue newval);
-   case scope of
-     | GlobalScope -> updateStaticObject (name, newval)
-     | LocalScope (f, o) -> updateAutomaticObject (f, o, name, newval)}
-
-(* The following ops read and write the value of an outside object. The object
-must exist. When writing, the new value must have the same type as the old
-value. *)
-
-op readOutsideObject (state:State, id:OutsideID) : Monad Value =
-  let store = state.storage in
-  if id in? domain store.outside then
-    ok (store.outside @ id)
-  else
-    error
-
-op writeOutsideObject (state:State, id:OutsideID, newval:Value) : Monad State =
-  {oldval <- readOutsideObject (state, id);
-   errorIf (typeOfValue oldval ~= typeOfValue newval);
-   ok (updateOutsideObject (state, id, newval))}
-
-(* FIXME HERE *)
-end-spec
-
-blah = spec
-
-(* The following ops read and write the value of the designated object.
-
-An undefined value of an aggregate type is equivalent to an aggregation of
-undefined values. In other words, an undefined structure is equivalent to a
-structure of undefined values (one for each member), and an undefined array is
-equivalent to an array of undefined values (one for each element). This applies
-recursively to members and elements of members and elements. This equivalence is
-important when reading and writing values via the following ops. Suppose that a
-local variable of a structure type is declared; as formalizer later, the
-undefined value of that structure is initially assigned to the local variable.
-Suppose that we read a member of that structure: we need to look up the
-structure type in the state, find the member's type, and return the undefined
-value of the member type. Similarly, for an undefined array, we need to return
-the undefined value of the array element type. When writing a member into an
-undefined structure, we need to replace the undefined structure with a structure
-of undefined values (save for the value that we are writing into the member).
-Similarly, when writing an element into an undefined array, we need to replace
-the undefined array with an array of undefined values (save for the value that
-we are writing into the element).
-
-To write a new value into a top-level or outside object, we just write the value
-into the object using op writeTopObject or writeOutsideObject above. To assign a
-new value to a member of a structure or an element of an array, we first
-retrieve the old value of the structure or array (by reading the value from the
-super-object designator) -- not of the member or element that we have to write
-into, but of the enclosing structure or array. Then we overwrite the member of
-the old structure value, or the element of the old array value, with the new
-value for the member or element, obtaining a new value for the enclosing
-structure or array. Finally, we recursively assign this new structure or array
-value to the super-object designator. The recursion eventually terminates with a
-top-level object. *)
-
-op readObject (state:State, obj:ObjectDesignator) : Monad Value =
-  case obj of
-  | top (scope, name) ->
-    readTopObject (state, scope, name)
-  | outside id ->
-    readOutsideObject (state, id)
-  | member (obj', mem) ->
-    {val' <- readObject (state, obj');
-     case val' of
-     | struct (_, members) ->
-       (case members mem of
-       | None -> error
-       | Some val -> ok val)
-     | undefined (struct tag) ->
-       (case state.structures tag of
-       | None -> error
-       | Some tmembers ->
-         (case tmembers mem of
-         | None -> error
-         | Some ty -> ok (undefined ty)))
-     | _ -> error}
-  | subscript (obj', i) ->
-    {val' <- readObject (state, obj');
-     case val' of
-     | array (_, elements) ->
-       if i < length elements then
-         ok (elements @ i)
-       else
-         error
-     | undefined (array (ty, _)) ->
-       ok (undefined ty)
-     | _ -> error}
-
-op writeObject (state:State, obj:ObjectDesignator, newval:Value) : Monad State =
-  case obj of
-  | top (scope, name) ->
-    writeTopObject (state, scope, name, newval)
-  | outside id ->
-    writeOutsideObject (state, id, newval)
-  | member (obj_struct, mem) ->
-    {oldval_struct <- readObject (state, obj_struct);
-     case oldval_struct of
-     | struct (tag, members) ->
-       (case members mem of
-       | None -> error
-       | Some oldval ->
-         if typeOfValue oldval = typeOfValue newval then
-           let newval_struct = struct (tag, update members mem newval) in
-           writeObject (state, obj_struct, newval_struct)
-         else
-           error)
-     | undefined (struct tag) ->
-       (case state.structures tag of
-       | None -> error
-       | Some tmembers ->
-         let allundef = fn mem:Identifier ->
-             (case tmembers mem of
-             | None -> None
-             | Some ty -> Some (undefined ty))
-         in
-         (case tmembers mem of
-         | None -> error
-         | Some ty ->
-           if ty = typeOfValue newval then
-             let newval_struct = struct (tag, update allundef mem newval) in
-             writeObject (state, obj_struct, newval_struct)
-           else
-             error))
-     | _ -> error}
-  | subscript (obj_array, i) ->
-    {oldval_array <- readObject (state, obj_array);
-     case oldval_array of
-     | array (ty, elements) ->
-       if i < length elements && ty = typeOfValue newval then
-         let newval_array = array (ty, update (elements, i, newval)) in
-         writeObject (state, obj_array, newval_array)
-       else
-         error
-     | undefined (array (ty, n)) ->
-       if i < n && ty = typeOfValue newval then
-         let allundef = List.repeat (undefined ty) n in
-         let newval_array = array (ty, update (allundef, i, newval)) in
-         writeObject (state, obj_array, newval_array)
-       else
-         error
-     | _ -> error}
-
-
-(* A symbol table is essentially a compile-time summary/representation of the
-run-time state. The following op abstracts a state into a symbol table.
-
-The static storage, which is a map from names to values, is turned into a map
-from names to types by applying op 'typeOfValue' to all the values in the map.
-Technically, this is done by lifting 'typeOfValue' to operate on optional values
-and types (via op 'mapOption') and then composing it with the named storage map,
-as encapsulated in op 'objectTableOfNamedStorage' below. The latter is applied
-to all the blocks of the topmost frame of the automatic storage, and the result
-appended to the map for the static storage. The outside storage does not
-contribute to the symbol table.
-
-The function table is created by dropping the bodies from the function
-information in the state, using the same 'mapOption' and function composition
-technique described above for object tables.
-
-The type definition table and the structure table are just copied from the state
-into the symbol table. *)
-
-op objectTableOfNamedStorage
-   (store:NamedStorage) : FiniteMap (Identifier, Type) =
-  (mapOption typeOfValue) o store
-
-op objectTableOfStorage (store:Storage) : ObjectTable =
-  if empty? store.automatic then
-    [objectTableOfNamedStorage store.static]
-  else
-    objectTableOfNamedStorage store.static ::
-    map objectTableOfNamedStorage (last store.automatic)
-
-op functionTableOfFunctionsInfo (funsinfo:FunctionsInfo) : FunctionTable =
-  (mapOption (fn funinfo:FunctionInfo -> (funinfo.return, funinfo.parameters)))
-  o
-  funsinfo
-
-op symbolTableOfState (state:State) : SymbolTable =
-  {typedefs   = state.typedefs,
-   structures = state.structures,
-   functions  = functionTableOfFunctionsInfo state.functions,
-   objects    = objectTableOfStorage state.storage}
-
-(* The following ops collect all the object designators that occur in values,
-named storages, frames, outside storages, storages, and states. *)
-
-op objDesignatorsInValue (val:Value) : FiniteSet ObjectDesignator =
-  case val of
-  | pointer (_, obj) ->
-    single obj
-  | array (_, vals) ->
-    (fn obj -> (ex(val) val in? vals && obj in? objDesignatorsInValue val))
-  | struct (_, members) ->
-    (fn obj -> (ex(mem) mem in? domain members &&
-                        obj in? objDesignatorsInValue (members @ mem)))
-  | _ ->
-    empty
-
-op objDesignatorsInNamedStorage
-   (store:NamedStorage) : FiniteSet ObjectDesignator =
-  fn obj -> (ex(name:Identifier) name in? domain store &&
-                                 obj in? objDesignatorsInValue (store @ name))
-
-op objDesignatorsInFrame
-   (frame:List NamedStorage) : FiniteSet ObjectDesignator =
-  fn obj -> (ex(b:Nat) b < length frame &&
-                       obj in? objDesignatorsInNamedStorage (frame @ b))
-
-op objDesignatorsInFrames
-   (frames:List (List NamedStorage)) : FiniteSet ObjectDesignator =
-  fn obj -> (ex(f:Nat) f < length frames &&
-                       obj in? objDesignatorsInFrame (frames @ f))
-
-op objDesignatorsInOutsideStorage
-   (store:OutsideStorage) : FiniteSet ObjectDesignator =
-  fn obj -> (ex(id:OutsideID) id in? domain store &&
-                              obj in? objDesignatorsInValue (store @ id))
-
-op objDesignatorsInStorage (store:Storage) : FiniteSet ObjectDesignator =
-  objDesignatorsInNamedStorage   store.static \/
-  objDesignatorsInFrames         store.automatic \/
-  objDesignatorsInOutsideStorage store.outside
-
-op objDesignatorsInState (state:State) : FiniteSet ObjectDesignator =
-  objDesignatorsInStorage state.storage
-
-
-%subsection (* State invariants *)
-
-(* Not all the states in the state space defined by type 'State' correspond to
-states that can actually happen at run time, when a program satisfying the
-compile-time constraints is executed. There are certain invariants that are true
-of the initial state and that are preserved by execution. We define some of
-these invariants.
-
-An important invariant is the absence of circularities in the structure types in
-the state. In other words, given a structure type S, no member of S can have a
-type that references S, and no member or element of a member S can, and so on
-recursively. (As explained in the comments for op 'checkStructSpecifier', our C
-subset disallows recursive structure via pointers, unlike [ISO].)
-
-The following op says whether a type references a structure (via a tag). This
-happens when the type is the structure type itself, or is a pointer to the
-structure, or is an array of those structures. *)
-
-op typeReferencesStruct? (ty:Type, tag:Identifier) : Bool =
-  case ty of
-  | struct tag' -> tag' = tag
-  | array  (ty', _) -> typeReferencesStruct? (ty', tag)
-  | pointer ty'     -> typeReferencesStruct? (ty', tag)
-  | _ -> false
-
-(* The following op says whether a structure (identified by tag) references
-another structure (identifier by tag'). This happens when the first structure is
-in the state and the type of at least one of its members directly references the
-second structure. *)
-
-op structReferencesStruct?
-   (state:State, tag:Identifier, tag':Identifier) : Bool =
-  tag in? domain state.structures &&
-  (let tmembers = state.structures @ tag in
-  (ex(mem) mem in? domain tmembers &&
-           typeReferencesStruct? (tmembers @ mem, tag')))
-
-(* A circularity arises when there is a list of two or more structures such that
-each one references the next one, and the first and last one in the list
-coincide. Negating this condition yields a predicate to test for
-non-circularity. *)
-
-op noCircularStructs? (state:State) : Bool =
-  ~ (ex (tags:List Identifier)
-       length tags >= 2 &&
-       (fa(i:Nat) i < length tags - 1 =>
-          structReferencesStruct? (state, tags @ i, tags @ (i + 1))) &&
-       head tags = last tags)
-
-(* A similar invariant is the absence of circularities in the function call
-graph. In other, no function can call itself, directly or indirectly.
-
-The following predicates say whether a statement, block item, or block items
-call(s) a function with a given identifier. *)
-
-op statementCallsFunction? (stmt:Statement, fun:Identifier) : Bool =
-  case stmt of
-  | call (_, fun', _) -> fun' = fun
-  | iF (_, thenBranch, elseBranch?) ->
-    statementCallsFunction? (thenBranch, fun) ||
-    (case elseBranch? of
-    | Some elseBranch -> statementCallsFunction? (elseBranch, fun)
-    | None -> false)
-  | block items -> blockItemsCallFunction? (items, fun)
-  | _ -> false
-
-op blockItemsCallFunction? (items:List BlockItem, fun:Identifier) : Bool =
-  case items of
-  | [] -> false
-  | item::items ->
-    blockItemCallsFunction? (item, fun) ||
-    blockItemsCallFunction? (items, fun)
-
-op blockItemCallsFunction? (item:BlockItem, fun:Identifier) : Bool =
-  case item of
-  | declaration _ -> false
-  | statement stmt -> statementCallsFunction? (stmt, fun)
-
-(* The following predicate says whether a function (with name fun) calls another
-function (with name fun'), directly. This happens when the first function is in
-the state and its body calls the second function. *)
-
-op functionCallsFunction?
-   (state:State, fun:Identifier, fun':Identifier) : Bool =
-  fun in? domain state.functions &&
-  (let funinfo = state.functions @ fun in
-  statementCallsFunction? (funinfo.body, fun'))
-
-(* A circularity arises when there is a list of two or more functions such that
-each one references the next one, and the first and last one in the list
-coincide. Negating this condition yields a predicate to test for
-non-circularity. *)
-
-op noCircularFunctions? (state:State) : Bool =
-  ~ (ex (funs:List Identifier)
-       length funs >= 2 &&
-       (fa(i:Nat) i < length funs - 1 =>
-          functionCallsFunction? (state, funs @ i, funs @ (i + 1))) &&
-       head funs = last funs)
-
-(* Another important invariant is that the body of each function in the state is
-a block whose items satisfy the compile-time constraints for lists of block
-items. The symbol table w.r.t. which the constraints are checked, is constructed
-from the state, but all the automatic-storage scopes are replaced with one scope
-for the function, which contains the functions parameters. Furthermore, the
-function's body always return something matching the return type (nothing if
-'void'). *)
-
-op functionBodiesOK? (state:State) : Bool =
-  fa (name:Identifier, funinfo:FunctionInfo)
-    state.functions name = Some funinfo =>
-    (let rety = funinfo.return in
-     let tparams = funinfo.parameters in
-     let pnames = map (project name) tparams in
-     let ptys = map (project typE) tparams in
-     let funscope = fromAssocList (zip (pnames, ptys)) in
-     let symtab = symbolTableOfState state in
-     let symtab' = symtab << {objects = [head symtab.objects] ++ [funscope]} in
-     case funinfo.body of
-     | block items ->
-       (case checkBlockItems (symtab', items) of
-       | Some sty ->
-         (rety ~= void => next nin? sty) &&
-         (fa(ty) return ty in? sty => assignableReturnTypes? (rety, ty))
-       | None -> false)
-     | _ -> false)
-
-(* Another important invariant is that every object designator in the state
-designates an object in the state. The condition that an object designator
-designates an object in the state is equivalent to op 'readObject' returning
-'ok'. *)
-
-op objDesignatorOK? (state:State, obj:ObjectDesignator) : Bool =
-  embed? ok (readObject (state, obj))
-
-op allObjDesignatorsOK? (state:State) : Bool =
-  fa(obj) obj in? objDesignatorsInState state => objDesignatorOK? (state, obj)
-
-(* We put together the above invariants into one predicate *)
-
-op invariants? (state:State) : Bool =
-  noCircularStructs?   state &&
-  noCircularFunctions? state &&
-  functionBodiesOK?    state &&
-  allObjDesignatorsOK? state
-
-
-%subsection (* Attachment and detachment of outside storage *)
-
-(* FIXME HERE: remove attachment and detachment *)
-
-(* When modeling the interaction of a program in our C subset with outside code,
-it is convenient to attach and detach outside storage to and from the state. If
-outside code calls a function in our C program, there will be an outside storage
-to be attached to the state. During the execution of the function, assuming no
-multi-threading (as our formal model assumes), outside storage can only be
-changed by our program (which does not call the outside code). When the function
-returns, the outside storage can be detached from the state, because at that
-point the outside code can modify the external storage. By attaching and
-detaching outside storage to the state, we can model various forms of
-interaction between our C program and outside code, and we can model various
-kinds on assumptions on modifications to outside storage made by outside code in
-between calls to functions in our C program.
-
-In order to attach and detach outside storage, certain closure conditions on
-pointers (i.e. object designators) must be satisfied. These conditions are
-modeled below, along with ops to attach and detach outside storage.
-
-We start with an op that returns the object designators that are in a state but
-not in the outside storage of the state. *)
-
-op objDesignatorsInNonOutsideStorage
-   (state:State) : FiniteSet ObjectDesignator =
-  objDesignatorsInNamedStorage state.storage.static \/
-  objDesignatorsInFrames       state.storage.automatic
-
-(* Together with the object designators in the outside storage, the object
-designators returned by op 'objDesignatorsInNonOutsideStorage' are all the
-object designators in the state. *)
-
-theorem object_designators_outside_nonoutside_union is
-  fa(state:State)
-    objDesignatorsInState state =
-    objDesignatorsInNonOutsideStorage state \/
-    objDesignatorsInOutsideStorage state.storage.outside
-
-theorem object_designators_outside_nonoutside_intersection is
-  fa(state:State)
-    objDesignatorsInNonOutsideStorage state /\
-    objDesignatorsInOutsideStorage state.storage.outside = empty
-
-(* The following op says whether the non-outside storage of a state has no
-references to the outside storage of the state. *)
-
-op noReferencesToOutsideStorage? (state:State) : Bool =
-  fa(obj) obj in? objDesignatorsInNonOutsideStorage state =>
-          ~ (embed? outside obj)
-
-(* The following op says whether an outside storage has only references to
-outside storage. *)
-
-op allReferencesToOutsideStorage? (ostore:OutsideStorage) : Bool =
-  fa(obj) obj in? objDesignatorsInOutsideStorage ostore => embed? outside obj
-
-(* If the outside and the non-outside storage of a state are partitioned
-(i.e. the non-outside storage has no references to the outside storage, and the
-outside storage has no references to the non-outside storage), we allow the
-outside storage to be detached from the state. The state invariants are
-maintained. *)
-
-op detachableOutsideStorage? (state:State) : Bool =
-  noReferencesToOutsideStorage? state &&
-  allReferencesToOutsideStorage? (state.storage.outside)
-
-op detachOutsideStorage
-   (state:State | detachableOutsideStorage? state) : State =
-  updateOutsideStorage (state, empty)
-
-theorem detachOutsideStorage_invariants is
-  fa(state:State) invariants? state && detachableOutsideStorage? state =>
-                  invariants? (detachOutsideStorage state)
-
-(* If a state has empty outside storage, an outside storage with no references
-to the state's storage can be attached to the state. The state invariants are
-maintained. *)
-
-op attachableOutsideStorage? (state:State, ostore:OutsideStorage) : Bool =
-  empty? state.storage.outside && allReferencesToOutsideStorage? ostore
-
-op attachOutsideStorage
-   (state:State, ostore:OutsideStorage |
-    attachableOutsideStorage? (state, ostore)) : State =
-  updateOutsideStorage (state, ostore)
-
-theorem attachOutsideStorage_invariants is
-  fa (state:State, ostore:OutsideStorage)
-    invariants? state && attachableOutsideStorage? (state, ostore) =>
-    invariants? (attachOutsideStorage (state, ostore))
-
-
 %subsection (* Computations on integers *)
 
-(* FIXME: make sure these all make sense here.. (they were moved down
-from the "Values" section) *)
+(* We can remove the constructors of integer values, and retrieve their integer
+values. It is an error to do that on non-integer values. If the value is an
+undefined integer, a non-standard outcome is produced. *)
 
-(* We can remove the constructors of integer values, and retrieve the bits that
-comprise them. It is an error to do that on non-integer values. If the value is
-an undefined integer, a non-standard outcome is produced. *)
-
-op bitsOfIntegerValue (val:Value) : Monad Bits =
+op intOfValue (val:Value) : Monad Int =
   case val of
-  |  char  x -> ok x
-  | uchar  x -> ok x
-  | schar  x -> ok x
-  | ushort x -> ok x
-  | sshort x -> ok x
-  | uint   x -> ok x
-  | sint   x -> ok x
-  | ulong  x -> ok x
-  | slong  x -> ok x
-  | ullong x -> ok x
-  | sllong x -> ok x
-  | undefined ty -> if integerType? ty then nonstd else error
+  | V_int (_, i) -> return i
+  | V_undefined ty -> if integerType? ty then raiseErr Err_nonstd else error
   | _ -> error
 
-(* Given an integer type and bits of the type's size, we can create a value with
-those bits and that type. *)
+(* Create an integer value of a given type. It is an error if the given type is
+   not an integer type, or if the integer does not fit in the given type. *)
+op valueOfInt (i:Int, ty:Type |
+                 integerType? ty && i in? rangeOfIntegerType ty) : Value =
+   V_int (ty, i)
 
-op valueOfBits
-   (bits:Bits, ty:Type | integerType? ty && length bits = typeBits ty) : Value =
-  the(val:Value) typeOfValue val = ty && bitsOfIntegerValue val = ok bits
+(* Create a list of bits from an integer, given a type *)
+op bitsOfInt (i:Int, ty:Type |
+                integerType? ty && i in? rangeOfIntegerType ty) : List Bit
+(* FIXME: write bitsOfInt! *)
 
-(* Each integer value encodes a mathematical integer. The outcome is an error if
-the value is not an integer, and non-standard if the value is undefined. *)
-
-op mathIntOfValue (val:Value) : Monad Int =
-  {bits <- bitsOfIntegerValue val;
-   if unsignedIntegerType? (typeOfValue val) ||
-      plainCharsAreUnsigned && typeOfValue val = char then
-     ok (toNat bits)
-   else
-     ok (toInt bits)}
-
-(* A mathematical integer in the range of an integer type can be represented in
-that type. *)
-
-op valueOfMathInt
-   (i:Int, ty:Type | integerType? ty && i in? rangeOfIntegerType ty) : Value =
-  the(val:Value) typeOfValue val = ty && mathIntOfValue val = ok i
+(* Create a value from a list of bits, given a type *)
+op valueOfBits (b:List Bit, ty:Type |
+                  integerType? ty && length b <= typeBits ty) : Value =
+   V_int (ty, TwosComplement.toInt b)
 
 (* Each scalar type has a "zero" value. For integers, it is the representation
 of the mathematical 0. For pointers, it is the null pointer. *)
 
 op zeroOfScalarType (ty:Type | scalarType? ty) : Value =
-  if integerType? ty then valueOfMathInt (0, ty) else nullpointer ty
-
-(* The zero of an integer type consists of all 0 bits. Note that, because of our
-environmental choices about the absence of padding bits and the two's complement
-representation of signed integers, the all-0-bits pattern is the only
-representation of the integer 0 values. In particular, two's complement do not
-have positive and negative zeros. *)
-
-theorem zero_of_integer_type_is_all_zeros is
-  fa(ty:Type) integerType? ty =>
-              bitsOfIntegerValue (zeroOfScalarType ty) =
-                ok (repeat B0 (typeBits ty))
+  if integerType? ty then valueOfInt (0, ty) else V_nullpointer ty
 
 (* The following predicate tests whether a scalar value is 0 or not. The result
 is an error if the value is not scalar, and non-standard if it is undefined. *)
 
 op zeroScalarValue? (val:Value) : Monad Bool =
   if scalarValue? val then
-    if embed? undefined val then nonstd
-    else ok (ex(ty:Type) scalarType? ty && val = zeroOfScalarType ty)
+    if embed? V_undefined val then raiseErr Err_nonstd
+    else return (val = zeroOfScalarType (typeOfValue val))
   else
     error
 
 (* It is useful to introduce Specware constants for the signed ints 0 and 1,
 because they are returned by some operators, as formalized later. *)
 
-op int0 : Value = valueOfMathInt (0, sint)
-
-op int1 : Value = valueOfMathInt (1, sint)
-
-
-
+op int0 : Value = valueOfInt (0, T_sint)
+op int1 : Value = valueOfInt (1, T_sint)
 
 
 %subsection (* Conversions *)
@@ -3013,16 +2548,16 @@ in [ISO 6.3.1.3/2].
 If the new type is signed, the outcome is non-standard [ISO 6.3.1.3/3]. *)
 
 op convertInteger (val:Value, ty:Type | integerType? ty) : Monad Value =
-  {i <- mathIntOfValue val;
+  {i <- intOfValue val;
    if i in? rangeOfIntegerType ty then
-     ok (valueOfMathInt (i, ty))
-   else if unsignedIntegerType? ty || (plainCharsAreUnsigned && ty = char) then
+     return (valueOfInt (i, ty))
+   else if unsignedIntegerType? ty || (plainCharsAreUnsigned && ty = T_char) then
      let max1:Nat = maxOfIntegerType ty + 1 in
      let i':Int = the(i':Int) i' in? rangeOfIntegerType ty &&
                               (ex(k:Int) i' = i + k * max1) in
-     ok (valueOfMathInt (i', ty))
+     return (valueOfInt (i', ty))
    else
-     nonstd}
+     raiseErr Err_nonstd}
 
 (* In terms of the bits that comprise the integer values, integer conversions
 correspond to zero-extension, sign-extension, truncation, or no change.
@@ -3043,6 +2578,7 @@ No change occurs when the new type has the same number of bits as the original
 value, regardless of whether the new type is signed or unsigned and whether the
 original value is signed or unsigned. *)
 
+(*
 theorem convertInteger_zero_extension is
   fa (val:Value, ty:Type, bits:Bits, newval:Value, newty:Type)
     typeOfValue val = ty &&
@@ -3081,6 +2617,7 @@ theorem convertInteger_no_change is
     typeBits newty = typeBits ty &&
     convertInteger (val, newty) = ok newval =>
     bitsOfIntegerValue newval = ok bits
+*)
 
 
 %subsubsection (* Integer promotions *)
@@ -3099,16 +2636,16 @@ op promoteValue (val:Value) : Monad Value =
 %subsubsection (* Usual arithmetic conversions *)
 
 (* At run time, the 'usual arithmetic conversions' [ISO 6.3.1.8] can be
-expressed as a mapping from pairs of values to pairs of values: the original
-values are converted to two values of the type returned by op
-arithConvertTypes. *)
+expressed, in our formalization, as a mapping from pairs of values to the
+required result type for arithmetic operations on those two values; we also
+bundle this with getting the integer values of the two values *)
 
-op arithConvertValues (val1:Value, val2:Value) : Monad (Value * Value) =
+op arithConvertValues (val1:Value, val2:Value) : Monad (Type * Int * Int) =
   if arithmeticValue? val1 && arithmeticValue? val2 then
     let ty = arithConvertTypes (typeOfValue val1, typeOfValue val2) in
-    {newval1 <- convertInteger (val1, ty);
-     newval2 <- convertInteger (val2, ty);
-     ok (newval1, newval2)}
+    {i1 <- intOfValue val1;
+     i2 <- intOfValue val2;
+     return (ty, i1, i2)}
   else
     error
 
@@ -3127,15 +2664,16 @@ The following op returns an error outcome if neither (i) nor (ii) apply, because
 the compile-time checks prevent that from happening. In conversion (ii), unless
 the pointer is null, the following op returns a non-standard outcome. *)
 
-op convertPointer (val:Value, ty:Type | embed? pointer ty) : Monad Value =
+op convertPointer (val:Value, ty:Type | embed? T_pointer ty) : Monad Value =
   let ty0 = typeOfValue val in
   if compatibleTypes? (ty0, ty) then
-    ok val
-  else if embed? pointer ty0 && (ty0 = pointer void || ty = pointer void) then
-    if embed? nullpointer val then
-      ok (nullpointer ty)
+    return val
+  else if embed? T_pointer ty0 && (ty0 = T_pointer T_void
+                                     || ty = T_pointer T_void) then
+    if embed? V_nullpointer val then
+      return (V_nullpointer ty)
     else
-      nonstd
+      raiseErr Err_nonstd
   else
     error
 
@@ -3163,9 +2701,9 @@ none of the cases (i)-(v) above holds. *)
 op convertForAssignment (val:Value, ty:Type) : Monad Value =
   if arithmeticType? ty then
     convertInteger (val, ty)
-  else if embed? struct ty && compatibleTypes? (typeOfValue val, ty) then
-    ok val
-  else if embed? pointer ty then
+  else if embed? T_struct ty && compatibleTypes? (typeOfValue val, ty) then
+    return val
+  else if embed? T_pointer ty then
     convertPointer (val, ty)
   else
     error
@@ -3182,7 +2720,7 @@ If the constant is too large to fit in a value, error is returned. *)
 
 op evaluateIntegerConstant (c:IntegerConstant) : Monad Value =
   case checkIntegerConstant c of
-  | Some ty -> ok (valueOfMathInt (integerConstantValue c, ty))
+  | Some ty -> return (valueOfInt (integerConstantValue c, ty))
   | None -> error
 
 
@@ -3207,24 +2745,25 @@ type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_MINUS (val:Value) : Monad Value =
   {val' <- promoteValue val;
-   let ty = typeOfValue val' in
-   let ok x = mathIntOfValue val' in
+   ty <- return (typeOfValue val');
+   x <- intOfValue val';
    let y = - x in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
-       nonstd}
+       raiseErr Err_nonstd}
 
 (* The '~' operator requires an integer operand [ISO 6.5.3.3/1] and returns the
 bitwise complement of the promoted operand [ISO 6.5.3.3/4]. *)
 
 op operator_NOT (val:Value) : Monad Value =
   {val' <- promoteValue val;
-   bits <- bitsOfIntegerValue val';
-   ok (valueOfBits (Bits.not bits, typeOfValue val'))}
+   x <- intOfValue val';
+   bits <- return (bitsOfInt (x, typeOfValue val'));
+   return (valueOfBits (Bits.not bits, typeOfValue val'))}
 
 (* The '!' operator requires a scalar operand [ISO 6.5.3.3/1] and returns the
 signed int 1 or 0 depending on whether the operator compares equal or unequal to
@@ -3232,7 +2771,7 @@ signed int 1 or 0 depending on whether the operator compares equal or unequal to
 
 op operator_NEG (val:Value) : Monad Value =
   {isZero <- zeroScalarValue? val;
-   if isZero then ok int1 else ok int0}
+   if isZero then return int1 else return int0}
 
 (* The binary '*' operator requires arithmetic operands [ISO 6.5.5/2], performs
 the usual arithmetic conversions [ISO 6.5.5/3], and returns the product [ISO
@@ -3247,16 +2786,13 @@ If the operands are signed and their product cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_MUL (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let y = x1 * x2 in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
        nonstd}
 
@@ -3273,17 +2809,14 @@ If the operands are signed and their quotient cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_DIV (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
-   if x2 = 0 then nonstd else
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
+   if x2 = 0 then raiseErr Err_nonstd else
    let y = x1 divT x2 in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
        nonstd}
 
@@ -3301,17 +2834,14 @@ If the operands are signed and their remainder cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_REM (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
    if x2 = 0 then nonstd else
    let y = x1 modT x2 in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
        nonstd}
 
@@ -3327,18 +2857,15 @@ If the operands are signed and their product cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_ADD (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let y = x1 + x2 in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
-       nonstd}
+       raiseErr Err_nonstd}
 
 (* The binary '-' operator requires arithmetic operands (our C subset excludes
 pointer arithmetic) [ISO 6.5.6/3], performs the usual arithmetic conversions
@@ -3352,18 +2879,15 @@ If the operands are signed and their product cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_SUB (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let y = x1 - x2 in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
-       nonstd}
+       raiseErr Err_nonstd}
 
 (* The '<<' operator requires integer operands [ISO 6.5.7/2], promotes them, and
 left-shifts the first operand E1 by the number of positions E2 indicated by the
@@ -3382,19 +2906,20 @@ is negative or E1 * 2^E2 is not representable), the behavior is undefined [ISO
 op operator_SHL (val1:Value, val2:Value) : Monad Value =
   {val1' <- promoteValue val1;
    val2' <- promoteValue val2;
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
+   ty <- return (typeOfValue val1') in
+   x1 <- intOfValue val1' in
+   x2 <- intOfValue val2' in
    if x2 < 0 || x2 >= typeBits ty then nonstd else
    let y = x1 * 2**x2 in
    if unsignedIntegerType? ty then
-     ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
    else
      if x1 >= 0 && y in? rangeOfIntegerType ty then
-       ok (valueOfMathInt (y, ty))
+       return (valueOfInt (y, ty))
      else
        nonstd}
 
+(*
 theorem operator_SHL is
   fa (val1:Value, bits1:Bits, val2:Value, d:Nat, val:Value, bits:Bits)
     operator_SHL (val1, val2) = ok val &&
@@ -3405,6 +2930,7 @@ theorem operator_SHL is
        promoteValue val1 = ok val1' &&
        bitsOfIntegerValue val1' = ok bits1' &&
        bits = shiftLeft (bits1', d))
+*)
 
 (* The '>>' operator requires integer operands [ISO 6.5.7/2], promotes them, and
 right-shifts the first operand E1 by the number of positions E2 indicated by the
@@ -3418,17 +2944,18 @@ implementation-dependent [ISO 6.5.7/5]. *)
 op operator_SHR (val1:Value, val2:Value) : Monad Value =
   {val1' <- promoteValue val1;
    val2' <- promoteValue val2;
-   let ty = typeOfValue val1' in
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
+   ty <- return (typeOfValue val1') in
+   x1 <- intOfValue val1' in
+   x2 <- intOfValue val2' in
    if x2 < 0 || x2 >= typeBits ty then nonstd else
    let y = x1 divT 2**x2 in
    if unsignedIntegerType? ty ||
       signedIntegerType? ty && x1 >= 0 then
-     ok (valueOfMathInt (y, ty))
+     return (valueOfInt (y, ty))
    else
      nonstd}
 
+(*
 theorem operator_SHR is
   fa (val1:Value, bits1:Bits, val2:Value, d:Nat, val:Value, bits:Bits)
     operator_SHL (val1, val2) = ok val &&
@@ -3439,6 +2966,7 @@ theorem operator_SHR is
        promoteValue val1 = ok val1' &&
        bitsOfIntegerValue val1' = ok bits1' &&
        bits = shiftRightUnsigned (bits1', d))
+*)
 
 (* The '<', '>', '<=', and '>=' operators require real operands (our C subset
 excludes pointer comparisons) [ISO 6.5.8/2], perform the usual arithmetic
@@ -3446,28 +2974,20 @@ conversions [ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether
 the comparison is true or false [ISO 6.5.8/6]. *)
 
 op operator_LT (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
-   if x1 < x2 then ok int1 else ok int0}
+  {(_, x1, x2) <- arithConvertValues (val1, val2);
+   if x1 < x2 then return int1 else return int0}
 
 op operator_GT (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
-   if x1 > x2 then ok int1 else ok int0}
+  {(_, x1, x2) <- arithConvertValues (val1, val2);
+   if x1 > x2 then return int1 else return int0}
 
 op operator_LE (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
-   if x1 <= x2 then ok int1 else ok int0}
+  {(_, x1, x2) <- arithConvertValues (val1, val2);
+   if x1 <= x2 then return int1 else return int0}
 
 op operator_GE (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ok x1 = mathIntOfValue val1' in
-   let ok x2 = mathIntOfValue val2' in
-   if x1 >= x2 then ok int1 else ok int0}
+  {(_, x1, x2) <- arithConvertValues (val1, val2);
+   if x1 >= x2 then return int1 else return int0}
 
 (* The '==' and '!=' operators require (i) two arithmetic operands, or (ii) two
 pointers to compatible types, or (iii) a pointer to a non-void type and a
@@ -3496,27 +3016,25 @@ returns 0 if '==' returns 1, and 1 if '==' returns 0. *)
 
 op operator_EQ (val1:Value, val2:Value) : Monad Value =
   if arithmeticValue? val1 && arithmeticValue? val2 then
-    {(val1', val2') <- arithConvertValues (val1, val2);
-     let x1 = mathIntOfValue val1' in
-     let x2 = mathIntOfValue val2' in
-     if x1 = x2 then ok int1 else ok int0}
+    {(_, x1, x2) <- arithConvertValues (val1, val2);
+     if x1 = x2 then return int1 else return int0}
   else if pointerValue? val1 && pointerValue? val2 &&
           (compatibleTypes? (typeOfValue val1, typeOfValue val2) ||
-           typeOfValue val1 = pointer void ||
-           typeOfValue val2 = pointer void) then
-    if embed? undefined val1 || embed? undefined val2 then
-      nonstd
-    else if embed? nullpointer val1 && embed? nullpointer val2
+           typeOfValue val1 = T_pointer T_void ||
+           typeOfValue val2 = T_pointer T_void) then
+    if embed? V_undefined val1 || embed? V_undefined val2 then
+      raiseErr Err_nonstd
+    else if embed? V_nullpointer val1 && embed? V_nullpointer val2
             || val1 = val2 then
-      ok int1
+      return int1
     else
-      ok int0
+      return int0
   else
     error
 
 op operator_NE (val1:Value, val2:Value) : Monad Value =
   {eq_result <- operator_EQ (val1, val2);
-   if eq_result = int0 then ok int1 else ok int0}
+   if eq_result = int0 then return int1 else return int0}
 
 (* The binary '&' operator, the '^' operator, and the '|' operator require
 integer operands [ISO 6.5.10/2, 6.5.11/2, 6.5.12/2], perform the usual
@@ -3525,25 +3043,22 @@ bitwise AND [ISO 6.5.10/4], exclusive OR [ISO 6.5.11/4], and inclusive OR [ISO
 6.5.12/4] of their operands. *)
 
 op operator_AND (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok bits1 = bitsOfIntegerValue val1' in
-   let ok bits2 = bitsOfIntegerValue val2' in
-   ok (valueOfBits (bits1 Bits.and bits2, ty))}
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
+   let bits1 = bitsOfInt (ty, x1) in
+   let bits2 = bitsOfInt (ty, x2) in
+   return (valueOfBits (bits1 Bits.and bits2, ty))}
 
 op operator_XOR (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok bits1 = bitsOfIntegerValue val1' in
-   let ok bits2 = bitsOfIntegerValue val2' in
-   ok (valueOfBits (bits1 Bits.xor bits2, ty))}
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
+   let bits1 = bitsOfInt (ty, x1) in
+   let bits2 = bitsOfInt (ty, x2) in
+   return (valueOfBits (bits1 Bits.xor bits2, ty))}
 
 op operator_IOR (val1:Value, val2:Value) : Monad Value =
-  {(val1', val2') <- arithConvertValues (val1, val2);
-   let ty = typeOfValue val1' in
-   let ok bits1 = bitsOfIntegerValue val1' in
-   let ok bits2 = bitsOfIntegerValue val2' in
-   ok (valueOfBits (bits1 Bits.ior bits2, ty))}
+  {(ty, x1, x2) <- arithConvertValues (val1, val2);
+   let bits1 = bitsOfInt (ty, x1) in
+   let bits2 = bitsOfInt (ty, x2) in
+   return (valueOfBits (bits1 Bits.ior bits2, ty))}
 
 (* We do not define ops 'operator_LAND' and 'operator_LOR' for the '&&' and '||'
 operators because they are non-strict, i.e. the second value is calculated only
@@ -3561,8 +3076,8 @@ never designate functions.
 The following type captures these two kinds of expression result. *)
 
 type ExpressionResult =
-  | object ObjectDesignator
-  | value  Value
+  | Res_object ObjectDesignator
+  | Res_value  Value
 
 (* If a subexpression results in an object designator, but the superexpression
 needs a value, the object designator is converted into a value, namely the value
@@ -3570,30 +3085,16 @@ stored in the designated object. The following op coerces an expression result
 into a value -- if already a value, there is no change. In order to retrieve the
 value stored in an object, the op has a state argument. *)
 
-op expressionValue (state:State, res:ExpressionResult) : Monad Value =
+op expressionValue (res:ExpressionResult) : Monad Value =
   case res of
-  | object obj -> readObject (state, obj)
-  | value val -> ok val
+  | Res_object obj -> readObject (state, obj)
+  | Res_value val -> return val
 
 (* It is convenient to lift the previous op to lists. *)
 
-op expressionValues
-   (state:State, ress:List ExpressionResult) : Monad (List Value) =
-  case ress of
-  | [] -> ok []
-  | res::ress ->
-    {val <- expressionValue (state, res);
-     vals <- expressionValues (state, ress);
-     ok (val :: vals)}
+op expressionValues (ress:List ExpressionResult) : Monad (List Value) =
+   mapM expressionValues ress
 
-(* We lift op typeOfValue to expression results and expression types. The type
-of an expression type is the type of the value of the expression result. The
-object flag is set iff the expression result is an object designator. *)
-
-op typeOfExpressionResult
-   (state:State, res:ExpressionResult) : Monad ExpressionType =
-  {val <- expressionValue (state, res);
-   ok {typE = typeOfValue val, object = embed? object res}}
 
 (* For most purposes, (an object designator to) an array that results from an
 expression is converted into a pointer to the array's initial element [ISO
@@ -3602,28 +3103,21 @@ when needed. An expression result that is a value is not changed, even if the
 value itself is a value, because as formalized later the evaluation of an
 expression never yields an array value as result, only an array designator. *)
 
-op convertToPointerIfArray
-   (state:State, res:ExpressionResult) : Monad ExpressionResult =
+op convertToPointerIfArray (res:ExpressionResult) : Monad ExpressionResult =
   case res of
-  | object obj ->
+  | Res_object obj ->
     {val <- readObject (state, obj);
      case typeOfValue val of
-     | array (ty, n) ->
-       if n ~= 0 then ok (value (pointer (ty, subscript (obj, 0))))
-       else nonstd % array is empty, so there is no initial element
-     | _ -> ok (object obj)} % no change
-  | value val -> ok (value val)  % no change
+     | T_array (ty, n) ->
+       if n ~= 0 then return (Res_value (V_pointer (ty, OD_subscript (obj, 0))))
+       else raiseErro Err_nonstd % array is empty, so there is no initial element
+     | _ -> return (Res_object obj)} % no change
+  | Res_value val -> return (Res_value val)  % no change
 
 (* It is convenient to lift the previous op to lists. *)
 
-op convertToPointersIfArrays
-   (state:State, ress:List ExpressionResult) : Monad (List ExpressionResult) =
-  case ress of
-  | [] -> ok []
-  | res::ress ->
-    {res' <- convertToPointerIfArray (state, res);
-     ress' <- convertToPointersIfArrays (state, ress);
-     ok (res' :: ress')}
+op convertToPointersIfArrays (ress:List ExpressionResult) : Monad (List ExpressionResult) =
+   mapM convertToPointersIfArray ress
 
 (* We formalize expression evaluation via an op that, given a state, returns an
 expression result outcome.
@@ -3709,33 +3203,62 @@ i.e. i is 0 and thus the result is element j of the array, as expected.
 As explained earlier, the null pointer constant has type 'void*', and therefore
 it returns a null pointer to void. *)
 
-op evaluate (state:State, expr:Expression) : Monad ExpressionResult =
+FIXME HERE NOW: make tables for the unary and binary ops
+
+op evaluate (expr:Expression) : Monad ExpressionResult =
   case expr of
-  | ident var -> 
-    {obj <- designatorOfObject (state, var);
-     ok (object obj)}
-  | const c ->
-    {val <- evaluateIntegerConstant c;
-     ok (value val)}
-  | unary (uop, expr) ->
-    % special treatment for expr of the form '& * expr0':
-    if uop = ADDR && (ex(expr0:Expression) expr = unary (STAR, expr0)) then
-      let unary (STAR, expr0) = expr in
-      evaluate (state, expr0)
-    % special treatment for expr of the form '& expr0 [ expr1 ]',
-    % if 'expr1' yields 0:
-    else if uop = ADDR &&
-            (ex (expr0:Expression,
-                 expr1:Expression,
-                 res1:ExpressionResult,
-                 val1:Value)
-               expr = subscript (expr0, expr1) &&
-               evaluate (state, expr1) = ok res1 &&
-               expressionValue (state, res1) = ok val1 &&
-               mathIntOfValue val1 = ok 0) then
-      let subscript (expr0, _) = expr in
-      evaluate (state, expr0)
-    % normal evaluation procedure for unary operators:
+    | E_ident var -> 
+      {obj <- designatorOfObject (state, var);
+       return (Res_object obj)}
+    | const c ->
+      {val <- evaluateIntegerConstant c;
+       return (Res_value val)}
+    | unary (ADDR, E_unary (STAR, expr0)) ->
+      % special treatment for expr of the form '& * expr0':
+      evaluate expr0
+    | unary (ADDR, e_arg as E_subscript (expr0, expr1)) ->
+      % special treatment for expr of the form '& expr0 [ expr1 ]',
+      % if 'expr1' yields 0:
+      {val1 <- monadBind (evaluate expr1, expressionValue);
+       i <- intOfValue val1;
+       if i = 0 then
+         evaluate expr0
+       else
+         {res <- evaluate e_arg;
+          case res of
+            | Res_object obj ->
+              {val <- expressionValue res;
+               return (Res_value (V_pointer (typeOfValue val, obj)))}
+            | Res_value _ -> error}}
+    | unary (ADDR, expr0) ->
+      {res0 <- evaluate expr0;
+       case res0 of
+         | Res_object obj ->
+           {val <- expressionValue res;
+            return (Res_value (V_pointer (typeOfValue val, obj)))}
+         | Res_value _ -> error}
+    | unary (STAR, expr0) ->
+      {res0 <- evaluate expr0;
+       res <- convertToPointerIfArray res0;
+       val <- expressionValue res;
+       case val of
+         | V_pointer (_, obj)        -> return (Res_object obj)
+         | V_nullpointer _           -> raiseErr Err_nonstd
+         | V_undefined (T_pointer _) -> raiseErr Err_nonstd
+         | _                         -> error}
+    | unary (PLUS, expr0) ->
+      {res0 <- evaluate expr0;
+       val0 <- expressionValue res0;
+       val <- operator_PLUS val0;
+       return (Res_value val)
+    | unary (MINUS, expr0) ->
+      {res0 <- evaluate expr0;
+       val0 <- expressionValue res0;
+       val <- operator_MINUS val0;
+       return (Res_value val)
+
+FIXME HERE NOW
+
     else
     {res <- evaluate (state, expr);
      case uop of
@@ -3933,6 +3456,7 @@ satisfies the compile-time constraints w.r.t. the symbol table of the state,
 does not yield an error. Furthermore, if a normal outcome occurs, the expression
 result has the expression type inferred by the compile-time constraints. *)
 
+(*
 theorem expression_evaluation is
   fa (state:State, expr:Expression, ety:ExpressionType)
     invariants? state &&
@@ -3942,6 +3466,7 @@ theorem expression_evaluation is
     | error -> false
     | nonstd -> true
     | nonterm -> true)
+*)
 
 (* It is useful to introduce an op to evaluate a sequence of expressions, one
 after the other. *)
@@ -4194,7 +3719,7 @@ pointer that designates an object in frame f and, if present, block b of frame f
 scope designator from an object designator is also defined. *)
 
 op scopeOfObjectDesignator
-   (obj:ObjectDesignator | ~(embed? outside obj)) : ScopeDesignator =
+   (obj:ObjectDesignator | ~(embed? allocated obj)) : ScopeDesignator =
   case obj of
   | top (scope, _)     -> scope
   | member    (obj, _) -> scopeOfObjectDesignator obj
@@ -4239,9 +3764,9 @@ op undefinePointersInFrame
   map (fn nstore:NamedStorage -> undefinePointersInNamedStorage (nstore, f, b?))
       frame
 
-op undefinePointersInOutsideStorage
-   (store:OutsideStorage, f:Nat, b?:Option Nat) : OutsideStorage =
-  fn id:OutsideID ->
+op undefinePointersInAllocatedStorage
+   (store:AllocatedStorage, f:Nat, b?:Option Nat) : AllocatedStorage =
+  fn id:AllocatedID ->
     case store id of
     | Some val -> Some (undefinePointersInValue (val, f, b?))
     | None -> None
@@ -4251,7 +3776,7 @@ op undefinePointersInStorage (store:Storage, f:Nat, b?:Option Nat) : Storage =
    automatic = map (fn frame:List NamedStorage ->
                        undefinePointersInFrame (frame, f, b?))
                    store.automatic,
-   outside = undefinePointersInOutsideStorage (store.outside, f, b?)}
+   allocated = undefinePointersInAllocatedStorage (store.allocated, f, b?)}
 
 op undefinePointersInState (state:State, f:Nat, b?:Option Nat) : State =
   state << {storage = undefinePointersInStorage (state.storage, f, b?)}
@@ -4711,7 +4236,7 @@ theorem translation_unit_execution is
 yields the initial state of the program. *)
 
 op emptyState : State =
-  {storage    = {static = empty, automatic = [], outside = empty},
+  {storage    = {static = empty, automatic = [], allocated = empty},
    typedefs   = empty,
    structures = empty,
    functions  = empty}
@@ -4719,9 +4244,9 @@ op emptyState : State =
 op initState (prg:Program) : Monad State =
   execTranslationUnit (emptyState, prg)
 
-theorem initState_no_outside_objects is
+theorem initState_no_allocated_objects is
   fa (prg:Program, state:State)
-    initState prg = ok state => empty? state.storage.outside
+    initState prg = ok state => empty? state.storage.allocated
 
 (* If a program satisfies all the compile-time constraints, executing its
 translation unit does not yield an error. If an initial state is returned, it
@@ -4736,6 +4261,340 @@ theorem initial_state_invariants is
     | error -> false
     | nonstd -> true
     | nonterm -> true)
+
+
+end-spec
+
+
+
+
+oldStuff = spec
+
+(* FIXME HERE: write monadic versions of all of these specificational ops *)
+
+(* A symbol table is essentially a compile-time summary/representation of the
+run-time state. The following op abstracts a state into a symbol table.
+
+The static storage, which is a map from names to values, is turned into a map
+from names to types by applying op 'typeOfValue' to all the values in the map.
+Technically, this is done by lifting 'typeOfValue' to operate on optional values
+and types (via op 'mapOption') and then composing it with the named storage map,
+as encapsulated in op 'objectTableOfNamedStorage' below. The latter is applied
+to all the blocks of the topmost frame of the automatic storage, and the result
+appended to the map for the static storage. The allocated storage does not
+contribute to the symbol table.
+
+The function table is created by dropping the bodies from the function
+information in the state, using the same 'mapOption' and function composition
+technique described above for object tables.
+
+The type definition table and the structure table are just copied from the state
+into the symbol table. *)
+
+op objectTableOfNamedStorage
+   (store:NamedStorage) : FiniteMap (Identifier, Type) =
+  (mapOption typeOfValue) o store
+
+op objectTableOfStorage (store:Storage) : ObjectTable =
+  if empty? store.automatic then
+    [objectTableOfNamedStorage store.static]
+  else
+    objectTableOfNamedStorage store.static ::
+    map objectTableOfNamedStorage (last store.automatic)
+
+op functionTableOfFunctionsInfo (funsinfo:FunctionsInfo) : FunctionTable =
+  (mapOption (fn funinfo:FunctionInfo -> (funinfo.return, funinfo.parameters)))
+  o
+  funsinfo
+
+op symbolTableOfState (state:State) : SymbolTable =
+  {typedefs   = state.typedefs,
+   structures = state.structures,
+   functions  = functionTableOfFunctionsInfo state.functions,
+   objects    = objectTableOfStorage state.storage}
+
+(* The following ops collect all the object designators that occur in values,
+named storages, frames, allocated storages, storages, and states. *)
+
+op objDesignatorsInValue (val:Value) : FiniteSet ObjectDesignator =
+  case val of
+  | pointer (_, obj) ->
+    single obj
+  | array (_, vals) ->
+    (fn obj -> (ex(val) val in? vals && obj in? objDesignatorsInValue val))
+  | struct (_, members) ->
+    (fn obj -> (ex(mem) mem in? domain members &&
+                        obj in? objDesignatorsInValue (members @ mem)))
+  | _ ->
+    empty
+
+op objDesignatorsInNamedStorage
+   (store:NamedStorage) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(name:Identifier) name in? domain store &&
+                                 obj in? objDesignatorsInValue (store @ name))
+
+op objDesignatorsInFrame
+   (frame:List NamedStorage) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(b:Nat) b < length frame &&
+                       obj in? objDesignatorsInNamedStorage (frame @ b))
+
+op objDesignatorsInFrames
+   (frames:List (List NamedStorage)) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(f:Nat) f < length frames &&
+                       obj in? objDesignatorsInFrame (frames @ f))
+
+op objDesignatorsInAllocatedStorage
+   (store:AllocatedStorage) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(id:AllocatedID) id in? domain store &&
+                              obj in? objDesignatorsInValue (store @ id))
+
+op objDesignatorsInStorage (store:Storage) : FiniteSet ObjectDesignator =
+  objDesignatorsInNamedStorage   store.static \/
+  objDesignatorsInFrames         store.automatic \/
+  objDesignatorsInAllocatedStorage store.allocated
+
+op objDesignatorsInState (state:State) : FiniteSet ObjectDesignator =
+  objDesignatorsInStorage state.storage
+
+
+%subsection (* State invariants *)
+
+(* Not all the states in the state space defined by type 'State' correspond to
+states that can actually happen at run time, when a program satisfying the
+compile-time constraints is executed. There are certain invariants that are true
+of the initial state and that are preserved by execution. We define some of
+these invariants.
+
+An important invariant is the absence of circularities in the structure types in
+the state. In other words, given a structure type S, no member of S can have a
+type that references S, and no member or element of a member S can, and so on
+recursively. (As explained in the comments for op 'checkStructSpecifier', our C
+subset disallows recursive structure via pointers, unlike [ISO].)
+
+The following op says whether a type references a structure (via a tag). This
+happens when the type is the structure type itself, or is a pointer to the
+structure, or is an array of those structures. *)
+
+op typeReferencesStruct? (ty:Type, tag:Identifier) : Bool =
+  case ty of
+  | struct tag' -> tag' = tag
+  | array  (ty', _) -> typeReferencesStruct? (ty', tag)
+  | pointer ty'     -> typeReferencesStruct? (ty', tag)
+  | _ -> false
+
+(* The following op says whether a structure (identified by tag) references
+another structure (identifier by tag'). This happens when the first structure is
+in the state and the type of at least one of its members directly references the
+second structure. *)
+
+op structReferencesStruct?
+   (state:State, tag:Identifier, tag':Identifier) : Bool =
+  tag in? domain state.structures &&
+  (let tmembers = state.structures @ tag in
+  (ex(mem) mem in? domain tmembers &&
+           typeReferencesStruct? (tmembers @ mem, tag')))
+
+(* A circularity arises when there is a list of two or more structures such that
+each one references the next one, and the first and last one in the list
+coincide. Negating this condition yields a predicate to test for
+non-circularity. *)
+
+op noCircularStructs? (state:State) : Bool =
+  ~ (ex (tags:List Identifier)
+       length tags >= 2 &&
+       (fa(i:Nat) i < length tags - 1 =>
+          structReferencesStruct? (state, tags @ i, tags @ (i + 1))) &&
+       head tags = last tags)
+
+(* A similar invariant is the absence of circularities in the function call
+graph. In other, no function can call itself, directly or indirectly.
+
+The following predicates say whether a statement, block item, or block items
+call(s) a function with a given identifier. *)
+
+op statementCallsFunction? (stmt:Statement, fun:Identifier) : Bool =
+  case stmt of
+  | call (_, fun', _) -> fun' = fun
+  | iF (_, thenBranch, elseBranch?) ->
+    statementCallsFunction? (thenBranch, fun) ||
+    (case elseBranch? of
+    | Some elseBranch -> statementCallsFunction? (elseBranch, fun)
+    | None -> false)
+  | block items -> blockItemsCallFunction? (items, fun)
+  | _ -> false
+
+op blockItemsCallFunction? (items:List BlockItem, fun:Identifier) : Bool =
+  case items of
+  | [] -> false
+  | item::items ->
+    blockItemCallsFunction? (item, fun) ||
+    blockItemsCallFunction? (items, fun)
+
+op blockItemCallsFunction? (item:BlockItem, fun:Identifier) : Bool =
+  case item of
+  | declaration _ -> false
+  | statement stmt -> statementCallsFunction? (stmt, fun)
+
+(* The following predicate says whether a function (with name fun) calls another
+function (with name fun'), directly. This happens when the first function is in
+the state and its body calls the second function. *)
+
+op functionCallsFunction?
+   (state:State, fun:Identifier, fun':Identifier) : Bool =
+  fun in? domain state.functions &&
+  (let funinfo = state.functions @ fun in
+  statementCallsFunction? (funinfo.body, fun'))
+
+(* A circularity arises when there is a list of two or more functions such that
+each one references the next one, and the first and last one in the list
+coincide. Negating this condition yields a predicate to test for
+non-circularity. *)
+
+op noCircularFunctions? (state:State) : Bool =
+  ~ (ex (funs:List Identifier)
+       length funs >= 2 &&
+       (fa(i:Nat) i < length funs - 1 =>
+          functionCallsFunction? (state, funs @ i, funs @ (i + 1))) &&
+       head funs = last funs)
+
+(* Another important invariant is that the body of each function in the state is
+a block whose items satisfy the compile-time constraints for lists of block
+items. The symbol table w.r.t. which the constraints are checked, is constructed
+from the state, but all the automatic-storage scopes are replaced with one scope
+for the function, which contains the functions parameters. Furthermore, the
+function's body always return something matching the return type (nothing if
+'void'). *)
+
+op functionBodiesOK? (state:State) : Bool =
+  fa (name:Identifier, funinfo:FunctionInfo)
+    state.functions name = Some funinfo =>
+    (let rety = funinfo.return in
+     let tparams = funinfo.parameters in
+     let pnames = map (project name) tparams in
+     let ptys = map (project typE) tparams in
+     let funscope = fromAssocList (zip (pnames, ptys)) in
+     let symtab = symbolTableOfState state in
+     let symtab' = symtab << {objects = [head symtab.objects] ++ [funscope]} in
+     case funinfo.body of
+     | block items ->
+       (case checkBlockItems (symtab', items) of
+       | Some sty ->
+         (rety ~= void => next nin? sty) &&
+         (fa(ty) return ty in? sty => assignableReturnTypes? (rety, ty))
+       | None -> false)
+     | _ -> false)
+
+(* Another important invariant is that every object designator in the state
+designates an object in the state. The condition that an object designator
+designates an object in the state is equivalent to op 'readObject' returning
+'ok'. *)
+
+op objDesignatorOK? (state:State, obj:ObjectDesignator) : Bool =
+  embed? ok (readObject (state, obj))
+
+op allObjDesignatorsOK? (state:State) : Bool =
+  fa(obj) obj in? objDesignatorsInState state => objDesignatorOK? (state, obj)
+
+(* We put together the above invariants into one predicate *)
+
+op invariants? (state:State) : Bool =
+  noCircularStructs?   state &&
+  noCircularFunctions? state &&
+  functionBodiesOK?    state &&
+  allObjDesignatorsOK? state
+
+
+%subsection (* Attachment and detachment of allocated storage *)
+
+(* FIXME HERE: remove attachment and detachment *)
+
+(* When modeling the interaction of a program in our C subset with allocated code,
+it is convenient to attach and detach allocated storage to and from the state. If
+allocated code calls a function in our C program, there will be an allocated storage
+to be attached to the state. During the execution of the function, assuming no
+multi-threading (as our formal model assumes), allocated storage can only be
+changed by our program (which does not call the allocated code). When the function
+returns, the allocated storage can be detached from the state, because at that
+point the allocated code can modify the external storage. By attaching and
+detaching allocated storage to the state, we can model various forms of
+interaction between our C program and allocated code, and we can model various
+kinds on assumptions on modifications to allocated storage made by allocated code in
+between calls to functions in our C program.
+
+In order to attach and detach allocated storage, certain closure conditions on
+pointers (i.e. object designators) must be satisfied. These conditions are
+modeled below, along with ops to attach and detach allocated storage.
+
+We start with an op that returns the object designators that are in a state but
+not in the allocated storage of the state. *)
+
+op objDesignatorsInNonAllocatedStorage
+   (state:State) : FiniteSet ObjectDesignator =
+  objDesignatorsInNamedStorage state.storage.static \/
+  objDesignatorsInFrames       state.storage.automatic
+
+(* Together with the object designators in the allocated storage, the object
+designators returned by op 'objDesignatorsInNonAllocatedStorage' are all the
+object designators in the state. *)
+
+theorem object_designators_allocated_nonallocated_union is
+  fa(state:State)
+    objDesignatorsInState state =
+    objDesignatorsInNonAllocatedStorage state \/
+    objDesignatorsInAllocatedStorage state.storage.allocated
+
+theorem object_designators_allocated_nonallocated_intersection is
+  fa(state:State)
+    objDesignatorsInNonAllocatedStorage state /\
+    objDesignatorsInAllocatedStorage state.storage.allocated = empty
+
+(* The following op says whether the non-allocated storage of a state has no
+references to the allocated storage of the state. *)
+
+op noReferencesToAllocatedStorage? (state:State) : Bool =
+  fa(obj) obj in? objDesignatorsInNonAllocatedStorage state =>
+          ~ (embed? allocated obj)
+
+(* The following op says whether an allocated storage has only references to
+allocated storage. *)
+
+op allReferencesToAllocatedStorage? (ostore:AllocatedStorage) : Bool =
+  fa(obj) obj in? objDesignatorsInAllocatedStorage ostore => embed? allocated obj
+
+(* If the allocated and the non-allocated storage of a state are partitioned
+(i.e. the non-allocated storage has no references to the allocated storage, and the
+allocated storage has no references to the non-allocated storage), we allow the
+allocated storage to be detached from the state. The state invariants are
+maintained. *)
+
+op detachableAllocatedStorage? (state:State) : Bool =
+  noReferencesToAllocatedStorage? state &&
+  allReferencesToAllocatedStorage? (state.storage.allocated)
+
+op detachAllocatedStorage
+   (state:State | detachableAllocatedStorage? state) : State =
+  updateAllocatedStorage (state, empty)
+
+theorem detachAllocatedStorage_invariants is
+  fa(state:State) invariants? state && detachableAllocatedStorage? state =>
+                  invariants? (detachAllocatedStorage state)
+
+(* If a state has empty allocated storage, an allocated storage with no references
+to the state's storage can be attached to the state. The state invariants are
+maintained. *)
+
+op attachableAllocatedStorage? (state:State, ostore:AllocatedStorage) : Bool =
+  empty? state.storage.allocated && allReferencesToAllocatedStorage? ostore
+
+op attachAllocatedStorage
+   (state:State, ostore:AllocatedStorage |
+    attachableAllocatedStorage? (state, ostore)) : State =
+  updateAllocatedStorage (state, ostore)
+
+theorem attachAllocatedStorage_invariants is
+  fa (state:State, ostore:AllocatedStorage)
+    invariants? state && attachableAllocatedStorage? (state, ostore) =>
+    invariants? (attachAllocatedStorage (state, ostore))
 
 
 %section (* Conclusion *)

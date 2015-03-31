@@ -46,6 +46,12 @@ op [a,b,c] mlens_compose (l1 : MLens (a,b), l2 : MLens (b,c)) : MLens (a,c) =
                     b_new <- l2.mlens_set b c;
                     l1.mlens_set a b_new})}
 
+(* FIXME: axiom about mlens_compose forming a category, i.e., it is associative
+   and has an identity *)
+
+(* FIXME: can combine lenses MLens(a,b1) and MLens(a,b2) into an MLens(a,b1*b2),
+   but only if the gets and sets commute; i.e., only if they are *separable* *)
+
 (* The monadic lens for getting / setting a specific key in a map. It
    is an error to get or set a key not already in the map; the error
    computations are passed in as arguments so that we don't have to
@@ -65,6 +71,14 @@ op [a] mlens_of_list_index (i:Nat, getErr:Monad a, setErr:Monad (List a)) : MLen
     {mlens_get = (fn l -> if i < length l then return (l @ i) else getErr),
      mlens_set = (fn l -> fn a ->
                     if i < length l then return (update (l,i,a)) else setErr)}
+
+(* The monadic lens for the ith element from the end of a list. As with
+   mlens_of_key and mlens_of_list_index, it is an error in both the get and the
+   set if a list does not have an ith element from the end. *)
+op [a] mlens_of_list_rindex (i:Nat, getErr:Monad a, setErr:Monad (List a)) : MLens (List a, a) =
+    {mlens_get = (fn l -> if i < length l then return (l @ (length l - i)) else getErr),
+     mlens_set = (fn l -> fn a ->
+                    if i < length l then return (update (l,length l - i,a)) else setErr)}
 
 (* FIXME: prove the subtyping constraints! *)
 
