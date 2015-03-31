@@ -1992,10 +1992,10 @@ type ScopeDesignator =
 type AllocatedID = | AllocatedID Nat
 
 type ObjectDesignator =
-  | OD_Top       ScopeDesignator * Identifier
-  | OD_Allocated   AllocatedID
-  | OD_Member    ObjectDesignator * Identifier
-  | OD_Subscript ObjectDesignator * Nat
+  | OD_Top        ScopeDesignator * Identifier
+  | OD_Allocated  AllocatedID
+  | OD_Member     ObjectDesignator * Identifier
+  | OD_Subscript  ObjectDesignator * Nat
 
 
 %subsection (* Values *)
@@ -2062,7 +2062,7 @@ separate types [ISO 6.2.5/14] and thus we use a different constructor for each
 different type. *)
 
 type Value =
-  |  V_int        TypedInt
+  | V_int         TypedInt
   | V_struct      Identifier * FiniteMap (Identifier, Value)
   | V_pointer     Type * ObjectDesignator
   | V_array       Type * List Value
@@ -2215,13 +2215,17 @@ op [a] nonstd : Monad a = raiseErr Err_nonstd
 op errorIf (condition:Bool) : Monad () =
   if condition then error else return ()
 
+(* Conditionally flag a non-standard computation *)
+op nonstdIf (condition:Bool) : Monad () =
+  if condition then raiseErr Err_nonstd else return ()
+
 (* The state type of the monad is the Storage type defined above *)
 type Monad.St = Storage
 
 (* The map function for monads; FIXME: should be in a standard library spec
    somewhere... *)
-op mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
-   case l of
+op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
+   case xs of
      | [] -> return []
      | x :: xs' ->
        {new_x <- f x;
@@ -2312,7 +2316,11 @@ op arrayElementsLens : MLens (Value, List Value) =
                                return (V_array (tp, fields))
                              | _ -> error}
 
-(* Build a lens for the object corrersponding to an ObjectDesignator *)
+(* Build a lens for the object corrersponding to an ObjectDesignator. Note that
+   reading from or writing to an array index out of bounds of an array is not an
+   error, but is instead leads to unspecified behavior, which we represent by
+   raising an Err_nonstd (as discussed above) *)
+
 op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
    case d of
      | OD_Top (scope_d, ident) ->
@@ -2327,14 +2335,26 @@ op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
                                      mlens_of_key (ident, error, error)))
      | OD_Subscript (d', i) ->
        mlens_compose (objectDesignatorLens d',
-                      mlens_compose (arrayElementsLens,
-                                     mlens_of_list_index (i, error, error)))
+                      mlens_compose
+                        (arrayElementsLens,
+                         mlens_of_list_index (i, raiseErr Err_nonstd,
+                                              raiseErr Err_nonstd)))
 
 (* Helper functions for reading from and writing to designated objects *)
 op readObject (d:ObjectDesignator) : Monad Value =
    (objectDesignatorLens d).mlens_get ()
 op writeObject (d:ObjectDesignator, v:Value) : Monad () =
    (objectDesignatorLens d).mlens_set () v
+
+(* Helper functions for reading from and writing to pointer values *)
+op readPtrValue (v:Value) : Monad Value =
+   case v of
+     | V_pointer (_, obj) -> readObject obj
+     | _ -> error
+op writePtrValue (v1:Value, v2:Value) : Monad () =
+   case v1 of
+     | V_pointer (_, obj) -> writeObject (obj, v2)
+     | _ -> error
 
 (* FIXME: shouldn't need storageStaticPlusTopFrameLens or identInScopeLens *)
 
@@ -2488,7 +2508,7 @@ op valueOfInt (i:Int, ty:Type |
    V_int (ty, i)
 
 (* Create a list of bits from an integer, given a type *)
-op bitsOfInt (i:Int, ty:Type |
+op bitsOfInt (ty:Type, i:Int |
                 integerType? ty && i in? rangeOfIntegerType ty) : List Bit
 (* FIXME: write bitsOfInt! *)
 
@@ -2762,7 +2782,7 @@ bitwise complement of the promoted operand [ISO 6.5.3.3/4]. *)
 op operator_NOT (val:Value) : Monad Value =
   {val' <- promoteValue val;
    x <- intOfValue val';
-   bits <- return (bitsOfInt (x, typeOfValue val'));
+   bits <- return (bitsOfInt (typeOfValue val', x));
    return (valueOfBits (Bits.not bits, typeOfValue val'))}
 
 (* The '!' operator requires a scalar operand [ISO 6.5.3.3/1] and returns the
@@ -2906,9 +2926,9 @@ is negative or E1 * 2^E2 is not representable), the behavior is undefined [ISO
 op operator_SHL (val1:Value, val2:Value) : Monad Value =
   {val1' <- promoteValue val1;
    val2' <- promoteValue val2;
-   ty <- return (typeOfValue val1') in
-   x1 <- intOfValue val1' in
-   x2 <- intOfValue val2' in
+   ty <- return (typeOfValue val1');
+   x1 <- intOfValue val1';
+   x2 <- intOfValue val2';
    if x2 < 0 || x2 >= typeBits ty then nonstd else
    let y = x1 * 2**x2 in
    if unsignedIntegerType? ty then
@@ -2944,9 +2964,9 @@ implementation-dependent [ISO 6.5.7/5]. *)
 op operator_SHR (val1:Value, val2:Value) : Monad Value =
   {val1' <- promoteValue val1;
    val2' <- promoteValue val2;
-   ty <- return (typeOfValue val1') in
-   x1 <- intOfValue val1' in
-   x2 <- intOfValue val2' in
+   ty <- return (typeOfValue val1');
+   x1 <- intOfValue val1';
+   x2 <- intOfValue val2';
    if x2 < 0 || x2 >= typeBits ty then nonstd else
    let y = x1 divT 2**x2 in
    if unsignedIntegerType? ty ||
@@ -3087,13 +3107,34 @@ value stored in an object, the op has a state argument. *)
 
 op expressionValue (res:ExpressionResult) : Monad Value =
   case res of
-  | Res_object obj -> readObject (state, obj)
+  | Res_object obj -> readObject obj
   | Res_value val -> return val
 
 (* It is convenient to lift the previous op to lists. *)
 
 op expressionValues (ress:List ExpressionResult) : Monad (List Value) =
-   mapM expressionValues ress
+   mapM expressionValue ress
+
+(* expressionValue lifted to an operator on computations *)
+op expressionValueM (res_m:Monad ExpressionResult) : Monad Value =
+   {res <- res_m;
+    expressionValue res}
+
+(* Lift a unary monadic function on values to a function on
+   ExpressionResult computations *)
+op liftValueFun1 (f:Value -> Monad Value) (res_m: Monad ExpressionResult) : Monad ExpressionResult =
+   {v <- expressionValueM res_m;
+    v_out <- f v;
+    return (Res_value v_out)}
+
+(* Lift a binary monadic function on values to a function on
+   ExpressionResult computations *)
+op liftValueFun2 (f:Value * Value -> Monad Value)
+   (res_m1: Monad ExpressionResult, res_m2: Monad ExpressionResult) : Monad ExpressionResult =
+   {v1 <- expressionValueM res_m1;
+    v2 <- expressionValueM res_m2;
+    v_out <- f (v1, v2);
+    return (Res_value v_out)}
 
 
 (* For most purposes, (an object designator to) an array that results from an
@@ -3106,18 +3147,18 @@ expression never yields an array value as result, only an array designator. *)
 op convertToPointerIfArray (res:ExpressionResult) : Monad ExpressionResult =
   case res of
   | Res_object obj ->
-    {val <- readObject (state, obj);
+    {val <- readObject obj;
      case typeOfValue val of
      | T_array (ty, n) ->
-       if n ~= 0 then return (Res_value (V_pointer (ty, OD_subscript (obj, 0))))
-       else raiseErro Err_nonstd % array is empty, so there is no initial element
+       {nonstdIf (n = 0); % if array is empty, there is no initial element
+        return (Res_value (V_pointer (ty, OD_Subscript (obj, 0))))}
      | _ -> return (Res_object obj)} % no change
   | Res_value val -> return (Res_value val)  % no change
 
 (* It is convenient to lift the previous op to lists. *)
 
 op convertToPointersIfArrays (ress:List ExpressionResult) : Monad (List ExpressionResult) =
-   mapM convertToPointersIfArray ress
+   mapM convertToPointerIfArray ress
 
 (* We formalize expression evaluation via an op that, given a state, returns an
 expression result outcome.
@@ -3203,253 +3244,205 @@ i.e. i is 0 and thus the result is element j of the array, as expected.
 As explained earlier, the null pointer constant has type 'void*', and therefore
 it returns a null pointer to void. *)
 
-FIXME HERE NOW: make tables for the unary and binary ops
+op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad ExpressionResult =
+   case uop of
+     | ADDR -> (fn res_m ->
+                  {res <- res_m;
+                   case res of
+                     | Res_value _ -> error
+                     | Res_object obj ->
+                       {val <- expressionValue res;
+                        return (Res_value (V_pointer (typeOfValue val, obj)))}})
+     | STAR -> (fn res_m ->
+                  {res <- res_m;
+                   res_ptr <- convertToPointerIfArray res;
+                   val <- expressionValue res_ptr;
+                   case val of
+                     | V_pointer (_, obj)        -> return (Res_object obj)
+                     | V_nullpointer _           -> raiseErr Err_nonstd
+                     | V_undefined (T_pointer _) -> raiseErr Err_nonstd
+                     | _                         -> error})
+     | PLUS  -> liftValueFun1 operator_PLUS
+     | MINUS -> liftValueFun1 operator_MINUS
+     | NOT   -> liftValueFun1 operator_NOT
+     | NEG   -> liftValueFun1 operator_NEG
+
+op evaluatorForBinaryOp (bop:BinaryOp) :
+   Monad ExpressionResult * Monad ExpressionResult -> Monad ExpressionResult =
+   case bop of
+     | MUL -> liftValueFun2 operator_MUL
+     | DIV -> liftValueFun2 operator_DIV
+     | REM -> liftValueFun2 operator_REM
+     | ADD -> liftValueFun2 operator_ADD
+     | SUB -> liftValueFun2 operator_SUB
+     | SHL -> liftValueFun2 operator_SHL
+     | SHR -> liftValueFun2 operator_SHR
+     | LT -> liftValueFun2 operator_LT
+     | GT -> liftValueFun2 operator_GT
+     | LE -> liftValueFun2 operator_LE
+     | GE -> liftValueFun2 operator_GE
+     | EQ -> liftValueFun2 operator_EQ
+     | NE -> liftValueFun2 operator_NE
+     | AND -> liftValueFun2 operator_AND
+     | XOR -> liftValueFun2 operator_XOR
+     | IOR -> liftValueFun2 operator_IOR
+     | LAND -> (fn (res_m1, res_m2) ->
+                  {val1 <- expressionValueM res_m1;
+                   isZero1 <- zeroScalarValue? val1;
+                   if isZero1 then return (Res_value int0)
+                   else
+                     {res2 <- res_m2;
+                      res2' <- convertToPointerIfArray res2;
+                      val2 <- expressionValue res2';
+                      isZero2 <- zeroScalarValue? val2;
+                      if isZero2 then return (Res_value int0)
+                      else return (Res_value int1)}})
+     | LOR -> (fn (res_m1, res_m2) ->
+                  {val1 <- expressionValueM res_m1;
+                   isZero1 <- zeroScalarValue? val1;
+                   if ~ isZero1 then return (Res_value int1)
+                   else
+                     {res2 <- res_m2;
+                      res2' <- convertToPointerIfArray res2;
+                      val2 <- expressionValue res2';
+                      isZero2 <- zeroScalarValue? val2;
+                      if isZero2 then return (Res_value int0)
+                      else return (Res_value int1)}})
 
 op evaluate (expr:Expression) : Monad ExpressionResult =
   case expr of
     | E_ident var -> 
-      {obj <- designatorOfObject (state, var);
+      {obj <- designatorOfObject var;
        return (Res_object obj)}
-    | const c ->
+    | E_const c ->
       {val <- evaluateIntegerConstant c;
        return (Res_value val)}
-    | unary (ADDR, E_unary (STAR, expr0)) ->
+    | E_unary (ADDR, E_unary (STAR, expr0)) ->
       % special treatment for expr of the form '& * expr0':
       evaluate expr0
-    | unary (ADDR, e_arg as E_subscript (expr0, expr1)) ->
+    | E_unary (ADDR, e_arg as E_subscript (expr0, expr1)) ->
       % special treatment for expr of the form '& expr0 [ expr1 ]',
       % if 'expr1' yields 0:
-      {val1 <- monadBind (evaluate expr1, expressionValue);
+      {val1 <- expressionValueM (evaluate expr1);
        i <- intOfValue val1;
        if i = 0 then
          evaluate expr0
        else
-         {res <- evaluate e_arg;
-          case res of
-            | Res_object obj ->
-              {val <- expressionValue res;
-               return (Res_value (V_pointer (typeOfValue val, obj)))}
-            | Res_value _ -> error}}
-    | unary (ADDR, expr0) ->
-      {res0 <- evaluate expr0;
-       case res0 of
-         | Res_object obj ->
-           {val <- expressionValue res;
-            return (Res_value (V_pointer (typeOfValue val, obj)))}
-         | Res_value _ -> error}
-    | unary (STAR, expr0) ->
-      {res0 <- evaluate expr0;
-       res <- convertToPointerIfArray res0;
-       val <- expressionValue res;
-       case val of
-         | V_pointer (_, obj)        -> return (Res_object obj)
-         | V_nullpointer _           -> raiseErr Err_nonstd
-         | V_undefined (T_pointer _) -> raiseErr Err_nonstd
-         | _                         -> error}
-    | unary (PLUS, expr0) ->
-      {res0 <- evaluate expr0;
-       val0 <- expressionValue res0;
-       val <- operator_PLUS val0;
-       return (Res_value val)
-    | unary (MINUS, expr0) ->
-      {res0 <- evaluate expr0;
-       val0 <- expressionValue res0;
-       val <- operator_MINUS val0;
-       return (Res_value val)
+         evaluatorForUnaryOp ADDR (evaluate e_arg)}
+    | E_unary (uop, expr0) ->
+      evaluatorForUnaryOp uop (evaluate expr0)
+    | E_binary (expr1, bop, expr2) ->
+      evaluatorForBinaryOp bop (evaluate expr1, evaluate expr2)
+    | E_cond (expr1, expr2, expr3, ty) ->
+      (* FIXME: capture the evaluation of the conditional, as well as the
+         evaluation of the branches, as single ops, to make it easier to reason
+         about them *)
+      {res1 <- evaluate expr1;
+       res1' <- convertToPointerIfArray res1;
+       val1 <- expressionValue res1';
+       isZero <- zeroScalarValue? val1;
+       if ~ isZero then
+         {res2 <- evaluate expr2;
+          res2' <- convertToPointerIfArray res2;
+          val2 <- expressionValue res2';
+          if integerType? ty then
+            {val' <- convertInteger (val2, ty);
+             return (Res_value val')}
+          else if embed? T_pointer ty then
+            {val' <- convertPointer (val2, ty);
+             return (Res_value val')}
+          else if typeOfValue val2 = ty then
+            return (Res_value val2)
+           else
+             error}
+       else
+         {res3 <- evaluate expr3;
+          res3' <- convertToPointerIfArray res3;
+          val3 <- expressionValue res3';
+          if integerType? ty then
+            {val' <- convertInteger (val3, ty);
+             return (Res_value val')}
+          else if embed? T_pointer ty then
+            {val' <- convertPointer (val3, ty);
+             return (Res_value val')}
+          else if typeOfValue val3 = ty then
+            return (Res_value val3)
+           else
+             error}}
+  | E_member (expr, mem) ->
+    {res <- evaluate expr;
+     case res of
+       | Res_value (V_struct (_, members)) ->
+         (case members mem of
+            | Some val ->
+              (* If the LHS is a struct value, with the mem struct member,
+                 return the value of the mem struct member *)
+              return (Res_value val)
+            | None ->
+              (* If LHS is a struct without member mem, it is an error *)
+              error)
+       | Res_value _ ->
+         (* Error if the LHS is a non-struct value *)
+         error
+       | Res_object obj ->
+         (* If the LHS is an object designator (i.e., an lvalue), make sure it
+            points to a struct, and then form the lvalue for the mem struct
+            member of that struct *)
+         {val_lhs <- readObject obj;
+          case val_lhs of
+            | V_struct (_, members) ->
+              (case members mem of
+                 | Some _ -> return (Res_object (OD_Member (obj, mem)))
+                 | None -> error)
+            | _ -> error}}
+  | E_memberp (expr0, mem) ->
+    (* FIXME: make some op(s) for simplifying all of this *)
+    {val <- expressionValueM (evaluate expr0);
+     case val of
+       | V_pointer (_, obj) ->
+         {val_star <- readObject obj;
+          case val_star of
+            | V_struct (_, members) ->
+              (case members mem of
+                 | Some _ ->
+                   (* If expr0 yields a pointer to a struct containing mem,
+                      return the designator of mem in that struct *)
+                   return (Res_object (OD_Member (obj, mem)))
+                 | None ->
+                 (* Error if we get a pointer to a struct not containing mem *)
+                 error)
+            | _ ->
+              (* Error if expr0 is a pointer to a non-struct *)
+              error}
+       | _ ->
+         (* Error if expr0 does not evaluate to a pointer *)
+         error}
+  | E_subscript (expr1, expr2) ->
+    {val1 <- expressionValueM (evaluate expr1);
+     val2 <- expressionValueM (evaluate expr2);
+     j <- intOfValue val2;
+     nonstdIf (j < 0); (* Undefined for negative array subscripts *)
+     obj <-
+       (case val1 of
+          | V_pointer (_, OD_Subscript (obj, i)) ->
+            (* If the LHS is a pointer to an array element, add the RHS to it *)
+            return (OD_Subscript (obj, i+j))
+          | V_pointer (_, obj) ->
+            (* If the LHS is non-array pointer, subscript it *)
+            return (OD_Subscript (obj, j))
+          | _ ->
+            (* Error if the LHS does not evaluate to a pointer *)
+            error);
+     (* We read the returned pointer to ensure it is good (i.e., it raises an
+        error if val1 is a pointer to a non-array, and it raises Err_nonstd if
+        the new index is out of bounds) *)
+     readObject obj;
+     return (Res_object obj)}
+  | E_nullconst ->
+    return (Res_value (V_nullpointer (T_pointer T_void)))
 
-FIXME HERE NOW
 
-    else
-    {res <- evaluate (state, expr);
-     case uop of
-     | ADDR ->
-       (case res of
-       | object obj ->
-         {val <- expressionValue (state, res);
-          ok (value (pointer (typeOfValue val, obj)))}
-       | value _ -> error)
-     | STAR ->
-       {res' <- convertToPointerIfArray (state, res);
-        val <- expressionValue (state, res');
-        case val of
-        | pointer (_, obj)      -> ok (object obj)
-        | nullpointer _         -> nonstd
-        | undefined (pointer _) -> nonstd
-        | _                     -> error}
-     | PLUS ->
-       {val <- expressionValue (state, res);
-        val' <- operator_PLUS val;
-        ok (value val')}
-     | MINUS ->
-       {val <- expressionValue (state, res);
-        val' <- operator_MINUS val;
-        ok (value val')}
-     | NOT ->
-       {val <- expressionValue (state, res);
-        val' <- operator_NOT val;
-        ok (value val')}
-     | NEG ->
-       {res' <- convertToPointerIfArray (state, res);
-        val <- expressionValue (state, res');
-        val' <- operator_NEG val;
-        ok (value val')}}
-  | binary (expr1, bop, expr2) ->
-    {res1 <- evaluate (state, expr1);
-     res1' <- convertToPointerIfArray (state, res1);
-     val1 <- expressionValue (state, res1');
-     if bop = LAND then
-       {isZero1 <- zeroScalarValue? val1;
-        if isZero1 then ok (value int0)
-        else
-          {res2 <- evaluate (state, expr2);
-           res2' <- convertToPointerIfArray (state, res2);
-           val2 <- expressionValue (state, res2');
-           isZero2 <- zeroScalarValue? val2;
-           if isZero2 then ok (value int0) else ok (value int1)}}
-     else if bop = LOR then
-       {isZero1 <- zeroScalarValue? val1;
-        if ~ isZero1 then ok (value int1)
-        else
-          {res2 <- evaluate (state, expr2);
-           res2' <- convertToPointerIfArray (state, res2);
-           val2 <- expressionValue (state, res2');
-           isZero2 <- zeroScalarValue? val2;
-           if isZero2 then ok (value int0) else ok (value int1)}}
-     else
-     {res2 <- evaluate (state, expr2);
-      res2' <- convertToPointerIfArray (state, res2);
-      val2 <- expressionValue (state, res2');
-      case bop of
-      | MUL ->
-        {val' <- operator_MUL (val1, val2);
-         ok (value val')}
-      | DIV ->
-        {val' <- operator_DIV (val1, val2);
-         ok (value val')}
-      | REM ->
-        {val' <- operator_REM (val1, val2);
-         ok (value val')}
-      | ADD ->
-        {val' <- operator_ADD (val1, val2);
-         ok (value val')}
-      | SUB ->
-        {val' <- operator_SUB (val1, val2);
-         ok (value val')}
-      | SHL ->
-        {val' <- operator_SHL (val1, val2);
-         ok (value val')}
-      | SHR ->
-        {val' <- operator_SHR (val1, val2);
-         ok (value val')} 
-      | LT ->
-        {val' <- operator_LT (val1, val2);
-         ok (value val')}
-      | GT ->
-        {val' <- operator_GT (val1, val2);
-         ok (value val')}
-      | LE ->
-        {val' <- operator_LE (val1, val2);
-         ok (value val')}
-      | GE ->
-        {val' <- operator_GE (val1, val2);
-         ok (value val')}
-      | EQ ->
-        {val' <- operator_EQ (val1, val2);
-         ok (value val')}
-      | NE ->
-        {val' <- operator_NE (val1, val2);
-         ok (value val')}
-      | AND ->
-        {val' <- operator_AND (val1, val2);
-         ok (value val')}
-      | XOR ->
-        {val' <- operator_XOR (val1, val2);
-         ok (value val')}
-      | IOR ->
-        {val' <- operator_IOR (val1, val2);
-         ok (value val')}}}
-  | cond (expr1, expr2, expr3, ty) ->
-    {res1 <- evaluate (state, expr1);
-     res1' <- convertToPointerIfArray (state, res1);
-     val1 <- expressionValue (state, res1');
-     isZero <- zeroScalarValue? val1;
-     if ~ isZero then
-       {res2 <- evaluate (state, expr2);
-        res2' <- convertToPointerIfArray (state, res2);
-        val2 <- expressionValue (state, res2');
-        if integerType? ty then
-          {val' <- convertInteger (val2, ty);
-           ok (value val')}
-        else if embed? pointer ty then
-          {val' <- convertPointer (val2, ty);
-           ok (value val')}
-        else if typeOfValue val2 = ty then
-          ok (value val2)
-        else
-          error}
-     else
-       {res3 <- evaluate (state, expr3);
-        res3' <- convertToPointerIfArray (state, res3);
-        val3 <- expressionValue (state, res3');
-        if integerType? ty then
-          {val' <- convertInteger (val3, ty);
-           ok (value val')}
-        else if embed? pointer ty then
-          {val' <- convertPointer (val3, ty);
-           ok (value val')}
-        else if typeOfValue val3 = ty then
-          ok (value val3)
-        else
-          error}}
-  | member (expr, mem) ->
-    {res <- evaluate (state, expr);
-     val <- expressionValue (state, res);
-     case typeOfValue val of
-     | struct tag ->
-       (case state.structures tag of
-       | None -> error
-       | Some tmembers ->
-         {errorIf (mem nin? domain tmembers);
-          case res of
-          | object obj -> ok (object (member (obj, mem)))
-          | value val ->
-            (case val of
-            | struct (_, members) -> ok (value (members @ mem))
-            | undefined _ -> nonstd)})
-     | _ -> error}
-  | memberp (expr, mem) ->
-    {res <- evaluate (state, expr);
-     val <- expressionValue (state, res);
-     case typeOfValue val of
-     | pointer (struct tag) ->
-       (case state.structures tag of
-       | None -> error
-       | Some tmembers ->
-         {errorIf (mem nin? domain tmembers);
-          case val of
-          | pointer (_, obj) -> ok (object (member (obj, mem)))
-          | undefined _ -> nonstd})
-     | _ -> error}
-  | subscript (expr, expr') ->
-    {res0 <- evaluate (state, expr);
-     res <- convertToPointerIfArray (state, res0);
-     val <- expressionValue (state, res);
-     res' <- evaluate (state, expr');
-     val' <- expressionValue (state, res');
-     case typeOfValue val of
-     | pointer _ ->
-       (case res of
-       | object (subscript (obj, i)) ->
-         (case readObject (state, obj) of
-         | ok (array (_, vals)) ->
-           {j <- mathIntOfValue val';
-            nonstdIf (j < 0 || i + j >= length vals);
-            ok (object (subscript (obj, i + j)))}
-         | _ -> nonstd)
-       | _ -> error)
-     | _ -> error}
-  | nullconst ->
-    ok (value (nullpointer (pointer void)))
+(* FIXME: figure out how to state and prove this type safety theorem *)
 
 (* Evaluating, in a state that satisfies the invariants, an expression that
 satisfies the compile-time constraints w.r.t. the symbol table of the state,
@@ -3471,14 +3464,8 @@ theorem expression_evaluation is
 (* It is useful to introduce an op to evaluate a sequence of expressions, one
 after the other. *)
 
-op evaluateAll
-   (state:State, exprs:List Expression) : Monad (List ExpressionResult) =
-  case exprs of
-  | [] -> ok []
-  | expr::exprs ->
-    {res <- evaluate (state, expr);
-     ress <- evaluateAll (state, exprs);
-     ok (res :: ress)}
+op evaluateAll (exprs:List Expression) : Monad (List ExpressionResult) =
+  mapM evaluate exprs
 
 
 %subsection (* Type names *)
@@ -3488,17 +3475,21 @@ type name w.r.t. a state. Recall that a state includes a symbol table for type
 definitions: this is used to look up, and expand away, typedef names. This op is
 similar to op 'checkTypeName'. *)
 
-op expandTypeName (state:State, tyn:TypeName) : Monad Type =
+end-spec
+
+asdf = spec
+
+op expandTypeName (typedefs: TypedefTable, tyn:TypeName) : Monad Type =
   case tyn of
   | typedef tdn ->
-    (case state.typedefs tdn of
+    (case typedefs tdn of
     | None -> error
     | Some ty -> ok ty)
   | pointer tyn ->
-    {ty <- expandTypeName (state, tyn);
+    {ty <- expandTypeName tyn;
      ok (pointer ty)}
   | array (tyn, n) ->
-    {ty <- expandTypeName (state, tyn);
+    {ty <- expandTypeName tyn;
      ok (array (ty, n))}
   | struct tag -> ok (struct tag)
   |  char  -> ok  char
@@ -3532,33 +3523,25 @@ type not present in the state. It is also an error if there is some circularity
 in the structures, which could cause the op not to terminate. Recall that the
 non-circularity of the structures is part of the state invariants. *)
 
-op zeroOfType (state:State, ty:Type) : Monad Value =
-  if ~ (invariants? state) then error else
+op zeroOfType (structures: StructTable) (ty:Type) : Monad Value =
   case ty of
-  | void -> error
-  | struct tag ->
-    (case state.structures tag of
+  | T_void -> error
+  | T_struct tag ->
+    (case structures tag of
     | None -> error
     | Some tmembers ->
       let orderedMembers: List (Identifier * Type) =
           toAssocList tmembers (String.<=) in
       let (mems, tys) = unzip orderedMembers in
-      {vals <- zerosOfTypes (state, tys);
+      {vals <- zerosOfTypes tys;
        ok (struct (tag, fromAssocList (zip (mems, vals))))})
-  | array (ty0, n) ->
-    {val0 <- zeroOfType (state, ty0);
-     ok (array (ty0, repeat val0 n))}
+  | T_array (ty0, n) ->
+    {val0 <- zeroOfType ty0;
+     return (V_array (ty0, repeat val0 n))}
   | ty -> ok (zeroOfScalarType ty)
 
-op zerosOfTypes (state:State, tys:List Type) : Monad (List Value) =
-  if ~ (invariants? state) then error else
-  case tys of
-  | [] -> ok []
-  | ty::tys ->
-    {val <- zeroOfType (state, ty);
-     vals <- zerosOfTypes (state, tys);
-     ok (val::vals)}
-
+op zerosOfTypes (structures: StructTable) (tys:List Type) : Monad (List Value) =
+  mapM (zeroOfType structures) tys
 
 %subsection (* Declarations *)
 
@@ -3573,9 +3556,9 @@ into automatic storage; if it has no initializer, its initial value is
 indeterminate [ISO 6.7.8/10]. Since object declarations in our C subset have no
 explicit initializer, we set the initial value to be undefined. *)
 
-op execObjectDeclaration (state:State, odecl:ObjectDeclaration) : Monad State =
-  {ty <- expandTypeName (state, odecl.typE);
-   zeroVal <- zeroOfType (state, ty);
+op execObjectDeclaration (structures: StructTable, odecl:ObjectDeclaration) : Monad State =
+  {ty <- expandTypeName odecltypE;
+   zeroVal <- zeroOfType (structures, ty);
    errorIf (odecl.name in? domain state.typedefs);
    let store = state.storage in
    if store.automatic = [] then
@@ -3597,6 +3580,7 @@ state, does not yield an error. Furthermore, if a normal outcome occurs, the new
 state satisfies the invariants and the symbol table of the new state is the one
 inferred by the compile-time constraints. *)
 
+(*
 theorem object_declaration_execution is
   fa (state:State, odecl:ObjectDeclaration, symtab:SymbolTable)
     invariants? state &&
@@ -3606,7 +3590,7 @@ theorem object_declaration_execution is
     | error -> false
     | nonstd -> true
     | nonterm -> true)
-
+*)
 (* When a structure specifier is encountered, the state of the program is
 extended with information about the structure. *)
 
