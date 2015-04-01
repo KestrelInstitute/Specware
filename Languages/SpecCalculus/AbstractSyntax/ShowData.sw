@@ -40,9 +40,9 @@ import ShowUtils
   %op  SpecCalc.setCurrentUID : UnitId -> SpecCalc.Env ()
 
 %Additional pretty-printer routines:
-op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
-op ppGr1Concat (x:List WLPretty) : WLPretty = ppNest 1 (ppConcat x)
-op ppGr2Concat (x:List WLPretty) : WLPretty = ppNest 2 (ppConcat x)
+op ppGrConcat (x:List WLPretty) : WLPretty  = ppConcatGN 0 x
+op ppGr1Concat (x:List WLPretty) : WLPretty = ppConcatGN 1 x
+op ppGr2Concat (x:List WLPretty) : WLPretty = ppConcatGN 2 x
 op ppNum (n:Int) : WLPretty = ppString(show n)
 op ppSpace : WLPretty = ppString " "
 op ppSpaceBreak : WLPretty = ppConcat[ppSpace, ppBreak]
@@ -578,7 +578,7 @@ op printValue (c:Context) (value:Value) : String =
   in
   let main_pp_val = ppValue (c << {fileName = file_nm}) value in
   let pp_val = if c.printPositionInfo?
-                 then ppConcat [ppString "infile ", ppID file_nm, ppBreak, main_pp_val]
+                 then ppConcat [ppString "infile ", ppID file_nm, ppNewline, main_pp_val]
                else main_pp_val
   in
   ppFormat pp_val
@@ -1570,7 +1570,7 @@ op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
 
 op printValueTop (value : Value, uid : UnitId, showImportedSpecs? : Bool) : String =
   printValue {printTypes? = true,
-              printPositionInfo? = false,
+              printPositionInfo? = true,
               fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
               %currentUID = uid,
               %uidsSeen = [uid],

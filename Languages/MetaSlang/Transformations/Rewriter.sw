@@ -1165,7 +1165,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 %% Check that all variables in a term are bound by the substitution.
 %%
 
- def completeMatch(term,subst:SubstC) =
+ def completeMatch(term: MSTerm,subst:SubstC): Bool =
      let S = subst.2 in
      let 
 	 def loop(term:MSTerm):Bool = 

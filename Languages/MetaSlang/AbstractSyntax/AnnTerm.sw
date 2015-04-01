@@ -70,7 +70,7 @@ MetaSlang qualifying spec
   %% Maybe AMatch should be a single thing, and then we use List AMatch in Case above.
  type AMatch b = List (APattern b * ATerm b * ATerm b) % Match is a pattern, a guard, and a body.
 
- type MetaSlang.AType b =
+ type AType b =
   | Arrow        AType b * AType b                   * b
   | Product      List (Id * AType b)                 * b
   | CoProduct    List (QualifiedId * Option (AType b)) * b
@@ -89,7 +89,7 @@ MetaSlang qualifying spec
   | Any                                                b  % e.g. "type S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
                                                           % Remove
 
- type MetaSlang.APattern b =
+ type APattern b =
   | AliasPat      APattern b * APattern b             * b
 %GK says:  | AliasPat      AVar b * APattern b             * b
   | VarPat        AVar b                              * b

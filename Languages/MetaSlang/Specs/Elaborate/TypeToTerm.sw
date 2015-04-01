@@ -92,16 +92,16 @@ XML qualifying spec
 								(reverse fields)))
 	   
 	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductTypeDescriptor",
-							 (foldl (fn (result,(id, opt_srt)) ->
+							 (foldl (fn (result,(Qualified(_,id), opt_srt)) ->
 								 mkapp ("List", "cons-2",
 									mkrecord [mkapp ("List", "cons-2",
 											 mkrecord [tag id,
 												   case opt_srt of
 												     | None     -> % mkapp ("Option", "None", mynil)
-                												   mkembed ("None", option_sd) % Todo: correct?
+                												   mkembed (mkQualifiedId("Option", "None"), option_sd) % Todo: correct?
 												                   
 												     | Some srt -> % mkapp ("Option", "Some", convert srt)
-														   mk_app_embed ("Some", 
+														   mk_app_embed (mkQualifiedId("Option", "Some"), 
 																 option_sd, % Todo: correct?
 																 convert srt)]),
 										  result]))

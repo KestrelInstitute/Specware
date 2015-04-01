@@ -62,7 +62,7 @@ SpecCalc qualifying spec
  %% The following is the type given to us by the parser.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type SpecCalc.SCTerm = SCTermBody * Position
+ type SCTerm = SCTermBody * Position
  type SCTermBody = 
    | UnitId       RelativeUID
    | Print        PrintTerm            
