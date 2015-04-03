@@ -271,6 +271,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\g"   'sw:generate-lisp)
+  (define-key map "\C-c\G"   'sw:generate-compile-and-load-lisp)
   (define-key map "\C-c\C-l" 'sw:gcl-current-file)
   (define-key map "\C-c\C-e" 'sw:evaluate-region)
   (define-key map "\C-c\C-s" 'sw:set-swe-spec)
@@ -1534,6 +1535,10 @@ STRING should be given if the last search was by `string-match' on STRING."
       (lisp-or-specware-command ":cl " "cl " dir "lisp/"
 				(substring buf-name (length dir) -3)
 				".lisp"))))
+
+(defun sw:generate-compile-and-load-lisp ()
+  (interactive)
+  (sw:generate-lisp t))
 
 (defun sw:generate-sliced-lisp (compile-and-load?)
   (interactive "P")
