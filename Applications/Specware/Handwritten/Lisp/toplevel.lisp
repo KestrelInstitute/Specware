@@ -627,15 +627,16 @@
 	    (with-output-to-string (*standard-output*)
 	      (let ((*error-output* *standard-output*)
 		    (SpecCalc::numberOfTypeErrorsToPrint 2))
-		(setq parsed-ok? (Specware::evaluateUID_fromLisp tmp-uid)))))
+		(setq parsed-ok? (Specware::evaluateUID_fromLisp-1-1 tmp-uid nil)))))
 	  (when parsed-ok?
 	    (if *swe-use-interpreter?*
 		(setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
-	      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))
+	       (with-output-to-string (*standard-output*)
+                 (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl))))))
       (Specware::setenv "SWPATH" old-swpath))
     (if Emacs::*goto-file-position-stored* ; Parse or type-check error
 	(progn (princ (trim-error-output parser-type-check-output))
-	       (show-error-position Emacs::*goto-file-position-stored* -15))
+	       (show-error-position Emacs::*goto-file-position-stored* -16))
       (progn
 	(princ parser-type-check-output)
 	(if *swe-use-interpreter?*
@@ -662,7 +663,7 @@
 			 (format t "~%Function is ")
 			 (pprint code)
 			 (format t "~%")
-			 (when (fboundp auxfn)
+			 (when (and (symbolp auxfn) (fboundp auxfn))
 			   (format t "~%where ~A is " auxfn)
 			   (let ((fn (symbol-function auxfn)))
 			     (let ((code #+allegro (excl::func_code fn)
@@ -732,15 +733,17 @@
   ;; For example, if code is
   ;;   (LAMBDA (X1) (BLOCK SWE::TMP #'(LAMBDA (X2) #'(LAMBDA (X3) (SWE::TMP-1-1-1 X1 X2 X3)))))
   ;; this will find the symbol SWE::TMP-1-1-1
-  (let ((fn (car code)))
-    (cond ((equal fn 'function)
-	   (find-aux-fn (cadr code)))
-	  ((equal fn 'block)
-	   (find-aux-fn (caddr code)))
-	  ((equal fn 'lambda)
-	   (find-aux-fn (caddr code)))
-	  (t
-	   fn))))
+  (if (listp code)
+      (let ((fn (car code)))
+        (cond ((equal fn 'function)
+               (find-aux-fn (cadr code)))
+              ((equal fn 'block)
+               (find-aux-fn (caddr code)))
+              ((equal fn 'lambda)
+               (find-aux-fn (caddr code)))
+              (t
+               fn)))
+    code))
 
 (defun fix-position-references (str prefix)
   (let ((pos 0))
