@@ -947,41 +947,13 @@ can refer to multiple objects. Thus, to form a unique reference to a named
 top-level object, a variable name must be combined with a "scope designator"
 that specifies either global or local scope, corresponding to static or
 automatic variables, respectively. For local scope, the scope designator must
-additionally specify which local variable in which function on the dynamic call
-stack is being referred to. This is done by supplying a FrameID, which refers to
-a dynamic stack frame on the call stack, along with a natural number, which
-refers to the nesting depth of the lexical block containing the particular
-variable being referred to. For instance, in the C function
+additionally specify which scope is being referred to, using a ScopeID. *)
 
-void foo (int x) {
-  int *y = &x;
-  {
-    void *x = bar ();
-    baz (x, y);
-    if (x > 0) { foo (x - 1); }
-  }
-}
-
-the variable name "x" could refer to the formal int parameter, which is bound in
-the outer-most lexical scope, or it could refer to the void pointer in the inner
-lexical block. The call to baz in fact gets references to both of these x
-variables, one through the intermediate variable y. By convention, the
-outer-most lexical block, which contains the formal int parameter, has number 0;
-the outer-most scope of the function body, which contains variable 1, has number
-1; and the inner block, with the second declaration of a variable named x has
-number 2. Further, every call to foo generates its own dynamic stack frame,
-which contains two separate x variables.
-
-Note that this numbering scheme is equivalent to deBruijn levels, not deBruijn
-indices. We use deBruijn levels because they do not vary as more inner scopes
-are added: block 0 always refers to the scope containing the formal parameters,
-no matter what scopes are intervening. *)
-
-type FrameID = | FrameID Nat
+type ScopeID = | ScopeID Nat
 
 type ScopeDesignator =
   | GlobalScope
-  | LocalScope FrameID * Nat
+  | LocalScope ScopeID
 
 type AllocatedID = | AllocatedID Nat
 
@@ -1123,14 +1095,30 @@ the value stored into an object always coincides with the type of the object. *)
 
 type NamedStorage = FiniteMap (Identifier, Value)
 
+(* A "local scope" is a runtime instance of a block scope [ISO 6.2.1]. Each time
+a function is executed, a new local scope is created for the function itself,
+and, every time a sub-block is entered in that function, a new local scope is
+created for that sub-block scope. Local scopes have a nesting, mirroring that of
+the block scopes they are instances of. This is captured by using a
+ScopeDesignator to designate the parent scope of a given local scope. The top of
+this nesting is always the global, static scope. *)
+
+type LocalScope = {scope_bindings : NameStorage,
+                   scope_parent : ScopeDesignator }
+
 (* As mentioned in the comments for type 'ObjectDesignator', our model of
 storage includes allocated objects, which are identified by the IDs introduced
 earlier. *)
 
 type AllocatedStorage = FiniteMap (AllocatedID, Value)
 
-(* As mentioned in the comments for type 'ObjectDesignator', at each point in
-time the file scope is active, along with a list of lists of block scopes. The
+(* FIXME HERE NOW: explain the new Storage type (with the new "automatic"
+field); also, think about AllocatedStorage also pointing to optional values,
+to designated deallocated objects...
+
+ At each point in time, the global scope is active, along with a 
+
+The
 list of lists arises as follows: the outer list corresponds to the function call
 stack, i.e. there is an element for each nested function call; the inner list of
 each element of the outer list corresponds to the nested block scopes inside
@@ -1154,7 +1142,7 @@ storage for allocated objects. *)
 
 type Storage =
   {static    : NamedStorage,
-   automatic : List (List NamedStorage),
+   automatic : List (Option LocalScope),
    allocated : AllocatedStorage}
 
 
