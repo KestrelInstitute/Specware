@@ -462,7 +462,7 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
   case tyi of
     | Spec -> mkOp(Qualified("MetaTransform", "extractSpec"), mkArrow(annTypeValueType, specType))
     | Morphism -> mkOp(Qualified("MetaTransform", "extractMorphism"), mkArrow(annTypeValueType, morphismType))
-    | Term -> mkOp(Qualified("MetaTransform", "extractTerm"), mkArrow(annTypeValueType, msTermType))
+    | Term -> mkOp(Qualified("MetaTransform", "extractMSTerm"), mkArrow(annTypeValueType, msTermType))
     | TransTerm -> mkOp(Qualified("MetaTransform", "extractTransTerm"), mkArrow(annTypeValueType, transTermType))
     | PathTerm -> mkOp(Qualified("MetaTransform", "extractPathTerm"), mkArrow(annTypeValueType, msTermType))
     % | Arrow(doms, ran) ->

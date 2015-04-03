@@ -177,20 +177,31 @@ spec
       | Name(prim_mv,pos) ->
         (case prim_mv of
            | "f" -> return First
+           | "first" -> return First
            | "l" -> return Last
+           | "last" -> return Last
            | "n" -> return Next
+           | "next" -> return Next
            | "p" -> return Prev
+           | "previous" -> return Prev
            | "w" -> return Widen
+           | "widen" -> return Widen
            | "a" -> return All
+           | "all" -> return All
            | "post" -> return Post
+           | "post-condition" -> return Post
            | _ -> raise (TransformError (pos, "Unrecognized move command: "^prim_mv)))
       | Item(search_type, se, pos) ->
         {target_str <- getSearchString se;
          case search_type of
            | "s" -> return(Search target_str)
+           | "search" -> return(Search target_str)
            | "r" -> return(ReverseSearch target_str)
+           | "rev-search" -> return(ReverseSearch target_str)
            | "sp" -> return(SearchPred(searchPredFn target_str))
+           | "search-predicate" -> return(SearchPred(searchPredFn target_str))
            | "rp" -> return(ReverseSearchPred(searchPredFn target_str))
+           | "rev-search-predicate" -> return(ReverseSearchPred(searchPredFn target_str))
            | _ -> raise (TransformError (pos, "Unrecognized move command: "^search_type))}
       | _ -> raise (TransformError (posOf mv_tm, "Unrecognized move command: "^show mv_tm))
 
@@ -390,6 +401,11 @@ spec
       | Bool -> true
       | _ -> false
 
+  op checkOption (oa: Option AnnTypeValue, itm_nm: String, pos: Position): Env(Option AnnTypeValue) =
+    case oa of
+      | None -> raise(TransformError(pos, "Illegal "^itm_nm))
+      | _ -> return oa
+
   op transformExprToAnnTypeValue(te: TransformExpr, ty_info: MTypeInfo, spc: Spec): Env(Option AnnTypeValue) =
     % let _ = writeLine("tetatv:\n"^anyToString te^"\n"^show ty_info) in
     case (te, ty_info) of
@@ -410,17 +426,17 @@ spec
            | (_, msgs) ->
              raise (TypeCheckErrors msgs))
       | (_, OpName) -> return(mapOption OpNameV (transformExprToQualifiedId te))
-      | (Item("lr", thm, _),      Rule) -> return(mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm))
-      | (Item("rl", thm, _),      Rule) -> return(mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm))
-      | (Item("omit", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Omit qid)) (transformExprToQualifiedId thm))
-      | (Item("strengthen", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Strengthen qid)) (transformExprToQualifiedId thm))
-      | (Item("weaken", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Weaken qid)) (transformExprToQualifiedId thm))
-      | (Item("fold", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Fold qid))   (transformExprToQualifiedId thm))
-      | (Item("unfold", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Unfold qid)) (transformExprToQualifiedId thm))
-      | (Item("rewr", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Rewrite qid))(transformExprToQualifiedId thm))
-      | (Item("rewrite", thm, _), Rule) -> return(mapOption (fn qid -> RuleV(Rewrite qid))(transformExprToQualifiedId thm))
-      | (Item("apply", thm, _),   Rule) -> return(mapOption (fn qid -> RuleV(MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)))
-                                             (transformExprToQualifiedId thm))
+      | (Item("lr", thm, pos),      Rule) -> checkOption(mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm), "lr", pos)
+      | (Item("rl", thm, pos),      Rule) -> checkOption(mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm), "rl", pos)
+      | (Item("omit", thm, pos),    Rule) -> checkOption(mapOption (fn qid -> RuleV(Omit qid)) (transformExprToQualifiedId thm), "omit", pos)
+      | (Item("strengthen", thm, pos),  Rule) -> checkOption(mapOption (fn qid -> RuleV(Strengthen qid)) (transformExprToQualifiedId thm), "strengthen", pos)
+      | (Item("weaken", thm, pos),  Rule) -> checkOption(mapOption (fn qid -> RuleV(Weaken qid)) (transformExprToQualifiedId thm), "weaken", pos)
+      | (Item("fold", thm, pos),    Rule) -> checkOption(mapOption (fn qid -> RuleV(Fold qid))   (transformExprToQualifiedId thm), "fold", pos)
+      | (Item("unfold", thm, pos),  Rule) -> checkOption(mapOption (fn qid -> RuleV(Unfold qid)) (transformExprToQualifiedId thm), "unfold", pos)
+      | (Item("rewr", thm, pos),    Rule) -> checkOption(mapOption (fn qid -> RuleV(Rewrite qid))(transformExprToQualifiedId thm), "rewr", pos)
+      | (Item("rewrite", thm, pos), Rule) -> checkOption(mapOption (fn qid -> RuleV(Rewrite qid))(transformExprToQualifiedId thm), "rewrite", pos)
+      | (Item("apply", thm, pos),   Rule) -> checkOption(mapOption (fn qid -> RuleV(MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)))
+                                                         (transformExprToQualifiedId thm), "apply", pos)
       | (Name(cmd_name, _),       Rule) | transformInfoCommand? cmd_name ->
          (case lookupMSRuleInfo cmd_name of
            | Some(ty_info, tr_fn) ->
@@ -435,7 +451,8 @@ spec
                   else return(None)
                 | _ -> return(None))
            | None -> return(None))
-      | (Item("revleibniz", thm, _), Rule) -> return(mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm))
+      | (Item("revleibniz", thm, pos), Rule) -> checkOption(mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm), "revleibniz", pos)
+      | (Item("rev-leibniz", thm, pos), Rule) -> checkOption(mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm), "rev-leibniz", pos)
       | (Tuple(flds, _), Tuple tp_mtis) | length flds = length tp_mtis ->
         {o_flds <- foldM (fn result -> fn (fldi, tpi_mti) ->
                            case result of

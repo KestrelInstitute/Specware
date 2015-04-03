@@ -206,12 +206,12 @@ def maintainOpsCoalgebraically
                                mkSteps
                                  [ % Go to rhs of postcondition just added, unfold and simplify
                                   Move [SearchPred (rhsApplication intro_qid)],
-                                  mkSimplify[LeftToRight(mkContextQId "fn value")],
-                                  Simplify1([reverseRuleSpec fold_rl,
-                                             Omit(mkContextQId "fn value")] ++ rules),
-                                  mkSimplify [Omit(mkContextQId "fn value")],
-                                  Simplify1(Omit(mkContextQId "fn value") :: rules),
-                                  mkSimplify(fold_rl :: rules)])) in
+                                  %mkSimplify[LeftToRight(mkContextQId "fn value")],
+                                  Simplify1([reverseRuleSpec fold_rl] ++ rules),
+                                  %mkSimplify [],
+                                  mkSimplify([LeftToRight(mkContextQId "fn value")]),
+                                  mkSimplify rules,
+                                  mkSimplify(fold_rl :: Omit(mkContextQId "fn value") :: rules)])) in
    let script = if traceMaintain? || trace?
                    then Steps[Trace true, main_script]
                  else main_script

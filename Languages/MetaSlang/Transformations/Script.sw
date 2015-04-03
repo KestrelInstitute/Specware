@@ -429,10 +429,10 @@ spec
                                let (new_rules, i) =
                                   foldl (fn ((rules, i), cj) ->
                                            % let _ = writeLine("Context Rule: "^ruleName cj) in
-                                           let sb_cj = substitute(cj, sbst) in
-                                           (assertRules(context, sb_cj, ruleName sb_cj, Context, Either,
-                                                        Some(simpProofByMetis(cj, "new_postcondition", tm, sbst)),
-                                                        freeTyVarsInTerm sb_cj)
+                                           let sb_cj = cj in % substitute(cj, sbst) in
+                                           (assertRulesDirn(context, sb_cj, ruleName sb_cj, Context, Either, rule_specs,
+                                                            Some(simpProofByMetis(cj, "new_postcondition", tm, sbst)),
+                                                            freeTyVarsInTerm sb_cj)
                                               ++ rules,
                                             i + 1))
                                      ([], i) sister_cjs

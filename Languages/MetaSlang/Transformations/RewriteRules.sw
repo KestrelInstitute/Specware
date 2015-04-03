@@ -116,7 +116,10 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
 		     of Some x -> mkVar x
-		      | None -> System.fail ("freshRule: "^show n^" not found in "^name))
+		      | None ->
+                        if context.allowUnboundVars?   % Maybe temporary
+                          then term
+                          else System.fail ("freshRule: "^show n^" not found in "^name))
 		| None -> term
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doType, id) trm
@@ -505,7 +508,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     condition : Option MSTerm,
                     subterm?  : Bool)   % If we are at a subterm of the original theorem
    : List RewriteRule =
-   % let _ = writeLine("assertRules "^anyToString dirn^": "^printTerm term) in
+   % let _ = writeLine("assertRules "^anyToString dirn^" "^desc^":\n"^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let free_vs = fvs ++ free_vs in
    let subst = S ++ subst in

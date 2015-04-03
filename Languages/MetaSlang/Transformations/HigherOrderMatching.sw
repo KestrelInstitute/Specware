@@ -523,7 +523,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,None,emptyStack))
 
- op onlyTrivialMatchesPossible?(topStack:  Option (Stack * MSTerm * MSTerm * Option MSType)): Bool =
+ op onlyTrivialMatchesPossible?(context: Context, topStack:  Option (Stack * MSTerm * MSTerm * Option MSType)): Bool =
    case topStack of
      | None -> false
      | Some(_,M,N,_) ->
@@ -546,7 +546,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
            M)
 
  op matchPairsTop (context: Context, subst: SubstC, stack0: Stack): List SubstC =
-   if allowTrivialMatches? || ~(onlyTrivialMatchesPossible?(next stack0))
+   if allowTrivialMatches? || ~(onlyTrivialMatchesPossible?(context: Context, next stack0))
      then matchPairs(context, subst, stack0)
      else []
 
