@@ -15,7 +15,7 @@
   #-sb-thread nm)
 
 (defun getMutex (mx)
-  #+sb-thread (sb-thread:get-mutex mx)
+  #+sb-thread (sb-thread:grab-mutex mx)
   #-sb-thread mx)
 (defun releaseMutex (mx)
   #+sb-thread (sb-thread:release-mutex mx)
