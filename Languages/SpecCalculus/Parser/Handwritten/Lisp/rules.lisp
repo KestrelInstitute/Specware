@@ -926,7 +926,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :LAMBDA-FORM ()
-  (:tuple (:anyof "fn" "\\_lambda") (1 :MATCH))
+  (:tuple (:anyof "fn" "\\_lambda") (:optional "|") (1 :AUX-MATCH))
   (make-lambda-form 1 ':left-lcb ':right-lcb)
   :documentation "Lambda abstraction")
 
@@ -940,7 +940,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :CASE-EXPRESSION ()
-  (:tuple "case" (1 :EXPRESSION) "of" (2 :MATCH))
+  (:tuple "case" (1 :EXPRESSION) (2 :MATCH))
   (make-case-expression 1 2 ':left-lcb ':right-lcb)
   :documentation "Case statement")
 
@@ -1335,7 +1335,10 @@ If we want the precedence to be optional:
 ;;  (list . 1))
 
 (define-sw-parser-rule :MATCH ()
-  (:tuple (:optional "|") (1 :AUX-MATCH))
+  (:anyof
+   (:tuple "|" (1 :AUX-MATCH))
+   (:tuple "of" (1 :AUX-MATCH))
+   (:tuple "of"  "|" (1 :AUX-MATCH)))
   1)
 
 (define-sw-parser-rule :AUX-MATCH ()
