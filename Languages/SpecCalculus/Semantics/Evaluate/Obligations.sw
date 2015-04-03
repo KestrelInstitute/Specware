@@ -166,7 +166,28 @@ op addMorphismTheorems (cod_spc: Spec) (sm: Morphism): Spec =
           [] sm.dom.elements
   in
   let sm_pragma_elts = map SM_PragmaToElement sm.pragmas in
-  setElements(cod_spc, cod_spc.elements ++ sm_pragma_elts ++ new_theorems )
+  let sm_cod_imports = filterSpecElements (fn el ->
+                                             case el of
+                                               | Import (_, i_sp, _, _) -> i_sp = sm.cod
+                                               | _ -> false)
+                         cod_spc.elements
+  in
+  let import_el = case findRightmost (fn el ->
+                                        case el of
+                                          | Import (_, i_sp, _, _) -> i_sp = sm.cod
+                                          | _ -> false)
+                         cod_spc.elements of
+                    | Some el -> el
+                    | None ->
+                  case findRightmost (fn el ->
+                                        case el of
+                                          | Import _ -> true
+                                          | _ -> false)
+                         cod_spc.elements of
+                    | Some el -> el
+                    | None -> last  cod_spc.elements
+  in
+  addElementsAfter(cod_spc, new_theorems ++ sm_pragma_elts, import_el)
 
   op specObligations : Spec * SCTerm -> Spec % Result was Env Spec, but can there be errors, etc.?
   def specObligations (spc, spcTerm) = 
