@@ -93,6 +93,18 @@
 (defun V_apply (pr)
   (V_apply-2 (car pr) (cdr pr)))
 
+(defun V_map_eval-3 (m x default)
+  (declare (fixnum x) (simple-vector m))
+  ;(incf *map-as-vector-ref-count*)
+  (if (>= x (length m))
+      *undefined*
+      (let ((val (svref m x)))
+        (if (eq val *undefined*) default
+            val))))
+
+(defun V_map_eval (triple)
+  (V_map_eval-3 (svref triple 0) (svref triple 1) (svref triple 2)))
+
 (defun eval-error (m x)
   ;(print-map m)
   (error "V_eval: out-of-domain reference: ~a length: ~a" x (length m)))

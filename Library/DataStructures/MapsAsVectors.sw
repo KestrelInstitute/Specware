@@ -36,10 +36,10 @@ spec
   %%   setf (lhs, update lhs indices value)
   %%    =>
   %%   update lhs indices value
-  axiom update is [key,a]
-    fa (m:Map(key,a), x:key, y:a, z:key)
-      V_eval (update m x y, z) =
-      (if z = x then y else V_eval (m, z))
+  % axiom update is [key,a]
+  %   fa (m:Map(key,a), x:key, y:a, z:key)
+  %     V_eval (update m x y, z) =
+  %     (if z = x then y else V_eval (m, z))
 
   op [a,b] singletonMap : a -> b -> Map(a,b) =
     fn x -> fn y -> MapVec.V_update(MapVec.V_empty_map,x,y)
@@ -60,7 +60,7 @@ spec
 
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapVec.V_eval(m,x)
 
-  op [a,b] map_apply (m: Map(a,b))(null_elt:b)(x: a): b = MapVec.V_eval(m,x)
+  op [a,b] map_apply (m: Map(a,b))(null_elt:b)(x: a): b = MapVec.V_map_eval(m,x,null_elt)
 
   op [a,b] mapFrom(s: Set a, f: a -> b): Map(a,b) =
     set_fold empty_map (fn (m, x) -> update m x (f x)) s

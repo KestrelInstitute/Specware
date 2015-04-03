@@ -21,6 +21,7 @@ spec
   op MapVec.V_apply : [key,a] Map(key,a) * key -> Option a
  %TODO require that the key is present in the map?
   op MapVec.V_eval  : [key,a] Map(key,a) * key -> a
+  op MapVec.V_map_eval  : [key,a] Map(key,a) * key * a -> a
 
   op MapVec.V_update      : [key,a] Map (key,a) * key * a -> Map (key,a)
   op MapVec.V_remove      : [a,key] Map (key,a) * key -> Map (key,a)

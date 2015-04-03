@@ -219,7 +219,10 @@ op semantics_of_get_set? (get_args  : MSTerms,
  %% corresponding get and set indices should be equal
  similar? (get_indices, set_indices) 
  &&
+ %% then_tm must be an argument of the set
+ termIn?(then_tm, set_args)
 
+ &&
  %% the get in lhs should use same indices as the get in the else term
  (case opAndArgs else_tm of
     | Some (_, _, get2_args) ->
