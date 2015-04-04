@@ -189,7 +189,7 @@ accepted in lieu of prompting."
       ["Process Current File" sw:process-current-file t]
       ["Process Unit" sw:process-unit t]
       ["Generate Lisp" sw:generate-lisp t]
-      ["Generate & Load Lisp" (sw:generate-lisp t) t]
+      ["Generate & Load Lisp" sw:generate-compile-and-load-lisp t]
       ["Generate Sliced Lisp" sw:generate-sliced-lisp t]
       ["Generate & Load Sliced Lisp" (sw:generate-sliced-lisp t) t]
       ["Generate Local Lisp"  sw:gcl-current-file t]
@@ -271,14 +271,13 @@ accepted in lieu of prompting."
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\g"   'sw:generate-lisp)
-  (define-key map "\C-c\G"   'sw:generate-compile-and-load-lisp)
+  (define-key map "\C-cl"    'sw:generate-compile-and-load-lisp)
   (define-key map "\C-c\C-l" 'sw:gcl-current-file)
   (define-key map "\C-c\C-e" 'sw:evaluate-region)
   (define-key map "\C-c\C-s" 'sw:set-swe-spec)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
   (define-key map "\C-c\C-a"    'sw:apropos-symbol)
   (define-key map "\C-c!"    'cd-current-directory)
-  (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
   ;(define-key map "\C-?"     'backward-delete-char-untabify)
   (define-key map "\C-\M-a"  'sw:beginning-of-unit)
