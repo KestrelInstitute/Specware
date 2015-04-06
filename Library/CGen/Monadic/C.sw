@@ -1099,52 +1099,85 @@ type NamedStorage = FiniteMap (Identifier, Value)
 a function is executed, a new local scope is created for the function itself,
 and, every time a sub-block is entered in that function, a new local scope is
 created for that sub-block scope. Local scopes have a nesting, mirroring that of
-the block scopes they are instances of. This is captured by using a
-ScopeDesignator to designate the parent scope of a given local scope. The top of
-this nesting is always the global, static scope. *)
+the block scopes they are instances of; i.e., the local scope created for a
+particular block always has a local scope for the block containing it. The top
+local scope of a function always has the global scope as its parent. This is
+captured by using a ScopeDesignator to designate the parent scope of a given
+local scope. *)
 
-type LocalScope = {scope_bindings : NameStorage,
-                   scope_parent : ScopeDesignator }
+type LocalScope = {scope_bindings : NamedStorage,
+                   scope_parent   : ScopeDesignator }
 
 (* As mentioned in the comments for type 'ObjectDesignator', our model of
-storage includes allocated objects, which are identified by the IDs introduced
-earlier. *)
+storage includes allocated objects, which are identified by the AllocatedID type
+introduced earlier. The allocated storage is modeled as a list, where the
+AllocatedID type, which is just natural numbers, is used to index into this
+list. In order to model deallocation of objects, each AllocatedID is mapped to
+an optional value, where "None" indicates a deallocated object. This is to
+prevent another allocation from re-using an AllocatedID. *)
 
-type AllocatedStorage = FiniteMap (AllocatedID, Value)
+type AllocatedStorage = List (Option Value)
 
-(* FIXME HERE NOW: explain the new Storage type (with the new "automatic"
-field); also, think about AllocatedStorage also pointing to optional values,
-to designated deallocated objects...
-
- At each point in time, the global scope is active, along with a 
-
-The
-list of lists arises as follows: the outer list corresponds to the function call
-stack, i.e. there is an element for each nested function call; the inner list of
-each element of the outer list corresponds to the nested block scopes inside
-that function's body. Note that the nesting of scopes only occurs within each
-element of the outer list (i.e. call stack), but not within the outer list
-itself, because block scopes inside different functions are unrelated.
-
-The objects declared with file scope have static storage duration [ISO 6.2.4/3],
-while the objects declared with block scope have automatic storage duration [ISO
-6.2.4/5].
-
-We model the static storage as a named storage, and the automatic storage as a
-list of dynamic function calls from innermost to outermost, where each function
-call itself has a list, from innermost to outermost, of named storages for each
-block. As discussed above (see type FrameID and ObjectDesignator), we refer to
-scopes in the automatic storage (at both levels, dynamic function calls and the
-blocks within a dynamic function call) by deBruijn levels, where the outermost
-scope has level 0; thus, to find the Nth scope (at either level) in a list, the
-Nth element *from the end* of the list by be used. We also have an allocated
-storage for allocated objects. *)
+(* We model the global, dynamic storage of a program as containing three fields
+corresponding to the three storage durations [ISO 6.2.4] of objects (excluding
+thread-local storage, which we do not model here). The static storage, for
+global variables and function definitions, is modeled as a named storage. The
+automatic storage, for local variables inside function bodies and nested blocks,
+is modeled as a list of local scopes, where ScopeID N refers to the Nth element
+of this list. To model the fact that automatic scopes are destroyed /
+deallocated when the block they belong to is exited, elements of the automatic
+storage list are actually of Option type, where "None" indicates a scope
+that has been deallocated. The storage for allocated objects is modeled
+with the AllocatedStorage type introduced above.
+*)
 
 type Storage =
   {static    : NamedStorage,
    automatic : List (Option LocalScope),
    allocated : AllocatedStorage}
 
+
+%subsection (* Translation Environment *)
+
+(* C programs are translated in a "translation environment" [ISO 5.1.1], though
+not much is specified about translation environments. In our formalization, the
+translation environment contains information about the typedefs and struct tags
+that the compiler has processed so far. We separate this information from the
+global state of the program, which was defined above as a Storage, because
+intuitively this information is static and lexical, not dynamic; i.e., different
+functions compiled in different translation units, although they share the same
+storage, can use different typedefs and structure tags. To model the
+availability of this information, we use a reader monad with type
+"TranslationEnv", defined below. *)
+
+(* To define the TranslationEnv type, we start by defining a symbol table for
+type definitions, i.e. an association of types to typedef names. *)
+
+type TypedefTable = FiniteMap (Identifier, Type)
+
+(* A structure type, introduced by a structure specifier, consists of
+an ordered list of typed members, each of which is modeled as a pair
+of a member name and its type. A symbol table for structure specifiers
+associates typed members to structure tags (which are identifiers). *)
+
+type StructMembers = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
+type StructTable = FiniteMap (Identifier, StructMembers)
+
+(* We now define TranslationEnv as containing the TypedefTable and StructTable
+for the current lexical environment.
+
+FIXME: in the future, this could also contain information about staitc
+identifiers with internal linkage, i.e., global variables, as well as static
+variables inside functions, that are not visible outside the current file and/or
+function body. *)
+
+type TranslationEnv =
+   {xenv_typedefs   : TypedefTable,
+    xenv_structures : StructTable}
+
+op emptyTranslationEnv : TranslationEnv =
+   {xenv_typedefs   = empty,
+    xenv_structures = empty}
 
 %subsection (* Outcomes *)
 
@@ -1166,20 +1199,19 @@ return a special error result to indicate that the situation should not arise if
 all the compile-time checks are satisfied. We can then prove that no error ever
 arises when all the compile-time checks (formalized earlier) are satisfied.
 
-emw4: We defer the low-level semantic definitions of C computations to
-a monad, which is defined externally to this spec. This monad must of
-course satisfy the monad laws, as specified by the monad spec
-/Library/Structures/Data/Monad, but must additionally provide features
-for error-reporting, for mutating some global state, and for
-representing non-terminating computations. These features are all
-specified in the following extensions of the monad spec. Note that, by
-leaving the actual monad the is being used abstract, we can
-instantiate it with different actual monads depending on the
-"computational features" we want to model; e.g., concurrency, file
-operations, etc. *)
+emw4: We defer the low-level semantic definitions of C computations to a monad,
+which is defined externally to this spec. This monad must of course satisfy the
+monad laws, as specified by the monad spec /Library/Structures/Data/Monad, but
+must additionally provide features for error-reporting, for mutating some global
+state, for reading lexically-scoped information, and for representing
+non-terminating computations. These features are all specified in the following
+extensions of the monad spec. Note that, by leaving the Monad type abstract, we
+can instantiate it with different actual monads depending on the "computational
+features" we want to model; e.g., concurrency, file operations, etc. *)
 
 import /Library/Structures/Data/Monad/MonadError
 import /Library/Structures/Data/Monad/MonadState
+import /Library/Structures/Data/Monad/MonadReader
 import /Library/Structures/Data/Monad/MonadNonTerm
 
 (* These are all the non-local exits (FIXME: document them!) *)
@@ -1220,136 +1252,6 @@ op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
         return (new_x :: new_xs)}
 
 
-%subsection (* Translation environment *)
-
-(* C programs are translated in a "translation environment" [ISO 5.1.1], though
-not much is specified about translation environments. In our formalization, the
-translation environment has access to a symbol table, that contains information
-about the typedefs, struct tags, etc., that the compiler has processed so far.
-We separate this information from the global state of the program, which was
-defined above as a Storage, because intuitively this information is available
-only in the translation environment and not in the execution environment. As an
-additional justification of this decision, this information can be different for
-different files in the same program; e.g., two source files in the same program
-can have two incompatible declarations for some struct s, as long as they do not
-"see" each others' declarations.
-
-Instead, we capture this information in the SymbolTable type, given below.
-Computations occurring in the translation environment, which have access to this
-information, run in the XMonad monad (short for "translation monad"), defined as
-a reader transformer applied to the outcomes Monad defined above. A computation
-in XMonad is "run" by passing it a SymbolTable structure, yielding a
-computation in Monad. *)
-
-(* We start by defining a symbol table for type definitions, i.e. an association
-of types to typedef names. *)
-
-type TypedefTable = FiniteMap (Identifier, Type)
-
-(* A structure type, introduced by a structure specifier, consists of
-an ordered list of typed members, each of which is modeled as a pair
-of a member name and its type. A symbol table for structure specifiers
-associates typed members to structure tags (which are identifiers). *)
-
-type StructMembers = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
-type StructTable = FiniteMap (Identifier, StructMembers)
-
-(* A symbol table for objects is organized as a list that corresponds to the
-nesting of scopes. The head of the list corresponds to the file scope [ISO
-6.2.1/4], while the rest of the list corresponds to nested block scopes [ISO
-6.2.1/4]. *)
-
-type ObjectTable = List (FiniteMap (Identifier, Type))
-
-(* A function has zero or more typed parameters, captured as follows. *)
-
-type TypedParameter =
-  {Param_type : Type,
-   Param_name : Identifier}
-
-type TypedParameters = List TypedParameter
-
-(* A symbol table for functions associates return types and typed parameters to
-the function names. *)
-
-type FunctionTable = FiniteMap (Identifier, Type * TypedParameters)
-
-(* Note that in our C subset type definitions and structure specifiers always
-have file scope, and so their respective symbol tables are "flat" maps, instead
-of lists of maps like object declarations.
-
-A symbol table consists of a symbol table for type definitions, structure
-specifiers, objects, and functions. *)
-
-(* FIXME: we don't currently use the ObjectTable or FunctionTable; do we need
-them? Maybe we should use them to resolve names to the correct scope; e.g., to
-make sure variable references that are not marked extern cannot be referenced
-in a different file scope. *)
-
-type SymbolTable =
- {typedefs   : TypedefTable,
-  structures : StructTable}
-
-(*
-type SymbolTable =
- {typedefs   : TypedefTable,
-  structures : StructTable,
-  objects    : ObjectTable,
-  functions  : FunctionTable}
-*)
-
-
-(* Now we define XMonad as a reader transformer applied to Monad *)
-(* FIXME: do this by importing a ReaderMonad spec and translating its Monad type
-   to be called XMonad (translations don't work with the Isabelle translator) *)
-type XMonad a = SymbolTable -> Monad a
-
-op [a] return (x:a) : XMonad a =
-   fn _ -> return x
-
-op [a,b] monadBind (m: XMonad a, f: a -> XMonad b) : XMonad b =
-  fn table -> monadBind (m table, fn x -> f x table)
-
-(* Read the current symbol table *)
-op getTable : XMonad SymbolTable = fn table -> return table
-
-(* Execute m using the given SymbolTable *)
-op [a] withTable (table: SymbolTable) (m: XMonad a) : XMonad a =
-   fn _ -> m table
-
-(* Lift a Monad computation into XMonad *)
-op [a] liftM (m: Monad a) : XMonad a = fn _ -> m
-
-(* "run" an XMonad computation, yielding a Monad computation *)
-op [a] runXMonad (table: SymbolTable) (m: XMonad a) : Monad a = m table
-
-(* mapM for XMonad *)
-op [a,b] mapXM (f : a -> XMonad b) (xs : List a) : XMonad (List b) =
-   case xs of
-     | [] -> return []
-     | x :: xs' ->
-       {new_x <- f x;
-        new_xs <- mapXM f xs';
-        return (new_x :: new_xs)}
-
-
-(* Operations that access the symbol table *)
-
-(* Look up a typedef name *)
-op lookupTypeDef (name : Identifier) : XMonad Type =
-  {table <- getTable;
-   case table.typedefs name of
-     | Some t -> return t
-     | None -> liftM error}
-
-(* Look up a struct tag *)
-op lookupStructMembers (tag : Identifier) : XMonad StructMembers =
-  {table <- getTable;
-   case table.structures tag of
-     | Some membs -> return membs
-     | None -> liftM error}
-
-
 % subsection (* Operations on storages *)
 
 (* To operate on storages in a general and elegant way, we map each object
@@ -1370,7 +1272,7 @@ op storageLens : MLens ((), Storage) =
 op storageStaticFieldLens : MLens (Storage,NamedStorage) =
    {mlens_get = fn s -> return s.static,
     mlens_set = fn s -> fn v -> return (s << {static=v})}
-op storageAutomaticFieldLens : MLens (Storage,List (List NamedStorage)) =
+op storageAutomaticFieldLens : MLens (Storage,List (Option LocalScope)) =
    {mlens_get = fn s -> return s.automatic,
     mlens_set = fn s -> fn v -> return (s << {automatic=v})}
 op storageAllocatedFieldLens : MLens (Storage,AllocatedStorage) =
@@ -1381,20 +1283,42 @@ op storageAllocatedFieldLens : MLens (Storage,AllocatedStorage) =
    "current" storage classes *)
 op staticStorageLens : MLens ((),NamedStorage) =
    mlens_compose (storageLens, storageStaticFieldLens)
-op automaticStorageLens : MLens ((),List (List NamedStorage)) =
+op automaticStorageLens : MLens ((),List (Option LocalScope)) =
    mlens_compose (storageLens, storageAutomaticFieldLens)
 op allocatedStorageLens : MLens ((),AllocatedStorage) =
    mlens_compose (storageLens, storageAllocatedFieldLens)
+
+(* Build a lens for the optional LocalScope with the given ScopeID, where
+   "optional" means it is allowed to be in a deallocated state *)
+op localScopeOptLens (scope_id : ScopeID) : MLens ((),Option LocalScope) =
+  case scope_id of
+    | ScopeID n ->
+      mlens_compose (automaticStorageLens,
+                     mlens_of_list_index (n, error, error))
+
+(* Build a lens for the bindings in a LocalScope *)
+op localScopeBindingsLens : MLens (LocalScope,NamedStorage) =
+   {mlens_get = fn lscope -> return lscope.scope_bindings,
+    mlens_set = fn lscope -> fn nstorage ->
+      return (lscope << {scope_bindings = nstorage})}
 
 (* Build a lens for the scope corrersponding to a ScopeDesignator *)
 op scopeDesignatorLens (d:ScopeDesignator) : MLens ((),NamedStorage) =
    case d of
      | GlobalScope -> staticStorageLens
-     | LocalScope (FrameID frame_id, block_id) ->
-       mlens_compose (automaticStorageLens,
-                      mlens_compose
-                        (mlens_of_list_rindex (frame_id, error, error),
-                         mlens_of_list_rindex (block_id, error, error)))
+     | LocalScope (scope_id) ->
+       mlens_compose (localScopeOptLens scope_id,
+                      mlens_compose (mlens_for_option (error, error),
+                                     localScopeBindingsLens))
+
+(* Build a lens for the optional Value associated with the given AllocatedID in
+   allocated storage, where "optional" means the AllocatedID is allowed to be in
+   a deallocated state *)
+op allocatedObjOptLens (alloc_id : AllocatedID) : MLens ((),Option Value) =
+  case alloc_id of
+    | AllocatedID n ->
+      mlens_compose (allocatedStorageLens,
+                     mlens_of_list_index (n, error, error))
 
 (* Build a lens for the struct fields of a Value.
 
@@ -1422,7 +1346,7 @@ op structFieldsLens : MLens (Value,FiniteMap (Identifier, Value)) =
                                return (V_struct (ident, fields))
                              | _ -> error}
 
-(* Build a lens for an array elements of a Value. Does not do auto-vivification
+(* Build a lens for the array elements of a Value. Does not do auto-vivification
    for undefined objects. (See the comments for structFieldsLens, above.) *)
 op arrayElementsLens : MLens (Value, List Value) =
    {mlens_get = fn v -> case v of
@@ -1436,17 +1360,14 @@ op arrayElementsLens : MLens (Value, List Value) =
 
 (* Build a lens for the object corrersponding to an ObjectDesignator. Note that
    reading from or writing to an array index out of bounds of an array is not an
-   error, but is instead leads to unspecified behavior, which we represent by
-   raising an Err_nonstd (as discussed above) *)
-
+   error, but is instead leads to unspecified behavior *)
 op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
    case d of
      | OD_Top (scope_d, ident) ->
        mlens_compose (scopeDesignatorLens scope_d,
                       mlens_of_key (ident, error, error))
      | OD_Allocated a_id ->
-       mlens_compose (allocatedStorageLens,
-                      mlens_of_key (a_id, error, error))
+       mlens_compose (allocatedObjOptLens a_id, mlens_for_option (error, error))
      | OD_Member (d', ident) ->
        mlens_compose (objectDesignatorLens d',
                       mlens_compose (structFieldsLens,
@@ -1455,8 +1376,7 @@ op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
        mlens_compose (objectDesignatorLens d',
                       mlens_compose
                         (arrayElementsLens,
-                         mlens_of_list_index (i, raiseErr Err_nonstd,
-                                              raiseErr Err_nonstd)))
+                         mlens_of_list_index (i, nonstd, nonstd)))
 
 (* Helper functions for reading from and writing to designated objects *)
 op readObject (d:ObjectDesignator) : Monad Value =
@@ -1474,99 +1394,60 @@ op writePtrValue (v1:Value, v2:Value) : Monad () =
      | V_pointer (_, obj) -> writeObject (obj, v2)
      | _ -> error
 
-(* FIXME: shouldn't need storageStaticPlusTopFrameLens or identInScopeLens *)
+(* FIXME: it would be nice to develop a pattern for "allocatable" monadic
+lenses, such as the LocalScopes and allocated objects, below *)
 
-(* Lens to combine the top frame of the automatic storage with the static
-   storage, in order to get the current scope for looking up identifiers; note
-   that it is an error to call "set" with a list whose length is different than
-   the length of the list returned by "get" on the storage *)
-op storageStaticPlusTopFrameLens : MLens (Storage, List NamedStorage) =
-   {mlens_get =
-      fn s -> case s.automatic of
-                | [] -> return [s.static]
-                | top_frame :: _ -> return (top_frame ++ [s.static]),
-    mlens_set =
-      fn s -> fn v -> case s.automatic of
-                        | [] ->
-                          if length v = 1 then
-                            return (s << {static = last v})
-                          else error
-                        | top_frame :: rest_frames ->
-                          if length v = length top_frame + 1 then
-                            return (s << {static = last v, automatic = butLast v :: rest_frames})
-                          else error}
-
-(* Lens to look up and/or set the value of an identifier in a scope list; we
-   define the get and set functions separately, as recursive functions *)
-op identInScopeGet (id:Identifier) (scope:List NamedStorage) : Monad Value =
-   case scope of
-     | [] -> error
-     | top :: scope' ->
-       (case top id of
-          | Some v -> return v
-          | None -> identInScopeGet id scope')
-op identInScopeSet (id:Identifier) (scope:List NamedStorage) (v:Value) : Monad (List NamedStorage) =
-   case scope of
-     | [] -> error
-     | top :: scope' ->
-       (case top id of
-          | Some v -> return (update top id v :: scope')
-          | None -> {res <- identInScopeSet id scope' v;
-                     return (top :: res)})
-op identInScopeLens (id:Identifier) : MLens (List NamedStorage, Value) =
-   {mlens_get = identInScopeGet id, mlens_set = identInScopeSet id}
-
-
-(* Push and pop functions for manipulating the automatic storage stack; the push
-   functions all return the id for the newly-pushed element *)
-op pushOuterFrame (frame:NamedStorage) : Monad FrameID =
+(* Allocate a new LocalScope *)
+op allocateLocalScope (scope:LocalScope) : Monad ScopeID =
   {storage <- getState;
-   putState (storage << {automatic = [frame] :: storage.automatic});
-   return (FrameID (length storage.automatic))}
-op popOuterFrame : Monad () =
+   putState (storage << {automatic = storage.automatic ++ [Some scope]});
+   return (ScopeID (length storage.automatic))}
+
+(* Deallocate a LocalScope *)
+op deallocateLocalScope (scope_id:ScopeID) : Monad () =
+   (localScopeOptLens scope_id).mlens_set () None
+
+(* Allocate storage for an object in the AllocatedStorage *)
+op allocateObject (val: Value) : Monad AllocatedID =
   {storage <- getState;
-   case storage.automatic of
-     | [] -> error
-     | top::rest -> putState (storage << {automatic = rest})}
-op pushInnerFrame (frame:NamedStorage) : Monad Nat =
-  {storage <- getState;
-   case storage.automatic of
-     | [] -> error
-     | top::rest ->
-       {putState (storage << {automatic = (frame::top)::rest});
-        return (length top)}}
-op popInnerFrame : Monad () =
-  {storage <- getState;
-   case storage.automatic of
-     | [] -> error
-     | (top::rest_inner)::rest_outer ->
-       putState (storage << {automatic = rest_inner::rest_outer})}
+   putState (storage << {allocated = storage.allocated ++ [Some val]});
+   return (AllocatedID (length storage.automatic))}
 
-(* Besides storage, it is convenient to include in the state of a C program in
-our subset also a symbol table of type definitions, a symbol table of structure
-types, and information about functions (consisting of return type, typed
-parameters, and body). These are used to execute declarations at run time, as
-formalized later. *)
-
-(* FIXME: remove FunctionInfo and State from the below; this is
-what they used to look like:
-
-type FunctionInfo =
-  {return     : Type,
-   parameters : TypedParameters,
-   body       : Statement}
-
-type FunctionsInfo = FiniteMap (Identifier, FunctionInfo)
-
-type State =
-  {storage    : Storage,
-   typedefs   : TypedefTable,
-   structures : StructTable,
-   functions  : FunctionsInfo}
-*)
+(* Deallocate an object in the AllocatedStorage *)
+op deallocateObject (alloc_id: AllocatedID) : Monad () =
+   (allocatedObjOptLens alloc_id).mlens_set () None
 
 
-%subsection (* Identifiers and Object Designators *)
+%subsection (* Operations on Lexical Environments *)
+
+(* The reader type of the monad is the TranslationEnv type defined above, along
+   with a designator for the LocalScope for the current lexical environment *)
+type Monad.R =
+   {r_xenv     : TranslationEnv,
+    r_curScope : ScopeDesignator }
+
+(* Look up a typedef name *)
+op lookupTypeDef (name : Identifier) : Monad Type =
+  {r <- askR;
+   case r.r_xenv.xenv_typedefs name of
+     | Some t -> return t
+     | None -> error}
+
+(* Look up a struct tag *)
+op lookupStructMembers (tag : Identifier) : Monad StructMembers =
+  {r <- askR;
+   case r.r_xenv.xenv_structures tag of
+     | Some membs -> return membs
+     | None -> error}
+
+(* FIXME HERE NOW: Write ops to get the current LocalScope and to push a new
+automatic scope *)
+
+
+end-spec
+
+blah2 = spec
+
 
 (* An object name denotes the object declared with that name in the innermost
 block that declares an object with that name. The following ops return the
@@ -2648,7 +2529,7 @@ op zeroOfType (ty:Type) : XMonad Value =
 
 end-spec
 
-blah = spec
+blah1 = spec
 
 %subsection (* Statements *)
 

@@ -80,6 +80,18 @@ op [a] mlens_of_list_rindex (i:Nat, getErr:Monad a, setErr:Monad (List a)) : MLe
      mlens_set = (fn l -> fn a ->
                     if i < length l then return (update (l,length l - i,a)) else setErr)}
 
+(* The monadic lens for an Option type; it is an error to get or set a "None" *)
+op [a] mlens_for_option (getErr : Monad a, setErr : Monad (Option a)) : MLens (Option a, a) =
+    {mlens_get = (fn opt ->
+                    case opt of
+                      | Some a -> return a
+                      | None -> getErr),
+     mlens_set = (fn opt -> fn a ->
+                    case opt of
+                      | Some _ -> return (Some a)
+                      | None -> setErr)}
+
+
 (* FIXME: prove the subtyping constraints! *)
 
 end-spec
