@@ -1296,6 +1296,11 @@ op localScopeOptLens (scope_id : ScopeID) : MLens ((),Option LocalScope) =
       mlens_compose (automaticStorageLens,
                      mlens_of_list_index (n, error, error))
 
+(* Build a lens for the LocalScope with the given ScopeID, raising an error if
+   that scope has been deallocated *)
+op localScopeLens (scope_id : ScopeID) : MLens ((),LocalScope) =
+   mlens_compose (localScopeOptLens scope_id, mlens_for_option (error, error))
+
 (* Build a lens for the bindings in a LocalScope *)
 op localScopeBindingsLens : MLens (LocalScope,NamedStorage) =
    {mlens_get = fn lscope -> return lscope.scope_bindings,
@@ -1307,9 +1312,15 @@ op scopeDesignatorLens (d:ScopeDesignator) : MLens ((),NamedStorage) =
    case d of
      | GlobalScope -> staticStorageLens
      | LocalScope (scope_id) ->
-       mlens_compose (localScopeOptLens scope_id,
-                      mlens_compose (mlens_for_option (error, error),
-                                     localScopeBindingsLens))
+       mlens_compose (localScopeLens scope_id, localScopeBindingsLens)
+
+(* Get the parent of a given scope, or raise an error for GlobalScope *)
+op getScopeParent (d:ScopeDesignator) : Monad ScopeDesignator =
+  case d of
+    | GlobalScope -> error
+    | LocalScope scope_id ->
+      {scope <- (localScopeLens scope_id).mlens_get ();
+       return scope.scope_parent}
 
 (* Build a lens for the optional Value associated with the given AllocatedID in
    allocated storage, where "optional" means the AllocatedID is allowed to be in
@@ -1397,7 +1408,16 @@ op writePtrValue (v1:Value, v2:Value) : Monad () =
 (* FIXME: it would be nice to develop a pattern for "allocatable" monadic
 lenses, such as the LocalScopes and allocated objects, below *)
 
-(* Allocate a new LocalScope *)
+(* Add a new static binding in the global scope *)
+op addStaticBinding (id:Identifier, val:Value) : Monad () =
+  {static <- staticStorageLens.mlens_get ();
+   if some? (static id) then
+     (* Raise an error if id already has a static binding *)
+     error
+   else
+     staticStorageLens.mlens_set () (update static id val)}
+
+(* Allocate a new ScopeID to point to a given LocalScope *)
 op allocateLocalScope (scope:LocalScope) : Monad ScopeID =
   {storage <- getState;
    putState (storage << {automatic = storage.automatic ++ [Some scope]});
@@ -1440,52 +1460,59 @@ op lookupStructMembers (tag : Identifier) : Monad StructMembers =
      | Some membs -> return membs
      | None -> error}
 
-(* FIXME HERE NOW: Write ops to get the current LocalScope and to push a new
-automatic scope *)
+(* Get the current ScopeDesignator *)
+op getCurrentScopeDesignator : Monad ScopeDesignator =
+  {r <- askR; return r.r_curScope }
 
+(* Run a computation with a different current scope *)
+op [a] withCurrentScopeDesignator (d:ScopeDesignator) (m:Monad a) : Monad a =
+  localR (fn r -> r << {r_curScope = d}) m
 
-end-spec
+(* Monadic lens for (just the bindings of) the current scope *)
+op currentBindingsLens : MLens ((), NamedStorage) =
+  mlens_of_computation {d <- getCurrentScopeDesignator;
+                        return (scopeDesignatorLens d)}
 
-blah2 = spec
+(* Perform a computation with a freshly allocated LocalScope, setting that
+   LocalScope to be the current scope for the duration of the computation and
+   deallocating the scope upon exit *)
+op [a] inFreshLocalScope (scope:LocalScope) (m:Monad a) : Monad a =
+  {scope_id <- allocateLocalScope scope;
+   ret <- withCurrentScopeDesignator (LocalScope scope_id) m;
+   deallocateLocalScope scope_id;
+   return ret}
 
+(* Perform m in a fresh LocalScope with the given bindings, using the current
+   scope as the parent scope *)
+op [a] withFreshLocalBindings (bindings:NamedStorage) (m : Monad a) : Monad a =
+  {cur_scope <- getCurrentScopeDesignator;
+   inFreshLocalScope {scope_bindings = bindings, scope_parent = cur_scope} m}
 
-(* An object name denotes the object declared with that name in the innermost
-block that declares an object with that name. The following ops return the
-designator of the innermost scope that declares an object with the argument
-name. Its arguments are the name itself, the current static storage, the FrameID
-of the current function call in the dynamic stack, and a list of block scopes in
-the current function call. It is an error if no object with the given name is
-declared in any scope. *)
+(* Perform m in a fresh LocalScope with the given bindings, using the top-level
+   static scope as the parent scope *)
+op [a] withFreshTopBindings (bindings:NamedStorage) (m : Monad a) : Monad a =
+  inFreshLocalScope {scope_bindings = bindings, scope_parent = GlobalScope} m
 
-op scopeOfObject_H (name:Identifier, static:NamedStorage,
-                    cur_frame:FrameID, blocks:List NamedStorage)
-   : Monad ScopeDesignator =
-  case blocks of
-    | [] ->
-      if name in? domain static then return GlobalScope
-      else error
-    | block :: blocks' ->
-      if name in? domain block then
-        return (LocalScope (cur_frame, length blocks'))
-      else
-        scopeOfObject_H (name, static, cur_frame, blocks')
+(* Perform m in the parent scope, raising an error if there is no parent scope,
+   i.e., if the current scope is the global scope *)
+op [a] inParentScope (m : Monad a) : Monad a =
+  {cur_scope <- getCurrentScopeDesignator;
+   parent_scope <- getScopeParent cur_scope;
+   withCurrentScopeDesignator parent_scope m}
 
-op scopeOfObject (name:Identifier) : Monad ScopeDesignator =
-   {st <- getState;
-    case st.automatic of
-      | [] -> error
-      | top_frame :: other_frames ->
-        scopeOfObject_H (name, st.static,
-                         FrameID (length other_frames), top_frame) }
+(* Find the innermost scope containing the given identifier *)
+op scopeOfIdentifier (id:Identifier) : Monad ScopeDesignator =
+  {cur_scope <- getCurrentScopeDesignator;
+   cur_bindings <- (scopeDesignatorLens cur_scope).mlens_get ();
+   if some? (cur_bindings id) then
+     return cur_scope
+   else
+     inParentScope (scopeOfIdentifier id)}
 
-
-(* The following op returns the complete object designator for a named object,
-by pairing the name with the scope designator returned by the op above. It is an
-error if the object's scope is not found. *)
-
-op designatorOfObject (name:Identifier) : Monad ObjectDesignator =
-  {scope <- scopeOfObject (name);
-   return (OD_Top (scope, name))}
+(* Build the ObjectDesignator for the innermost binding of an identifier *)
+op designatorOfIdentifier (id:Identifier) : Monad ObjectDesignator =
+  {scope <- scopeOfIdentifier id;
+   return (OD_Top (scope, id))}
 
 
 %subsection (* Computations on integers *)
@@ -2241,6 +2268,9 @@ i.e. i is 0 and thus the result is element j of the array, as expected.
 As explained earlier, the null pointer constant has type 'void*', and therefore
 it returns a null pointer to void. *)
 
+(* FIXME HERE NOW: capture the conversions specified in [ISO 6.3.2.1] as a
+single op, and apply it in all the cases of the below *)
+
 op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad ExpressionResult =
    case uop of
      | ADDR -> (fn res_m ->
@@ -2309,7 +2339,7 @@ op evaluatorForBinaryOp (bop:BinaryOp) :
 op evaluate (expr:Expression) : Monad ExpressionResult =
   case expr of
     | E_ident var -> 
-      {obj <- designatorOfObject var;
+      {obj <- designatorOfIdentifier var;
        return (Res_object obj)}
     | E_const c ->
       {val <- evaluateIntegerConstant c;
@@ -2472,7 +2502,7 @@ type name w.r.t. a state. Recall that a state includes a symbol table for type
 definitions: this is used to look up, and expand away, typedef names. This op is
 similar to op 'checkTypeName'. *)
 
-op expandTypeName (tyn:TypeName) : XMonad Type =
+op expandTypeName (tyn:TypeName) : Monad Type =
   case tyn of
   | TN_typedef tdn ->
     lookupTypeDef tdn
@@ -2514,13 +2544,13 @@ type not present in the state. It is also an error if there is some circularity
 in the structures, which could cause the op not to terminate. Recall that the
 non-circularity of the structures is part of the state invariants. *)
 
-op zeroOfType (ty:Type) : XMonad Value =
+op zeroOfType (ty:Type) : Monad Value =
   case ty of
-  | T_void -> liftM error
+  | T_void -> error
   | T_struct tag ->
     {membs <- lookupStructMembers tag;
      (mems, tys) <- return (unzip membs);
-     vals <- mapXM zeroOfType tys;
+     vals <- mapM zeroOfType tys;
      return (V_struct (tag, fromAssocList (zip (mems, vals))))}
   | T_array (ty0, n) ->
     {val0 <- zeroOfType ty0;

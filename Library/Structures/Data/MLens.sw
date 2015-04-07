@@ -91,6 +91,13 @@ op [a] mlens_for_option (getErr : Monad a, setErr : Monad (Option a)) : MLens (O
                       | Some _ -> return (Some a)
                       | None -> setErr)}
 
+(* Turn a computation that returns a monadic lens into a monadic lens, where the
+   "get" and "set" functions first perform the computation and then apply the
+   corresponding function in the returned monadic lens *)
+op [a,b] mlens_of_computation (m: Monad (MLens (a, b))) : MLens (a,b) =
+  {mlens_get = fn a -> {l <- m; l.mlens_get a},
+   mlens_set = fn b -> fn a -> {l <- m; l.mlens_set b a}}
+
 
 (* FIXME: prove the subtyping constraints! *)
 
