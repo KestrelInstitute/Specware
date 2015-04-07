@@ -616,12 +616,12 @@ written, however, also affects the particular integer type that is
 selected for it [ISO 6.4.4.1], so we make the type explicit in integer
 constants as well. *)
 
-type IntegerConstant = { n_t : Nat * Type |
-                          integerType? n_t.2 && n_t.1 in? rangeOfIntegerType n_t.2 }
+type IntegerConstant = { n_t : Type * Nat |
+                          integerType? n_t.1 && n_t.2 in? rangeOfIntegerType n_t.1 }
 
-op integerConstantValue (c:IntegerConstant) : Nat = c.1
+op integerConstantValue (c:IntegerConstant) : Nat = c.2
 
-op integerConstantType (c:IntegerConstant) : Type = c.2
+op integerConstantType (c:IntegerConstant) : Type = c.1
 
 
 %subsection (* Unary operators *)
@@ -670,11 +670,17 @@ type BinaryOp =
 
 %subsection (* Expressions *)
 
-(* Our C subset features the following kinds of expressions [ISO 6.5]:
-identifiers [ISO 6.5.1/1], integer constants [ISO 6.5.1/1], unary expressions
-using the unary operators introduced above, binary expressions using the binary
-operators introduced above, conditional expressions [ISO 6.5.15], structure
-member expressions (i.e. the '.' and '->' operators, respectively denoted by the
+(* Our C subset includes only expressions which do not have side effects. This
+is because the order in which side effects occur in expressions is unspecified
+[ISO 6.5/2], but trying to model exactly when such unspecified behavior could
+occur is complex and difficult. Thus, any side-effecting expressions (such as
+assignment expressions) are promoted to statements in our formalism.
+
+Our C subset includes the following kinds of expressions [ISO 6.5]: identifiers
+[ISO 6.5.1/1], integer constants [ISO 6.5.1/1], unary expressions using the
+unary operators introduced above, binary expressions using the binary operators
+introduced above, conditional expressions [ISO 6.5.15], structure member
+expressions (i.e. the '.' and '->' operators, respectively denoted by the
 constructors 'member' and 'memberp', where 'p' suggests that the left operand
 must be a pointer, as required for '->') [ISO 6.5.2.3], array subscripting [ISO
 6.5.2.1], and the null pointer constant [ISO 6.3.2.3/3] '(void* ) 0' (we leave
@@ -925,7 +931,7 @@ type Program = List TranslationUnit
 execution) of C programs. *)
 
 
-%subsection (* Object designators *)
+%subsection (* Object and Function Designators *)
 
 (* Each object declaration in a program in our C subset introduces an object
 [ISO 3.15]. When such an object is a structure, its members are subobjects of
@@ -934,20 +940,25 @@ the object, which can be independently written to via a suitable lvalue [ISO
 and they can be written independently via a suitable lvalue. This recursively
 applies to members and elements of structure members and array elements.
 
-(emw4) At the top level of this nesting are the global variables, the local
-(i.e., stack) variables, and the heap-allocated objects (returned by, e.g.,
-malloc). These three classes of top-level objects correspond to the three sorts
-of storage [ISO 6.2.4] in C (not including thread storage, which we do not
-support here): static storage for global variables, automatic storage for local
-(i.e., stack) variables, and allocated storage for heap-allocated objects.
-Top-level objects in static and automatic storage are referred to by name, since
-each object in static and automatic storage corresponds to a, respectively,
-global or local variable. However, because of variable shadowing, the same name
-can refer to multiple objects. Thus, to form a unique reference to a named
-top-level object, a variable name must be combined with a "scope designator"
-that specifies either global or local scope, corresponding to static or
-automatic variables, respectively. For local scope, the scope designator must
-additionally specify which scope is being referred to, using a ScopeID. *)
+For all of these objects, we introduce the object designators, as entities that
+refer to these objects. Intuitively, an object designator is a pointer to an
+object in the heap, and, in fact, this is how pointer values are defined below.
+
+At the top level of the nesting of subobjects inside other objects are the
+global variables, the local (i.e., stack) variables, and the heap-allocated
+objects (returned by, e.g., malloc). These three classes of top-level objects
+correspond to the three sorts of storage [ISO 6.2.4] in C (not including thread
+storage, which we do not support here): static storage for global variables,
+automatic storage for local (i.e., stack) variables, and allocated storage for
+heap-allocated objects. Top-level objects in static and automatic storage are
+referred to by name, since each object in static and automatic storage
+corresponds to a, respectively, global or local variable. However, because of
+variable shadowing, the same name can refer to multiple objects. Thus, to form a
+unique reference to a named top-level object, a variable name must be combined
+with a "scope designator" that specifies either global or local scope,
+corresponding to static or automatic variables, respectively. For local scope,
+the scope designator must additionally specify which scope is being referred to,
+using a ScopeID. *)
 
 type ScopeID = | ScopeID Nat
 
@@ -964,56 +975,53 @@ type ObjectDesignator =
   | OD_Subscript  ObjectDesignator * Nat
 
 
+(* A function designator [ISO 6.3.2.1] is defined to be any expression that has
+function type. We diverge slightly from this definition, and define a function
+designator to be any identifier that has function type. Note that any function
+designator in the C spec will always evaluate to the function defined by some
+named function definition somewhere in the program, and thus the value of an
+expression of function type (the C spec's definition of "function designator")
+will always be an element of the FunctionDesignator type defined here. Later,
+when we define the Monad type, we will define a lookup table for finding the
+actual monadic function associated with a FunctionDesignator. *)
+
+type FunctionDesignator = | FunctionDesignator Identifier
+
+
+(* A pointer is a reference to an object or a function [ISO 6.2.5/20]. *)
+
+type Pointer =
+  | ObjPointer ObjectDesignator
+  | FunPointer FunctionDesignator
+
+
 %subsection (* Values *)
 
 (* We represent integers in values with a tagged integer type *)
 type TypedInt = { ty_i : Type * Int |
                    integerType? ty_i.1 && ty_i.2 in? rangeOfIntegerType ty_i.1 }
 
-(* (emw4) The text in [ISO 6.2.6.1] suggests that the representations
-of functions themselves is unspecified. (Technically, clause 1 says
-"The representations of all types are unspecified except as stated in
-this subclause" and does not state how functions are represented.) To
-represent this lack of representation, we declare but do not define
-the type FunctionRepr of representations of functions. Intuitively,
-elements of this type can be thought of as a sequence of machine code
-instructions in binary form. Later, we define the runFunction op,
-which runs a FunctionRepr by converting it into the computation that
-it actually performs, as well as the compileFunction op, that converts
-an AST representation of C syntax into a FunctionRepr. Our only
-requirement is that compiling and then running an AST is the same as
-interpreting the AST directly using the C semantics given below. *)
-
-type FunctionRepr
-
-(* The wording in [ISO 3.19] indicates that, conceptually, a value "includes" a
-type. Typical implementations only store "raw" bits inside objects [ISO 3.15],
-without explicit type information, but use the declared type of the object to
-interpret the object's content [ISO 6.5/6].
+(* We now define the values. The C spec defines the values as the contents of an
+object when interpreted at a specific type [ISO 3.19], where an object is a
+region of data storage [ISO 3.15]. This wording suggests that, conceptually, a
+value "includes" a type. Typical implementations only store "raw" bits inside
+objects, without explicit type information, but use the declared type of the
+object to interpret the object's content [ISO 6.5/6].
 
 In our formal model of values, it is convenient to include type information. The
 values in our C subset are those of the integer types, of structure types, of
 pointer types, and of array types; those are all the non-'void' types in our C
 subset.
 
-Based on our definition of op CHAR_BIT, as explained earlier, char values in our
-formalization consist of 8 bits, like type 'Byte' in the Specware library.
-
 A structure (value) consists of a value assigned to each member, so we use a
 finite map from identifiers (denoting members) to values. We also include the
 tag of the structure, so that we have complete type information.
 
-A pointer (value) consists of an object designator. In our C subset, we only
-allow pointers that reference well-defined objects, and not arbitrary addresses
-in memory. Our C subset is type-safe. We also include, as part of our model of a
-pointer, the type of the object referenced by the pointer. There is also a
-separate null pointer [ISO 6.3.2.3/3] value for each type [ISO 6.3.2.3/4].
+A pointer (value) is an element of the Pointer type defined above. There is also
+a separate null pointer [ISO 6.3.2.3/3] value for each type [ISO 6.3.2.3/4].
 
 An array value consists of a list of values -- the elements of the array. We
 also include the type of the elements in our model of an array value.
-
-(emw4) A function value is a FunctionRepr (see the above discussion)
-along with its return type and input parameter types.
 
 When an object declared in automatic storage has no initializer, its initial
 value is indeterminate [ISO 6.7.9/10]. Unlike Java, C does not enforce that such
@@ -1030,10 +1038,9 @@ different type. *)
 type Value =
   | V_int         TypedInt
   | V_struct      Identifier * FiniteMap (Identifier, Value)
-  | V_pointer     Type * ObjectDesignator
+  | V_pointer     Type * Pointer
   | V_array       Type * List Value
   | V_nullpointer Type
-  | V_function    Type * (List Type) * FunctionRepr
   | V_undefined   Type
 
 (* There is an obvious mapping from values to types. Note that this includes
@@ -1045,7 +1052,6 @@ op typeOfValue (val:Value) : Type =
   | V_int (ty, _)            -> ty
   | V_struct (tag, _)        -> T_struct tag
   | V_pointer (ty, _)        -> T_pointer ty
-  | V_function (ty, tys, _)  -> T_function (ty, tys)
   | V_array (ty, vals)       -> T_array (ty, length vals)
   | V_nullpointer ty         -> T_pointer ty
   | V_undefined ty           -> ty
@@ -1062,9 +1068,6 @@ op arithmeticValue? (val:Value) : Bool =
 
 op pointerValue? (val:Value) : Bool =
   embed? T_pointer (typeOfValue val)
-
-op functionValue? (val:Value) : Bool =
-  embed? T_function (typeOfValue val)
 
 op structValue? (val:Value) : Bool =
   embed? T_struct (typeOfValue val)
@@ -1137,48 +1140,6 @@ type Storage =
    allocated : AllocatedStorage}
 
 
-%subsection (* Translation Environment *)
-
-(* C programs are translated in a "translation environment" [ISO 5.1.1], though
-not much is specified about translation environments. In our formalization, the
-translation environment contains information about the typedefs and struct tags
-that the compiler has processed so far. We separate this information from the
-global state of the program, which was defined above as a Storage, because
-intuitively this information is static and lexical, not dynamic; i.e., different
-functions compiled in different translation units, although they share the same
-storage, can use different typedefs and structure tags. To model the
-availability of this information, we use a reader monad with type
-"TranslationEnv", defined below. *)
-
-(* To define the TranslationEnv type, we start by defining a symbol table for
-type definitions, i.e. an association of types to typedef names. *)
-
-type TypedefTable = FiniteMap (Identifier, Type)
-
-(* A structure type, introduced by a structure specifier, consists of
-an ordered list of typed members, each of which is modeled as a pair
-of a member name and its type. A symbol table for structure specifiers
-associates typed members to structure tags (which are identifiers). *)
-
-type StructMembers = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
-type StructTable = FiniteMap (Identifier, StructMembers)
-
-(* We now define TranslationEnv as containing the TypedefTable and StructTable
-for the current lexical environment.
-
-FIXME: in the future, this could also contain information about staitc
-identifiers with internal linkage, i.e., global variables, as well as static
-variables inside functions, that are not visible outside the current file and/or
-function body. *)
-
-type TranslationEnv =
-   {xenv_typedefs   : TypedefTable,
-    xenv_structures : StructTable}
-
-op emptyTranslationEnv : TranslationEnv =
-   {xenv_typedefs   = empty,
-    xenv_structures = empty}
-
 %subsection (* Outcomes *)
 
 (* [ISO] prescribes the outcomes of certain computations, while leaving the
@@ -1214,6 +1175,19 @@ import /Library/Structures/Data/Monad/MonadState
 import /Library/Structures/Data/Monad/MonadReader
 import /Library/Structures/Data/Monad/MonadNonTerm
 
+(* The map function for monads; FIXME: should be in a standard library spec
+   somewhere... *)
+op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
+   case xs of
+     | [] -> return []
+     | x :: xs' ->
+       {new_x <- f x;
+        new_xs <- mapM f xs';
+        return (new_x :: new_xs)}
+
+
+%subsubsection (* Non-Local Exits *)
+
 (* These are all the non-local exits (FIXME: document them!) *)
 type Monad.Err =
     | Err_error
@@ -1238,21 +1212,11 @@ op nonstdIf (condition:Bool) : Monad () =
 op [a] returnFromFun (retVal : Option Value) : Monad a =
    raiseErr (Err_return retVal)
 
-(* The state type of the monad is the Storage type defined above *)
-type Monad.St = Storage
-
-(* The map function for monads; FIXME: should be in a standard library spec
-   somewhere... *)
-op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
-   case xs of
-     | [] -> return []
-     | x :: xs' ->
-       {new_x <- f x;
-        new_xs <- mapM f xs';
-        return (new_x :: new_xs)}
-
 
 % subsection (* Operations on storages *)
+
+(* The state type of the monad is the Storage type defined above *)
+type Monad.St = Storage
 
 (* To operate on storages in a general and elegant way, we map each object
    designator to a "monadic lens", i.e., to a pair of mondic getter and setter
@@ -1314,13 +1278,10 @@ op scopeDesignatorLens (d:ScopeDesignator) : MLens ((),NamedStorage) =
      | LocalScope (scope_id) ->
        mlens_compose (localScopeLens scope_id, localScopeBindingsLens)
 
-(* Get the parent of a given scope, or raise an error for GlobalScope *)
-op getScopeParent (d:ScopeDesignator) : Monad ScopeDesignator =
-  case d of
-    | GlobalScope -> error
-    | LocalScope scope_id ->
-      {scope <- (localScopeLens scope_id).mlens_get ();
-       return scope.scope_parent}
+(* Get the parent of a given local scope *)
+op getScopeParent (scope_id: ScopeID) : Monad ScopeDesignator =
+   {scope <- (localScopeLens scope_id).mlens_get ();
+    return scope.scope_parent}
 
 (* Build a lens for the optional Value associated with the given AllocatedID in
    allocated storage, where "optional" means the AllocatedID is allowed to be in
@@ -1398,11 +1359,11 @@ op writeObject (d:ObjectDesignator, v:Value) : Monad () =
 (* Helper functions for reading from and writing to pointer values *)
 op readPtrValue (v:Value) : Monad Value =
    case v of
-     | V_pointer (_, obj) -> readObject obj
+     | V_pointer (_, ObjPointer obj) -> readObject obj
      | _ -> error
 op writePtrValue (v1:Value, v2:Value) : Monad () =
    case v1 of
-     | V_pointer (_, obj) -> writeObject (obj, v2)
+     | V_pointer (_, ObjPointer obj) -> writeObject (obj, v2)
      | _ -> error
 
 (* FIXME: it would be nice to develop a pattern for "allocatable" monadic
@@ -1438,10 +1399,80 @@ op deallocateObject (alloc_id: AllocatedID) : Monad () =
    (allocatedObjOptLens alloc_id).mlens_set () None
 
 
-%subsection (* Operations on Lexical Environments *)
+%subsubsection (* Translation Environment *)
 
-(* The reader type of the monad is the TranslationEnv type defined above, along
-   with a designator for the LocalScope for the current lexical environment *)
+(* C programs are translated in a "translation environment" [ISO 5.1.1], though
+not much is specified about translation environments. In our formalization, the
+translation environment contains information about the typedefs and struct tags
+that the compiler has processed so far, as well as a global lookup table for
+named function definitions. We separate this information from the global state
+of the program, which was defined above as a Storage, because intuitively this
+information is static and lexical, not dynamic; i.e., different functions
+compiled in different translation units, although they share the same storage,
+can use different typedefs and structure tags. To model the availability of this
+information, we use a reader monad with type "TranslationEnv", defined below. *)
+
+(* To define the TranslationEnv type, we start by defining a symbol table for
+type definitions, i.e. an association of types to typedef names. *)
+
+type TypedefTable = FiniteMap (Identifier, Type)
+
+(* A structure type, introduced by a structure specifier, consists of
+an ordered list of typed members, each of which is modeled as a pair
+of a member name and its type. A symbol table for structure specifiers
+associates typed members to structure tags (which are identifiers). *)
+
+type StructMembers = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
+type StructTable = FiniteMap (Identifier, StructMembers)
+
+(* A function table is a mapping from identifiers to monadic functions on zero
+or more values. These monadic functions are restricted so that they cannot
+depend on the translation environment, a condition which is specified by
+requiring the monadic computations to be insensitive to the localR monadic
+operation. This condition is necessary when we actually try to build a concrete
+Monad type, in order to break the circularity between the Monad and
+FunctionTable types: the Monad type must contain (a type isomorphic to) the
+FunctionTable type, which in turn contains the Monad type. In fact, the Monad
+type must contain (a type isomorphic to) the FunctionTable type in a negative
+position, since Monad is a MonadReader for a type containing FunctionTable.
+
+The reason this condition breaks the circularity is that it allows Monad to be
+define as something like the following (using Haskell's ReaderT transformer):
+
+type Monad a = ReaderT (TypedefTable * StructTable * UnderFunctionTable) UnderMonad a
+type UnderFunctionTable =
+   List (Identifier * (List Value -> MonadUnder Value))
+
+for some underlying monad UnderMonad. With this definition of Monad, we have
+that UnderMonad a is isomorphic to { m:Monad a | fa (f) localR f m = m }, where
+lifting through the ReaderT transformer does one direction of the isomorphism
+and applying a Monad computation m to any TranslationEnv (an operation also know
+as "runReaderT" in Haskell) is the other direction of the isomorphism. *)
+
+type TopFunction = (List Value -> {m:Monad Value | fa (f) localR f m = m }) * Type * List Type
+type FunctionTable = FiniteMap (Identifier, TopFunction)
+
+(* We now define TranslationEnv as containing tables for typedefs, structs, and
+top-level function definitions.
+
+FIXME: in the future, this could also contain information about staitc
+identifiers with internal linkage, i.e., global variables, as well as static
+variables inside functions, that are not visible outside the current file and/or
+function body. *)
+
+type TranslationEnv =
+   {xenv_typedefs   : TypedefTable,
+    xenv_structures : StructTable,
+    xenv_functions  : FunctionTable }
+
+op emptyTranslationEnv : TranslationEnv =
+   {xenv_typedefs   = empty,
+    xenv_structures = empty,
+    xenv_functions  = empty}
+
+
+(* The reader type of the monad is the TranslationEnv type, along with a
+   designator for the current lexical scope *)
 type Monad.R =
    {r_xenv     : TranslationEnv,
     r_curScope : ScopeDesignator }
@@ -1459,6 +1490,15 @@ op lookupStructMembers (tag : Identifier) : Monad StructMembers =
    case r.r_xenv.xenv_structures tag of
      | Some membs -> return membs
      | None -> error}
+
+(* Look up a function *)
+op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction) =
+  case f_desig of
+    | FunctionDesignator id ->
+      {r <- askR;
+       case r.r_xenv.xenv_functions id of
+         | Some f -> return f
+         | None -> error}
 
 (* Get the current ScopeDesignator *)
 op getCurrentScopeDesignator : Monad ScopeDesignator =
@@ -1493,26 +1533,30 @@ op [a] withFreshLocalBindings (bindings:NamedStorage) (m : Monad a) : Monad a =
 op [a] withFreshTopBindings (bindings:NamedStorage) (m : Monad a) : Monad a =
   inFreshLocalScope {scope_bindings = bindings, scope_parent = GlobalScope} m
 
-(* Perform m in the parent scope, raising an error if there is no parent scope,
-   i.e., if the current scope is the global scope *)
-op [a] inParentScope (m : Monad a) : Monad a =
-  {cur_scope <- getCurrentScopeDesignator;
-   parent_scope <- getScopeParent cur_scope;
-   withCurrentScopeDesignator parent_scope m}
-
-(* Find the innermost scope containing the given identifier *)
-op scopeOfIdentifier (id:Identifier) : Monad ScopeDesignator =
-  {cur_scope <- getCurrentScopeDesignator;
-   cur_bindings <- (scopeDesignatorLens cur_scope).mlens_get ();
-   if some? (cur_bindings id) then
-     return cur_scope
+(* Look up an identifier, starting in the designated scope and proceeding to its
+   parents, and then falling back on the global function table if necessary. The
+   result is either an object or function designator, i.e., a Pointer. *)
+op lookupIdentifierInScope (id:Identifier, scope:ScopeDesignator) : Monad Pointer =
+  {bindings <- (scopeDesignatorLens scope).mlens_get ();
+   if some? (bindings id) then
+     (* If id is in the current scope, return the corresponding pointer *)
+     return (ObjPointer (OD_Top (scope, id)))
    else
-     inParentScope (scopeOfIdentifier id)}
+     case scope of
+       | LocalScope scope_id ->
+         (* If id is not in the current scope, proceed to the parent scope *)
+         {parent_scope <- getScopeParent scope_id;
+          lookupIdentifierInScope (id, parent_scope)}
+       | GlobalScope ->
+         (* If no parent scope, check in the function table; we do a lookup and
+            discard the value as a way of ensuring id is in the table *)
+         {_ <- lookupFunction (FunctionDesignator id);
+          return (FunPointer (FunctionDesignator id)) }}
 
-(* Build the ObjectDesignator for the innermost binding of an identifier *)
-op designatorOfIdentifier (id:Identifier) : Monad ObjectDesignator =
-  {scope <- scopeOfIdentifier id;
-   return (OD_Top (scope, id))}
+(* Look up an identifier starting in the current scope *)
+op lookupIdentifier (id:Identifier) : Monad Pointer =
+  {d <- getCurrentScopeDesignator;
+   lookupIdentifierInScope (id, d)}
 
 
 %subsection (* Computations on integers *)
@@ -1529,9 +1573,8 @@ op intOfValue (val:Value) : Monad Int =
 
 (* Create an integer value of a given type. It is an error if the given type is
    not an integer type, or if the integer does not fit in the given type. *)
-op valueOfInt (i:Int, ty:Type |
-                 integerType? ty && i in? rangeOfIntegerType ty) : Value =
-   V_int (ty, i)
+op valueOfInt (i : TypedInt) : Value =
+   V_int i
 
 (* Create a list of bits from an integer, given a type *)
 op bitsOfInt (ty:Type, i:Int |
@@ -1547,7 +1590,7 @@ op valueOfBits (b:List Bit, ty:Type |
 of the mathematical 0. For pointers, it is the null pointer. *)
 
 op zeroOfScalarType (ty:Type | scalarType? ty) : Value =
-  if integerType? ty then valueOfInt (0, ty) else V_nullpointer ty
+  if integerType? ty then valueOfInt (ty, 0) else V_nullpointer ty
 
 (* The following predicate tests whether a scalar value is 0 or not. The result
 is an error if the value is not scalar, and non-standard if it is undefined. *)
@@ -1562,8 +1605,8 @@ op zeroScalarValue? (val:Value) : Monad Bool =
 (* It is useful to introduce Specware constants for the signed ints 0 and 1,
 because they are returned by some operators, as formalized later. *)
 
-op int0 : Value = valueOfInt (0, T_sint)
-op int1 : Value = valueOfInt (1, T_sint)
+op int0 : Value = valueOfInt (T_sint, 0)
+op int1 : Value = valueOfInt (T_sint, 1)
 
 
 %subsection (* Conversions *)
@@ -1596,12 +1639,12 @@ If the new type is signed, the outcome is non-standard [ISO 6.3.1.3/3]. *)
 op convertInteger (val:Value, ty:Type | integerType? ty) : Monad Value =
   {i <- intOfValue val;
    if i in? rangeOfIntegerType ty then
-     return (valueOfInt (i, ty))
+     return (valueOfInt (ty, i))
    else if unsignedIntegerType? ty || (plainCharsAreUnsigned && ty = T_char) then
      let max1:Nat = maxOfIntegerType ty + 1 in
      let i':Int = the(i':Int) i' in? rangeOfIntegerType ty &&
                               (ex(k:Int) i' = i + k * max1) in
-     return (valueOfInt (i', ty))
+     return (valueOfInt (ty, i'))
    else
      raiseErr Err_nonstd}
 
@@ -1765,7 +1808,7 @@ whose mathematical integer value is the one returned by op 'integerConstValue'.
 If the constant is too large to fit in a value, error is returned. *)
 
 op evaluateIntegerConstant (c:IntegerConstant) : Monad Value =
-  return (valueOfInt (integerConstantValue c, integerConstantType c))
+  return (valueOfInt (integerConstantType c, integerConstantValue c))
 
 
 %subsection (* Unary and binary operators *)
@@ -1793,10 +1836,10 @@ op operator_MINUS (val:Value) : Monad Value =
    x <- intOfValue val';
    let y = - x in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        raiseErr Err_nonstd}
 
@@ -1833,10 +1876,10 @@ op operator_MUL (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let y = x1 * x2 in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        nonstd}
 
@@ -1857,10 +1900,10 @@ op operator_DIV (val1:Value, val2:Value) : Monad Value =
    if x2 = 0 then raiseErr Err_nonstd else
    let y = x1 divT x2 in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        nonstd}
 
@@ -1882,10 +1925,10 @@ op operator_REM (val1:Value, val2:Value) : Monad Value =
    if x2 = 0 then nonstd else
    let y = x1 modT x2 in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        nonstd}
 
@@ -1904,10 +1947,10 @@ op operator_ADD (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let y = x1 + x2 in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        raiseErr Err_nonstd}
 
@@ -1926,10 +1969,10 @@ op operator_SUB (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let y = x1 - x2 in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        raiseErr Err_nonstd}
 
@@ -1956,10 +1999,10 @@ op operator_SHL (val1:Value, val2:Value) : Monad Value =
    if x2 < 0 || x2 >= typeBits ty then nonstd else
    let y = x1 * 2**x2 in
    if unsignedIntegerType? ty then
-     return (valueOfInt (y modF (maxOfIntegerType ty + 1), ty))
+     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
      if x1 >= 0 && y in? rangeOfIntegerType ty then
-       return (valueOfInt (y, ty))
+       return (valueOfInt (ty, y))
      else
        nonstd}
 
@@ -1995,7 +2038,7 @@ op operator_SHR (val1:Value, val2:Value) : Monad Value =
    let y = x1 divT 2**x2 in
    if unsignedIntegerType? ty ||
       signedIntegerType? ty && x1 >= 0 then
-     return (valueOfInt (y, ty))
+     return (valueOfInt (ty, y))
    else
      nonstd}
 
@@ -2113,124 +2156,172 @@ quite operate on values, as formalized below. *)
 
 %subsection (* Expressions *)
 
-(* The result of an expression in our C subset is an object designator or a
-value [ISO 6.5/1]. In our C subset, expressions do not have side effects and
-never designate functions.
-
-The following type captures these two kinds of expression result. *)
-
+(* An C expression designates a possibly side-effecting computation of a value,
+an object designator (i.e., an lvalue), or a function designator [ISO 6.5/1].
+(Note that we do not in fact allow side-effects in our expressions, as discussed
+above.) We smoosh the latter two into the single case of returning a Pointer,
+yielding the following type for the result of evaluating an expression. Further,
+array expression values are converted to pointers [ISO 6.3.2.1], except for a
+few special cases, and this is also captured in the following type. *)
+type ExpressionValue = {v:Value | ~(arrayValue? v)}
 type ExpressionResult =
-  | Res_object ObjectDesignator
-  | Res_value  Value
+  | Res_pointer Pointer
+  | Res_value   ExpressionValue
 
-(* If a subexpression results in an object designator, but the superexpression
-needs a value, the object designator is converted into a value, namely the value
-stored in the designated object. The following op coerces an expression result
-into a value -- if already a value, there is no change. In order to retrieve the
-value stored in an object, the op has a state argument. *)
+(* Convert a FunctionDesignator to a pointer value. This requires looking up the
+   type information of the pointer in the function table. *)
+op pointerValueForFunction (f_desig : FunctionDesignator) : Monad ExpressionValue =
+  {(_, ret_ty, param_tys) <- lookupFunction f_desig;
+   return (V_pointer (T_function (ret_ty, param_tys), FunPointer f_desig))}
 
-op expressionValue (res:ExpressionResult) : Monad Value =
+(* Convert a FunctionDesignator to an ExpressionResult *)
+op pointerResultForFunction (f_desig : FunctionDesignator) : Monad ExpressionResult =
+  {v <- pointerValueForFunction f_desig;
+   return (Res_value v)}
+
+(* In all but a handfull of special cases, the result of an expression is
+   converted to a value that is not an array or a function [ISO 6.3.2.1].
+   Lvalues are converted to the values of the objects designated by them, array
+   values are converted to pointers to their first element, and function values
+   are converted to pointers to those function values. These conversions are
+   intuitively part of converting an ExpressionResult to a Value. *)
+op expressionValue (res:ExpressionResult) : Monad ExpressionValue =
   case res of
-  | Res_object obj -> readObject obj
-  | Res_value val -> return val
+    | Res_pointer (ptr as (ObjPointer obj)) ->
+      {v <- readObject obj;
+       case v of
+         | V_array (ty, _) -> return (V_pointer (ty, ptr))
+         | _ -> return (V_pointer (typeOfValue v, ptr)) }
+    | Res_pointer (FunPointer f_desig) ->
+      pointerValueForFunction f_desig
+    | Res_value val ->
+      return val
 
 (* It is convenient to lift the previous op to lists. *)
-
-op expressionValues (ress:List ExpressionResult) : Monad (List Value) =
+op expressionValues (ress:List ExpressionResult) : Monad (List ExpressionValue) =
    mapM expressionValue ress
 
 (* expressionValue lifted to an operator on computations *)
-op expressionValueM (res_m:Monad ExpressionResult) : Monad Value =
+op expressionValueM (res_m:Monad ExpressionResult) : Monad ExpressionValue =
    {res <- res_m;
     expressionValue res}
 
 (* Lift a unary monadic function on values to a function on
    ExpressionResult computations *)
-op liftValueFun1 (f:Value -> Monad Value) (res_m: Monad ExpressionResult) : Monad ExpressionResult =
+op liftValueFun1 (f:ExpressionValue -> Monad ExpressionValue) (res_m: Monad ExpressionResult) : Monad ExpressionResult =
    {v <- expressionValueM res_m;
     v_out <- f v;
     return (Res_value v_out)}
 
 (* Lift a binary monadic function on values to a function on
    ExpressionResult computations *)
-op liftValueFun2 (f:Value * Value -> Monad Value)
+op liftValueFun2 (f:ExpressionValue * ExpressionValue -> Monad ExpressionValue)
    (res_m1: Monad ExpressionResult, res_m2: Monad ExpressionResult) : Monad ExpressionResult =
    {v1 <- expressionValueM res_m1;
     v2 <- expressionValueM res_m2;
     v_out <- f (v1, v2);
     return (Res_value v_out)}
 
+(* The following maps unary operations to functions on ExpressionResult, where
+the input ExpressionResult is the result of evaluating the operand of the
+operation. For the unary '&' operator, the operand must result in an object
+designator [ISO 6.5.3.2/1], which is returned as a pointer value [ISO
+6.5.3.2/3]. For the unary '*' operator, the operand must be a pointer [ISO
+6.5.3.2/2], which is returned as an object designator [ISO 6.5.3.2/4].
+Dereferencing an undefined pointer value yields undefined behavior. There are
+two exceptions to this, which are covered by the evaluate op defined below. *)
+op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad ExpressionResult =
+   case uop of
+     | ADDR -> (fn res_m ->
+                  {res <- res_m;
+                   case res of
+                     | Res_value _ -> error
+                     | Res_pointer (FunPointer f_desig) ->
+                       pointerResultForFunction f_desig
+                     | Res_pointer obj ->
+                       {val <- expressionValue res;
+                        return (Res_value (V_pointer (typeOfValue val, obj)))}})
+     | STAR -> (fn res_m ->
+                  {val <- expressionValueM res_m;
+                   case val of
+                     | V_pointer (_, ptr)        -> return (Res_pointer ptr)
+                     | V_nullpointer _           -> raiseErr Err_nonstd
+                     | V_undefined (T_pointer _) -> raiseErr Err_nonstd
+                     | _                         -> error})
+     | PLUS  -> liftValueFun1 operator_PLUS
+     | MINUS -> liftValueFun1 operator_MINUS
+     | NOT   -> liftValueFun1 operator_NOT
+     | NEG   -> liftValueFun1 operator_NEG
 
-(* For most purposes, (an object designator to) an array that results from an
-expression is converted into a pointer to the array's initial element [ISO
-6.3.2.1/3]. The following op performs this conversion on an expression result,
-when needed. An expression result that is a value is not changed, even if the
-value itself is a value, because as formalized later the evaluation of an
-expression never yields an array value as result, only an array designator. *)
+(* The following maps binary operations to binary functions on ExpressionResult.
+In a binary expression with any operator but '&&' and '||', first the operands
+are evaluated, then the operator is applied. Since expressions in our C subset
+have no side-effects, and since they both must be evaluated (in some order), it
+makes no difference which one is evaluated first. For '&&' and '||', the second
+expression is only evaluated if necessary. This could make a difference for,
+e.g., multi-threaded code. *)
+op evaluatorForBinaryOp (bop:BinaryOp) :
+   Monad ExpressionResult * Monad ExpressionResult -> Monad ExpressionResult =
+   case bop of
+     | MUL -> liftValueFun2 operator_MUL
+     | DIV -> liftValueFun2 operator_DIV
+     | REM -> liftValueFun2 operator_REM
+     | ADD -> liftValueFun2 operator_ADD
+     | SUB -> liftValueFun2 operator_SUB
+     | SHL -> liftValueFun2 operator_SHL
+     | SHR -> liftValueFun2 operator_SHR
+     | LT -> liftValueFun2 operator_LT
+     | GT -> liftValueFun2 operator_GT
+     | LE -> liftValueFun2 operator_LE
+     | GE -> liftValueFun2 operator_GE
+     | EQ -> liftValueFun2 operator_EQ
+     | NE -> liftValueFun2 operator_NE
+     | AND -> liftValueFun2 operator_AND
+     | XOR -> liftValueFun2 operator_XOR
+     | IOR -> liftValueFun2 operator_IOR
+     | LAND -> (fn (res_m1, res_m2) ->
+                  {val1 <- expressionValueM res_m1;
+                   isZero1 <- zeroScalarValue? val1;
+                   if isZero1 then return (Res_value int0)
+                   else
+                     {val2 <- expressionValueM res_m2;
+                      isZero2 <- zeroScalarValue? val2;
+                      if isZero2 then return (Res_value int0)
+                      else return (Res_value int1)}})
+     | LOR -> (fn (res_m1, res_m2) ->
+                  {val1 <- expressionValueM res_m1;
+                   isZero1 <- zeroScalarValue? val1;
+                   if ~ isZero1 then return (Res_value int1)
+                   else
+                     {val2 <- expressionValueM res_m2;
+                      isZero2 <- zeroScalarValue? val2;
+                      if isZero2 then return (Res_value int0)
+                      else return (Res_value int1)}})
 
-op convertToPointerIfArray (res:ExpressionResult) : Monad ExpressionResult =
-  case res of
-  | Res_object obj ->
-    {val <- readObject obj;
-     case typeOfValue val of
-     | T_array (ty, n) ->
-       {nonstdIf (n = 0); % if array is empty, there is no initial element
-        return (Res_value (V_pointer (ty, OD_Subscript (obj, 0))))}
-     | _ -> return (Res_object obj)} % no change
-  | Res_value val -> return (Res_value val)  % no change
 
-(* It is convenient to lift the previous op to lists. *)
-
-op convertToPointersIfArrays (ress:List ExpressionResult) : Monad (List ExpressionResult) =
-   mapM convertToPointerIfArray ress
-
-(* We formalize expression evaluation via an op that, given a state, returns an
-expression result outcome.
-
-Op 'convertToPointerIfArray' is applied to every operand (that may be an array),
-except for the operand of unary '&' [ISO 6.3.2.1/3] -- note that our C subset
-does not include the 'sizeof' operator, which is the other case in which op
-'convertToPointerIfArray' should not be used.
+(* We now formalize all of expression evaluation, as follows.
 
 A variable [ISO 6.5.1/2] evaluates to the object designator that the variable
 references.
 
 An integer constant [ISO 6.5.1/3] evaluates to the integer value formalized by
-op 'evaluateIntegerConstant'.
+op 'evaluateIntegerConstant'. A unary or binary expression is evaluated using
+evaluatorForUnaryOp or evaluatorForBinaryOp, respectively, defined above.
 
-In a unary expression, first the operand is evaluated, then the operator is
-applied. For the unary '&' operator, the operand must result in an object
-designator [ISO 6.5.3.2/1], which is returned as a pointer value [ISO
-6.5.3.2/3]. For the unary '*' operator, the operand must be a pointer [ISO
-6.5.3.2/2], which is returned as an object designator [ISO 6.5.3.2/4]. There is
-an exception to this evaluation procedure: an expression of the form '&*E'
-evaluates to the same as E, i.e. '&' and '*' are not applied [ISO 6.5.3.2/3].
-The difference between the normal evaluation procedure and this exception is
-visible when 'E' is null: dereferencing null yields undefined behavior [ISO
-6.5.3.2/4]. Dereferencing an undefined pointer value yields undefined behavior.
-The other exception to normal evaluation mentioned in [ISO 6.5.3.2/3], namely
-the evaluation of an expression of the form '&E[I]', which evaluates to the same
-as 'E + I', makes a difference in our C subset only if 'E' is null and 'I' is 0,
-because in that case the result is null instead of being non-standard. If 'E' is
-null and 'I' is not 0, then 'E + I' is undefined according to [ISO 6.5.6/8],
-just like '&E[I]' is undefined. If 'E' is not null, then there is no difference
-between the result of '&E[I]' and 'E + I' according to [ISO]. Note also that,
-according to [ISO 6.3.2.1/3], we do not use op 'convertToPointerIfArray' on the
-operand of unary '&'.
+There are two special cases for evaluating unary expressions. The first is that
+an expression of the form '&*E' evaluates to the same as E, i.e. '&' and '*' are
+not applied [ISO 6.5.3.2/3]. The difference between the normal evaluation
+procedure and this exception is visible when 'E' is null: dereferencing null
+yields undefined behavior [ISO 6.5.3.2/4].
 
-In a binary expression with any operator but '&&' and '||', first the operands
-are evaluated, then the operator is applied. Since expressions in our C subset
-have no side-effects, and since they both must be evaluated (in some order), it
-makes no difference which one is evaluated first.
-
-In a binary expression with the '&&' or '||' operator, the first operand, which
-must be scalar [ISO 6.5.13/2, 6.5.14/2], is compared with 0. If that suffices to
-determine the result (i.e. 0 for '&&', non-0 for '||'), the result (i.e. the
-signed int 0 or 1) is returned. Otherwise, the second operand, which must be
-scalar [ISO 6.5.13/2, 6.5.14/2] is compared with 0, returning the signed 'int' 0
-or 1 depending on whether the comparison with 0 succeeds or fails. In other
-words, '&&' and '||' guarantee left-to-right evaluation and the second operand
-is evaluated only if needed [ISO 6.5.13/4, 6.5.14/4].
+The second special case for unary expressions is for an expression of the form
+'&E[I]' when I evaluates to 0, which yields just E [ISO 6.5.3.2/3]. Normally,
+this would evaluate to the same as 'E + I', but the distinction makes a
+difference in our C subset if 'E' is null, because in that case the result is
+null instead of being non-standard. If 'E' is null and 'I' is not 0, then 'E +
+I' is undefined according to [ISO 6.5.6/8], just like '&E[I]' is undefined. If
+'E' is not null, then there is no difference between the result of '&E[I]' and
+'E + I'.
 
 A conditional expression requires a scalar first operand [ISO 6.5.15/2], which
 it evaluates and compares with 0 [ISO 6.5.15/4]. Based on the result of the
@@ -2271,131 +2362,50 @@ it returns a null pointer to void. *)
 (* FIXME HERE NOW: capture the conversions specified in [ISO 6.3.2.1] as a
 single op, and apply it in all the cases of the below *)
 
-op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad ExpressionResult =
-   case uop of
-     | ADDR -> (fn res_m ->
-                  {res <- res_m;
-                   case res of
-                     | Res_value _ -> error
-                     | Res_object obj ->
-                       {val <- expressionValue res;
-                        return (Res_value (V_pointer (typeOfValue val, obj)))}})
-     | STAR -> (fn res_m ->
-                  {res <- res_m;
-                   res_ptr <- convertToPointerIfArray res;
-                   val <- expressionValue res_ptr;
-                   case val of
-                     | V_pointer (_, obj)        -> return (Res_object obj)
-                     | V_nullpointer _           -> raiseErr Err_nonstd
-                     | V_undefined (T_pointer _) -> raiseErr Err_nonstd
-                     | _                         -> error})
-     | PLUS  -> liftValueFun1 operator_PLUS
-     | MINUS -> liftValueFun1 operator_MINUS
-     | NOT   -> liftValueFun1 operator_NOT
-     | NEG   -> liftValueFun1 operator_NEG
-
-op evaluatorForBinaryOp (bop:BinaryOp) :
-   Monad ExpressionResult * Monad ExpressionResult -> Monad ExpressionResult =
-   case bop of
-     | MUL -> liftValueFun2 operator_MUL
-     | DIV -> liftValueFun2 operator_DIV
-     | REM -> liftValueFun2 operator_REM
-     | ADD -> liftValueFun2 operator_ADD
-     | SUB -> liftValueFun2 operator_SUB
-     | SHL -> liftValueFun2 operator_SHL
-     | SHR -> liftValueFun2 operator_SHR
-     | LT -> liftValueFun2 operator_LT
-     | GT -> liftValueFun2 operator_GT
-     | LE -> liftValueFun2 operator_LE
-     | GE -> liftValueFun2 operator_GE
-     | EQ -> liftValueFun2 operator_EQ
-     | NE -> liftValueFun2 operator_NE
-     | AND -> liftValueFun2 operator_AND
-     | XOR -> liftValueFun2 operator_XOR
-     | IOR -> liftValueFun2 operator_IOR
-     | LAND -> (fn (res_m1, res_m2) ->
-                  {val1 <- expressionValueM res_m1;
-                   isZero1 <- zeroScalarValue? val1;
-                   if isZero1 then return (Res_value int0)
-                   else
-                     {res2 <- res_m2;
-                      res2' <- convertToPointerIfArray res2;
-                      val2 <- expressionValue res2';
-                      isZero2 <- zeroScalarValue? val2;
-                      if isZero2 then return (Res_value int0)
-                      else return (Res_value int1)}})
-     | LOR -> (fn (res_m1, res_m2) ->
-                  {val1 <- expressionValueM res_m1;
-                   isZero1 <- zeroScalarValue? val1;
-                   if ~ isZero1 then return (Res_value int1)
-                   else
-                     {res2 <- res_m2;
-                      res2' <- convertToPointerIfArray res2;
-                      val2 <- expressionValue res2';
-                      isZero2 <- zeroScalarValue? val2;
-                      if isZero2 then return (Res_value int0)
-                      else return (Res_value int1)}})
 
 op evaluate (expr:Expression) : Monad ExpressionResult =
   case expr of
     | E_ident var -> 
-      {obj <- designatorOfIdentifier var;
-       return (Res_object obj)}
+      {ptr <- lookupIdentifier var;
+       return (Res_pointer ptr)}
     | E_const c ->
       {val <- evaluateIntegerConstant c;
        return (Res_value val)}
     | E_unary (ADDR, E_unary (STAR, expr0)) ->
       % special treatment for expr of the form '& * expr0':
       evaluate expr0
-    | E_unary (ADDR, e_arg as E_subscript (expr0, expr1)) ->
-      % special treatment for expr of the form '& expr0 [ expr1 ]',
-      % if 'expr1' yields 0:
-      {val1 <- expressionValueM (evaluate expr1);
-       i <- intOfValue val1;
+    | E_unary (ADDR, e_arg as E_subscript (expr1, expr2)) ->
+      % special treatment for expr of the form '& expr1 [ expr2 ]',
+      % if 'expr2' yields 0:
+      {val2 <- expressionValueM (evaluate expr2);
+       i <- intOfValue val2;
        if i = 0 then
-         evaluate expr0
+         evaluate expr1
        else
          evaluatorForUnaryOp ADDR (evaluate e_arg)}
-    | E_unary (uop, expr0) ->
-      evaluatorForUnaryOp uop (evaluate expr0)
+    | E_unary (uop, expr1) ->
+      evaluatorForUnaryOp uop (evaluate expr1)
     | E_binary (expr1, bop, expr2) ->
       evaluatorForBinaryOp bop (evaluate expr1, evaluate expr2)
     | E_cond (expr1, expr2, expr3, ty) ->
       (* FIXME: capture the evaluation of the conditional, as well as the
          evaluation of the branches, as single ops, to make it easier to reason
          about them *)
-      {res1 <- evaluate expr1;
-       res1' <- convertToPointerIfArray res1;
-       val1 <- expressionValue res1';
+      {val1 <- expressionValueM (evaluate expr1);
        isZero <- zeroScalarValue? val1;
-       if ~ isZero then
-         {res2 <- evaluate expr2;
-          res2' <- convertToPointerIfArray res2;
-          val2 <- expressionValue res2';
-          if integerType? ty then
-            {val' <- convertInteger (val2, ty);
-             return (Res_value val')}
-          else if embed? T_pointer ty then
-            {val' <- convertPointer (val2, ty);
-             return (Res_value val')}
-          else if typeOfValue val2 = ty then
-            return (Res_value val2)
-           else
-             error}
-       else
-         {res3 <- evaluate expr3;
-          res3' <- convertToPointerIfArray res3;
-          val3 <- expressionValue res3';
-          if integerType? ty then
-            {val' <- convertInteger (val3, ty);
-             return (Res_value val')}
-          else if embed? T_pointer ty then
-            {val' <- convertPointer (val3, ty);
-             return (Res_value val')}
-          else if typeOfValue val3 = ty then
-            return (Res_value val3)
-           else
-             error}}
+       ret_val <-
+         if ~ isZero then expressionValueM (evaluate expr2)
+         else expressionValueM (evaluate expr3);
+       ret_val_converted <-
+         if integerType? ty then
+           convertInteger (ret_val, ty)
+         else if embed? T_pointer ty then
+           convertPointer (ret_val, ty)
+         else if typeOfValue ret_val = ty then
+           return ret_val
+          else
+            error;
+       return (Res_value ret_val_converted)}
   | E_member (expr, mem) ->
     {res <- evaluate expr;
      case res of
@@ -2411,7 +2421,7 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
        | Res_value _ ->
          (* Error if the LHS is a non-struct value *)
          error
-       | Res_object obj ->
+       | Res_pointer (ObjPointer obj) ->
          (* If the LHS is an object designator (i.e., an lvalue), make sure it
             points to a struct, and then form the lvalue for the mem struct
             member of that struct *)
@@ -2419,14 +2429,17 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
           case val_lhs of
             | V_struct (_, members) ->
               (case members mem of
-                 | Some _ -> return (Res_object (OD_Member (obj, mem)))
+                 | Some _ -> return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
                  | None -> error)
-            | _ -> error}}
+            | _ -> error}
+       | Res_pointer (FunPointer _) ->
+         (* Error if the LHS is a function designator *)
+         error}
   | E_memberp (expr0, mem) ->
     (* FIXME: make some op(s) for simplifying all of this *)
     {val <- expressionValueM (evaluate expr0);
      case val of
-       | V_pointer (_, obj) ->
+       | V_pointer (_, ObjPointer obj) ->
          {val_star <- readObject obj;
           case val_star of
             | V_struct (_, members) ->
@@ -2434,7 +2447,7 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
                  | Some _ ->
                    (* If expr0 yields a pointer to a struct containing mem,
                       return the designator of mem in that struct *)
-                   return (Res_object (OD_Member (obj, mem)))
+                   return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
                  | None ->
                  (* Error if we get a pointer to a struct not containing mem *)
                  error)
@@ -2451,20 +2464,20 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
      nonstdIf (j < 0); (* Undefined for negative array subscripts *)
      obj <-
        (case val1 of
-          | V_pointer (_, OD_Subscript (obj, i)) ->
+          | V_pointer (_, ObjPointer (OD_Subscript (obj, i))) ->
             (* If the LHS is a pointer to an array element, add the RHS to it *)
             return (OD_Subscript (obj, i+j))
-          | V_pointer (_, obj) ->
+          | V_pointer (_, ObjPointer obj) ->
             (* If the LHS is non-array pointer, subscript it *)
             return (OD_Subscript (obj, j))
           | _ ->
-            (* Error if the LHS does not evaluate to a pointer *)
+            (* Error if the LHS does not evaluate to an object pointer *)
             error);
      (* We read the returned pointer to ensure it is good (i.e., it raises an
         error if val1 is a pointer to a non-array, and it raises Err_nonstd if
         the new index is out of bounds) *)
      readObject obj;
-     return (Res_object obj)}
+     return (Res_pointer (ObjPointer obj))}
   | E_nullconst ->
     return (Res_value (V_nullpointer (T_pointer T_void)))
 
