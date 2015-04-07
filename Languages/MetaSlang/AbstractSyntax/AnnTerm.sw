@@ -2009,6 +2009,8 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
                    | _ -> false)
     tm
 
+ op defensive_execution? : Bool = false  % todo: make arg to foldSubTerms ?
+
  %% folds function over all the subterms in top-down order
  op [b,r] foldSubTerms (f : ATerm b * r -> r) (val : r) (term : ATerm b) : r =
    let newVal = f (term, val) in
@@ -2036,9 +2038,36 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
 
      | Fun _                   -> newVal
 
-     | Lambda    (rules,    _) -> foldl (fn (val,(p, c, M)) ->
-					 foldSubTerms f (foldSubTerms f (foldSubTermsPat f val p) c) M)
-					newVal rules
+     | Lambda    (rules,    _) -> let first_cases              = butLast rules in       
+                                  let (last_p, last_c, last_M) = last    rules in
+                                  let val =
+                                      foldl (fn (val,(p, c, M)) ->
+                                               foldSubTerms f (foldSubTerms f (foldSubTermsPat f val p) c) M)
+                                            newVal 
+                                            first_cases
+                                  in
+                                  %% todo: this is used by slicing, verify that it is coordinated with code generation
+                                  let val = 
+                                      if defensive_execution? then
+                                        %% We could ignore restriction functions here, but choose not to.
+                                        %% An execution slice, for example, will include the restriction function.
+                                        %% If the restriction here should fail, this will cause a fall-through
+                                        %% to the end of a case statement or lambda dispatch.
+                                        foldSubTermsPat f val last_p
+                                      else
+                                        %% Ignore any restriction function in the pattern of the last case,
+                                        %% since we presumably cannot fail to take the last case.
+                                        %% An execution slice, for example, will not include the restriction function.
+                                        %% If the restriction here would have failed if present, this omission
+                                        %% would cause the last case to (incorrectly) be executed anyway.
+                                        % let _ = 
+                                        %     case last_p of
+                                        %       | RestrictedPat(_,t,_) -> writeLine ("Ignoring final restriction: " ^ printTerm t)
+                                        %       |  _ -> ()
+                                        % in
+                                        val
+                                  in
+                                  foldSubTerms f (foldSubTerms f val last_c) last_M
 
      | IfThenElse(M, N, P,  _) -> foldSubTerms f
 					       (foldSubTerms f 
