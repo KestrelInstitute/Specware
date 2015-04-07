@@ -50,6 +50,81 @@ proof Isa SetsAsBags__e_bsl_fsl_Obligation_subtype
   apply(auto simp add: BagsAsMaps__bagin_of_insert SetsAsBags__in_p_def BagsAsMaps__Map_P_of_insert SetsAsBags__set_insert_def BagsAsMaps__bag_insertion)
 end-proof
 
+proof Isa Bag__in_bag_union
+  apply(metis Bag__occs_bag_union BagsAsMaps__bagin_p_def add_is_0)
+end-proof
+
+proof Isa Bag__commutativity_of_bag_union
+  apply(rule BagsAsMaps__occurrences)
+  sorry
+end-proof
+
+proof Isa Bag__associative_bag_join
+  sorry
+end-proof
+
+proof Isa Bag__bagin_p_of_bag_intersection
+  sorry
+end-proof
+
+proof Isa Bag__bag_intersection_right_zero
+  sorry
+end-proof
+
+proof Isa Bag__bag_intersection_left_zero
+  sorry
+end-proof
+
+proof Isa Bag__bag_sum_empty
+  sorry
+end-proof
+
+proof Isa Bag__bag_sum_insert
+  sorry
+end-proof
+
+proof Isa Bag__delete_of_empty
+  sorry
+end-proof
+
+proof Isa Bag__distribute_bagunion_over_right_insert
+  sorry
+end-proof
+
+proof Isa Bag__distribute_bagunion_over_left_insert
+  sorry
+end-proof
+
+proof Isa Bag__distribute_bag_diff_over_left_insert
+  sorry
+end-proof
+
+proof Isa Bag__distribute_bagunion_over_right_delete
+  sorry
+end-proof
+
+proof Isa Bag__distribute_bag_diff_over_left_delete
+  sorry
+end-proof
+
+proof Isa Bag__distribute_bag_diff_over_right_insert
+  sorry
+end-proof
+
+proof Isa Bag__bag_union_right_unit
+  sorry
+end-proof
+
+proof Isa Bag__bag_union_left_unit
+  sorry
+end-proof
+
+proof Isa Bag__bag_diff_left_zero
+  sorry
+end-proof
+
+
+
 M = morphism Sets -> SetsAsBagMaps {Set._ +-> SetsAsBags._}
 
 proof Isa Set__membership
