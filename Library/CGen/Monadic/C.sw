@@ -2328,10 +2328,9 @@ it evaluates and compares with 0 [ISO 6.5.15/4]. Based on the result of the
 comparison, the second or third operand is evaluated and returned [ISO
 6.5.15/4], converted to the type that is the fourth argument of the 'cond'
 constructor. This explains the reason for this fourth argument: without this
-fourth argument, since only one of the second and third operands is evaluated,
+fourth argument, since only one of the second and third operands are evaluated,
 we would not have enough information to calculate the type of the result, which
-depends on the types of both second and third operands (cf. op
-'checkExpression').
+depends on the types of both second and third operands.
 
 A structure member expression requires a structure as left operand [ISO
 6.5.2.3/1]. The right operand must be a member of the structure [ISO 6.5.2.3/1].
@@ -2358,10 +2357,6 @@ i.e. i is 0 and thus the result is element j of the array, as expected.
 
 As explained earlier, the null pointer constant has type 'void*', and therefore
 it returns a null pointer to void. *)
-
-(* FIXME HERE NOW: capture the conversions specified in [ISO 6.3.2.1] as a
-single op, and apply it in all the cases of the below *)
-
 
 op evaluate (expr:Expression) : Monad ExpressionResult =
   case expr of
