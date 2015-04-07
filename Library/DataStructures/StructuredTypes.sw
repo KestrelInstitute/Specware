@@ -1797,7 +1797,6 @@ end-proof
 
 %% TODO: Currently unprovable because bag_size does not have a definition !
 proof Isa L2B_length
-  sledgehammer
   apply(induct lst)
   apply(simp add: L2B_Nil_alt)
   sorry
