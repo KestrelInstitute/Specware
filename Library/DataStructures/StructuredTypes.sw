@@ -687,9 +687,10 @@ end-proof
       ( ((ndL2S lst) subset (domain cm))
       => ((ndL2S lst) -- (CM2S cm)) = (ndL2S (filter (fn(x:{x:a | x in? lst})->  ~(TMApply(cm,x))) lst)) )
 
-  theorem lift_ndL2S_over_if is [a]
-   fa(x:List a,y:List a,p:Bool)
-     ((if p then ndL2S x else ndL2S y) = ndL2S(if p then x else y))
+%%Doesn't type check (also has a name clash with lift_ndL2S_over_if above):
+  %% theorem lift_ndL2S_over_if is [a]
+  %%  fa(x:List a,y:List a,p:Bool)
+  %%    ((if p then ndL2S x else ndL2S y) = ndL2S(if p then x else y))
 
 
 
@@ -1778,5 +1779,32 @@ proof Isa ndL2S_set_diff
   apply (metis CM2S_member ndL2S_set_diff_Obligation_subtype0)
 end-proof
 
+proof Isa length_of_tail
+  apply(metis List__length_butLast length_butlast length_tl)
+end-proof
+
+proof Isa length_of_singleton
+  apply(metis List__length_butLast_order Nitpick.size_list_simp(2) One_nat_def diff_self_eq_0 length_tl not_less0)
+end-proof
+
+proof Isa L2B_Nil1
+  apply(metis L2B_Nil)
+end-proof
+
+proof Isa L2B_nonempty
+  apply(metis L2B_Nil List__nonEmpty_p_def)
+end-proof
+
+%% TODO: Currently unprovable because bag_size does not have a definition !
+proof Isa L2B_length
+  sledgehammer
+  apply(induct lst)
+  apply(simp add: L2B_Nil_alt)
+  sorry
+end-proof
+
+proof Isa M2F_TMApply
+  sorry
+end-proof
 
 end-spec
