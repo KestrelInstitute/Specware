@@ -794,18 +794,15 @@ b = ...' Note also that, by having function calls not be expressions in our
 subset, we maintain expressions free of side effects.
 
 Besides these expression statements, our C subset includes 'if' selection
-statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while', 'do',
-and 'for' iteration statements [ISO 6.8.5], and compound statements
-(i.e. blocks) [ISO 6.8.2]. Our 'if' statement captures both the variant with
-'else' and the variant without 'else', based on the presence of the second,
-optional statement. A 'return' statement [ISO 6.8.6.4] includes an optional
-expression.
+statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while', and
+'do' iteration statements [ISO 6.8.5], and compound statements (i.e. blocks)
+[ISO 6.8.2]. (We currently expect that "for" statements are just treated as
+"while" statements, possibly with additional statements added before the loop
+and at the end of each iteration of the loop.)
 
-Because of our treatment of assignments and function calls as statements, we use
-statements as the first and third (optional) expressions of a 'for' statement.
-Later in our model we restrict such statements to assignments and function
-calls. Expressions in our model have no side effects, so allowing expressions in
-(our model of) 'for' statements would not be very useful.
+Our 'if' statement captures both the variant with 'else' and the
+variant without 'else', based on the presence of the second, optional statement.
+A 'return' statement [ISO 6.8.6.4] includes an optional expression.
 
 Besides statements, we only allow object declarations as block items [ISO
 6.8.2], not other kinds of declarations. *)
@@ -817,7 +814,6 @@ type Statement =
   | S_return Option Expression
   | S_while  Expression * Statement
   | S_do     Statement * Expression
-  | S_for    Option Statement * Option Expression * Option Statement * Statement
   | S_block  List BlockItem
 
 type BlockItem =
@@ -837,6 +833,8 @@ other than "extern", which is here represented as a Boolean indicating whether
 extern is present or not. Our model also excludes any declarator other than a
 simple identifier [ISO 6.7.6], since these can all be modeled using simple
 identifiers with more complex types. *)
+
+(* FIXME: remove isExtern...? *)
 
 type ObjectDeclaration =
  {ObjDecl_type : TypeName,
@@ -1449,7 +1447,7 @@ lifting through the ReaderT transformer does one direction of the isomorphism
 and applying a Monad computation m to any TranslationEnv (an operation also know
 as "runReaderT" in Haskell) is the other direction of the isomorphism. *)
 
-type TopFunction = (List Value -> {m:Monad Value | fa (f) localR f m = m }) * Type * List Type
+type TopFunction = (List Value -> {m:Monad (Option Value) | fa (f) localR f m = m }) * Type * List Type
 type FunctionTable = FiniteMap (Identifier, TopFunction)
 
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
@@ -1512,6 +1510,12 @@ op [a] withCurrentScopeDesignator (d:ScopeDesignator) (m:Monad a) : Monad a =
 op currentBindingsLens : MLens ((), NamedStorage) =
   mlens_of_computation {d <- getCurrentScopeDesignator;
                         return (scopeDesignatorLens d)}
+
+(* Add a binding to the current scope *)
+op addLocalBinding (id:Identifier, val:Value) : Monad () =
+  {bindings <- currentBindingsLens.mlens_get ();
+   if some? (bindings id) then error else
+     currentBindingsLens.mlens_set () (update bindings id val)}
 
 (* Perform a computation with a freshly allocated LocalScope, setting that
    LocalScope to be the current scope for the duration of the computation and
@@ -2502,6 +2506,10 @@ after the other. *)
 op evaluateAll (exprs:List Expression) : Monad (List ExpressionResult) =
   mapM evaluate exprs
 
+op evaluateAllToValues (exprs:List Expression) : Monad (List Value) =
+  {ress <- mapM evaluate exprs;
+   mapM expressionValue ress}
+
 
 %subsection (* Type names *)
 
@@ -2565,144 +2573,12 @@ op zeroOfType (ty:Type) : Monad Value =
      return (V_array (ty0, repeat val0 n))}
   | ty -> return (zeroOfScalarType ty)
 
-end-spec
-
-blah1 = spec
 
 %subsection (* Statements *)
 
-(* As formalized below, entering a block extends the top frame of the automatic
-storage with a new, empty scope, which is retracted when the block is
-exited. Upon retraction, any pointer to an object allocated in that block
-becomes dangling. The dangling pointer may be in an object in an outer
-scope. Similarly, calling a function extends the automatic storage with a new
-frame, which is retracted when the function returns, potentially leaving
-dangling pointers in the state.
+(* We now formalize the execution of statements.
 
-In order to maintain the type safety of our C subset, we need to prevent these
-dangling pointers from being used. To this end, the following ops sets them to
-an undefined value. The following ops systematically set to 'undefined' any
-pointer that designates an object in frame f and, if present, block b of frame f
--- if is not present, all pointers to all objects in frame f are set to
-'undefined' (this happens when returning from a function). An op to extract the
-scope designator from an object designator is also defined. *)
-
-op scopeOfObjectDesignator
-   (obj:ObjectDesignator | ~(embed? allocated obj)) : ScopeDesignator =
-  case obj of
-  | top (scope, _)     -> scope
-  | member    (obj, _) -> scopeOfObjectDesignator obj
-  | subscript (obj, _) -> scopeOfObjectDesignator obj
-
-op undefinePointersInValue (val:Value, f:Nat, b?:Option Nat) : Value =
-  case val of
-  | pointer (ty, obj) ->
-    let dangling:Bool =
-        case b? of
-        | Some b -> scopeOfObjectDesignator obj = block (f, b)
-        | None -> (ex(b:Nat) scopeOfObjectDesignator obj = block (f, b))
-    in
-    if dangling then undefined (pointer ty) else val
-  | array (ty, vals) ->
-    array (ty, undefinePointersInValues (vals, f, b?))
-  | struct (tag, members) ->
-    let orderedMembers: List (Identifier * Value) =
-        toAssocList members (String.<=) in
-    let (mems, vals) = unzip orderedMembers in
-    let vals' = undefinePointersInValues (vals, f, b?) in
-    let members' = fromAssocList (zip (mems, vals')) in
-    struct (tag, members')
-  | val -> val
-
-op undefinePointersInValues
-   (vals:List Value, f:Nat, b?:Option Nat) : List Value =
-  case vals of
-  | [] -> []
-  | val::vals -> undefinePointersInValue (val, f, b?) ::
-                 undefinePointersInValues (vals, f, b?)
-
-op undefinePointersInNamedStorage
-   (store:NamedStorage, f:Nat, b?:Option Nat) : NamedStorage =
-  fn name:Identifier ->
-    case store name of
-    | Some val -> Some (undefinePointersInValue (val, f, b?))
-    | None -> None
-
-op undefinePointersInFrame
-   (frame:List NamedStorage, f:Nat, b?:Option Nat) : List NamedStorage =
-  map (fn nstore:NamedStorage -> undefinePointersInNamedStorage (nstore, f, b?))
-      frame
-
-op undefinePointersInAllocatedStorage
-   (store:AllocatedStorage, f:Nat, b?:Option Nat) : AllocatedStorage =
-  fn id:AllocatedID ->
-    case store id of
-    | Some val -> Some (undefinePointersInValue (val, f, b?))
-    | None -> None
-
-op undefinePointersInStorage (store:Storage, f:Nat, b?:Option Nat) : Storage =
-  {static = undefinePointersInNamedStorage (store.static, f, b?),
-   automatic = map (fn frame:List NamedStorage ->
-                       undefinePointersInFrame (frame, f, b?))
-                   store.automatic,
-   allocated = undefinePointersInAllocatedStorage (store.allocated, f, b?)}
-
-op undefinePointersInState (state:State, f:Nat, b?:Option Nat) : State =
-  state << {storage = undefinePointersInStorage (state.storage, f, b?)}
-
-(* In order to call a function, a list of values must be supplied as arguments
-[ISO 6.5.2.2/4]. The values are assigned to the function's parameters, and
-therefore must match the number and types of the parameters (matching of types
-is up to assignment). The following op creates a named storage with the
-arguments stored into the parameters, while at the same time checking that they
-match in number and types. *)
-
-op assignArgumentsToParameters
-   (state:State, tparams:TypedParameters, args:List Value) : Monad NamedStorage =
-  case tparams of
-  | [] -> if args ~= [] then error else ok empty
-  | tparam::tparams ->
-    (case args of
-    | [] -> error
-    | val::vals ->
-      {nstore <- assignArgumentsToParameters (state, tparams, vals);
-       if tparam.name in? domain nstore then
-         error
-       else
-         {val' <- convertForAssignment (val, tparam.typE);
-          ok (update nstore tparam.name val')}})
-
-(* After executing a statement 'S' in our C subset, control is transferred
-either to the next statement to execute, or to the caller of the function in
-which 'S' occurs. The latter case happens when executing a 'return'. The
-following Specware type captures these two possible forms of statement
-completion. In the return case, the returned value is included ('None' if the
-'return' statement has no expression. *)
-
-type StatementCompletion = | next | return Option Value
-
-(* We lift op 'typeOfValue' to statement completions and statement type
-elements. *)
-
-op typeOfStatementCompletion
-   (scomp:StatementCompletion) : StatementTypeElement =
-  case scomp of
-  | next              -> next
-  | return (Some val) -> return (typeOfValue val)
-  | return None       -> return void
-
-(* We also introduce a relation that says when a statement completion has a
-statement type. Because a statement type is a set, we need a relation. *)
-
-op statementCompletionHasType?
-   (scomp:StatementCompletion, sty:StatementType) : Bool =
-  ex(styelem:StatementTypeElement)
-    styelem in? sty && typeOfStatementCompletion scomp = styelem
-
-(* Besides a completion, the execution of a statement is characterized by side
-effects on the state. Thus, we regard the result of executing a statement as
-consisting of an (updated) state plus a completion. We formalize statement
-execution via an op that, given a state, returns a statement result outcome.
+FIXME HERE: update this documentation!
 
 The left operand of an assignment must denote an object [ISO 6.5.16/2,
 6.5.16/3]. The left and right operands must be (i) two arithmetic operands, or
@@ -2768,171 +2644,94 @@ value is returned, it is an error. In the absence of errors, function execution
 results in a new state and an optional value (present iff the function has a
 non-'void' return type). *)
 
-type StatementResult =
- {state      : State,
-  completion : StatementCompletion}
-
-op execStatement (state:State, stmt:Statement) : Monad StatementResult =
+op execStatement (stmt:Statement) : Monad () =
   case stmt of
-  | assign (expr1, expr2) ->
-    {res1 <- evaluate (state, expr1);
-     oldval <- expressionValue (state, res1);
+  | S_assign (expr1, expr2) ->
+    {res1 <- evaluate expr1;
+     oldval <- expressionValue res1;
      case res1 of
-     | object obj ->
-       {res2 <- evaluate (state, expr2);
-        res2' <- convertToPointerIfArray (state, res2);
-        newval <- expressionValue (state, res2');
+     | Res_pointer (ObjPointer obj) ->
+       {newval <- expressionValueM (evaluate expr2);
         newval' <- convertForAssignment (newval, typeOfValue oldval);
-        state' <- writeObject (state, obj, newval');
-        ok {state = state', completion = next}}
-     | value _ -> error}
-  | call (expr?, fun, exprs) ->
-    {ress <- evaluateAll (state, exprs);
-     ress' <- convertToPointersIfArrays (state, ress);
-     args <- expressionValues (state, ress');
-     (state', val?) <- callFunction (state, fun, args);
-     case expr? of
-     | Some expr ->
-       {res <- evaluate (state', expr);
-        oldval <- expressionValue (state', res);
-        case res of
-        | object obj ->
-          (case val? of
-          | Some newval ->
-            {newval' <- convertForAssignment (newval, typeOfValue oldval);
-             state'' <- writeObject (state', obj, newval');
-             ok {state = state'', completion = next}}
-          | None -> error)
-        | value _ -> error}
-     | None -> ok {state = state', completion = next}}
-  | iF (expr, thenBranch, Some elseBranch) ->
-    {res <- evaluate (state, expr);
-     res' <- convertToPointerIfArray (state, res);
-     condition <- expressionValue (state, res');
+        writeObject (obj, newval') }
+     | _ -> error}
+  | S_call (lhs_expr_opt, fun_expr, arg_exprs) ->
+    (* For a function call, first evaluate the arguments and the function *)
+    {arg_values <- evaluateAllToValues arg_exprs;
+     fun_value <- expressionValueM (evaluate fun_expr);
+     (* Next, look up the function and apply it to the args *)
+     res_opt <-
+       case fun_value of
+         | V_pointer (_, FunPointer f_desig) ->
+           {(f, _, _) <- lookupFunction f_desig;
+            f arg_values}
+         | _ -> error ;
+     (* Finally, assign the result to the LHS, if there is one *)
+     case (lhs_expr_opt, res_opt) of
+       | (None, _) -> return ()
+       | (Some lhs_expr, Some res) ->
+         {lhs_res <- evaluate lhs_expr;
+          case lhs_res of
+            | Res_pointer (ObjPointer obj) ->
+              writeObject (obj, res)
+            | _ -> error}
+       | (Some _, None) -> error}
+  | S_if (cond_expr, then_branch, else_branch_opt) ->
+    (* For an if-statement, evaluate the condition, test if it is zero, and
+       then, finally, execute the then or else branch, as appropriate *)
+    {condition <- expressionValueM (evaluate cond_expr);
      isZero <- zeroScalarValue? condition;
      if ~ isZero then
-       execStatement (state, thenBranch)
+       execStatement then_branch
      else
-       execStatement (state, elseBranch)}
-  | iF (expr, thenBranch, None) ->
-    execStatement (state, iF (expr, thenBranch, Some (block [])))
-  | return (Some expr) ->
-    {res <- evaluate (state, expr);
-     res' <- convertToPointerIfArray (state, res);
-     val <- expressionValue (state, res');
-     errorIf (empty? state.storage.automatic);
-     let f = length state.storage.automatic - 1 in
-     let state' = updateAutomaticStorage
-                    (state, butLast state.storage.automatic) in
-     ok {state = undefinePointersInState (state, f, None),
-         completion = return (Some val)}}
-  | return None ->
-    if empty? state.storage.automatic then error else
-    let f = length state.storage.automatic - 1 in
-    let state' = updateAutomaticStorage
-                   (state, butLast state.storage.automatic) in
-    ok {state = undefinePointersInState (state, f, None),
-        completion = return None}
-  | while (expr, body) ->
-    % the loop does not terminate if there is a stream of states:
-    if (ex(states:Stream State)
-          % the stream starts with the initial state:
-          states 0 = state &&
-          % for each state in the stream:
-          (fa(i:Nat)
-             % the test is true:
-             (ex (res:ExpressionResult, res':ExpressionResult, condition:Value)
-                evaluate (states i, expr) = ok res &&
-                convertToPointerIfArray (state, res) = ok res' &&
-                expressionValue (states i, res') = ok condition &&
-                zeroScalarValue? condition = ok false)
-             &&
-             % the body completes and yields the next state:
-             execStatement (states i, body) =
-              ok {state = states (i + 1), completion = next}))
-    then
-      nonterm
-    % otherwise, the loop eventually terminates:
-    else
-      {res <- evaluate (state, expr);
-       res' <- convertToPointerIfArray (state, res);
-       condition <- expressionValue (state, res');
-       isZero <- zeroScalarValue? condition;
-       % terminate if test is false:
-       if isZero then
-         ok {state = state, completion = next}
-       % keep going if test is true (will terminate eventually, either because
-       % the test will become false or because the body will execute a 'return'
-       % statement):
-       else
-         execStatement
-          (state, block [statement body, statement (while (expr, body))])}
-  | do (body, expr) ->
-    execStatement
-     (state, block [statement body, statement (while (expr, body))])
-  | for (first?, expr?, third?, body) ->
-    let pre:List BlockItem =
-        case first? of Some first -> [statement first] | None -> [] in
-    let test:Expression =
-        case expr? of Some expr -> expr | None -> const "1" in
-    let post:List BlockItem =
-        case third? of Some third -> [statement third] | None -> [] in
-    execStatement
-     (state,
-      block (pre ++
-             [statement (while (test, block ([statement body] ++ post)))]))
-  | block items ->
-    if empty? state.storage.automatic then error else
-    let topframe = last state.storage.automatic in
-    let f = length state.storage.automatic - 1 in
-    let state' = updateAutomaticFrame (state, f, topframe ++ [empty]) in
-    {res <- execBlockItems (state', items);
-     let topframe' = last res.state.storage.automatic in
-     let b = length topframe' - 1 in
-     let state'' = updateAutomaticFrame (res.state, f, butLast topframe') in
-     ok (res << {state = undefinePointersInState (state'', f, Some b)})}
+       case else_branch_opt of
+         | Some else_branch -> execStatement else_branch
+         | None -> return ()}
+  | S_return (Some expr) ->
+    (* For a return statement with an expression, evaluate the expression and
+       then do a non-local exit with Err_return (which is not really an error,
+       see type Monad.Err above) applied to the value of the expression *)
+    {val <- expressionValueM (evaluate expr);
+     raiseErr (Err_return (Some val))}
+  | S_return None ->
+    (* For a return statement with no expression, raise Err_return None *)
+    raiseErr (Err_return None)
+  | S_while (cond_expr, body) ->
+    (* For loops use mfix (FIXME: document this...?) *)
+    mfix ((=),
+          fn recurse -> fn unit ->
+            {condition <- expressionValueM (evaluate cond_expr);
+             isZero <- zeroScalarValue? condition;
+             if isZero then return () else
+               {_ <- execStatement body;
+                recurse ()}}) ()
+  | S_do (body, cond_expr) ->
+    (* For do loops, execute the body once and then do a while loop *)
+    {_ <- execStatement body;
+     execStatement (S_while (cond_expr, body))}
+  | S_block items ->
+    withFreshLocalBindings empty (execBlockItems items)
 
-op execBlockItems (state:State, items:List BlockItem) : Monad StatementResult =
+op execBlockItems (items:List BlockItem) : Monad () =
   case items of
-  | [] -> ok {state = state, completion = next}
-  | item::items ->
-    {result <- execBlockItem (state, item);
-     if result.completion = next then
-       execBlockItems (result.state, items)
-     else
-       ok result}
+  | [] -> return ()
+  | item::items' ->
+    {_ <- execBlockItem item;
+     execBlockItems items'}
 
-op execBlockItem (state:State, item:BlockItem) : Monad StatementResult =
+op execBlockItem (item:BlockItem) : Monad () =
   case item of
-  | declaration odecl ->
-    {state' <- execObjectDeclaration (state, odecl);
-     ok {state = state', completion = next}}
-  | statement stmt -> execStatement (state, stmt)
+  | BlockItem_declaration (tp_name, id) ->
+    {tp <- expandTypeName tp_name;
+     zero_val <- zeroOfType tp;
+     addLocalBinding (id, zero_val)}
+  | BlockItem_statement stmt -> execStatement stmt
 
-op callFunction (state:State, name:Identifier, args:List Value)
-                : Monad (State * Option Value) =
-  case state.functions name of
-  | None -> error
-  | Some funinfo ->
-    {newscope <- assignArgumentsToParameters (state, funinfo.parameters, args);
-     let state' = updateAutomaticStorage
-                    (state, state.storage.automatic ++ [[newscope]]) in
-     case funinfo.body of
-     | block items ->
-       {result <- execBlockItems (state', items);
-        case result.completion of
-        | return (Some val) ->
-          if embed? undefined val then
-            nonstd
-          else
-            {val' <- convertForAssignment (val, funinfo.return);
-             ok (result.state, Some val')}
-        | _ ->
-          if funinfo.return = void then
-            ok (result.state, None)
-          else
-            error}
-     | _ -> error}
+end-spec
+
+blah1 = spec
+
+
 
 (* Executing, in a state that satisfies the invariants, a statement that
 satisfies the compile-time constraints w.r.t. the symbol table of the state,
