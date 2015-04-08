@@ -18,6 +18,10 @@ MonadReader = Monad qualifying spec
   axiom local_ask is
     fa (f) localR f askR = askR
 
+  axiom local_local is [a]
+    fa (f1,f2,m:Monad a)
+      localR f1 (localR f2 m) = localR (fn r -> f2 (f1 r)) m
+
   axiom local_return is [a]
     fa (f,x:a) localR f (return x) = return x
 
@@ -25,5 +29,5 @@ MonadReader = Monad qualifying spec
     fa (f,m,g:a -> Monad b)
       localR f (monadBind (m, g)) =
       monadBind (localR f m, fn x -> localR f (g x))
-  
+
 end-spec
