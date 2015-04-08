@@ -424,7 +424,7 @@ spec
              % let _ = writeLine("qtm: "^printTermWithTypes tm) in
              return(Some(TermV tm))
            | (_, msgs) ->
-             raise (TypeCheckErrors msgs))
+             raise (TypeCheckErrors (msgs, spc)))
       | (_, OpName) -> return(mapOption OpNameV (transformExprToQualifiedId te))
       | (Item("lr", thm, pos),      Rule) -> checkOption(mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm), "lr", pos)
       | (Item("rl", thm, pos),      Rule) -> checkOption(mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm), "rl", pos)
@@ -633,7 +633,7 @@ spec
                          {o_atv <- transformExprToAnnTypeValue(te, mtyi, spc);
                           case o_atv  of
                             | None -> return(None)
-                            | Some atv -> let _ = writeLine("atv for "^tag^": "^show atv) in return(Some(tag, atv))}
+                            | Some atv -> return(Some(tag, atv))}
                        | None ->
                          case defaultAnnTypeValue mtyi of
                            | Some atv -> return(Some(tag, atv))

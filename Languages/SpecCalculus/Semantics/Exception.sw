@@ -36,12 +36,14 @@ SpecCalc qualifying spec
   import /Languages/SpecCalculus/AbstractSyntax/UnitId
   import /Languages/MetaSlang/Specs/Position
 
+  type AnnSpec.Spec
+
   type Monad.Exception =
     | Fail                String 
     | FileNotFound        Position * RelativeUID
     | UIDNotFound         Position * RelativeUID
     | TypeCheck           Position * String
-    | TypeCheckErrors     List(String * Position)
+    | TypeCheckErrors     List(String * Position) * Spec
     %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
     | OldTypeCheck        String              
     | Unsupported         Position * String
@@ -69,7 +71,7 @@ SpecCalc qualifying spec
       | FileNotFound        (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
       | UIDNotFound         (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
       | TypeCheck           (pos, msg) -> (Some (pos, false), "Type error: "              ^ msg)
-      | TypeCheckErrors     pairs      -> (None,              printTypeErrors pairs)
+      | TypeCheckErrors     (pairs, err_spc) -> (None,        printTypeErrors pairs)
       | Unsupported         (pos, msg) -> (Some (pos, false), "Unsupported operation: "   ^ msg)
       | SyntaxError         msg        -> (None,              "Syntax error: "            ^ msg)
       | ParserError         fileName   -> (None,              "Syntax error in file "     ^ fileName)

@@ -210,7 +210,7 @@ op elaborateSpecM (spc : Spec) : Env Spec =
   filename <- return ((uidToFullPath unitId) ^ ".sw");
   case elaboratePosSpec (spc, filename) of
     | Spec spc    -> return spc
-    | Errors msgs -> raise (TypeCheckErrors msgs)
+    | Errors (msgs, err_spc) -> raise (TypeCheckErrors (msgs, err_spc))
   }
 
 op explicateHiddenAxiomsM (spc : Spec) : Env Spec =

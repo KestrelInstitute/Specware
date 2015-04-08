@@ -1230,6 +1230,9 @@ spec
    % let _ = writeLine(printSpec spc) in
    spc
 
+ op obligationSpec (spc: Spec): Spec =
+   makeTypeCheckObligationSpec (spc, false, FALSE, "")
+
 % op  boundVars   : Gamma -> List Var
 % op  boundTyVars : Gamma -> TyVars
 % def boundTyVars(_, tyVars, _, _, _) = tyVars

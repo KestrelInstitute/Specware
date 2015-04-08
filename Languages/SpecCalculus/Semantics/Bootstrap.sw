@@ -80,13 +80,7 @@ Specware qualifying spec
   %% evaluateUnitId is designed to be called from application programs to
   %% get a unit from a unit id string.
 
-  % op  evaluateUnitId : String -> Option SpecCalc.Value
-  def Specware.evaluateUnitId path =
-    let
-      %% Ignore exceptions
-      def handler _ (* except *) =
-        return (None : Option SpecCalc.Value)
-    in
+  op Specware.evaluateUnitIdWithErrors (path: String): Option Value * List(String * Position) =
     let prog = {
 		cleanEnv;
 		currentUID <- pathToCanonicalUID ".";
@@ -97,10 +91,23 @@ Specware qualifying spec
 					      startLineColumnByte, 
 					      endLineColumnByte path_body));
 		(val,_,_)  <- evaluateUID position unitId;
-		return (Some val)
-	       } 
+		return (Some val, [])
+	       }
+    in
+    let def handler except =
+          case except
+            | TypeCheckErrors(errs, err_spc) -> return(Some(Spec err_spc), errs)
+            | _ ->
+          case decodeException except
+            | (Some(pos, _), str) -> return(None, [(str, pos)])
+            | (None, str) -> return(None, [(str, noPos)])
     in
       runSpecCommand (catch prog handler)
+
+ % op  evaluateUnitId : String -> Option SpecCalc.Value
+  def Specware.evaluateUnitId path =
+    let (opt_val, errs) = evaluateUnitIdWithErrors path in
+    if errs = [] then opt_val else None
 
   op  initializeInterpreterBase : () -> () % defined in toplevel.lisp
 
@@ -503,7 +510,7 @@ Specware qualifying spec
       | TypeCheck        (position,_) -> Some position
       | Proof            (position,_) -> Some position
       | TransformError   (position,_) -> Some position
-      | TypeCheckErrors  errs         ->
+      | TypeCheckErrors  (errs, err_spc) ->
         (case getFirstRealPosition errs of
            | None ->
              (case errs of

@@ -27,7 +27,7 @@ import /Languages/MetaSlang/Transformations/CurryUtils
 %% ========================================================================
 
 type Message  = String
-type Result = | Spec Spec | Errors (List(String * Position))
+type Result = | Spec Spec | Errors (List(String * Position) * Spec)
 
 %% ========================================================================
 
@@ -227,7 +227,7 @@ def elaboratePosSpec (given_spec0, filename) =
   %% because we don't need to know the type for _
   case checkErrors final_pass_env of
     | []   -> Spec (convertPosSpecToSpec final_spec)
-    | msgs -> Errors msgs
+    | msgs -> Errors (msgs, convertPosSpecToSpec final_spec)
 
 (* Debugging fun
 op printIncr(ops: AOpMap StandardAnnotation): () =
@@ -559,7 +559,8 @@ op checkOp (info: OpInfo, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
      else 
        (error (env, 
                "mismatch between bound vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs) ^ "]"
-               ^            " and free vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs_used) ^ "]",
+               ^            " and free vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs_used) ^ "]"
+               ^ " for op "^show(head info.names),
                termAnn def_tm);
         tvs)
  in
@@ -624,6 +625,37 @@ op collectUsedTyVars (ty: MSType, info: OpInfo, dfn: MSTerm, env: LocalEnv): Lis
              else ()
     in
     ! tv_cell
+
+(*
+op collectUsedTyVars (ty: MSType, info: OpInfo, dfn: MSTerm, env: LocalEnv): List TyVar =
+  let tv_cell = Ref [] : Ref TyVars in
+  let incomplete? = Ref false in
+  let 
+
+    def insert tv = 
+      tv_cell := ListUtilities.insert (tv, ! tv_cell) 
+
+    def check_ty ty = 
+      case ty of
+        | TyVar     (tv,      _) -> insert tv
+        | Boolean              _ -> ()
+        | MetaTyVar (mtv,     _) -> 
+          (let {name = _, uniqueId, link} = ! mtv in
+           case link of
+             | Some s -> ()
+             | None -> incomplete? := true)
+        | _ -> ()
+
+  in                        
+    let _ = appTerm (id, check_ty, id) info.dfn in
+    let _ = if !incomplete? && complainAboutImplicitPolymorphicOps? then
+              error (env, 
+                     "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printType ty), 
+                     termAnn dfn)
+             else ()
+    in
+    ! tv_cell
+*)
 
 op checkForUnboundMetaTyVars(tm: MSTerm, env: LocalEnv): () =
   let warned? = Ref false in
