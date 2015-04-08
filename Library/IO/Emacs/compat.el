@@ -60,7 +60,7 @@
 (defvar *sbcl-size* 
   (let ((given (getenv "SBCL_SIZE")))
     (if (null given)
-        (if *windows-system-p* 1200 (if *macos-p* 4000 2400))
+        (if *windows-system-p* 1000 (if *macos-p* 4000 2400))
       (read given)))
   "Size of --dynamic-space-size for sbcl")
 

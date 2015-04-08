@@ -131,12 +131,12 @@
   (sb-sys:enable-interrupt sb-unix:sigio (lambda (signal code scp)
                                            (sigio-handler signal code scp))))
 
-#-win32
 (defun enable-sigio-on-fd (fd)
   (sb-posix::fcntl fd sb-posix::f-setfl sb-posix::o-async)
   (sb-posix::fcntl fd sb-posix::f-setown (getpid))
   (values))
 
+#-win32
 (defimplementation add-sigio-handler (socket fn)
   (set-sigio-handler)
   (let ((fd (socket-fd socket)))

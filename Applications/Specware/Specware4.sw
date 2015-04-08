@@ -9,6 +9,7 @@ spec
   import /Provers/ToIsabelle/IsaPrinter
   import /Provers/ToCoq/CoqPrinter
   import /Languages/SpecCalculus/AbstractSyntax/ASW_Printer
+  import /Languages/SpecCalculus/AbstractSyntax/XMLPrinter
 
   import Sketch  qualifying /Library/Structures/Data/Maps/Monomorphic/AsLists
 
