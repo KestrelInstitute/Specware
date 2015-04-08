@@ -79,7 +79,7 @@
 		(require :sb-posix)
                 (require :sb-cltl2)
                 ;; :sb-sprof may need to be removed if running on windows
-		(require :sb-sprof)
+		#-win32 (require :sb-sprof)
                 (require :asdf)
                 (require :sb-grovel)
                 ))
