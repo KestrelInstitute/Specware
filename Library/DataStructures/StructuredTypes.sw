@@ -1835,12 +1835,12 @@ end-proof
 
 proof Isa simplify_gt4
   sorry (* TODO: Remove this sorry once the theorem gets translated right (Isabelle currently doesn't know that x is a nat). *)
-  apply(metis Divides.div_less One_nat_def Suc_pred div_2_gt_zero neq0_conv one_add_one simplify_gt0 zero_less_diff)
+  (* apply(metis Divides.div_less One_nat_def Suc_pred div_2_gt_zero neq0_conv one_add_one simplify_gt0 zero_less_diff) *)
 end-proof
 
 proof Isa simplify_gt4a
   sorry (* TODO: Remove this sorry once the theorem gets translated right (Isabelle currently doesn't know that x is a nat). *)
-  apply(metis add_gr_0 div_0 neq0_conv semiring_div_class.mod_div_equality')
+  (* apply(metis add_gr_0 div_0 neq0_conv semiring_div_class.mod_div_equality') *)
 end-proof
 
 end-spec
