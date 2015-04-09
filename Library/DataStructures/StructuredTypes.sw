@@ -21,6 +21,24 @@ theorem simplify_gt0 is
 theorem simplify_gt1 is
   fa(x:Nat) (1 + x > x) = true
 
+theorem simplify_gt2 is
+  fa(x:Nat, y:Nat) y>0 => (x + y > x) = true
+
+theorem simplify_gt3 is
+  fa(x:Nat, y:Nat) y>0 => (y + x > x) = true
+
+theorem simplify_gt4 is
+  fa(x:Nat) ((x div 2) > 0) = (x > 1)
+
+theorem simplify_gt4a is
+  fa(x:Nat) ((x div 2) + (x mod 2) > 0) = (x > 1)
+
+theorem simplify_gt5 is
+  fa(x:Nat, y:Nat) (x + y > x) = (y > 0)
+
+theorem simplify_gt6 is
+  fa(x:Nat, y:Nat) (x + y > y) = (x > 0)
+
 %% TODO: Move these to Library/General/ListFacts:
 
 theorem right_unit_of_concat is [a]
@@ -40,6 +58,15 @@ theorem length_of_Nil is [a]
 
 theorem length_of_Cons is [a]
   fa(lst:List a, x:a) length(x::lst) = 1 + length lst
+
+theorem length_of_concat is [a]
+  fa(x:List a, y:List a) length(x ++ y) = length x + length y
+
+theorem length_of_prefix is [a]
+  fa(x:List a, n:Nat) length(prefix(x,n)) = n
+
+theorem length_of_suffix is [a]
+  fa(x:List a, n:Nat) length(suffix(x,n)) = n
 
 theorem diff_of_empty_2 is [a]
   fa(lst:List a) diff(lst, []) = lst
