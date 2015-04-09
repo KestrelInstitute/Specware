@@ -31,7 +31,7 @@ theorem simplify_gt4 is
   fa(x:Nat) ((x div 2) > 0) = (x > 1)
 
 theorem simplify_gt4a is
-  fa(x:Nat) ((x div 2) + (x mod 2) > 0) = (x > 1)
+  fa(x:Nat) ((x div 2) + (x mod 2) > 0) = (x > 0)
 
 theorem simplify_gt5 is
   fa(x:Nat, y:Nat) (x + y > x) = (y > 0)
@@ -1831,6 +1831,14 @@ end-proof
 
 proof Isa M2F_TMApply
   sorry
+end-proof
+
+proof Isa simplify_gt4
+  apply(metis Divides.div_less One_nat_def Suc_pred div_2_gt_zero neq0_conv one_add_one simplify_gt0 zero_less_diff)
+end-proof
+
+proof Isa simplify_gt4a
+  apply(metis add_gr_0 div_0 neq0_conv semiring_div_class.mod_div_equality')
 end-proof
 
 end-spec
