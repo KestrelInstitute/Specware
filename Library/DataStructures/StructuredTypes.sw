@@ -63,10 +63,10 @@ theorem length_of_concat is [a]
   fa(x:List a, y:List a) length(x ++ y) = length x + length y
 
 theorem length_of_prefix is [a]
-  fa(x:List a, n:Nat) length(prefix(x,n)) = n
+  fa(x:List a, n:Nat) (n <= length x) => length(prefix(x,n)) = n
 
 theorem length_of_suffix is [a]
-  fa(x:List a, n:Nat) length(suffix(x,n)) = n
+  fa(x:List a, n:Nat) (n <= length x) => length(suffix(x,n)) = n
 
 theorem diff_of_empty_2 is [a]
   fa(lst:List a) diff(lst, []) = lst
