@@ -2387,9 +2387,6 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
     | E_binary (expr1, bop, expr2) ->
       evaluatorForBinaryOp bop (evaluate expr1, evaluate expr2)
     | E_cond (expr1, expr2, expr3, ty) ->
-      (* FIXME: capture the evaluation of the conditional, as well as the
-         evaluation of the branches, as single ops, to make it easier to reason
-         about them *)
       {val1 <- expressionValueM (evaluate expr1);
        isZero <- zeroScalarValue? val1;
        ret_val <-
