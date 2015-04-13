@@ -24,7 +24,7 @@ Sorting = spec
   %% Proofs start here:
 
   proof Isa div_2_bound
-    sorry
+    by (metis div_less_dividend gr0I one_less_numeral_iff semiring_norm(76))
   end-proof
 
   proof Isa sorted_of_cons
