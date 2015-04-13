@@ -3197,7 +3197,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    else (lhs,rhs)
 
  %% Ops that are not polymorphic in Specware but are mapped to polymorphic ops in Isabelle
- op isabelleOverloadedOps: List String = ["**", "modF", "divF"]
+ op isabelleOverloadedOps: List String = ["**", "modF", "divF", "div", "mod"]
 
  op filterConstrainedVars(c: Context, t: MSTerm, vs: MSVars): MSVars =
    let def removeArgs(vs: MSVars, args: MSTerms, bound_vars: MSVars): MSVars =
