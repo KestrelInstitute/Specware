@@ -394,6 +394,8 @@ op printTypedTerm (tterm : TypedTerm) : String =
 type Location = | Pathname Pathname
                 | Primitive
                 | Verbatim
+                | HVerbatim
+                | CVerbatim
 
 op make_Pathname_Location (pathname : Pathname)
  : Location =
@@ -403,15 +405,20 @@ op make_Primitive_Location ()
  : Location =
  Primitive
 
-op make_Verbatim_Location ()
+op make_Verbatim_Location (kw)
  : Location =
- Verbatim
+ case kw of
+   | "hverbatim" -> HVerbatim
+   | "cverbatim" -> CVerbatim
+   | _ -> Verbatim
 
 op printLocation (location : Location) : String =
  case location of
    | Pathname pathname -> "in " ^ printPathname pathname
    | Primitive         -> "primitive"
    | Verbatim          -> "verbatim"
+   | HVerbatim         -> "hverbatim"
+   | CVerbatim         -> "cverbatim"
 
 op printOptionalLocation (x : Option Location) : String =
  case x of

@@ -278,8 +278,11 @@
   (LM::make_Primitive_Location-0))
 
 (define-lm-parser-rule :VerbatimLocation
-    (:tuple (:optional "in") "verbatim" (:optional "section") (:optional "above"))
-  (LM::make_Verbatim_Location-0))
+    (:tuple (:optional "in") 
+            (1 (:anyof "verbatim" "hverbatim" "cverbatim")) 
+            (:optional "section") 
+            (:optional "above"))
+  (LM::make_Verbatim_Location 1))
 
 ;;; ========================================================================
 ;;;  TypeTranslation
