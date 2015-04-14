@@ -69,9 +69,9 @@ spec
 (defun mkSome (val)
   (cons ':|Some| val))
 
-(defparameter *map-as-vector--initial-vector-size* 10)
+(defparameter *map-as-vector--initial-vector-size* 50)
 (defparameter *map-as-vector--max-vector-size* 1000000)
-(defparameter *map-as-vector-resize-factor* 1.1)
+(defparameter *map-as-vector-resize-factor* 2.0)
 
 (defmacro map-as-vector--initial-vector ()
   `(make-array *map-as-vector--initial-vector-size*
@@ -140,6 +140,18 @@ spec
 
 (defun V_apply (pr)
   (V_apply-2 (car pr) (cdr pr)))
+
+(defun V_map_eval-3 (m x default)
+  (declare (fixnum x) (simple-vector m))
+  ;(incf *map-as-vector-ref-count*)
+  (if (>= x (length m))
+      *undefined*
+      (let ((val (svref m x)))
+        (if (eq val *undefined*) default
+            val))))
+
+(defun V_map_eval (triple)
+  (V_map_eval-3 (svref triple 0) (svref triple 1) (svref triple 2)))
 
 (defun eval-error (m x)
   ;(print-map m)
