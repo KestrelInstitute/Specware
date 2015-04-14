@@ -38,7 +38,9 @@
    ;;
    :extended-comment-delimiters '(("(*" "*)" t nil)) ; t means recursive
    ;;
-   :pragma-delimiters           '(("-verbatim" "-end" nil nil))
+   :pragma-delimiters           '(("-verbatim" "-end" nil nil)
+                                  ("-hverbatim" "-end" nil nil)
+                                  ("-cverbatim" "-end" nil nil))
    ;;
    :case-sensitive?             t
    ;;

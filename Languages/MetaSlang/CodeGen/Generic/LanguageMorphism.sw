@@ -82,8 +82,9 @@ op make_Language (s : String) : Language =
 
 type Sections = List Section
 type Section = | Verbatim  String
+               | CVerbatim String         % verbatim to be printed at start of .c 
                | Imports   Imports
-               | CImports  Imports        % imports to be printed at start of .c 
+               | CImports  Imports        % imports  to be printed at start of .c 
                | Morphism  Translations
                | Natives   Natives
                | Generated
@@ -94,7 +95,10 @@ type Section = | Verbatim  String
 
 op make_Verbatim_Section  (pre : String, body : String, post : String) 
  : Section = 
- Verbatim  body
+ case pre of
+   | "-cverbatim" -> CVerbatim body
+   | "-hverbatim" -> Verbatim  body
+   | _            -> Verbatim  body
 
 type Verbatims = {pre  : List String,
                   post : List String}
@@ -166,6 +170,25 @@ op extractCImports (lms : LanguageMorphisms) : Imports =
                 lm.sections)
        []
        lms
+
+op extractHVerbatims (lms : LanguageMorphisms) : Verbatims =
+ %% -verbatim => HVerbatims
+ extractVerbatims lms
+
+op extractCVerbatims (lms : LanguageMorphisms) : Verbatims =
+ %% TODO: allow for post c_verbatims?
+ let c_verbatims =
+     foldl (fn (c_verbatims, lm) ->
+              foldl (fn (c_verbatims, section) ->
+                       case section of
+                         | CVerbatim verbatim -> c_verbatims ++ [verbatim]
+                         | _ -> c_verbatims)
+                    c_verbatims
+                    lm.sections)
+          []
+          lms
+ in
+ {pre = c_verbatims, post = []}
 
 type Imports   = List Import
 type Import    = Pathname

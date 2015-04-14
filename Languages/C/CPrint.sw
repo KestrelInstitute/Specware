@@ -472,7 +472,9 @@ CPrint qualifying spec
   let hincludes            = map ppInclude             s.hincludes            in
   let cincludes            = map ppInclude             s.cincludes            in
   let includes             = hincludes ++ cincludes                           in % one of the two will be the empty list
-  let verbatims            = map ppVerbatim            s.verbatims            in    
+  let hverbatims           = map ppVerbatim            s.hverbatims           in    
+  let cverbatims           = map ppVerbatim            s.cverbatims           in    
+  let verbatims            = hverbatims ++ cverbatims                         in % one of the two will be the empty list
   let defines              = map ppDefine              s.defines              in
   let constDefns           = map ppVarDefnAsDefine     s.constDefns           in
   let structUnionTypeDefns = map ppStructUnionTypeDefn s.structUnionTypeDefns in
