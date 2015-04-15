@@ -370,7 +370,7 @@ MetaSlangRewriter qualifying spec
        let out_term = Let(bds2, Let([(p1, e1)], e3, a1), a2) in
        unit (out_term,
              (emptySubstitution,
-              mkSimpRule ("noramlizeEmbeddedLets", inferType(spc, term), term, out_term),
+              mkSimpRule ("normalizeEmbeddedLets", inferType(spc, term), term, out_term),
               path, boundVars, demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
        let out_term = mkBool(id1 = id2) in
