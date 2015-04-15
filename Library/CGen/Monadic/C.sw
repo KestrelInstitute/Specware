@@ -1475,12 +1475,22 @@ type Monad.R =
    {r_xenv     : TranslationEnv,
     r_curScope : ScopeDesignator }
 
+(* Test if a typedef name is currently defined *)
+op testTypeDef (name : Identifier) : Monad Bool =
+  {r <- askR;
+   return (some? (r.r_xenv.xenv_typedefs name))}
+
 (* Look up a typedef name *)
 op lookupTypeDef (name : Identifier) : Monad Type =
   {r <- askR;
    case r.r_xenv.xenv_typedefs name of
      | Some t -> return t
      | None -> error}
+
+(* Test if a struct tag name is currently defined *)
+op testStructTag (name : Identifier) : Monad Bool =
+  {r <- askR;
+   return (some? (r.r_xenv.xenv_structures name))}
 
 (* Look up a struct tag *)
 op lookupStructMembers (tag : Identifier) : Monad StructMembers =
@@ -1511,10 +1521,14 @@ op currentBindingsLens : MLens ((), NamedStorage) =
   mlens_of_computation {d <- getCurrentScopeDesignator;
                         return (scopeDesignatorLens d)}
 
-(* Add a binding to the current scope *)
+(* Add a binding to the current scope, raising an error if a binding with that
+   name already exists in the current scope or the current typedef table *)
 op addLocalBinding (id:Identifier, val:Value) : Monad () =
   {bindings <- currentBindingsLens.mlens_get ();
-   if some? (bindings id) then error else
+   is_type_def <- testTypeDef id;
+   if some? (bindings id) || is_type_def then
+     error
+   else
      currentBindingsLens.mlens_set () (update bindings id val)}
 
 (* Perform a computation with a freshly allocated LocalScope, setting that
@@ -2641,7 +2655,7 @@ value is returned, it is an error. In the absence of errors, function execution
 results in a new state and an optional value (present iff the function has a
 non-'void' return type). *)
 
-op execStatement (stmt:Statement) : Monad () =
+op evalStatement (stmt:Statement) : Monad () =
   case stmt of
   | S_assign (expr1, expr2) ->
     {res1 <- evaluate expr1;
@@ -2679,10 +2693,10 @@ op execStatement (stmt:Statement) : Monad () =
     {condition <- expressionValueM (evaluate cond_expr);
      isZero <- zeroScalarValue? condition;
      if ~ isZero then
-       execStatement then_branch
+       evalStatement then_branch
      else
        case else_branch_opt of
-         | Some else_branch -> execStatement else_branch
+         | Some else_branch -> evalStatement else_branch
          | None -> return ()}
   | S_return (Some expr) ->
     (* For a return statement with an expression, evaluate the expression and
@@ -2700,29 +2714,64 @@ op execStatement (stmt:Statement) : Monad () =
             {condition <- expressionValueM (evaluate cond_expr);
              isZero <- zeroScalarValue? condition;
              if isZero then return () else
-               {_ <- execStatement body;
+               {_ <- evalStatement body;
                 recurse ()}}) ()
   | S_do (body, cond_expr) ->
     (* For do loops, execute the body once and then do a while loop *)
-    {_ <- execStatement body;
-     execStatement (S_while (cond_expr, body))}
+    {_ <- evalStatement body;
+     evalStatement (S_while (cond_expr, body))}
   | S_block items ->
-    withFreshLocalBindings empty (execBlockItems items)
+    withFreshLocalBindings empty (evalBlockItems items)
 
-op execBlockItems (items:List BlockItem) : Monad () =
+op evalBlockItems (items:List BlockItem) : Monad () =
   case items of
   | [] -> return ()
   | item::items' ->
-    {_ <- execBlockItem item;
-     execBlockItems items'}
+    {_ <- evalBlockItem item;
+     evalBlockItems items'}
 
-op execBlockItem (item:BlockItem) : Monad () =
+op evalBlockItem (item:BlockItem) : Monad () =
   case item of
   | BlockItem_declaration (tp_name, id) ->
     {tp <- expandTypeName tp_name;
      zero_val <- zeroOfType tp;
      addLocalBinding (id, zero_val)}
-  | BlockItem_statement stmt -> execStatement stmt
+  | BlockItem_statement stmt -> evalStatement stmt
+
+
+%subsection (* Declarations *)
+
+(* When an object declaration is encountered at run time, the declared object is
+added to the innermost active scope of the storage. This could be in the static
+storage (for an object declared with file scope) or in the automatic storage
+(for an object declared with block scope).
+
+If the declared object has file scope, it goes into static storage and it is
+initialized to 0 [ISO 6.9.2/2]. If the declared object has block scope, it goes
+into automatic storage; if it has no initializer, its initial value is
+indeterminate [ISO 6.7.8/10]. Since object declarations in our C subset have no
+explicit initializer, we set the initial value to be undefined. *)
+
+op evalObjectDeclaration (odecl:ObjectDeclaration) : Monad () =
+  {ty <- expandTypeName odecl.ObjDecl_type;
+   zeroVal <- zeroOfType ty;
+   addLocalBinding (odecl.ObjDecl_name, zeroVal)}
+
+(* For struct declarations, evaluate each type name, check there are no
+   duplicate field names, and check that the struct tag is not already in use *)
+op evalMemberDeclaration (decl:MemberDeclaration) : Monad (Identifier * Type) =
+  {ty <- expandTypeName decl.MemDecl_type;
+   errorIf (ty = T_void);
+   return (decl.MemDecl_name, ty)}
+
+op evalStructSpecifier (sspec:StructSpecifier) : Monad (Identifier * StructMembers) =
+  {is_struct_tag <- testStructTag sspec.StructSpec_tag;
+   errorIf is_struct_tag;
+   members <- mapM evalMemberDeclaration (sspec.StructSpec_members);
+   errorIf (members = []);
+   if noRepetitions? (unzip members).1 then
+     return (sspec.StructSpec_tag, members)
+   else error}
 
 end-spec
 
@@ -2801,36 +2850,6 @@ theorem function_call is
     | nonterm -> true)
 
 
-%subsection (* Declarations *)
-
-(* When an object declaration is encountered at run time, the declared object is
-added to the innermost active scope of the storage. This could be in the static
-storage (for an object declared with file scope) or in the automatic storage
-(for an object declared with block scope).
-
-If the declared object has file scope, it goes into static storage and it is
-initialized to 0 [ISO 6.9.2/2]. If the declared object has block scope, it goes
-into automatic storage; if it has no initializer, its initial value is
-indeterminate [ISO 6.7.8/10]. Since object declarations in our C subset have no
-explicit initializer, we set the initial value to be undefined. *)
-
-op execObjectDeclaration (structures: StructTable, odecl:ObjectDeclaration) : Monad State =
-  {ty <- expandTypeName odecltypE;
-   zeroVal <- zeroOfType (structures, ty);
-   errorIf (odecl.name in? domain state.typedefs);
-   let store = state.storage in
-   if store.automatic = [] then
-     {errorIf (odecl.name in? domain store.static);
-      errorIf (odecl.name in? domain state.typedefs);
-      errorIf (odecl.name in? domain state.functions);
-      ok (updateStaticObject (state, odecl.name, zeroVal))}
-   else
-     let topframe = last store.automatic in
-     {errorIf (empty? topframe);
-      errorIf (odecl.name in? domain (last topframe));
-      ok (updateAutomaticObject
-           (state, length store.automatic - 1, length topframe - 1,
-                   odecl.name, undefined ty))}}
 
 (* Executing, in a state that satisfies the invariants, an object declaration
 that satisfies the compile-time constraints w.r.t. the symbol table of the
@@ -2849,28 +2868,6 @@ theorem object_declaration_execution is
     | nonstd -> true
     | nonterm -> true)
 *)
-(* When a structure specifier is encountered, the state of the program is
-extended with information about the structure. *)
-
-op execMemberDeclarations
-   (state:State, decls:List MemberDeclaration) : Monad TypedMembers =
-  case decls of
-  | [] -> ok empty
-  | decl::decls ->
-    let tyn = decl.typE in
-    let mem = decl.name in
-    {tmembers <- execMemberDeclarations (state, decls);
-     ty <- expandTypeName (state, tyn);
-     errorIf (ty = void);
-     errorIf (mem in? domain tmembers);
-     ok (update tmembers mem ty)}
-
-op execStructSpecifier (state:State, sspec:StructSpecifier) : Monad State =
-  let tag = sspec.tag in
-  {errorIf (tag in? domain state.structures);
-   tmembers <- execMemberDeclarations (state, sspec.members);
-   errorIf (tmembers = empty);
-   ok (state << {structures = update state.structures tag tmembers})}
 
 (* Executing, in a state that satisfies the invariants, a structure specifier
 that satisfies the compile-time constraints w.r.t. the symbol table of the
