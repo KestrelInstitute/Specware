@@ -1480,6 +1480,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	       else spc
     in
     % let _ = writeLine("4:\n"^printSpec spc) in
+    let spc = explicateEmbeds spc in
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
@@ -1775,7 +1776,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
   op findMutuallyRecursiveElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
        : QualifiedIds * SpecElements * SpecElements * SpecElements =
     let op_refs = qid0 :: opsInOpDefFor(qid0, spc) in
-    let _ = writeLine(show qid0^" has ops (0)\n"^anyToString(map show (opsInOpDefFor(qid0, spc)))) in
+    % let _ = writeLine(show qid0^" has ops (0)\n"^anyToString(map show (opsInOpDefFor(qid0, spc)))) in
     let def findMutuallyRecursiveOps(els, op_refs, mr_els, pending_prag_els) =
           case els of
             | [] -> orderElts(mr_els, pending_prag_els)
