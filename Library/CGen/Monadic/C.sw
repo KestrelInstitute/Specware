@@ -1205,6 +1205,12 @@ op errorIf (condition:Bool) : Monad () =
 op nonstdIf (condition:Bool) : Monad () =
   if condition then raiseErr Err_nonstd else return ()
 
+(* Lift an Option a to a Monad a, mapping None to error *)
+op [a] liftOption (opt: Option a) : Monad a =
+  case opt of
+    | Some x -> return x
+    | None -> error
+
 (* Return from the current function. This uses "raiseErr", even though it is not
    technically an "error", since raiseErr is really just a non-local exit *)
 op [a] returnFromFun (retVal : Option Value) : Monad a =
@@ -1453,6 +1459,12 @@ type FunctionTable = FiniteMap (Identifier, TopFunction)
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
 top-level function definitions.
 
+FIXME HERE: TranslationEnv should contain information about what identifiers are
+in scope (possibly with their types), because referencing an identifier outside
+of its allowed lexical scope, even if it is dynamically in scope, is an error
+(e.g., this might happen if a global in a different file is not introduced in
+scope in the current file with the "extern" keyword.)
+
 FIXME: in the future, this could also contain information about staitc
 identifiers with internal linkage, i.e., global variables, as well as static
 variables inside functions, that are not visible outside the current file and/or
@@ -1483,9 +1495,7 @@ op testTypeDef (name : Identifier) : Monad Bool =
 (* Look up a typedef name *)
 op lookupTypeDef (name : Identifier) : Monad Type =
   {r <- askR;
-   case r.r_xenv.xenv_typedefs name of
-     | Some t -> return t
-     | None -> error}
+   liftOption (r.r_xenv.xenv_typedefs name)}
 
 (* Test if a struct tag name is currently defined *)
 op testStructTag (name : Identifier) : Monad Bool =
@@ -1495,18 +1505,14 @@ op testStructTag (name : Identifier) : Monad Bool =
 (* Look up a struct tag *)
 op lookupStructMembers (tag : Identifier) : Monad StructMembers =
   {r <- askR;
-   case r.r_xenv.xenv_structures tag of
-     | Some membs -> return membs
-     | None -> error}
+   liftOption (r.r_xenv.xenv_structures tag)}
 
 (* Look up a function *)
 op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction) =
   case f_desig of
     | FunctionDesignator id ->
       {r <- askR;
-       case r.r_xenv.xenv_functions id of
-         | Some f -> return f
-         | None -> error}
+       liftOption (r.r_xenv.xenv_functions id)}
 
 (* Get the current ScopeDesignator *)
 op getCurrentScopeDesignator : Monad ScopeDesignator =
@@ -2525,34 +2531,36 @@ op evaluateAllToValues (exprs:List Expression) : Monad (List Value) =
 %subsection (* Type names *)
 
 (* A type name denotes a type. The following op returns the type denoted by a
-type name w.r.t. a state. Recall that a state includes a symbol table for type
-definitions: this is used to look up, and expand away, typedef names. This op is
-similar to op 'checkTypeName'. *)
+type name w.r.t. a TypedefTable, by expanding all the typedef names in the type
+name. *)
 
-op expandTypeName (tyn:TypeName) : Monad Type =
+op expandTypeName (table:TypedefTable, tyn:TypeName) : Option Type =
   case tyn of
-  | TN_typedef tdn ->
-    lookupTypeDef tdn
+  | TN_typedef tdn -> table tdn
   | TN_pointer tyn ->
-    {ty <- expandTypeName tyn;
-     return (T_pointer ty)}
+    {ty <- expandTypeName (table, tyn);
+     Some (T_pointer ty)}
   | TN_array (tyn, n) ->
-    {ty <- expandTypeName tyn;
-     return (T_array (ty, n))}
-  | TN_struct tag -> return (T_struct tag)
-  | TN_char  ->  return T_char
-  | TN_uchar  -> return T_uchar
-  | TN_schar  -> return T_schar
-  | TN_ushort -> return T_ushort
-  | TN_sshort -> return T_sshort
-  | TN_uint   -> return T_uint
-  | TN_sint   -> return T_sint
-  | TN_ulong  -> return T_ulong
-  | TN_slong  -> return T_slong
-  | TN_ullong -> return T_ullong
-  | TN_sllong -> return T_sllong
-  | TN_void   -> return T_void
+    {ty <- expandTypeName (table, tyn);
+     Some (T_array (ty, n))}
+  | TN_struct tag -> Some (T_struct tag)
+  | TN_char  ->  Some T_char
+  | TN_uchar  -> Some T_uchar
+  | TN_schar  -> Some T_schar
+  | TN_ushort -> Some T_ushort
+  | TN_sshort -> Some T_sshort
+  | TN_uint   -> Some T_uint
+  | TN_sint   -> Some T_sint
+  | TN_ulong  -> Some T_ulong
+  | TN_slong  -> Some T_slong
+  | TN_ullong -> Some T_ullong
+  | TN_sllong -> Some T_sllong
+  | TN_void   -> Some T_void
 
+(* Monadic version of the above, that looks up the current TypedefTable *)
+op expandTypeNameM (tyn:TypeName) : Monad Type =
+  {r <- askR;
+   liftOption (expandTypeName (r.r_xenv.xenv_typedefs, tyn))}
 
 %subsection (* Zero values *)
 
@@ -2571,18 +2579,32 @@ type not present in the state. It is also an error if there is some circularity
 in the structures, which could cause the op not to terminate. Recall that the
 non-circularity of the structures is part of the state invariants. *)
 
-op zeroOfType (ty:Type) : Monad Value =
+op zeroOfType (table:StructTable, ty:Type) : Option Value =
   case ty of
-  | T_void -> error
+  | T_void -> None
   | T_struct tag ->
-    {membs <- lookupStructMembers tag;
-     (mems, tys) <- return (unzip membs);
-     vals <- mapM zeroOfType tys;
-     return (V_struct (tag, fromAssocList (zip (mems, vals))))}
+    {membs <- table tag;
+     (mems, tys) <- Some (unzip membs);
+     vals <- zerosOfTypes (table, tys);
+     Some (V_struct (tag, fromAssocList (zip (mems, vals))))}
   | T_array (ty0, n) ->
-    {val0 <- zeroOfType ty0;
-     return (V_array (ty0, repeat val0 n))}
-  | ty -> return (zeroOfScalarType ty)
+    {val0 <- zeroOfType (table, ty0);
+     Some (V_array (ty0, repeat val0 n))}
+  | ty -> Some (zeroOfScalarType ty)
+
+(* This just maps zeroOfType over tys *)
+op zerosOfTypes (table:StructTable, tys:List Type) : Option (List Value) =
+  case tys of
+    | [] -> Some []
+    | ty::tys' ->
+      {z <- zeroOfType (table, ty);
+       zs <- zerosOfTypes (table, tys');
+       Some (z::zs)}
+
+(* This lifts zeroOfType into Monad *)
+op zeroOfTypeM (ty:Type) : Monad Value =
+  {r <- askR;
+   liftOption (zeroOfType (r.r_xenv.xenv_structures, ty))}
 
 
 %subsection (* Statements *)
@@ -2733,27 +2755,35 @@ op evalBlockItems (items:List BlockItem) : Monad () =
 op evalBlockItem (item:BlockItem) : Monad () =
   case item of
   | BlockItem_declaration (tp_name, id) ->
-    {tp <- expandTypeName tp_name;
-     zero_val <- zeroOfType tp;
+    {tp <- expandTypeNameM tp_name;
+     zero_val <- zeroOfTypeM tp;
      addLocalBinding (id, zero_val)}
   | BlockItem_statement stmt -> evalStatement stmt
 
 
-%subsection (* Declarations *)
+%subsection (* Translation Units *)
 
-(* When an object declaration is encountered at run time, the declared object is
-added to the innermost active scope of the storage. This could be in the static
-storage (for an object declared with file scope) or in the automatic storage
-(for an object declared with block scope).
+(* Evaluating, or "compiling", a translation unit builds up a representation of
+all the top-level external declarations in that translation unit.
 
-If the declared object has file scope, it goes into static storage and it is
-initialized to 0 [ISO 6.9.2/2]. If the declared object has block scope, it goes
-into automatic storage; if it has no initializer, its initial value is
-indeterminate [ISO 6.7.8/10]. Since object declarations in our C subset have no
-explicit initializer, we set the initial value to be undefined. *)
+FIXME HERE: more description! *)
 
-op evalObjectDeclaration (odecl:ObjectDeclaration) : Monad () =
-  {ty <- expandTypeName odecl.ObjDecl_type;
+end-spec
+
+blah0 = spec
+
+
+type TranslationUnitRepr =
+   {repr_structs   : StructTable,
+    repr_typedefs  : TypedefTable,
+    repr_objects   : List (Identifier * Bool),
+    repr_functions : List (Identifier * Option TopFunction)}
+
+
+FIXME HERE NOW: use the following type
+
+op evalObjectDeclaration (repr: TranslationUnitRepr, odecl:ObjectDeclaration) : Option TranslationUnitRepr =
+  {ty <- expandTypeName (repr.repr_typedefs, odecl.ObjDecl_type);
    zeroVal <- zeroOfType ty;
    addLocalBinding (odecl.ObjDecl_name, zeroVal)}
 
