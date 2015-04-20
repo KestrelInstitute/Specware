@@ -150,23 +150,23 @@ op writeOut (s : String) : () =
 %%% Transforms invocable by user
 %%% ================================================================================
 
-op SpecTransform.showSpec (spc : Spec) (msg : String) : Spec =
+op SpecTransform.showSpec (spc : Spec) (msg : String) : () =
  let _ = Debugging.showSpec spc msg in
- spc
+ ()
 
-op SpecTransform.showSpecFlat (spc : Spec) (msg : String) : Spec =
+op SpecTransform.showSpecFlat (spc : Spec) (msg : String) : () =
  let _ = Debugging.showSpecFlat spc msg in
- spc
+ ()
 
-op SpecTransform.showSpecInternals (spc : Spec) (msg : String) : Spec =
+op SpecTransform.showSpecInternals (spc : Spec) (msg : String) : () =
  let _ = Debugging.showSpecInternals spc msg in
- spc
+ ()
 
-op SpecTransform.showElements (spc : Spec) (msg : String) (depth : Nat) (verbose? : Bool) : Spec =
+op SpecTransform.showElements (spc : Spec) (msg : String) (depth : Nat) (verbose? : Bool) : () =
  let _ = Debugging.showElements spc msg depth verbose? in
- spc
+ ()
 
-op SpecTransform.showOps (spc : Spec) (msg : String) (names : QualifiedIds) : Spec =
+op SpecTransform.showOps (spc : Spec) (msg : String) (names : QualifiedIds) : () =
  let _ = writeLine "-showOps------------" in
  let _ = writeLine ("##9 " ^ msg)         in  % "##9" is just a convenient pattern to search for
  let _ = app (fn qid -> 
@@ -182,9 +182,9 @@ op SpecTransform.showOps (spc : Spec) (msg : String) (names : QualifiedIds) : Sp
              names
  in
  let _ = writeLine "--------------------" in
- spc
+ ()
 
-op SpecTransform.showAllTypes (spc : Spec) (msg : String) : Spec =
+op SpecTransform.showAllTypes (spc : Spec) (msg : String) : () =
  let _ = writeLine "-showAllTypes-------" in
  let _ = writeLine ("## " ^ msg)          in
  let
@@ -209,15 +209,15 @@ op SpecTransform.showAllTypes (spc : Spec) (msg : String) : Spec =
  in
  let _ = scan spc.elements in
  let _ = writeLine "--------------------" in
- spc
+ ()
 
 op MetaRule.showTerm (spc : Spec) (msg : String) (term : MSTerm) : Option MSTerm =
  let _ = writeLine "-showTerm-----------" in
  let _ = writeLine (msg ^ printTerm term) in
  let _ = writeLine "--------------------" in
- Some term
+ None
 
-op SpecTransform.showPragmas (s : Spec, msg : String) : Spec =
+op SpecTransform.showPragmas (s : Spec, msg : String) : () =
  let _ = writeLine "====================" in
  let _ = writeLine ("Pragmas: " ^ msg) in
  let _ = writeLine "--------------------" in
@@ -235,6 +235,6 @@ op SpecTransform.showPragmas (s : Spec, msg : String) : Spec =
                          s.elements
   in
   let _ = writeLine "====================" in
-  s
+  ()
 
 end-spec

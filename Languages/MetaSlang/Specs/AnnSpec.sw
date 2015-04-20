@@ -1461,7 +1461,7 @@ op [a] showQ(el: ASpecElement a): String =
  op showQIDs (qids : List QualifiedId) : String = showStrings (map printQualifiedId qids)
 
  %% debugging utility
- op SpecTransform.showImports (spc : Spec) (msg : String) (show_types? : Bool) (show_ops? : Bool) : Spec =
+ op SpecTransform.showImports (spc : Spec) (msg : String) (show_types? : Bool) (show_ops? : Bool) : () =
   let
     def spaces n =
       implode (repeat #\s n)
@@ -1485,6 +1485,6 @@ op [a] showQ(el: ASpecElement a): String =
   let _ = aux (0, spc.elements) in
 
   let _ = writeLine "====================" in
-  spc
+  ()
 
 end-spec

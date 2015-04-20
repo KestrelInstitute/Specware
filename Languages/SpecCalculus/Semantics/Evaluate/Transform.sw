@@ -644,7 +644,7 @@ spec
            then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                  return(RecV tagged_atvs :: r_atvs)}
            else
-             let _ = writeLine("fld_tyis: "^anyToString fld_tyis^"\ntagged_atvs: "^anyToString tagged_atvs) in
+             % let _ = writeLine("fld_tyis: "^anyToString fld_tyis^"\ntagged_atvs: "^anyToString tagged_atvs) in
              let missing_fields = mapPartial (fn (nm, _) ->
                                                 if exists? (fn (nmi, _) -> nm = nmi) tagged_atvs
                                                   then None else Some nm)
@@ -676,30 +676,29 @@ spec
         (case lookupSpecTransformInfo cmd_name of
            | Some(ty_info, tr_fn) ->
              (case ty_info of
-                | Arrows(mtis, Spec) -> 
+                | Arrows(mtis, rng) -> 
                   {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
                                                                                 implicit_term?  = false,
                                                                                 implicit_qid?   = false});
                    % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
-                   return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))}
-                | Arrows(mtis, Monad Spec) -> 
-                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
-                                                                                implicit_term? = false,
-                                                                                implicit_qid? = false});
-                   % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
-                   return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))}
-                | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
+                   case rng of
+                     | Spec -> return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))
+                     | Tuple [] -> return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))
+                     | Monad Spec ->  return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))
+                     | Monad (Tuple [] ) ->  return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))
+                     | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function"))}
+                 | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
            | None ->
          case lookupMSTermTransformInfo cmd_name of
            | Some(ty_info, tr_fn) ->
              (case ty_info of
-                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result ->
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result || result = Tuple [] ->
                   {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
                                                                                 implicit_term?  = true,
                                                                                 implicit_qid? = true});
                    % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
                    return(TermTransform(cmd_name, tr_fn, ArrowsV atvs))}
-                | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
+                | _ -> raise (TransformError (pos, cmd_name^" not an MSTerm returning function")))
            | None ->
          case lookupMSRuleInfo cmd_name of
            | Some(ty_info, tr_fn) ->

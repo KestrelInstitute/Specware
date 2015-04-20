@@ -209,6 +209,17 @@ op [a] forallTerm? (term : ATerm a) : Bool =
    | Bind (Forall, _, _, _) -> true
    | _ -> false
 
+op [a] voidTerm? (term : ATerm a) : Bool =
+ case term of
+   | Record([], _) -> true
+   | _ -> false
+
+op [a] voidType? (ty : AType a) : Bool =
+ case ty of
+   | Product([], _) -> true
+   | _ -> false
+
+
 %% Op's (particular Fun's)
 
 op mkProject   (id : Id, super : MSType, sub   : MSType) : MSTerm = mkFun (Project id, mkArrow (super, sub))

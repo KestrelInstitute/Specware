@@ -607,9 +607,11 @@ op simpIf1 (spc: Spec) (tm: MSTerm): MSTerm =
     | None -> tm
     | Some simp_tm -> simp_tm
 
+(*
 op MSTermTransform.testTr (spc: Spec) (tm1: TransTerm) (tm2: MSTerm) (rls: RuleSpecs): Option MSTerm =
   (writeLine ("applying "^showRls rls^" to\n"^printTerm tm1^"\nwith argument\n"^printTerm tm2);
    None)
+*)
 
 op MSTermTransform.substConjEquality (tm: TransTerm) (cj_nm: Nat) (rl?: Bool)
      : Option (MSTerm * Proof) =

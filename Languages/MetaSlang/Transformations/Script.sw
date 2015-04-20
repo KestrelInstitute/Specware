@@ -1142,18 +1142,20 @@ spec
         let arg_with_spc = replaceSpecTraceArgs(arg, spc, tracing?) in
         let result = apply(tr_fn, arg_with_spc) in
         % let _ = writeLine(anyToString result) in
-        let TVal(SpecV new_spc) = result in
-        % let _ = writeLine(printSpec new_spc) in
-        return(new_spc, tracing?)
+        (case result of
+           | TVal(SpecV new_spc) -> 
+             % let _ = writeLine(printSpec new_spc) in
+             return(new_spc, tracing?)
+           | _ -> return(spc, tracing?))
       | SpecTransformInMonad(tr_name, tr_fn, arg) ->
         let _ = if tracing? then writeLine(show script) else () in
         let arg_with_spc = replaceSpecTraceArgs(arg, spc, tracing?) in
-        {%result <- applyM(tr_fn, arg_with_spc);
-         % let _ = writeLine(anyToString result) in
-         TVal(MonadV m_spc) <- return(apply(tr_fn, arg_with_spc));
-         % let _ = writeLine(printSpec new_spc) in
-         SpecV new_spc <- m_spc;
-         return(new_spc, tracing?)}
+        % let _ = writeLine(anyToString result) in
+        (case apply(tr_fn, arg_with_spc) of
+           | TVal(MonadV m_spc) -> 
+             {SpecV new_spc <- m_spc;
+              return(new_spc, tracing?)}
+           | _ ->  return(spc, tracing?))
       | SpecTransform(Qualified(q, id), rls) ->
         {trans_fn <- return(specTransformFunction(q, id));
          % print (scriptToString script^"\n "^anyToString trans_fn^"\n");

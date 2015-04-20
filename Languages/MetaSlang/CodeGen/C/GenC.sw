@@ -8,8 +8,7 @@ import /Languages/MetaSlang/CodeGen/C/SpecToCSpec                      % statefu
 import /Languages/C/PrintCSpec                                         %        c spec =>        c files
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% generateCFiles is a side-effecting transform that returns the original 
-%% metaslang spec. 
+%% generateCFiles is a side-effecting transform. 
 %%
 %% It generate C code for the given spec and writes it into the appropriate
 %% .h and .c files.
@@ -22,10 +21,10 @@ import /Languages/C/PrintCSpec                                         %        
 %%   Languages/SpecCalculus/Semantics/Specware.sw
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op SpecTransform.generateCFiles (ms_spec : Spec, filename : String) : Spec =
+op SpecTransform.generateCFiles (ms_spec : Spec, filename : String) : () =
  let new_ms_spec = transformSpecTowardsC ms_spec                    in
  let _           = emitCFiles (new_ms_spec, filename) in
- ms_spec
+ ()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% transformSpecTowardsC performs a series of spec transforms with the ntention 
@@ -54,8 +53,8 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
  SpecTransform.simplifyForExecution (ms_spec, options)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% emitCfiles is an identity transform on metaslang specs, with the side-effect 
-%% of possibly outputting C files directly from the provided metaslang spec.  
+%% emitCfiles is an side-effecting transform on metaslang specs, that
+%% possibly outputs C files directly from the provided metaslang spec.  
 %%
 %% The provided metaslang spec might have been produced manually, or by an 
 %% invocation of transformSpecTowardsC, or by a series of more detailed 
@@ -88,7 +87,7 @@ op all_ops_and_types (ms_spec : Spec) : OpNames * TypeNames =
  in
  (op_names, type_names)
 
-op SpecTransform.emitCFiles (ms_spec : Spec, filename : String) : Spec =
+op SpecTransform.emitCFiles (ms_spec : Spec, filename : String) : () =
  let (root_ops, root_types) = default_roots ms_spec in
  newEmitCFiles (ms_spec, root_ops, root_types, filename)
 
@@ -96,7 +95,7 @@ op SpecTransform.newEmitCFiles (ms_spec    : Spec,
                                 root_ops   : OpNames,
                                 root_types : TypeNames,
                                 filename   : String)
- : Spec =
+ : () =
  let slice = sliceForCGen (ms_spec, root_ops, root_types) in
  let _ = describeSlice ("EMITTING", slice) in
  let _ = 
@@ -107,7 +106,7 @@ op SpecTransform.newEmitCFiles (ms_spec    : Spec,
          %% warning might be under control of various flags
          writeLine ("ERROR: Unable to emit C files for " ^ filename)
  in             
- ms_spec
+ ()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C spec from a MetaSlang spec
@@ -122,7 +121,7 @@ op SpecTransform.genC (original_ms_spec    : Spec,
                        opt_ginit           : Option OpName,
                        filename            : String,
                        tracing?            : Bool)
- : Spec =
+ : () =
  let ms_spec       = SpecTransform.transformSpecTowardsC original_ms_spec in
  let stateful_spec = SpecTransform.makeExecutionStateful (ms_spec,
                                                           root_op_names,
@@ -137,6 +136,6 @@ op SpecTransform.genC (original_ms_spec    : Spec,
                                                           [],
                                                           filename) 
  in
- original_ms_spec
+ ()
 
 end-spec

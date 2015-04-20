@@ -694,7 +694,7 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
           addDef(spc, info, new_def)
         | _ -> spc
 
-op SpecTransform.doNothing(spc: Spec): Spec = spc
+%% op SpecTransform.doNothing(spc: Spec): Spec = spc
 
 op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List RuleSpec): Env Spec =
   let _ = writeLine("finalizeCoType") in

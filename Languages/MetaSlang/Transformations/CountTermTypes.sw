@@ -243,11 +243,11 @@ op tally_type (tally : Tally) (typ : MSType) : MSType * Tally =
 op tally_pattern (tally : Tally) (pat : MSPattern) : MSPattern * Tally =
  (pat, tally)
 
-op SpecTransform.initTermTypeCounter (spc : Spec) : Spec =
+op SpecTransform.initTermTypeCounter (spc : Spec) : () =
  let _ = priorTally := newTally "zero_tally" in
- spc
+ ()
 
-op SpecTransform.countTermTypes (spc : Spec, msg : String) : Spec =
+op SpecTransform.countTermTypes (spc : Spec, msg : String) : () =
  let tally = newTally msg in
  let tsp   = (tally_term, tally_type, tally_pattern) in
  let tally = foldOpInfos (fn (info, tally) ->
@@ -257,6 +257,6 @@ op SpecTransform.countTermTypes (spc : Spec, msg : String) : Spec =
                          spc.ops
  in
  let _ = printTally tally in
- spc
+ ()
 
 end-spec

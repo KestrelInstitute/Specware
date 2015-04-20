@@ -690,6 +690,9 @@ spec
    let _ = if trace? then toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") else () in
    simp_term
 
+ op MSTermTransform.simpStandard  (spc: Spec) (term: TransTerm): MSTerm =
+   simplify spc term
+
  op SpecTransform.simplifySpec (spc : Spec) : Spec =
    % let _ = toScreen("Before:\n" ^ printSpec spc ^ "\n\n") in
    let simp_spc = mapSpec (simplifyOne spc, fn typ -> typ, fn pat -> pat) spc in

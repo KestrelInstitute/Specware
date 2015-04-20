@@ -238,6 +238,36 @@ op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
     | ProofTactic -> ("tact__0", proofTacticType)
     | _ -> fail ("Can only return Specs, Morphisms, MSTerms or Proofs")
 
+op stripDefaults(mti: MTypeInfo): Option MTypeInfo =
+  case mti of
+    | Spec -> None
+    | Morphism -> None
+    | Term -> None
+    | TransTerm -> None
+    | PathTerm -> None
+    | Arrows (doms, _) ->
+      (case mapPartial stripDefaults doms of
+         | [] -> None
+         | [dom] -> Some dom
+         | new_doms -> Some(Arrows(butLast new_doms, last new_doms)))
+    | Str -> Some mti
+    | Num -> Some mti
+    | Bool -> Some mti
+    | TraceFlag -> None
+    | OpName -> Some mti
+    | TransOpName -> None
+    | Rule -> None
+    | RefinementProof -> None
+    | ProofTactic -> None
+    | Opt smti -> mapOption Opt (stripDefaults smti)
+    | List smti -> mapOption List (stripDefaults smti)
+    | Tuple mtis ->
+      (case mapPartial stripDefaults mtis of
+         | [] -> None
+         | [mti] -> Some mti
+         | mtis ->Some(Tuple mtis))
+    | Rec prs -> Some(Rec(mapPartial (fn (fld, v) -> mapOption (fn v -> (fld, v)) (stripDefaults v)) prs))
+    | Monad MTypeInfo -> None
 
 op apply(f as TFn tf: TypedFun, arg: AnnTypeValue): TypedFun =
   case arg of
@@ -349,34 +379,44 @@ op AnnTypeValue.show(atv: AnnTypeValue): String =
   let pp = ppNest 2 (ppAnnTypeValue atv) in
   ppFormat(pp)
 
-op MTypeInfo.show(ty_info: MTypeInfo): String =
+op ppMTypeInfo(ty_info: MTypeInfo): Doc =
   case ty_info of
-    | Spec -> "Spec"
-    | Morphism -> "Morphism"
-    | Term -> "Term"
-    | TransTerm -> "TransTerm"
-    | PathTerm -> "PathTerm"
-    | Arrows(doms, ran) -> "("^(foldr (fn (d, result) -> show d^" -> "^result) (show ran^")") doms)^")"
-    | Str  -> "Str"
-    | Num  -> "Num"
-    | Bool -> "Bool"
-    | TraceFlag -> "TraceFlag"
-    | OpName -> "OpName"
-    | TransOpName -> "TransOpName"
-    | Rule -> "Rule"
-    | RefinementProof -> "Proof"
-    | ProofTactic -> "Tactic"
-    | Opt i -> "Opt "^show i
-    | List l -> "List "^show l
-    | Tuple (l) -> "Tuple"^show l
-    | Rec ((fld,i)::l) -> "Rec("^fld^": "^show i
-                                     ^(foldr (fn ((fld, i), result) -> ", "^fld^": "^show i^result) ")" l)
-    | Monad m -> "Monad "^show m
+    | Spec -> ppString "Spec"
+    | Morphism -> ppString "Morphism"
+    | Term -> ppString "Term"
+    | TransTerm -> ppString "TransTerm"
+    | PathTerm -> ppString "PathTerm"
+    | Arrows(doms, ran) -> ppSep (ppString " -> ") (map ppMTypeInfo (doms ++ [ran]))
+    | Str  -> ppString "String"
+    | Num  -> ppString "Int"
+    | Bool -> ppString "Bool"
+    | TraceFlag -> ppString "TraceFlag"
+    | OpName -> ppString "OpName"
+    | TransOpName -> ppString "TransOpName"
+    | Rule -> ppString "Rule"
+    | RefinementProof -> ppString "Proof"
+    | ProofTactic -> ppString "Tactic"
+    | Opt i -> ppConcat[ppString "Option ", ppMTypeInfo i]
+    | List l -> ppConcat[ppString "List ", ppMTypeInfo l]
+    | Tuple [] ->  ppString "()"
+    | Tuple tps -> ppConcat[ppString "(", ppSep (ppString " * ") (map ppMTypeInfo tps), ppString ")"]
+    | Rec fld_mti_prs -> ppConcat[ppString "{", ppNestG 0
+                                                  (ppSep (ppConcat[ppString ", ", ppBreak])
+                                                     (map (fn (fld, mti_i) ->
+                                                             ppConcat[ppString fld, ppString ": ", ppMTypeInfo mti_i])
+                                                        fld_mti_prs)),
+                                  ppString "}"]
+    | Monad m -> ppConcat[ppString "Monad ", ppMTypeInfo m]
 
-op MTypeInfos.show(ty_infos: List MTypeInfo): String =
-  case ty_infos of
-    | [] -> "()"
-    | i::l -> "("^show i^foldr (fn (i, result) -> ", "^show i^result) ")" l
+
+op MTypeInfo.show(ty_info: MTypeInfo): String =
+  let pp = ppNest 2 (ppMTypeInfo ty_info) in
+  ppFormat(pp)
+
+op showPrefixedMTI(str: String, ty_info: MTypeInfo): String =
+  let pp = ppConcat[ppString str, ppMTypeInfo ty_info] in
+   ppFormat(pp)
+
 
 op transformResultType?(ti: MTypeInfo): Bool =
   case ti of
@@ -389,6 +429,7 @@ op transformResultType?(ti: MTypeInfo): Bool =
     | ProofTactic -> true
     | Monad Spec -> true
     | Monad Morphism -> true
+    | Tuple [] -> true                  % Means only for side-effect
     | Tuple tis -> exists? transformResultType? tis
     | Arrows(tis, ran) -> transformResultType? ran
     | _ -> false
@@ -429,6 +470,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
                in
                Some(Arrows(dom_info :: r_doms, ran_info))
              | _ -> None)
+        | Product([], _) -> Some(Tuple[])
         | Product(prs as ("1",_)::_, _) | tupleFields? prs->
           mapOption Tuple
             (foldr (fn ((_, fld_ty), o_flds) ->
@@ -542,6 +584,15 @@ op addTransformInfo(q: Id, nm: Id, ty_info: MTypeInfo, tr_fn: TypedFun): Transfo
 
 op lookupTransformInfo(q: Id, nm: Id): Option TransformInfo =
   findAQualifierMap(transformInfoMap, q, nm)
+
+op listTransformInfo(q0: Id): () =
+  appiAQualifierMap (fn (q, id, (tyinfo, _): TransformInfo) ->
+                     if q0 = "_" || q0 = q
+                       then case stripDefaults tyinfo of
+                              | None -> writeLine id
+                              | Some tyinfo -> writeLine(showPrefixedMTI(id^": ", tyinfo))
+                       else ())
+    transformInfoMap
 
 op lookupSpecTransformInfo(nm: Id): Option TransformInfo =
   lookupTransformInfo(specTransformQualifier, nm)
