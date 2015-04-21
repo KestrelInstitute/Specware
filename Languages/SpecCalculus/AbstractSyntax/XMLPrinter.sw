@@ -14,6 +14,7 @@ XMLPrinter qualifying spec
  op  Specware.evaluateUnitIdWithErrors : String -> Option Value * List(String * Position)
  op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
  op  SpecCalc.findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
+ op  SpecCalc.pathStringToCanonicalUID : String * Bool -> UnitId
  % op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
  type SpecElem = SpecElemTerm
 
@@ -33,15 +34,23 @@ XMLPrinter qualifying spec
   (* true if s starts with prefix *)
   op  startsWith(s: String, prefix: String) : Boolean =
     sublistAt?(explode prefix, 0, explode s)
-    
+  
+  (* <tag atts><metadata>...pos...</metadata> *)
+  op ElemOpen(tag: String, atts: List String, pos: Position): String =
+    let posS = SRef(pos) in
+    let posElem = if posS = "" then ""  else Elem("metadata", [], [SRefLink(posS)], noPos) in
+    let openTag = "<" ^ tag ^ (flatten atts) in
+    openTag ^ ">" ^ posElem 
+  (* </tag> *)
+  op ElemClose(tag:String): String  = "</" ^ tag ^ ">"
   (* <tag atts><metadata>...pos...</metadata>children</tag> *)
   op Elem(tag: String, atts: List String, children: List String, pos: Position): String =
     let posS = SRef(pos) in
     let posElem = if posS = "" then [] else [Elem("metadata", [], [SRefLink(posS)], noPos)] in
     let openTag = "<" ^ tag ^ (flatten atts) in
     let body = mkString (posElem ++ children) "\n" in
-    if body = "" then openTag ^ "/>" else openTag ^ ">" ^ body ^ "</" ^ tag ^ ">" 
- 
+    if body = "" then openTag ^ "/>" else openTag ^ ">" ^ body ^ ElemClose(tag) 
+    
   op xmlEncode(s: String): String =
    translate (fn c -> case c | #& -> "&amp;" | #" -> "&quot;" | #< -> "&lt;" | c -> show c) s
  
@@ -51,9 +60,15 @@ XMLPrinter qualifying spec
  
   op Document (file: String, spc: String) : String =
     Elem("omdoc", [Att("base", file)], [spc], noPos)
+  op DocumentOpen(file: String) : String =
+    ElemOpen("omdoc", [Att("base", file)], noPos)
+  op DocumentClose:String = ElemClose("omdoc")
  
   op Theory (ns: String, name: String, decls: List String, pos: Position) : String =
     Elem("theory", [Att("base", ns), Att("name", name), Att("meta","/Specware?Specware")], decls, pos)
+  op TheoryOpen(ns: String, name: String, pos: Position) : String =
+    ElemOpen("theory", [Att("base", ns), Att("name", name), Att("meta","/Specware?Specware")], pos)
+  op TheoryClose: String = ElemClose("theory")
     
   op ConstDec (name: String, role: String, tyvar: List String, tp: Option String, df: Option String, not: Option String, pos: Position) : String =
     let def wrapTyvars comp binder termOpt = case termOpt
@@ -174,6 +189,7 @@ XMLPrinter qualifying spec
                   physLogMap: List (String * String), (* (physical,logical) URI pairs *)
                   currentUID: UnitId,
                   uidsSeen: List UnitId, % Used to avoid infinite recursion because of circularity
+                  outStream: IO.Stream,
                   recursive?: Bool}
 
  (* replace the phyiscal prefix with the corresponding logical one *)
@@ -187,27 +203,23 @@ XMLPrinter qualifying spec
   (* main function, if recursive, also call on all imported Specs
      arguments: phyiscal root, logical root, absolute path to UID, flag for recursive printing *)
   op  printUIDtoFile: String * String * String * Bool -> String
-  def printUIDtoFile (phys, log, uid_str, recursive?) =
-     let (valOpt, errs) = evaluateUnitIdWithErrors uid_str in
-     %% let swpath = SpecCalc.getSpecPath0
-     let physLogMap = [(phys,log)] in
-     let fileName = uid_str in
-     let defaultErrorFile = fileName ^ ".sw.err" in
-     let (xmlFile, errorFile) = case valOpt of
-       | Some val ->
-         (case uidStringForValue val of
-           | None -> ("Error: Can't get UID string from value", defaultErrorFile) 
-           | Some (uid,file) ->
-             let xmlF = file ^ ".omdoc" in
-             let errF = file ^ ".sw.err" in
-             let _ = ensureDirectoriesExist xmlF in
-             let _ = writeStringToFile(printValueTop(val,physLogMap,uid,fileName,recursive?),xmlF) in
-             (xmlF, errF)
-         )
-       | None -> ("Error: Unknown UID " ^ uid_str, defaultErrorFile) 
+  def printUIDtoFile (phys, log, uid_str_ext, recursive?) =
+     let uid_str = case (reverse (explode uid_str_ext)) of
+      | #w :: #s :: #. :: rest -> implode (reverse rest)
+      | _ -> uid_str_ext
      in
-     let _ = writeStringToFile(ppErrors errs, errorFile) in
-     xmlFile
+     let (valOpt, errs) = evaluateUnitIdWithErrors uid_str in
+     let physLogMap = [(phys,log)] in
+     let uid = pathStringToCanonicalUID(uid_str, false) in
+     let outFile = uidToOutFileName uid in
+     let xmlFile = outFile ^ ".omdoc" in
+     let errFile = outFile ^ ".sw.err" in
+     let _ = ensureDirectoriesExist xmlFile in
+     let _ = writeStringToFile(ppErrors errs, errFile) in
+     case valOpt of
+       | Some val ->
+          (printValueTop(val,physLogMap,uid,[],uid_str,recursive?,xmlFile); "OK")
+       | None -> "no value for uid found"
 
   (* returns the UnitId and the string to use as its file name (without extension, possibly ending in #name) *)
   op  uidStringForValue: Value -> Option (UnitId * String)
@@ -228,15 +240,17 @@ XMLPrinter qualifying spec
        | Some uid ->
            Some (uid, uidToOutFileName uid, case uid.hashSuffix | Some loc_nm -> "#" ^ loc_nm | _ -> "")
  
-  (* output file is UnitId[#localName].omdoc *)
+  (* path/omdoc/name[#suffix] *)
   op  uidToOutFileName : UnitId -> String
-  def uidToOutFileName {path,hashSuffix=_} =
+  def uidToOutFileName uid =
     (* path: path of the file defining the unit (with device, without extension) *) 
     (* device?: true if path begins with Windows device name, i.e., ends in : *)
+    let suffix = case uid.hashSuffix | None -> "" | Some s -> "#" ^ s in
+    let path = uid.path in
     let (device_dir, name) = (butLast path, last path) in
     let (device, dir) = if deviceString? (head path) then
        (head device_dir, tail device_dir) else ("", device_dir)
-    in mkString ([device] ++ dir ++ ["omdoc", name]) "/"
+    in (mkString ([device] ++ dir ++ ["omdoc", name]) "/") ^ suffix
  
   op  deleteASWFilesForUID: String -> ()
   def deleteASWFilesForUID uidstr =
@@ -268,31 +282,35 @@ XMLPrinter qualifying spec
        else ()
 
   (* called for recursively printing a value, if 'recursive' is set *)
-  op  ensureValuePrinted: Context -> Value -> ()
+  op  ensureValuePrinted: Context -> Value -> String
   def ensureValuePrinted c val =
      case uidStringForValue val of
-       | None -> ()
+       | None -> "skipped"
        | Some (uid,fil_nm) ->
          let omdoc_fil_nm = fil_nm ^ ".omdoc" in
-         let c = c << {currentUID = uid, fileName = fil_nm} in
-                writeStringToFile(printValue c val,omdoc_fil_nm)
+         printValueTop(val, c.physLogMap, uid, c.uidsSeen, fil_nm, c.recursive?, omdoc_fil_nm)
  
   (* called for printing the top value that was provided by the main call *)
-  op  printValueTop : Value * List (String * String) * UnitId * String * Bool -> String
-  def printValueTop (value, pLMap,uid,fN,recursive?) =
+  op  printValueTop : Value * List (String * String) * UnitId * List UnitId * String * Bool * String -> String
+  def printValueTop (value, pLMap,uid,seen, fN,recursive?, outFile) =
+   let def writer stream =
      printValue {printTypes? = true,
                  physLogMap = pLMap,
                  currentUID = uid,
                  fileName = fN,
-                 uidsSeen = [uid],
+                 outStream = stream,
+                 uidsSeen = uid :: seen,
                  recursive? = recursive?}
        value
+   in IO.withOpenFileForWrite(outFile, writer)
  
   (* prepare the context and print a value (toplevel or recursive) *)
   op  printValue : Context -> Value -> String
   def printValue c value =
-     let main_pp_val = ppValue c value None in
-     Document(physicalToLogicalPath c ("file:" ^ c.fileName), main_pp_val)
+     let _ = streamWriter(c.outStream, DocumentOpen(physicalToLogicalPath c ("file:" ^ c.fileName))) in
+     let _ = streamWriter(c.outStream, ppValue c value None) in
+     let _ = streamWriter(c.outStream, DocumentClose)
+     in "streamed document\n"
 
  %% printing modules
  
@@ -323,7 +341,12 @@ XMLPrinter qualifying spec
                   case findTermForUnitInCache(Spec spc) of
                     | None -> "elements"
                     | Some def_tm -> ppSpecOrigin c def_tm
-     in Theory(ns, name, ppSpecElements c norm_spc norm_spc.elements, noPos) (* Spec Uids are derived theories are unnamed for now *)
+     in
+     (streamWriter(c.outStream, TheoryOpen(ns, name, noPos));
+      ppSpecElements c norm_spc norm_spc.elements;
+      streamWriter(c.outStream, TheoryClose);
+      "streamed theory\n"
+     )
  
   op  SpecCalc.findTermForUnitInCache: Value -> Option SCTerm
   def findTermForUnitInCache val =
@@ -394,8 +417,8 @@ XMLPrinter qualifying spec
      case findUnitIdforUnitInCache val of
        | Some uid ->
          let _ = if c.recursive? && uid nin? c.uidsSeen
-                   then ensureValuePrinted (c << {uidsSeen = Cons(uid,c.uidsSeen)}) val
-                 else ()
+           then ensureValuePrinted c val 
+           else ""
          in
            (ppUID c uid)
        | None -> "unknown value omitted" (* not sure if this can happen for well-formed input *)
@@ -421,7 +444,7 @@ XMLPrinter qualifying spec
  %% printing symbols
   op  ppSpecElement: Context -> Spec -> SpecElement -> Bool -> String
   def ppSpecElement c spc elem op_with_def? =
-     case elem of
+     let elemS = case elem of
        | Import (im_sc_tm,im_sp,im_elements,pos) ->
          InclDec(ppUIDorFull c (Spec im_sp) (Some im_sc_tm), pos)
        | Op (qid,d?,pos) ->
@@ -457,6 +480,8 @@ XMLPrinter qualifying spec
          MProof(mkString [beg_str, mid_str, end_str] " ", pos)
        | Comment (str,pos) ->
          MComment(str, pos)
+     in
+       (streamWriter(c.outStream, elemS); "streamed element\n")
  
   op  ppOpInfo :  Context -> Bool -> Bool -> Aliases * Fixity * MSTerm -> Position -> String
   def ppOpInfo c decl? def? (aliases, fixity, dfn) pos =
