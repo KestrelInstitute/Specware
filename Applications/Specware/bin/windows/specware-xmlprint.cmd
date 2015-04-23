@@ -10,4 +10,4 @@ cd %CURRDIR%
 
 set SWPATH=%1
 
-"%LISP_EXECUTABLE%" --eval "(progn(XMLPrinter::printUIDtoFile-3 \"%1\" \"%2\" \"%3\" %4) (exit))"
+"%LISP_EXECUTABLE%" --eval "(progn(XMLPrinter::printUIDtoFile-4 \"%1\" \"%2\" \"%3\" %4) (exit))"

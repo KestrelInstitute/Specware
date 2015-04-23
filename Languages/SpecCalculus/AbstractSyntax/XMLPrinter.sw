@@ -1,4 +1,19 @@
-%%% Top level function XMLPrinter.printUIDtoFile 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This spec defines inductive functions to print out the abstract syntax in XML format.
+% The specific XML format used is the MMT dialect of the OMDoc language.                    
+%
+% The generated files can be read in by MMT for further processing.
+% See
+% - git@gl.mathhub.info:Specware/Library.git
+%   for an MMT repository of the (public parts of the) Specware library
+% - https://svn.kwarc.info/repos/MMT
+%   for documentation, source, and binaries of MMT
+% 
+% The top level function of the induction is printUIDtoFile.
+% It can be called from the command line using the script specware-xmlprint
+% (currently only Windows but easily adaptible to Unix).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 XMLPrinter qualifying spec 
 
@@ -111,11 +126,11 @@ XMLPrinter qualifying spec
     Elem("OMBIND", [], [binder, MContext(vars)] ++ body, pos)
   
   op MRecord(fields: List (String * String), types: Bool, pos: Position): String =
-    let tag = if types then "type" else "definition" in
-    Elem("Subst", [],
-         map (fn (key, value) -> Elem("OMV", [Att("name", key)], [Elem(tag,[], [value], noPos)], noPos)) fields, pos)
+    let (sym,tag) = if types then ("Record","type") else ("record","definition") in
+    let fieldsS = map (fn (key, value) -> Elem("OML", [Att("name", key)], [Elem(tag,[], [value], noPos)], noPos)) fields in
+    SApp(SW(sym), fieldsS, pos)
   op MProjection(field: String, pos: Position): String =
-    MUConst(field, pos)
+    Elem("OML", [Att("name", field)], [], pos)
  
   (* <OMBVAR>...</OMBVAR> *)
   op MContext(vds: List String): String =
@@ -147,7 +162,7 @@ XMLPrinter qualifying spec
     MApp(SW(name), args, pos)
   (* application of a Specware binder *)
   op SBindN (bindername: String, vars: List String, body: List String, pos: Position): String =
-    Elem("OMBIND", [], [SW(bindername), MContext(vars)] ++ body, pos)
+    MBind(SW(bindername), vars, body, pos)
   op SBind(bindername: String, vars: List String, body: String, pos: Position): String =
     SBindN(bindername, vars, [body], pos)
   (* user-defined constant; currently the module is not known *)
@@ -170,7 +185,7 @@ XMLPrinter qualifying spec
     | File (file, beg, ed) ->
       let slashOpt = if startsWith(file, "/") then "" else "/" in
       "file:" ^ slashOpt ^ file ^ "#" ^ Pos(beg) ^ ":" ^ Pos(ed)
-    | _ -> "" (* other positions are not useful, this case includes noPos *)
+    | _ -> "#-1.0.0:-1.0.0" (* other positions are not useful, this case includes noPos *)
  
   (* byte.line.end, all starting at 0 *)
   op Pos(line: Nat, col: Nat, byte: Nat): String =
@@ -411,7 +426,7 @@ XMLPrinter qualifying spec
        | ["Library","Base"] -> true
        | _ -> false
  
-  (* tries to turn a value into a unit: if so, export it recursively and print the UID; otherwise, print the value *) 
+  (* returns the URI of a value if it is a named value. Also makes sure that spec is printed if recursive. *) 
   op  ppUIDorFull: Context -> Value -> Option SCTerm -> String
   def ppUIDorFull c val opt_val_tm =
      case findUnitIdforUnitInCache val of
@@ -421,7 +436,7 @@ XMLPrinter qualifying spec
            else ""
          in
            (ppUID c uid)
-       | None -> "unknown value omitted" (* not sure if this can happen for well-formed input *)
+       | None -> "?UnknownValueOmitted" (* happes, e.g., for "Q qualifying S" *)
  
   op  SpecCalc.findUnitIdforUnitInCache: Value -> Option UnitId
   def findUnitIdforUnitInCache val =
@@ -595,9 +610,9 @@ XMLPrinter qualifying spec
        | IfThenElse (pred,term1,term2,_) -> SApp("if", [ppTerm c pred, ppTerm c term1, ppTerm c term2], pos)
        | Seq (terms,_) -> SApp("seq", map (ppTerm c) terms, pos)
        | Pi(tvs,term1,_) -> if tvs = [] then ppTerm c term1
-           else MBind(LF("Pi"), map (fn tv -> MVarDec(tv, Some (SW("tp")), noPos)) tvs, [ppTerm c term1], pos)
+           else MBind(LF("lambda"), map (fn tv -> MVarDec(tv, Some (SW("tp")), noPos)) tvs, [ppTerm c term1], pos)
        | And(terms,_) -> SApp("colimit_and", map (ppTerm c) terms, pos)
-       | Any(_) -> SWP("any", pos)
+       | Any(_) -> SWP("any", pos) %% internal placeholder, should not come up ideally 
        | TypedTerm (tm,srt,_) ->
            SApp("sorted", [ppTerm c tm, ppType c srt], pos)
        | Transform(tr, _) -> fail ("no case for Transform")
@@ -683,7 +698,12 @@ XMLPrinter qualifying spec
   op  ppMatch : Context -> MSMatch -> List String
   def ppMatch c cases =
      let def ppCase (pattern,guard,term) =
-         SBindN("case", map (ppVar c) (patternVars pattern), [ppPattern c pattern, ppTerm c guard, ppTerm c term], noPos)
+         let vars = (patternVars pattern) in
+         let args = [ppPattern c pattern, ppTerm c guard, ppTerm c term] in
+         if vars = Nil then
+           SApp("case", args, noPos)
+         else
+           SBindN("case", map (ppVar c) vars, args, noPos)
      in
        map ppCase cases
  
@@ -759,7 +779,7 @@ XMLPrinter qualifying spec
        | Boolean _ -> SWP("bool", pos)
        | TyVar (tyVar,_) -> MVar(ppID tyVar, pos)
        | Pi(tvs,ty,_) -> if tvs = [] then ppType c ty
-           else MBind(LF("lambda"), map (fn tv -> MVarDec(tv, Some (SW("tp")), noPos)) tvs, [ppType c ty], pos)
+           else MBind(LF("Pi"), map (fn tv -> MVarDec(tv, Some (SW("tp")), noPos)) tvs, [ppType c ty], pos)
        | And(types,_) -> SApp("colimit_and", map (ppType c) types, pos)
        | Any(_) -> SWP("any", pos)
        | MetaTyVar (mtyVar, _) -> fail("no case for metatyvar")
