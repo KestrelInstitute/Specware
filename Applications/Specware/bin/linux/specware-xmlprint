@@ -1,0 +1,16 @@
+source ~/.bashrc
+
+# To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
+SBCL_SIZE="${SBCL_SIZE:=4000}"
+
+LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+export SWPATH="$1":/
+echo SWPATH="$SWPATH"
+
+if [ -f $LISP_EXECUTABLE ]; then
+#  (/bin/echo '(SWShell::specware-shell nil)'; cat) | sbcl --core $LISP_EXECUTABLE
+  "$LISP_EXECUTABLE" --dynamic-space-size $SBCL_SIZE --eval "(let ((exit-code 1)) (ignore-errors (progn (XMLPrinter::printUIDtoFile-4 \"$1\" \"$2\" \"$3\" $4) (setq exit-code 0))) (exit :code exit-code))"
+else
+  echo "ERROR: Could not find Specware core file (expected to be $LISP_EXECUTABLE)."
+  exit 1
+fi
