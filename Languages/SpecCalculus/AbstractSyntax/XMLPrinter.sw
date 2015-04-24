@@ -53,7 +53,7 @@ XMLPrinter qualifying spec
   (* <tag atts><metadata>...pos...</metadata> *)
   op ElemOpen(tag: String, atts: List String, pos: Position): String =
     let posS = SRef(pos) in
-    let posElem = if posS = "" then ""  else Elem("metadata", [], [SRefLink(posS)], noPos) in
+    let posElem = if pos = noPos then "" else Elem("metadata", [], [SRefLink(posS)], noPos) in
     let openTag = "<" ^ tag ^ (flatten atts) in
     openTag ^ ">" ^ posElem 
   (* </tag> *)
@@ -61,7 +61,7 @@ XMLPrinter qualifying spec
   (* <tag atts><metadata>...pos...</metadata>children</tag> *)
   op Elem(tag: String, atts: List String, children: List String, pos: Position): String =
     let posS = SRef(pos) in
-    let posElem = if posS = "" then [] else [Elem("metadata", [], [SRefLink(posS)], noPos)] in
+    let posElem = if pos = noPos then [] else [Elem("metadata", [], [SRefLink(posS)], noPos)] in
     let openTag = "<" ^ tag ^ (flatten atts) in
     let body = mkString (posElem ++ children) "\n" in
     if body = "" then openTag ^ "/>" else openTag ^ ">" ^ body ^ ElemClose(tag) 
@@ -185,7 +185,7 @@ XMLPrinter qualifying spec
     | File (file, beg, ed) ->
       let slashOpt = if startsWith(file, "/") then "" else "/" in
       "file:" ^ slashOpt ^ file ^ "#" ^ Pos(beg) ^ ":" ^ Pos(ed)
-    | _ -> "#-1.0.0:-1.0.0" (* other positions are not useful, this case includes noPos *)
+    | _ -> if pos = noPos then "" else "#-1.0.0:-1.0.0" (* other positions are not useful, this case includes noPos *)
  
   (* byte.line.end, all starting at 0 *)
   op Pos(line: Nat, col: Nat, byte: Nat): String =
