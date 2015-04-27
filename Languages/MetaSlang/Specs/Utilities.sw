@@ -1128,6 +1128,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        -> getConjuncts p ++ getConjuncts q
      | _ -> [t]
 
+ op [a] disjunction?(t: ATerm a): Bool =
+   case t of
+     | Apply(Fun(Or,_,_), _,_) -> true
+     | _ -> false
+
  op [a] getDisjuncts(t: ATerm a): List (ATerm a) =
    case t of
      | Apply(Fun(Or,_,_), Record([("1",p),("2",q)],_),_)
@@ -3342,7 +3347,7 @@ op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
  def evaluableQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Bool"]
 
 %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
-op MSInterpreter.interpreterBaseSpec: Spec
+op MSInterpreter.interpreterBaseSpec: Spec = emptySpec
 
 op findTheOpInterp(spc: Spec, qid: QualifiedId): Option OpInfo =
   case findTheOp (interpreterBaseSpec, qid) of

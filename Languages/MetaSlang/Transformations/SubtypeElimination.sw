@@ -248,7 +248,7 @@ SpecNorm qualifying spec
               % let _ = writeLine("Trying "^printQualifiedId qid) in
               (case AnnSpec.findTheOp(spc, qid) of
                | Some opinfo ->
-                 let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+                 let (tvs, ty, dfn) = unpackNthTerm(opinfo.dfn, 0) in
                  % let dfn = refinedTerm(dfn, 0) in
                  (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc, coercions) of
                   | ([],_) ->

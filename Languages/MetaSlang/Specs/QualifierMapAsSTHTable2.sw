@@ -44,11 +44,11 @@ spec
 		       if new_im = MapL.emptyMap then None
 			 else Some new_im)
      m
- def appAQualifierMap f m =
+ def [a] appAQualifierMap (f: a -> ()) (m: AQualifierMap a): () =
    STHMap.app (fn im -> MapL.app f im) m
- def appiAQualifierMap  f m =
+ def [a] appiAQualifierMap (f: Qualifier * Id * a -> ()) (m: AQualifierMap a): () =
    STHMap.appi (fn (id,im) -> MapL.appi (fn (q,v) -> f(q,id,v)) im) m
- def qualifiers m =
+ def [a] qualifiers (m: AQualifierMap a): List Qualifier =
    STHMap.foldi (fn(_,im,quals) ->
 		 MapL.foldi (fn (qname,_,quals) ->
 			    if qname in? quals

@@ -2310,7 +2310,9 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
  op ppConstructorTyped(c: Context, c_nm: QualifiedId, ty: MSType, spc: Spec): Pretty =
    case unfoldToBaseNamedType(spc, ty) of
      | Base(qid, _, _) -> ppConstructor(c, c_nm, qid)
-     | _ -> fail("Couldn't find coproduct type of constructor "^show c_nm)
+     | _ ->
+       % let _ = writeLine("ty: "^printType ty) in
+       fail("Couldn't find coproduct type of constructor "^show c_nm)
 
  op  ppIdInfo : List QualifiedId -> Pretty
  def ppIdInfo qids =
@@ -3943,6 +3945,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | Some (uf_ty as Base _) -> unfoldToBaseNamedType(spc, uf_ty)
         | Some (Subtype(sup_ty as Base _, _, _)) -> unfoldToBaseNamedType(spc, sup_ty)
         | _ -> ty)
+     | Subtype(sup_ty, _, _) -> unfoldToBaseNamedType(spc, sup_ty)
      | _ -> ty
 
  def projectorFun (c:Context, p:String, s:MSType, spc:Spec) : String =
