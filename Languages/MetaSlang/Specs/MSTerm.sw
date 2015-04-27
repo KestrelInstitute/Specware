@@ -469,4 +469,24 @@ op termList (term : MSTerm) : MSTerms =
    | _ -> 
      [term]
 
-endspec
+op filePositionOfTerm (tm: MSTerm): Option Position =
+  foldSubTerms (fn (t,val) ->
+		  case val of
+		    | Some _ -> val
+		    | None ->
+                      case termAnn t of
+                        | pos as File _ -> Some pos
+                        | _ -> None)
+    None tm
+
+op fileNameOfTerm (tm: MSTerm): Option String =
+  mapOption (fn File(nm,_,_) -> nm) (filePositionOfTerm tm)
+
+op filePositionOfType (ty: MSType): Option Position =
+  foldTypesInType (fn (val,t) ->
+                     case typeAnn t of
+                       | pos as File _ -> Some pos
+                       | _ -> val)
+    None ty
+    
+end-spec

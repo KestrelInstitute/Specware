@@ -437,7 +437,10 @@ emacs interface functions.
 	  %% This is the top-level version so seenUIDs should be [] and returned seenUIDs will be ignored
 	  %% seenUIDs for one op shouldn't affect seenUIDs for another
           foldr (fn (info,(val,_)) ->
-		 let (nval,seenUIDs) = findLocalUID (primaryOpName info,seenUIDs) in
+		 let (nval,seenUIDs) = 
+                     case filePositionOfTerm info.dfn of
+                       | Some(File (file_name, (left, _, _), _)) -> ([(show left, file_name)], seenUIDs)
+                       | _ -> findLocalUID (primaryOpName info,seenUIDs) in
 		 (nval ++ val,seenUIDs))
 	        ([],seenUIDs)
 		infos
@@ -608,7 +611,11 @@ emacs interface functions.
 	  %% This is the top-level version so seenUIDs should be [] and returned seenUIDs will be ignored
 	  %% seenUIDs for one op shouldn't affect seenUIDs for another
           foldr (fn (info, (val,_)) ->
-		 let (nval,seenUIDs) = findLocalUID (primaryTypeName info,seenUIDs) in
+		 let (nval,seenUIDs) =
+                     case filePositionOfType info.dfn of
+                       | Some(File (file_name, (left, _, _), _)) -> ([(show left, file_name)], seenUIDs)
+                       | _ -> findLocalUID (primaryTypeName info, seenUIDs)
+                 in
 		 (nval ++ val,seenUIDs))
 	        ([],seenUIDs)
 		infos
