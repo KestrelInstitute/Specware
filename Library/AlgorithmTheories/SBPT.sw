@@ -30,6 +30,7 @@ iteration of the current partial solution, so a SSP spec seems appropriate.
 
 SSP = spec
  type State
+ axiom StateInhabited is ex(st: State) true
  op pre  : State -> Bool
  op post : State -> State -> Bool
  op p (st:State | pre st): {st':State | post st st'}
@@ -37,6 +38,7 @@ end-spec
 
 Mealy = spec
  type State
+ axiom StateInhabited is ex(st: State) true
  type In
  op pre  : State -> Bool
  op post : State -> In -> State -> Bool
@@ -45,6 +47,7 @@ end-spec
 
 Moore = spec
  type State
+ axiom StateInhabited is ex(st: State) true
  type In
  type Out
  op pre  : State -> Bool

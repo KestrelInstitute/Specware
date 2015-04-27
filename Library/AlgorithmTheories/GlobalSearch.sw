@@ -5,6 +5,7 @@
 GlobalSearchTheory = spec
   import ProblemTheory#DROfPartial
   type State
+  axiom StateInhabited is ex(st: State) true
   op InitialState : D -> State
 
   (*  Satisfies(z,s) means that z is "in" the space denoted by s *)

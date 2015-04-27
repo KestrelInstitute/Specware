@@ -24,6 +24,7 @@ GS_CDBL_Theory = spec
 %%         ../Library/StructuredTypes   % using CW library
 
   type State      % problem-solving state
+  axiom StateInhabited is ex(st: State) true
   type InferenceStack
   type RefinementReason   % sum type 
 
