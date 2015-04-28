@@ -416,16 +416,14 @@ spec
 	   | Bool b -> Some b
 	   | _ -> None)
       | RecordVal [("1",a1),("2",a2)] ->
-        (if evalConstant? a1 && evalConstant? a2
-	  then (case (a1,a2) of
-		  | (Unevaluated t1,Unevaluated t2) ->
-		    if equivTerm? spc (t1, t2)
-		      then Some true
-		      else None
-		  | (Unevaluated _, _) -> None
-		  | (_, Unevaluated _) -> None
-		  | _ -> Some(equalValue?(a1, a2)))
-	  else None)
+        (case (a1,a2) of
+           | (Unevaluated t1,Unevaluated t2) ->
+             if equivTerm? spc (t1, t2)
+               then Some true
+             else None
+           | (Unevaluated _, _) -> None
+           | (_, Unevaluated _) -> None
+           | _ -> Some(equalValue?(a1, a2)))
       | _ -> None
         
   def mergeFields(row1,row2) =
