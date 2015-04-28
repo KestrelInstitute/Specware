@@ -188,7 +188,7 @@ op mtiToMSType(mti: MTypeInfo): MSType =
     | TraceFlag -> traceFlagType
     | OpName -> transOpNameType
     | TransOpName -> qualifiedIdType
-    | Rule -> ruleSpecType   % ?
+    | Rule -> ruleSpecType
     | RefinementProof -> refinementProofType
     | ProofTactic -> proofTacticType
     | Opt o_mti -> mkBase(Qualified("Option", "Option"), [mtiToMSType o_mti])
@@ -256,18 +256,24 @@ op stripDefaults(mti: MTypeInfo): Option MTypeInfo =
     | TraceFlag -> None
     | OpName -> Some mti
     | TransOpName -> None
-    | Rule -> None
+    | Rule -> Some mti
     | RefinementProof -> None
     | ProofTactic -> None
     | Opt smti -> mapOption Opt (stripDefaults smti)
     | List smti -> mapOption List (stripDefaults smti)
     | Tuple mtis ->
       (case mapPartial stripDefaults mtis of
-         | [] -> None
+         | []    -> None
          | [mti] -> Some mti
-         | mtis ->Some(Tuple mtis))
+         | mtis  -> Some(Tuple mtis))
     | Rec prs -> Some(Rec(mapPartial (fn (fld, v) -> mapOption (fn v -> (fld, v)) (stripDefaults v)) prs))
     | Monad MTypeInfo -> None
+
+op voidValuedMTI?(mti: MTypeInfo): Bool =
+  case mti of
+    | Tuple [] -> true
+    | Arrows(_, rng) -> voidValuedMTI? rng
+    | _ -> false
 
 op apply(f as TFn tf: TypedFun, arg: AnnTypeValue): TypedFun =
   case arg of
@@ -294,7 +300,7 @@ op applyN(tf: TypedFun, args: List AnnTypeValue): TypedFun =
 op Script.ppRuleSpec(rl: RuleSpec): WLPretty
 op Proof.printProof : Proof.Proof -> String
 
-op ppAnnTypeValue(atv: AnnTypeValue): Doc =
+op ppAnnTypeValue (atv: AnnTypeValue): Doc =
   case atv of
     | SpecV _ -> ppString "spec"
     | MorphismV _ -> ppString "morphism"
@@ -379,14 +385,15 @@ op AnnTypeValue.show(atv: AnnTypeValue): String =
   let pp = ppNest 2 (ppAnnTypeValue atv) in
   ppFormat(pp)
 
-op ppMTypeInfo(ty_info: MTypeInfo): Doc =
+op ppMTypeInfo (parens?: Bool) (ty_info: MTypeInfo): Doc =
+  let def addParens? parens? doc = if parens? then ppConcat[ppString "(", doc, ppString ")"] else doc in
   case ty_info of
     | Spec -> ppString "Spec"
     | Morphism -> ppString "Morphism"
     | Term -> ppString "Term"
     | TransTerm -> ppString "TransTerm"
     | PathTerm -> ppString "PathTerm"
-    | Arrows(doms, ran) -> ppSep (ppString " -> ") (map ppMTypeInfo (doms ++ [ran]))
+    | Arrows(doms, ran) -> ppSep (ppString " ") (map (ppMTypeInfo true) (doms ++ [ran]))
     | Str  -> ppString "String"
     | Num  -> ppString "Int"
     | Bool -> ppString "Bool"
@@ -396,25 +403,26 @@ op ppMTypeInfo(ty_info: MTypeInfo): Doc =
     | Rule -> ppString "Rule"
     | RefinementProof -> ppString "Proof"
     | ProofTactic -> ppString "Tactic"
-    | Opt i -> ppConcat[ppString "Option ", ppMTypeInfo i]
-    | List l -> ppConcat[ppString "List ", ppMTypeInfo l]
+    | Opt i  -> ppConcat[ppString "?",  ppMTypeInfo false i]
+    | List l -> ppConcat[ppString "[",  ppMTypeInfo false l, ppString "*]"]
     | Tuple [] ->  ppString "()"
-    | Tuple tps -> ppConcat[ppString "(", ppSep (ppString " * ") (map ppMTypeInfo tps), ppString ")"]
+    | Tuple [ty_info_0] -> ppMTypeInfo parens? ty_info_0
+    | Tuple tps -> addParens? true (ppSep (ppString ", ") (map (fn ty_info_i -> ppMTypeInfo (embed? Tuple ty_info_i) ty_info_i) tps))
     | Rec fld_mti_prs -> ppConcat[ppString "{", ppNestG 0
                                                   (ppSep (ppConcat[ppString ", ", ppBreak])
                                                      (map (fn (fld, mti_i) ->
-                                                             ppConcat[ppString fld, ppString ": ", ppMTypeInfo mti_i])
+                                                             ppConcat[ppString fld, ppString " = ", ppMTypeInfo false mti_i])
                                                         fld_mti_prs)),
                                   ppString "}"]
-    | Monad m -> ppConcat[ppString "Monad ", ppMTypeInfo m]
+    | Monad m -> addParens? parens? (ppConcat[ppString "Monad ", ppMTypeInfo true m])
 
 
 op MTypeInfo.show(ty_info: MTypeInfo): String =
-  let pp = ppNest 2 (ppMTypeInfo ty_info) in
+  let pp = ppNest 2 (ppMTypeInfo false ty_info) in
   ppFormat(pp)
 
 op showPrefixedMTI(str: String, ty_info: MTypeInfo): String =
-  let pp = ppConcat[ppString str, ppMTypeInfo ty_info] in
+  let pp = ppConcat[ppString str, ppMTypeInfo true ty_info] in
    ppFormat(pp)
 
 
@@ -585,9 +593,9 @@ op addTransformInfo(q: Id, nm: Id, ty_info: MTypeInfo, tr_fn: TypedFun): Transfo
 op lookupTransformInfo(q: Id, nm: Id): Option TransformInfo =
   findAQualifierMap(transformInfoMap, q, nm)
 
-op listTransformInfo(q0: Id): () =
+op listTransformInfo(q0: Id, info?: Bool): () =
   appiAQualifierMap (fn (q, id, (tyinfo, _): TransformInfo) ->
-                     if q0 = "_" || q0 = q
+                     if (q0 = "_" || q0 = q) && voidValuedMTI? tyinfo = info?
                        then case stripDefaults tyinfo of
                               | None -> writeLine id
                               | Some tyinfo -> writeLine(showPrefixedMTI(id^": ", tyinfo))

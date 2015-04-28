@@ -307,8 +307,8 @@ op evaluateCheckSpec (optional_argstring : Option String, lastUnitIdLoaded : Opt
 %% spec, to support easy grepping, in case checkSpec is called many
 %% times in a derivation.
 
-op SpecTransform.checkSpec (spc : Spec, opt_str : Option String) : () =
-  let str = case opt_str of | Some str -> str | None -> "" in
+op SpecTransform.checkSpec (spc : Spec, str : String) : () =
+  % let str = case opt_str of | Some str -> str | None -> "" in
   let _ = checkSpecCore(spc, str) in ()
 
 end-spec

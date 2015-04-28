@@ -497,14 +497,16 @@
                (help (let ((cl-user::*sw-help-strings*
                             *transform-help-strings*))
                        (cond
-                         ((equal argstr "rules") (MetaTransform::listTransformInfo MetaTransform::msRuleQualifier))
-                         ((equal argstr "term-transforms") (MetaTransform::listTransformInfo MetaTransform::msTermTransformQualifier))
-                         ((equal argstr "spec-transforms") (MetaTransform::listTransformInfo MetaTransform::specTransformQualifier))
+                         ((equal argstr "rules")           (MetaTransform::listTransformInfo-2 MetaTransform::msRuleQualifier nil))
+                         ((equal argstr "term-transforms") (MetaTransform::listTransformInfo-2 MetaTransform::msTermTransformQualifier nil))
+                         ((equal argstr "spec-transforms") (MetaTransform::listTransformInfo-2 MetaTransform::specTransformQualifier nil))
+                         ((equal argstr "spec-info")       (MetaTransform::listTransformInfo-2 MetaTransform::specTransformQualifier t))
                          (t (cl-user::sw-help argstr)
-                            (format t "~%help rules : list available transform rules~%~
-                                       help term-transforms : list available term transformation commands~%~
-                                       help spec-transforms : list available spec transformation commands~%")))
-                       
+                            (when (null argstr)
+                              (format t "~%help rules           : list available transform rules~%~
+                                           help term-transforms : list available term transformation commands~%~
+                                           help spec-transforms : list available spec transformation commands~%~
+                                           help spec-info       : list available spec information commands~%"))))
                        (values)))
                (at                 (at-command (parse-qid argstr 'op)))
                ((at-t at-theorem)  (at-theorem-command (parse-qid argstr 'theorem)))
