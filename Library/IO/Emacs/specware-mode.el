@@ -1744,7 +1744,9 @@ STRING should be given if the last search was by `string-match' on STRING."
         (switch-to-buffer buf))
       (goto-char (point-min))
       (if (numberp line-num)
-          (forward-line (1- line-num))
+          (progn (forward-line (1- line-num))
+                 (end-of-line)
+                 (sw:beginning-of-element))
         (let ((qsym (regexp-quote sym)))
           (or (if sort?
                   (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
@@ -1776,7 +1778,10 @@ STRING should be given if the last search was by `string-match' on STRING."
                          (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)))))
               (error "Can't find definition of %s in %s" qsym file))))
       (beginning-of-line)
-      (recenter 4)
+      (unless (and (pos-visible-in-window-p)
+                   (save-excursion (sw:end-of-element)
+                                   (pos-visible-in-window-p)))
+        (recenter 4))
       (report-next-match-task-status))))
 
 (defun report-next-match-task-status ()
