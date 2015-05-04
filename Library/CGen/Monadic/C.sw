@@ -1459,12 +1459,6 @@ type FunctionTable = FiniteMap (Identifier, TopFunction)
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
 top-level function definitions.
 
-FIXME HERE: TranslationEnv should contain information about what identifiers are
-in scope (possibly with their types), because referencing an identifier outside
-of its allowed lexical scope, even if it is dynamically in scope, is an error
-(e.g., this might happen if a global in a different file is not introduced in
-scope in the current file with the "extern" keyword.)
-
 FIXME: in the future, this could also contain information about staitc
 identifiers with internal linkage, i.e., global variables, as well as static
 variables inside functions, that are not visible outside the current file and/or
@@ -2325,8 +2319,15 @@ op evaluatorForBinaryOp (bop:BinaryOp) :
 
 (* We now formalize all of expression evaluation, as follows.
 
-A variable [ISO 6.5.1/2] evaluates to the object designator that the variable
-references.
+A identifier (i.e., a variable) [ISO 6.5.1/2] evaluates to the object designator
+that the variable references. Note that, in the official C semantics, an
+undeclared identifier is an error, and is in fact a violation of syntax; in our
+formalization, however, not only is an undeclared identifier valid
+syntactically, it can also have a non-erroneous value, specifically in the case
+of a global variable from another translation unit that was not declared in the
+current translation unit using "extern". However, an undeclared identifier that
+does not lead to an error in our formalization will not typecheck in our
+formalization, and so in that sense it is "a violation of the syntax".
 
 An integer constant [ISO 6.5.1/3] evaluates to the integer value formalized by
 op 'evaluateIntegerConstant'. A unary or binary expression is evaluated using
