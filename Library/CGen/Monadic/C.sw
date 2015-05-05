@@ -329,6 +329,8 @@ formalization). An array type includes the number of elements [ISO
 
 (* emw4: added function pointer types *)
 
+type FunType = Type * List Type
+
 type Type =
   | T_char                        %          char
   | T_uchar                       % unsigned char
@@ -345,7 +347,7 @@ type Type =
   | T_pointer Type                % pointer (to type)
   | T_array   Type * Nat          % array (of type of size)
   | T_void                        % void
-  | T_function Type * (List Type) % function (with return type and argument types)
+  | T_function FunType            % function (with return type and argument types)
 
 (* The following are the standard signed integer types [ISO 6.2.5/4] *)
 
@@ -1183,7 +1185,6 @@ op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
         new_xs <- mapM f xs';
         return (new_x :: new_xs)}
 
-
 %subsubsection (* Non-Local Exits *)
 
 (* These are all the non-local exits (FIXME: document them!) *)
@@ -1453,8 +1454,9 @@ lifting through the ReaderT transformer does one direction of the isomorphism
 and applying a Monad computation m to any TranslationEnv (an operation also know
 as "runReaderT" in Haskell) is the other direction of the isomorphism. *)
 
-type TopFunction = (List Value -> {m:Monad (Option Value) | fa (f) localR f m = m }) * Type * List Type
-type FunctionTable = FiniteMap (Identifier, TopFunction)
+type CFunction = List Value -> Monad (Option Value)
+type TopFunction = { m:CFunction | fa (l,f) localR f (m l) = m l }
+type FunctionTable = FiniteMap (Identifier, TopFunction * FunType)
 
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
 top-level function definitions.
@@ -1491,18 +1493,13 @@ op lookupTypeDef (name : Identifier) : Monad Type =
   {r <- askR;
    liftOption (r.r_xenv.xenv_typedefs name)}
 
-(* Test if a struct tag name is currently defined *)
-op testStructTag (name : Identifier) : Monad Bool =
-  {r <- askR;
-   return (some? (r.r_xenv.xenv_structures name))}
-
 (* Look up a struct tag *)
 op lookupStructMembers (tag : Identifier) : Monad StructMembers =
   {r <- askR;
    liftOption (r.r_xenv.xenv_structures tag)}
 
 (* Look up a function *)
-op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction) =
+op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction * FunType) =
   case f_desig of
     | FunctionDesignator id ->
       {r <- askR;
@@ -2189,7 +2186,7 @@ type ExpressionResult =
 (* Convert a FunctionDesignator to a pointer value. This requires looking up the
    type information of the pointer in the function table. *)
 op pointerValueForFunction (f_desig : FunctionDesignator) : Monad ExpressionValue =
-  {(_, ret_ty, param_tys) <- lookupFunction f_desig;
+  {(_, (ret_ty, param_tys)) <- lookupFunction f_desig;
    return (V_pointer (T_function (ret_ty, param_tys), FunPointer f_desig))}
 
 (* Convert a FunctionDesignator to an ExpressionResult *)
@@ -2533,7 +2530,8 @@ op evaluateAllToValues (exprs:List Expression) : Monad (List Value) =
 
 (* A type name denotes a type. The following op returns the type denoted by a
 type name w.r.t. a TypedefTable, by expanding all the typedef names in the type
-name. *)
+name. Note that this is not done in the Monad, so that it can be called by
+evalTranslationUnit. *)
 
 op expandTypeName (table:TypedefTable, tyn:TypeName) : Option Type =
   case tyn of
@@ -2578,7 +2576,11 @@ a list of types: the members are ordered according to their names, and a list of
 It is an error if the type to calculate a 0 value of, is 'void' or a structure
 type not present in the state. It is also an error if there is some circularity
 in the structures, which could cause the op not to terminate. Recall that the
-non-circularity of the structures is part of the state invariants. *)
+non-circularity of the structures is part of the state invariants.
+
+Note that zeroOfType itself is not defined in the Monad, but instead represents
+errors using the Option type; this is so that TranslationUnits can be evaluated
+outside the Monad as well. *)
 
 op zeroOfType (table:StructTable, ty:Type) : Option Value =
   case ty of
@@ -2697,7 +2699,7 @@ op evalStatement (stmt:Statement) : Monad () =
      res_opt <-
        case fun_value of
          | V_pointer (_, FunPointer f_desig) ->
-           {(f, _, _) <- lookupFunction f_desig;
+           {(f, _) <- lookupFunction f_desig;
             f arg_values}
          | _ -> error ;
      (* Finally, assign the result to the LHS, if there is one *)
@@ -2764,45 +2766,117 @@ op evalBlockItem (item:BlockItem) : Monad () =
 
 %subsection (* Translation Units *)
 
-(* Evaluating, or "compiling", a translation unit builds up a representation of
-all the top-level external declarations in that translation unit.
+(* Translation units are evaluated by building up a semantic object containing
+all the top-level external declarations in that translation unit. This semantic
+object is defined by the type TranslationUnitSem, and contains the struct and
+typedef tables along with the top-level identifiers and their object or function
+values. Note that a function in a TranslationUnitSem need not be a TopFunction,
+meaning that it can still depend on the function table, because we have not yet
+"tied the knot"; this is done when we compile a whole program, below.
 
-FIXME HERE: more description! *)
+Note also that translation units are not evaluated inside the Monad.
+
+FIXME HERE: explain why, and explain the basic pattern of evaluating translation
+units basically inside the state-error monad. *)
+
+type TranslationUnitSem =
+   {tunit_structs   : StructTable,
+    tunit_typedefs  : TypedefTable,
+    tunit_objects   : FiniteMap (Identifier, Value),
+    tunit_functions : FiniteMap (Identifier, CFunction * FunType)}
+
+(* Look up a value in an alist *)
+(* FIXME HERE: this should be in a library somewhere... *)
+op [a,b] assoc (l:List (a * b)) (key : a) : Option b =
+  case l of
+    | [] -> None
+    | (x,y)::l' -> if key = x then Some y else assoc l' key
+
+(* Add a key-value pair to an alist in a unique way, returning None if the key
+is already in l *)
+op [a,b] acons_uniq (l:List (a * b)) (key : a) (val : b) : Option (List (a * b)) =
+  case assoc l key of
+    | None -> Some (l ++ [(key,val)])
+    | Some _ -> None
+
+(* For object declarations, check that the name is not already in the object
+table, get the zero value for the given type, and add the result to the table.
+Extern declarations do not go in the current translation unit; they are just
+there for type-checking. *)
+op evalObjectDeclaration (tunit: TranslationUnitSem, odecl:ObjectDeclaration) : Option TranslationUnitSem =
+  if odecl.ObjDecl_isExtern then
+    Some tunit
+  else
+    {ty <- expandTypeName (tunit.tunit_typedefs, odecl.ObjDecl_type);
+     zeroVal <- zeroOfType (tunit.tunit_structs, ty);
+     Some (tunit << {tunit_objects = update tunit.tunit_objects odecl.ObjDecl_name zeroVal})}
+
+(* For struct members, expand the type name and make sure it is not void *)
+op evalMemberDeclaration (tunit:TranslationUnitSem, decl:MemberDeclaration) : Option (Identifier * Type) =
+  {ty <- expandTypeName (tunit.tunit_typedefs, decl.MemDecl_type);
+   if (ty = T_void) then None
+   else Some (decl.MemDecl_name, ty)}
+
+op evalMemberDeclarations (tunit:TranslationUnitSem,
+                           decls:List MemberDeclaration) : Option (List (Identifier * Type)) =
+  case decls of
+    | [] -> Some []
+    | decl::decls' ->
+      {res <- evalMemberDeclaration (tunit, decl);
+       ress <- evalMemberDeclarations (tunit, decls');
+       Some (res::ress)}
+
+(* For struct declarations, evaluate each struct member, check there are no
+   duplicate field names, and check that the struct tag is not already in use *)
+op evalStructSpecifier (tunit:TranslationUnitSem, sspec:StructSpecifier) : Option TranslationUnitSem =
+  {members <- evalMemberDeclarations (tunit, sspec.StructSpec_members);
+   () <-
+     if some? (tunit.tunit_structs sspec.StructSpec_tag)
+       || members = [] || ~(noRepetitions? (unzip members).1)
+       then None else Some ();
+   Some (tunit << {tunit_structs =
+                     update tunit.tunit_structs sspec.StructSpec_tag members})}
+
+
+(* Expand all the type names in a ParameterList *)
+op evalParameterList (tunit:TranslationUnitSem,
+                      params:ParameterList) : Option (List (Type * Identifier)) =
+  case params of
+    | [] -> Some []
+    | param::params' ->
+      {ty <- expandTypeName (tunit.tunit_typedefs, param.PDecl_type);
+       rest <- evalParameterList (tunit, params');
+       Some ((ty,param.PDecl_name)::rest)}
 
 end-spec
 
 blah0 = spec
 
+(* FIXME HERE NOW *)
 
-type TranslationUnitRepr =
-   {repr_structs   : StructTable,
-    repr_typedefs  : TypedefTable,
-    repr_objects   : List (Identifier * Bool),
-    repr_functions : List (Identifier * Option TopFunction)}
+(*
+type FunctionDefinition =
+ {FDef_return     : TypeName,
+  FDef_name       : Identifier,
+  FDef_parameters : ParameterList,
+  FDef_body       : Statement}
+*)
 
 
-FIXME HERE NOW: use the following type
+op evalFunctionDefinition (tunit:TranslationUnitSem,
+                           fdef:FunctionDefinition) : Option TranslationUnitSem =
+  {}
 
-op evalObjectDeclaration (repr: TranslationUnitRepr, odecl:ObjectDeclaration) : Option TranslationUnitRepr =
-  {ty <- expandTypeName (repr.repr_typedefs, odecl.ObjDecl_type);
-   zeroVal <- zeroOfType ty;
-   addLocalBinding (odecl.ObjDecl_name, zeroVal)}
+op evalExternalDeclarations (tunit:TranslationUnitSem,
+                             decls:List ExternalDeclaration) : Option TranslationUnitSem =
+  case decls of
+    | [] -> Some tunit
+    | decl::decls' ->
+      {}
 
-(* For struct declarations, evaluate each type name, check there are no
-   duplicate field names, and check that the struct tag is not already in use *)
-op evalMemberDeclaration (decl:MemberDeclaration) : Monad (Identifier * Type) =
-  {ty <- expandTypeName decl.MemDecl_type;
-   errorIf (ty = T_void);
-   return (decl.MemDecl_name, ty)}
-
-op evalStructSpecifier (sspec:StructSpecifier) : Monad (Identifier * StructMembers) =
-  {is_struct_tag <- testStructTag sspec.StructSpec_tag;
-   errorIf is_struct_tag;
-   members <- mapM evalMemberDeclaration (sspec.StructSpec_members);
-   errorIf (members = []);
-   if noRepetitions? (unzip members).1 then
-     return (sspec.StructSpec_tag, members)
-   else error}
+(* Evaluate a translation unit *)
+op evalTranslationUnit (unit:TranslationUnit) : Option TranslationUnitSem =
+   FIXME
 
 end-spec
 
