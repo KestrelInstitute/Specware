@@ -836,8 +836,6 @@ extern is present or not. Our model also excludes any declarator other than a
 simple identifier [ISO 6.7.6], since these can all be modeled using simple
 identifiers with more complex types. *)
 
-(* FIXME: remove isExtern...? *)
-
 type ObjectDeclaration =
  {ObjDecl_type : TypeName,
   ObjDecl_name : Identifier,
@@ -880,17 +878,26 @@ type ParameterDeclaration =
 
 type ParameterList = List ParameterDeclaration
 
-(* A function definition consists of a return type (name), a name, a parameter
-list, and a body [ISO 6.7.6.3, 6.9.1]. *)
+(* We combine function declarations [ISO 6.7.6.3] and definitions [ISO 6.9.1]
+into the same type, which contains a return type (name), a name, a parameter
+list, and an optional body, where the body is supplied for a function definition
+and not supplied for a function declaration. We also support the "extern"
+storage class specifier for function declarations, allowing functions to call
+other functions in different translation units, but it is an error for a
+function definition to be marked "extern". *)
 
-type FunctionDefinition =
- {FDef_return     : TypeName,
+type FunctionDeclaration =
+ {FDef_retType    : TypeName,
   FDef_name       : Identifier,
-  FDef_parameters : ParameterList,
-  FDef_body       : Statement}
+  FDef_params     : ParameterList,
+  FDef_body       : Option Statement,
+  FDef_isExtern   : Bool}
 
 (* The following are the declarations [ISO 6.7] that, as defined later, can
 appear at the top level in a translation unit in our C subset. *)
+
+(* FIXME: these are allowed inside functions, however, which is why they are
+separated from the external declarations *)
 
 type Declaration =
   | Decl_struct   StructSpecifier
@@ -908,7 +915,7 @@ external declaration is either a function definition or a declaration as defined
 earlier [ISO 6.9/1]. *)
 
 type ExternalDeclaration =
-  | EDecl_function    FunctionDefinition
+  | EDecl_function    FunctionDeclaration
   | EDecl_declaration Declaration
 
 type TranslationUnit = List ExternalDeclaration
@@ -1078,6 +1085,27 @@ op arrayValue? (val:Value) : Bool =
 op scalarValue? (val:Value) : Bool =
   scalarType? (typeOfValue val)
 
+(* Return true iff the given value "has" the given type (FIXME: find the ISO
+section for this...) *)
+op valueHasType (v:Value, tp:Type) : Bool =
+  compatibleTypes? (typeOfValue v, tp)
+
+(* Return true iff the given list of values "have" the given types (FIXME: find
+the ISO section for this...) *)
+op valuesHaveTypes (vs:List Value, tps:List Type) : Bool =
+  case (vs, tps) of
+    | ([], []) -> true
+    | (v::vs', tp::tps') ->
+      valueHasType (v, tp) && valuesHaveTypes (vs', tps')
+    | _ -> false
+
+(* Return true iff the given function return value (or None for a function that
+does not return a value) is compatible with the given type *)
+op optValueHasType (opt_v:Option Value, tp:Type) : Bool =
+  case opt_v of
+    | Some v -> valueHasType (v,tp)
+    | None -> compatibleTypes? (T_void, tp)
+
 
 %subsection (* Storage *)
 
@@ -1185,6 +1213,16 @@ op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
         new_xs <- mapM f xs';
         return (new_x :: new_xs)}
 
+(* The map function for Option; FIXME: should be in a standard library spec
+   somewhere... *)
+op [a,b] mapM_opt (f : a -> Option b) (xs : List a) : Option (List b) =
+   case xs of
+     | [] -> Some []
+     | x :: xs' ->
+       {new_x <- f x;
+        new_xs <- mapM_opt f xs';
+        Some (new_x :: new_xs)}
+
 %subsubsection (* Non-Local Exits *)
 
 (* These are all the non-local exits (FIXME: document them!) *)
@@ -1217,6 +1255,13 @@ op [a] liftOption (opt: Option a) : Monad a =
 op [a] returnFromFun (retVal : Option Value) : Monad a =
    raiseErr (Err_return retVal)
 
+(* Catch any returnFromFuns called in body, returning None if there were none *)
+op catchReturns (body : Monad ()) : Monad (Option Value) =
+   catchErrs ({ body; return None },
+              (fn err ->
+                 case err of
+                   | Err_return retVal -> return retVal
+                   | _ -> raiseErr err))
 
 % subsection (* Operations on storages *)
 
@@ -2582,32 +2627,27 @@ Note that zeroOfType itself is not defined in the Monad, but instead represents
 errors using the Option type; this is so that TranslationUnits can be evaluated
 outside the Monad as well. *)
 
-op zeroOfType (table:StructTable, ty:Type) : Option Value =
+op zeroOfType (table:StructTable) (ty:Type) : Option Value =
   case ty of
   | T_void -> None
   | T_struct tag ->
     {membs <- table tag;
      (mems, tys) <- Some (unzip membs);
-     vals <- zerosOfTypes (table, tys);
+     vals <- zerosOfTypes table tys;
      Some (V_struct (tag, fromAssocList (zip (mems, vals))))}
   | T_array (ty0, n) ->
-    {val0 <- zeroOfType (table, ty0);
+    {val0 <- zeroOfType table ty0;
      Some (V_array (ty0, repeat val0 n))}
   | ty -> Some (zeroOfScalarType ty)
 
 (* This just maps zeroOfType over tys *)
-op zerosOfTypes (table:StructTable, tys:List Type) : Option (List Value) =
-  case tys of
-    | [] -> Some []
-    | ty::tys' ->
-      {z <- zeroOfType (table, ty);
-       zs <- zerosOfTypes (table, tys');
-       Some (z::zs)}
+op zerosOfTypes (table:StructTable) (tys:List Type) : Option (List Value) =
+   mapM_opt (zeroOfType table) tys
 
 (* This lifts zeroOfType into Monad *)
 op zeroOfTypeM (ty:Type) : Monad Value =
   {r <- askR;
-   liftOption (zeroOfType (r.r_xenv.xenv_structures, ty))}
+   liftOption (zeroOfType r.r_xenv.xenv_structures ty)}
 
 
 %subsection (* Statements *)
@@ -2785,6 +2825,68 @@ type TranslationUnitSem =
     tunit_objects   : FiniteMap (Identifier, Value),
     tunit_functions : FiniteMap (Identifier, CFunction * FunType)}
 
+op emptyTranslationUnitSem : TranslationUnitSem =
+   {tunit_structs   = empty,
+    tunit_typedefs  = empty,
+    tunit_objects   = empty,
+    tunit_functions = empty}
+
+(* The monad for evaluating translation units *)
+type XUMonad a = TranslationUnitSem -> Option (TranslationUnitSem * a)
+
+(* XUMonad's return and bind *)
+op [a] return (x:a) : XUMonad a = fn tunit -> Some (tunit, x)
+op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
+  fn tunit1 -> case m tunit1 of
+             | Some (tunit2, b) -> f b tunit2
+             | None -> None
+
+(* Run an XUMonad *)
+op [a] runXU (m : XUMonad a) : Option (TranslationUnitSem * a) =
+  m emptyTranslationUnitSem
+
+(* The map function for XUMonad *)
+op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
+   case xs of
+     | [] -> return []
+     | x :: xs' ->
+       {new_x <- f x;
+        new_xs <- mapM_XU f xs';
+        return (new_x :: new_xs)}
+
+(* Get the current TranslationUnitSem *)
+op xu_get : XUMonad TranslationUnitSem =
+  fn tunit -> Some (tunit, tunit)
+
+(* An error in XUMonad *)
+op [a] xu_error : XUMonad a = fn _ -> None
+
+(* Test that a FiniteMap in the current tunit does not have a binding for id *)
+op [a] xu_errorIfBound (id : Identifier, f : TranslationUnitSem -> FiniteMap (Identifier, a)) : XUMonad () =
+  {tunit <- xu_get;
+   if some? (f tunit id) then xu_error else return ()}
+
+(* Update the TranslationUnitSem *)
+op xu_update (f : TranslationUnitSem -> TranslationUnitSem) : XUMonad () =
+  fn tunit -> Some (f tunit, ())
+
+(* Lift an Option into XUMonad *)
+op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
+  case opt_x of
+    | Some x -> return x
+    | None -> xu_error
+
+(* Expand a TypeName in XUMonad *)
+op expandTypeNameXU (tp:TypeName) : XUMonad Type =
+  {tunit <- xu_get;
+   liftOption_XU (expandTypeName (tunit.tunit_typedefs, tp))}
+
+(* Call zeroOfType in XUMonad *)
+op zeroOfTypeXU (tpName:TypeName) : XUMonad Value =
+  {tunit <- xu_get;
+   tp <- liftOption_XU (expandTypeName (tunit.tunit_typedefs, tpName));
+   liftOption_XU (zeroOfType tunit.tunit_structs tp)}
+
 (* Look up a value in an alist *)
 (* FIXME HERE: this should be in a library somewhere... *)
 op [a,b] assoc (l:List (a * b)) (key : a) : Option b =
@@ -2799,70 +2901,107 @@ op [a,b] acons_uniq (l:List (a * b)) (key : a) (val : b) : Option (List (a * b))
     | None -> Some (l ++ [(key,val)])
     | Some _ -> None
 
+
+(* For typedefs, add it to the typedef table, checking first that the typedef
+name is not already in the typedef table *)
+op evalTypedef (typedef:TypeDefinition) : XUMonad () =
+  let id = typedef.Typedef_name in
+  {xu_errorIfBound (id, fn tunit -> tunit.tunit_typedefs);
+   tp <- expandTypeNameXU typedef.Typedef_type;
+   xu_update (fn tunit ->
+                tunit << {tunit_typedefs = update tunit.tunit_typedefs id tp})}
+
 (* For object declarations, check that the name is not already in the object
-table, get the zero value for the given type, and add the result to the table.
-Extern declarations do not go in the current translation unit; they are just
-there for type-checking. *)
-op evalObjectDeclaration (tunit: TranslationUnitSem, odecl:ObjectDeclaration) : Option TranslationUnitSem =
+table or the function table, get the zero value for the given type, and add the
+result to the table. Extern declarations do not go in the current translation
+unit; they are just there for type-checking. *)
+op evalObjectDeclaration (odecl:ObjectDeclaration) : XUMonad () =
+  let id = odecl.ObjDecl_name in
   if odecl.ObjDecl_isExtern then
-    Some tunit
+    return ()
   else
-    {ty <- expandTypeName (tunit.tunit_typedefs, odecl.ObjDecl_type);
-     zeroVal <- zeroOfType (tunit.tunit_structs, ty);
-     Some (tunit << {tunit_objects = update tunit.tunit_objects odecl.ObjDecl_name zeroVal})}
+    {xu_errorIfBound (id, fn tunit -> tunit.tunit_objects);
+     xu_errorIfBound (id, fn tunit -> tunit.tunit_functions);
+     zeroVal <- zeroOfTypeXU (odecl.ObjDecl_type);
+     xu_update (fn tunit ->
+                  tunit << {tunit_objects =
+                              update tunit.tunit_objects id zeroVal})}
 
 (* For struct members, expand the type name and make sure it is not void *)
-op evalMemberDeclaration (tunit:TranslationUnitSem, decl:MemberDeclaration) : Option (Identifier * Type) =
-  {ty <- expandTypeName (tunit.tunit_typedefs, decl.MemDecl_type);
-   if (ty = T_void) then None
-   else Some (decl.MemDecl_name, ty)}
-
-op evalMemberDeclarations (tunit:TranslationUnitSem,
-                           decls:List MemberDeclaration) : Option (List (Identifier * Type)) =
-  case decls of
-    | [] -> Some []
-    | decl::decls' ->
-      {res <- evalMemberDeclaration (tunit, decl);
-       ress <- evalMemberDeclarations (tunit, decls');
-       Some (res::ress)}
+op evalMemberDeclaration (decl:MemberDeclaration) : XUMonad (Identifier * Type) =
+  {ty <- expandTypeNameXU (decl.MemDecl_type);
+   if (ty = T_void) then xu_error
+   else return (decl.MemDecl_name, ty)}
 
 (* For struct declarations, evaluate each struct member, check there are no
    duplicate field names, and check that the struct tag is not already in use *)
-op evalStructSpecifier (tunit:TranslationUnitSem, sspec:StructSpecifier) : Option TranslationUnitSem =
-  {members <- evalMemberDeclarations (tunit, sspec.StructSpec_members);
-   () <-
-     if some? (tunit.tunit_structs sspec.StructSpec_tag)
-       || members = [] || ~(noRepetitions? (unzip members).1)
-       then None else Some ();
-   Some (tunit << {tunit_structs =
-                     update tunit.tunit_structs sspec.StructSpec_tag members})}
+op evalStructSpecifier (sspec:StructSpecifier) : XUMonad () =
+  let id = sspec.StructSpec_tag in
+  {members <- mapM_XU evalMemberDeclaration sspec.StructSpec_members;
+   if members = [] || ~(noRepetitions? (unzip members).1)
+     then xu_error else return ();
+   xu_errorIfBound (id, fn tunit -> tunit.tunit_structs);
+   xu_update (fn tunit ->
+                tunit << {tunit_structs =
+                            update tunit.tunit_structs id members})}
 
+(* Expand all the type name in a ParameterDeclaration *)
+op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier * Type) =
+   {ty <- expandTypeNameXU (param.PDecl_type);
+    return (param.PDecl_name, ty)}
 
-(* Expand all the type names in a ParameterList *)
-op evalParameterList (tunit:TranslationUnitSem,
-                      params:ParameterList) : Option (List (Type * Identifier)) =
-  case params of
-    | [] -> Some []
-    | param::params' ->
-      {ty <- expandTypeName (tunit.tunit_typedefs, param.PDecl_type);
-       rest <- evalParameterList (tunit, params');
-       Some ((ty,param.PDecl_name)::rest)}
+(* Build a C function that quantifies over a list of argument values and then
+   binds those argument values to params in a fresh, top-level scope *)
+(* FIXME HERE: move this to a short section above about C functions *)
+op makeCFunction (retType : Type, params : List (Identifier * Type), body : Statement) : CFunction =
+  fn args ->
+    if valuesHaveTypes (args, (unzip params).2) then
+      {ret <- catchReturns (withFreshTopBindings
+                              (fromAssocList (zip ((unzip params).1, args)))
+                              (evalStatement body));
+       if optValueHasType (ret, retType) then return ret else error
+       }
+    else error
 
-(* Eval a function definition, by FIXME HERE NOW *)
-op evalFunctionDefinition (tunit:TranslationUnitSem,
-                           fdef:FunctionDefinition) : Option TranslationUnitSem =
-  if some? (tunit.tunit_functions fdef.FDef_name) then None else
-    {retType <- expandTypeName (tunit.tunit_typedefs, fdef.FDef_return);
-     params <- evalParameterList (tunit, fdef.FDef_parameters);
-     vals <- zerosOfTypes (tunit.tunit_structs, (unzip params).1);
-     Some (tunit <<
-             {tunit_functions =
-              ((fn args ->
-                withFreshTopBindings
-                  (fromAssocList (zip (unzip params).2 vals))
-                  (evalStatement fdef.FDef_body)),
-               (retType, (unzip params).1))})
-   }
+(* Build a function by evaluating its return and parameter type names and then
+calling makeCFunction *)
+op evalCFunction (retTypeName : TypeName,
+                  paramDecls : ParameterList, body : Statement) : XUMonad (CFunction * FunType) =
+  {retType <- expandTypeNameXU retTypeName;
+   params <- mapM_XU evalParameterDeclaration paramDecls;
+   return (makeCFunction (retType, params, body),
+           (retType, (unzip params).2))}
+
+(* Eval a function definition, by checking that the name is not already defined
+in the object or function table and then calling evalCFunction *)
+op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad () =
+  let id = fdef.FDef_name in
+  case fdef.FDef_body of
+    | None ->
+      (* Ignore function prototypes in the semantics *)
+      return ()
+    | Some body ->
+      {if fdef.FDef_isExtern then xu_error else return ();
+       xu_errorIfBound (id, fn tunit -> tunit.tunit_objects);
+       xu_errorIfBound (id, fn tunit -> tunit.tunit_functions);
+       f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
+       xu_update (fn tunit ->
+                    tunit << {tunit_functions =
+                                update tunit.tunit_functions id f_res})}
+
+(* Evaluate any external declaration *)
+op evalExternalDeclaration (decl:ExternalDeclaration) : XUMonad () =
+  case decl of
+    | EDecl_function fdef -> evalFunctionDeclaration fdef
+    | EDecl_declaration (Decl_struct sspec) -> evalStructSpecifier sspec
+    | EDecl_declaration (Decl_object odecl) -> evalObjectDeclaration odecl
+    | EDecl_declaration (Decl_typedef typedef) -> evalTypedef typedef
+
+(* Evaluate a translation unit *)
+op evalTranslationUnit (unit:TranslationUnit) : Option TranslationUnitSem =
+  case runXU (mapM_XU evalExternalDeclaration unit) of
+    | Some (tunit, _) -> Some tunit
+    | None -> None
 
 
 end-spec
@@ -2870,31 +3009,6 @@ end-spec
 blah0 = spec
 
 (* FIXME HERE NOW *)
-
-(*
-type FunctionDefinition =
- {FDef_return     : TypeName,
-  FDef_name       : Identifier,
-  FDef_parameters : ParameterList,
-  FDef_body       : Statement}
-*)
-
-
-op evalExternalDeclarations (tunit:TranslationUnitSem,
-                             decls:List ExternalDeclaration) : Option TranslationUnitSem =
-  case decls of
-    | [] -> Some tunit
-    | decl::decls' ->
-      {}
-
-(* Evaluate a translation unit *)
-op evalTranslationUnit (unit:TranslationUnit) : Option TranslationUnitSem =
-   FIXME
-
-end-spec
-
-blah1 = spec
-
 
 
 (* Executing, in a state that satisfies the invariants, a statement that
