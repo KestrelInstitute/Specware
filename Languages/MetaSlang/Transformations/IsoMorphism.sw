@@ -236,9 +236,16 @@ op invertIsoInfo(iso_info: IsoInfoList): IsoInfoList =
 op typeInIsoInfoList(qid: QualifiedId, iso_info: IsoInfoList): Bool =
   case iso_info of
     | [] -> false
-    | (info as ((_,_,Base(ty_qid,_,_),Base(ty'_qid,_,_)),_) :: _) | qid = ty_qid || qid = ty'_qid -> 
-      true
-    | _::rst -> typeInIsoInfoList(qid,rst)
+    | ((_,_,Base(ty_qid,_,_), Base(ty'_qid,_,_)),_) :: rst ->
+      qid = ty_qid || qid = ty'_qid
+        || typeInIsoInfoList(qid, rst)
+
+op typeUsedByIsoInfoList(qid: QualifiedId, iso_info: IsoInfoList, spc: Spec): Bool =
+  case iso_info of
+    | [] -> false
+    | ((_,_,ty,ty'), _) :: rst ->
+      typeQIdUsedToDefineType?(qid, ty, spc) || typeQIdUsedToDefineType?(qid, ty', spc)
+        || typeUsedByIsoInfoList(qid, rst, spc)
 
 op  Env.mapOpInfos : [b] (AOpInfo b -> SpecCalc.Env (AOpInfo b)) -> AOpMap b -> SpecCalc.Env (AOpMap b)
 def Env.mapOpInfos f ops =
@@ -771,7 +778,7 @@ op newPrimedTypes(init_spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo,
     (fn (_,_,info,result as (new_iso_info, spc)) ->
        let qid = primaryTypeName info in
        let Qualified(q,id) = qid in
-       if typeInIsoInfoList(qid, iso_info) then
+       if typeUsedByIsoInfoList(qid, iso_info, init_spc) then
          return result
        else
          let (tvs,ty) = unpackFirstTypeDef info in {

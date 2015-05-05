@@ -105,6 +105,10 @@ op mkVar         (v        : MSVar)                                  : MSTerm = 
 op mkFun         (constant : MSFun, typ : MSType)                    : MSTerm = Fun        (constant, typ,           noPos)
 op mkIfThenElse  (t1       : MSTerm,  t2 : MSTerm,  t3 : MSTerm)     : MSTerm = IfThenElse (t1, t2, t3,              noPos)
 
+op mkForall(vars : MSVars, body : MSTerm) : MSTerm = mkBind(Forall, vars, body)
+op mkExists(vars : MSVars, body : MSTerm) : MSTerm = mkBind(Exists, vars, body)
+op mkExists1(vars : MSVars, body : MSTerm): MSTerm = mkBind(Exists1,vars, body)
+
 op mkApply       (f : MSTerm, arg  : MSTerm)  : MSTerm = Apply (f, arg,          noPos)
 op mkAppl        (f : MSTerm, args : MSTerms) : MSTerm = Apply (f, mkTuple args, noPos)
 op mkApplication (f : MSTerm, args : MSTerms) : MSTerm = Apply (f, mkTuple args, noPos)

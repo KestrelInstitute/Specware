@@ -1293,6 +1293,20 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
       [] ty
 
+  op typeQIdUsedToDefineType?(qid: QualifiedId, ty: MSType, spc: Spec): Bool =
+    let def aux(ty: MSType, seenTypeQIds: QualifiedIds) =
+          existsInType? (fn tyi ->
+                           case tyi
+                             | Base(qidi, _, _) ->
+                               qid = qidi || (qidi nin? seenTypeQIds
+                                                && (case findTheType(spc, qidi)
+                                                     | None -> false
+                                                     | Some info -> aux(info.dfn, qidi::seenTypeQIds)))
+                             | _ -> false)
+            ty
+    in
+    aux(ty, [])
+
   op opsInOpDefFor(op_id: QualifiedId, spc: Spec): QualifiedIds =
     case findTheOp(spc, op_id) of
       | Some info -> opsInTerm info.dfn
