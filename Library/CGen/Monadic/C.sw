@@ -2848,6 +2848,23 @@ op evalParameterList (tunit:TranslationUnitSem,
        rest <- evalParameterList (tunit, params');
        Some ((ty,param.PDecl_name)::rest)}
 
+(* Eval a function definition, by FIXME HERE NOW *)
+op evalFunctionDefinition (tunit:TranslationUnitSem,
+                           fdef:FunctionDefinition) : Option TranslationUnitSem =
+  if some? (tunit.tunit_functions fdef.FDef_name) then None else
+    {retType <- expandTypeName (tunit.tunit_typedefs, fdef.FDef_return);
+     params <- evalParameterList (tunit, fdef.FDef_parameters);
+     vals <- zerosOfTypes (tunit.tunit_structs, (unzip params).1);
+     Some (tunit <<
+             {tunit_functions =
+              ((fn args ->
+                withFreshTopBindings
+                  (fromAssocList (zip (unzip params).2 vals))
+                  (evalStatement fdef.FDef_body)),
+               (retType, (unzip params).1))})
+   }
+
+
 end-spec
 
 blah0 = spec
@@ -2862,10 +2879,6 @@ type FunctionDefinition =
   FDef_body       : Statement}
 *)
 
-
-op evalFunctionDefinition (tunit:TranslationUnitSem,
-                           fdef:FunctionDefinition) : Option TranslationUnitSem =
-  {}
 
 op evalExternalDeclarations (tunit:TranslationUnitSem,
                              decls:List ExternalDeclaration) : Option TranslationUnitSem =
