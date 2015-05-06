@@ -49,6 +49,11 @@
 (defun sw-use-x-symbol? ()
   sw:use-x-symbol)
 
+(defcustom sw:process-on-load nil
+  "If non-nil process Specware file automatically when loaded"
+  :type 'boolean
+  :group 'specware)
+
 (defcustom sw:use-hide-show t
   "If non-nil use the hide-show folding package with Specware"
   :type 'boolean
@@ -587,6 +592,17 @@ Mode map
               (hs-minor-mode 1)
               (setq hs-marker-begin-regexp "\\s-*%{{{")
               (setq hs-marker-end-regexp "\\s-*%}}}"))))
+
+(defun sw:process-current-file-and-return ()
+  (when sw:process-on-load
+    (let ((buf (current-buffer)))
+      (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
+        (lisp-or-specware-command-quiet ":sw " "proc " filename))
+      ;(pop-to-buffer buf)
+      )))
+
+(add-hook 'sw:specware-mode-hook
+          'sw:process-current-file-and-return)
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
 
