@@ -1317,9 +1317,10 @@ AnnSpecPrinter qualifying spec
 		      (ppLHS tvs) 
 		      ++
 		      [(0, string " "), 
-		       (0, pp.DefEquals), 
-		       (0, string " "), 
-		       (2, ppType context ([index, typeIndex], Top) srt)]))
+		       (0, pp.DefEquals)]
+                      ++
+		      (if embed? CoProduct srt then [] else  [(0, string " ")])
+		      ++ [(2, ppType context ([index, typeIndex], Top) srt)]))
    in
    let (decls, defs) = typeInfoDeclsAndDefs info in
    let warnings = 

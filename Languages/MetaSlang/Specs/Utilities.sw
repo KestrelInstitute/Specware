@@ -3068,9 +3068,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 
  type MatchResult = | Match MSVarSubst | NoMatch | DontKnow
 
- op  patternMatch : MSPattern * MSTerm * MSVarSubst -> MatchResult 
-
- def patternMatch(pat:MSPattern, N, S) = 
+ op patternMatch(pat: MSPattern, N: MSTerm, S: MSVarSubst, constrs: QualifiedIds): MatchResult = 
      case pat
        of VarPat(x, _) -> Match(Cons((x,N),S))
 	| WildPat _ -> Match S
@@ -3085,7 +3083,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 			    (case N
 			       of Record(NFields,_) -> findField(l,NFields)
 		                | _ -> Apply(Fun(Project l,Arrow(ty,s,noPos),noPos),N,noPos)) in
-		        (case patternMatch(p,N,S)
+		        (case patternMatch(p, N, S, constrs)
 			   of Match S -> loop(fields,S)
 			    | r -> r)
 		     | [] -> Match S
@@ -3093,19 +3091,30 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 	  loop(fields2,S)
 	| EmbedPat(lbl,None,ty,_) -> 
 	  (case N
-	     of Fun(Embed(lbl2,_),_,_) -> if lbl = lbl2 then Match S else NoMatch
-	      | Apply(Fun(Embed(_,true),_,_),_,_) -> NoMatch
-	      | _ -> DontKnow)
+	     | Fun(Embed(lbl2,_),_,_) -> if lbl = lbl2 then Match S else NoMatch
+	     | Apply(Fun(Embed(_,true),_,_),_,_) -> NoMatch
+	     | Fun(Op(lbl2,_),_,_) ->
+               if lbl = lbl2 then Match S
+               else if lbl2 in? constrs then NoMatch
+               else DontKnow
+	     | Apply(Fun(Op(lbl2,_),_,_),_,_) | lbl2 in? constrs -> NoMatch
+	     | _ -> DontKnow)
 	| EmbedPat(lbl,Some p,ty,_) -> 
 	  (case N
-	     of Fun(Embed(lbl2,_),_,_) -> NoMatch
-	      | Apply(Fun(Embed(lbl2,true),_,_),N2,_) -> 
-		if lbl = lbl2 
-		   then patternMatch(p,N2,S)
-		else NoMatch
-	      | _ -> DontKnow)
+             | Fun(Embed(lbl2,_),_,_) -> NoMatch
+             | Apply(Fun(Embed(lbl2,true),_,_),N2,_) -> 
+               if lbl = lbl2 
+                 then patternMatch(p, N2, S, constrs)
+               else NoMatch
+             | Fun(Op(lbl2,_),_,_) |  lbl2 in? constrs -> NoMatch
+             | Apply(Fun(Op(lbl2,_),_,_),N2,_) -> 
+               if lbl = lbl2 
+                 then patternMatch(p, N2, S, constrs)
+               else if lbl2 in? constrs then NoMatch
+               else DontKnow
+             | _ -> DontKnow)
         | RestrictedPat(p,_,_) ->
-          (case patternMatch(p,N,S) of
+          (case patternMatch(p, N, S, constrs) of
              %% Assume we can't decide predicate
              | NoMatch -> NoMatch
              | _ -> DontKnow)
@@ -3125,19 +3134,31 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 	  (case N
 	    of Fun(Nat m,_,_) -> (if n = m then Match S else NoMatch)
 	     | _ -> DontKnow)
-        | TypedPat(p1, _, _) -> patternMatch(p1, N, S)
+        | TypedPat(p1, _, _) -> patternMatch(p1, N, S, constrs)
 	| _ -> DontKnow
 
+ op constrsInPattern(pat: MSPattern): QualifiedIds =
+   foldSubPatterns (fn | (EmbedPat(qid,_,_,_), qids) | qid nin? qids -> qid :: qids
+                       | (_, qids) -> qids)
+     [] pat
+
  op  patternMatchRules : MSMatch * MSTerm -> Option (MSVarSubst * MSTerm)
- def patternMatchRules(rules,N) = 
-     case rules 
-       of [] -> None
-        | (pat,Fun(Bool true,_,_),body)::rules -> 
-	  (case patternMatch(pat,N,[])
-	     of Match S -> Some(S,body)
-	      | NoMatch -> patternMatchRules(rules,N)
-	      | DontKnow -> None)
-	| _ :: rules -> None
+ def patternMatchRules(rules,N) =
+   let constrs = foldl (fn (constrs, (pat,_,_)) ->
+                        constrsInPattern pat ++ constrs)
+                   [] rules
+   in
+   let def aux rules =
+         case rules 
+           of [] -> None
+            | (pat,Fun(Bool true,_,_),body)::rules -> 
+              (case patternMatch(pat, N, [], constrs)
+                 of Match S -> Some(S,body)
+                  | NoMatch -> aux rules
+                  | DontKnow -> None)
+            | _ :: rules -> None
+   in
+   aux rules
 
   op [a] mergeSomeLists(ol1: Option(List a), ol2: Option(List a)): Option(List a) =
     case (ol1, ol2) of

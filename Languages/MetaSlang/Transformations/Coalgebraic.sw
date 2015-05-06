@@ -749,7 +749,7 @@ op MSTermTransform.mergePostConditions (spc: Spec) (tm: TransTerm): Option MSTer
                           case o_sbst of
                             | None -> None
                             | Some sbst ->
-                          case patternMatch(param, arg, sbst) of
+                          case patternMatch(param, arg, sbst, []) of
                             | Match sbst -> Some sbst
                             | _ -> None)
                    (Some pc_sbst) (zip(sub_params, args)) of

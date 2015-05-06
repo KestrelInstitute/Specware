@@ -81,17 +81,19 @@ spec
  def removeUnnecessaryVariable spc term =
      % let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
-       of Let([(VarPat (v,_),e)],body,_) ->
+       of Let([(vp as VarPat (v,_),e)],body,pos) ->
 	  let noSideEffects = sideEffectFree(e) || embed? Lambda e in
-	  (case countVarRefs(body,v)
-	     of 0 -> if noSideEffects then body else term
+          let new_body = if noSideEffects then termSubst(body, [(e, mkVar v)]) else body in
+          let term = if body = new_body then Let([(vp, e)],new_body,pos) else term in
+	  (case countVarRefs(new_body,v)
+	     of 0 -> if noSideEffects then new_body else term
 	      | 1 -> if noSideEffects
 	                 || noInterveningSideEffectsBefore?
-			      (body,fn (Var (v2,_)) -> v = v2
+			      (new_body,fn (Var (v2,_)) -> v = v2
 			             | _ -> false)
 	               then %let _ = if embed? Lambda e then writeLine("ruv: \n"^printTerm term) else () in
-                            let result = simplifyOne spc (substitute(body,[(v,e)])) in
-                            %let _ = if embed? Lambda e then writeLine("--> \n"^printTerm (substitute(body,[(v,e)]))
+                            let result = simplifyOne spc (substitute(new_body,[(v,e)])) in
+                            %let _ = if embed? Lambda e then writeLine("--> \n"^printTerm (substitute(new_body,[(v,e)]))
                             %                                            ^"\n"^printTerm result) else () in
                             result
 		       else term

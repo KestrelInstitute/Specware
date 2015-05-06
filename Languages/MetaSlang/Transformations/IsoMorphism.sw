@@ -1,4 +1,4 @@
-(* Takes isomorphism function iso_qid and its inverse osi_qid,
+(* takes isomorphism function iso_qid and its inverse osi_qid,
    Extracts State and State'
    Find all functions f that take State as an argument or returned value and create
    f' with State' instead of State. The body is a call to f with state parameters wrapped in
@@ -236,9 +236,9 @@ op invertIsoInfo(iso_info: IsoInfoList): IsoInfoList =
 op typeInIsoInfoList(qid: QualifiedId, iso_info: IsoInfoList): Bool =
   case iso_info of
     | [] -> false
-    | ((_,_,Base(ty_qid,_,_), Base(ty'_qid,_,_)),_) :: rst ->
-      qid = ty_qid || qid = ty'_qid
-        || typeInIsoInfoList(qid, rst)
+    | (info as ((_,_,Base(ty_qid,_,_),Base(ty'_qid,_,_)),_) :: _) | qid = ty_qid || qid = ty'_qid -> 
+      true
+    | _::rst -> typeInIsoInfoList(qid,rst)
 
 op typeUsedByIsoInfoList(qid: QualifiedId, iso_info: IsoInfoList, spc: Spec): Bool =
   case iso_info of
@@ -1051,10 +1051,11 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                     fn pr as ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
                     % let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
                     case src_ty of
-                      | Base(qid', [], _) ->
+                      | Base(qid', _, _) ->
                         return(pr :: base_iso_info, typeNameInfo, spc, i)
                       | _ ->
                         let dummy_ty_id = "iso-dom-ty"^show i in
+                        % let _ = writeLine("introducing new type "^dummy_ty_id^" for "^printType src_ty) in
                         let dummy_ty_qid = mkUnQualifiedId(dummy_ty_id) in
                         let dummy_ty = mkBase(dummy_ty_qid, []) in
                         let spc = spc << {types = insertAQualifierMap(spc.types, UnQualified, dummy_ty_id,
@@ -1666,9 +1667,9 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                       print ("\n" ^ printQualifiedId qid ^ ":");
                       print (printTerm simp_dfn ^ "\n")
                    };
-                   return (opinfo \_guillemotleft {dfn = new_dfn})
+                   return (opinfo << {dfn = new_dfn})
                  }}) spc.ops;
-     spc <- return (spc \_guillemotleft {ops = simp_ops});
+     spc <- return (spc << {ops = simp_ops});
      spc <- return (if typeNameInfo = [] then spc
                      else mapSpec (id,
                                    fn ty ->

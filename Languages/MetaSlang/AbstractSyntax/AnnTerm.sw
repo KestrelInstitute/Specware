@@ -68,6 +68,7 @@ MetaSlang qualifying spec
  type AVars b = List (AVar b)
 
  op [a] varType((_,ty): AVar a): AType a = ty
+ op [b] varName((nm, _): AVar b): Id = nm
 
   %% Maybe AMatch should be a single thing, and then we use List AMatch in Case above.
  type AMatch b = List (APattern b * ATerm b * ATerm b) % Match is a pattern, a guard, and a body.
