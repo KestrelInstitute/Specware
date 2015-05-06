@@ -2808,42 +2808,42 @@ op evalBlockItem (item:BlockItem) : Monad () =
 
 (* Translation units are evaluated by building up a semantic object containing
 all the top-level external declarations in that translation unit. This semantic
-object is defined by the type TranslationUnitSem, and contains the struct and
-typedef tables along with the top-level identifiers and their object or function
-values. Note that a function in a TranslationUnitSem need not be a TopFunction,
-meaning that it can still depend on the function table, because we have not yet
-"tied the knot"; this is done when we compile a whole program, below.
+object is defined by the type TopLevel, and contains the struct and typedef
+tables along with the top-level identifiers and their object or function values.
+Note that a function in a TopLevel need not be a TopFunction, meaning that it
+can still depend on the function table, because we have not yet "tied the knot";
+this is done when we compile a whole program, below.
 
 Note also that translation units are not evaluated inside the Monad.
 
 FIXME HERE: explain why, and explain the basic pattern of evaluating translation
 units basically inside the state-error monad. *)
 
-type TranslationUnitSem =
-   {tunit_structs   : StructTable,
-    tunit_typedefs  : TypedefTable,
-    tunit_objects   : FiniteMap (Identifier, Value),
-    tunit_functions : FiniteMap (Identifier, CFunction * FunType)}
+type TopLevel =
+   {top_structs   : StructTable,
+    top_typedefs  : TypedefTable,
+    top_objects   : FiniteMap (Identifier, Value),
+    top_functions : FiniteMap (Identifier, CFunction * FunType)}
 
-op emptyTranslationUnitSem : TranslationUnitSem =
-   {tunit_structs   = empty,
-    tunit_typedefs  = empty,
-    tunit_objects   = empty,
-    tunit_functions = empty}
+op emptyTopLevel : TopLevel =
+   {top_structs   = empty,
+    top_typedefs  = empty,
+    top_objects   = empty,
+    top_functions = empty}
 
 (* The monad for evaluating translation units *)
-type XUMonad a = TranslationUnitSem -> Option (TranslationUnitSem * a)
+type XUMonad a = TopLevel -> Option (TopLevel * a)
 
 (* XUMonad's return and bind *)
-op [a] return (x:a) : XUMonad a = fn tunit -> Some (tunit, x)
+op [a] return (x:a) : XUMonad a = fn top -> Some (top, x)
 op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
-  fn tunit1 -> case m tunit1 of
-             | Some (tunit2, b) -> f b tunit2
+  fn top1 -> case m top1 of
+             | Some (top2, b) -> f b top2
              | None -> None
 
 (* Run an XUMonad *)
-op [a] runXU (m : XUMonad a) : Option (TranslationUnitSem * a) =
-  m emptyTranslationUnitSem
+op [a] runXU (m : XUMonad a) : Option (TopLevel * a) =
+  m emptyTopLevel
 
 (* The map function for XUMonad *)
 op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
@@ -2854,21 +2854,21 @@ op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
         new_xs <- mapM_XU f xs';
         return (new_x :: new_xs)}
 
-(* Get the current TranslationUnitSem *)
-op xu_get : XUMonad TranslationUnitSem =
-  fn tunit -> Some (tunit, tunit)
+(* Get the current TopLevel *)
+op xu_get : XUMonad TopLevel =
+  fn top -> Some (top, top)
 
 (* An error in XUMonad *)
 op [a] xu_error : XUMonad a = fn _ -> None
 
-(* Test that a FiniteMap in the current tunit does not have a binding for id *)
-op [a] xu_errorIfBound (id : Identifier, f : TranslationUnitSem -> FiniteMap (Identifier, a)) : XUMonad () =
-  {tunit <- xu_get;
-   if some? (f tunit id) then xu_error else return ()}
+(* Test that a FiniteMap in the current top-level does not have a binding for id *)
+op [a] xu_errorIfBound (id : Identifier, f : TopLevel -> FiniteMap (Identifier, a)) : XUMonad () =
+  {top <- xu_get;
+   if some? (f top id) then xu_error else return ()}
 
-(* Update the TranslationUnitSem *)
-op xu_update (f : TranslationUnitSem -> TranslationUnitSem) : XUMonad () =
-  fn tunit -> Some (f tunit, ())
+(* Update the TopLevel *)
+op xu_update (f : TopLevel -> TopLevel) : XUMonad () =
+  fn top -> Some (f top, ())
 
 (* Lift an Option into XUMonad *)
 op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
@@ -2878,14 +2878,14 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
 
 (* Expand a TypeName in XUMonad *)
 op expandTypeNameXU (tp:TypeName) : XUMonad Type =
-  {tunit <- xu_get;
-   liftOption_XU (expandTypeName (tunit.tunit_typedefs, tp))}
+  {top <- xu_get;
+   liftOption_XU (expandTypeName (top.top_typedefs, tp))}
 
 (* Call zeroOfType in XUMonad *)
 op zeroOfTypeXU (tpName:TypeName) : XUMonad Value =
-  {tunit <- xu_get;
-   tp <- liftOption_XU (expandTypeName (tunit.tunit_typedefs, tpName));
-   liftOption_XU (zeroOfType tunit.tunit_structs tp)}
+  {top <- xu_get;
+   tp <- liftOption_XU (expandTypeName (top.top_typedefs, tpName));
+   liftOption_XU (zeroOfType top.top_structs tp)}
 
 (* Look up a value in an alist *)
 (* FIXME HERE: this should be in a library somewhere... *)
@@ -2906,10 +2906,10 @@ op [a,b] acons_uniq (l:List (a * b)) (key : a) (val : b) : Option (List (a * b))
 name is not already in the typedef table *)
 op evalTypedef (typedef:TypeDefinition) : XUMonad () =
   let id = typedef.Typedef_name in
-  {xu_errorIfBound (id, fn tunit -> tunit.tunit_typedefs);
+  {xu_errorIfBound (id, fn top -> top.top_typedefs);
    tp <- expandTypeNameXU typedef.Typedef_type;
-   xu_update (fn tunit ->
-                tunit << {tunit_typedefs = update tunit.tunit_typedefs id tp})}
+   xu_update (fn top ->
+                top << {top_typedefs = update top.top_typedefs id tp})}
 
 (* For object declarations, check that the name is not already in the object
 table or the function table, get the zero value for the given type, and add the
@@ -2920,12 +2920,12 @@ op evalObjectDeclaration (odecl:ObjectDeclaration) : XUMonad () =
   if odecl.ObjDecl_isExtern then
     return ()
   else
-    {xu_errorIfBound (id, fn tunit -> tunit.tunit_objects);
-     xu_errorIfBound (id, fn tunit -> tunit.tunit_functions);
+    {xu_errorIfBound (id, fn top -> top.top_objects);
+     xu_errorIfBound (id, fn top -> top.top_functions);
      zeroVal <- zeroOfTypeXU (odecl.ObjDecl_type);
-     xu_update (fn tunit ->
-                  tunit << {tunit_objects =
-                              update tunit.tunit_objects id zeroVal})}
+     xu_update (fn top ->
+                  top << {top_objects =
+                              update top.top_objects id zeroVal})}
 
 (* For struct members, expand the type name and make sure it is not void *)
 op evalMemberDeclaration (decl:MemberDeclaration) : XUMonad (Identifier * Type) =
@@ -2940,10 +2940,10 @@ op evalStructSpecifier (sspec:StructSpecifier) : XUMonad () =
   {members <- mapM_XU evalMemberDeclaration sspec.StructSpec_members;
    if members = [] || ~(noRepetitions? (unzip members).1)
      then xu_error else return ();
-   xu_errorIfBound (id, fn tunit -> tunit.tunit_structs);
-   xu_update (fn tunit ->
-                tunit << {tunit_structs =
-                            update tunit.tunit_structs id members})}
+   xu_errorIfBound (id, fn top -> top.top_structs);
+   xu_update (fn top ->
+                top << {top_structs =
+                            update top.top_structs id members})}
 
 (* Expand all the type name in a ParameterDeclaration *)
 op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier * Type) =
@@ -2982,12 +2982,12 @@ op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad () =
       return ()
     | Some body ->
       {if fdef.FDef_isExtern then xu_error else return ();
-       xu_errorIfBound (id, fn tunit -> tunit.tunit_objects);
-       xu_errorIfBound (id, fn tunit -> tunit.tunit_functions);
+       xu_errorIfBound (id, fn top -> top.top_objects);
+       xu_errorIfBound (id, fn top -> top.top_functions);
        f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
-       xu_update (fn tunit ->
-                    tunit << {tunit_functions =
-                                update tunit.tunit_functions id f_res})}
+       xu_update (fn top ->
+                    top << {top_functions =
+                                update top.top_functions id f_res})}
 
 (* Evaluate any external declaration *)
 op evalExternalDeclaration (decl:ExternalDeclaration) : XUMonad () =
@@ -2998,10 +2998,17 @@ op evalExternalDeclaration (decl:ExternalDeclaration) : XUMonad () =
     | EDecl_declaration (Decl_typedef typedef) -> evalTypedef typedef
 
 (* Evaluate a translation unit *)
-op evalTranslationUnit (unit:TranslationUnit) : Option TranslationUnitSem =
+op evalTranslationUnit (unit:TranslationUnit) : Option TopLevel =
   case runXU (mapM_XU evalExternalDeclaration unit) of
-    | Some (tunit, _) -> Some tunit
+    | Some (top, _) -> Some top
     | None -> None
+
+
+%subsection (* Programs *)
+
+(* FIXME HERE: document the "tying the knot" stuff here *)
+
+
 
 
 end-spec
