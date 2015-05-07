@@ -2021,7 +2021,7 @@ op makeSubstFromLambdas(tm: MSTerm, args: MSTerms): MSVarSubst =
     | a1::r_args ->
   case tm of
     | Lambda([(pat, _, bod)], _) ->
-      (case patternMatch(pat, a1, []) of
+      (case patternMatch(pat, a1, [], []) of
          | Match sb -> sb
          | _ -> [])
         ++ makeSubstFromLambdas(bod, r_args)
