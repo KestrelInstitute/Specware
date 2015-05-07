@@ -446,6 +446,12 @@ op longType? (ty:Type) : Bool =
 op llongType? (ty:Type) : Bool =
   ty = T_sllong || ty = T_ullong
 
+(* Whether ty is a function pointer type *)
+op functionPointerType? (ty:Type) : Bool =
+  case ty of
+    | T_pointer (T_function _) -> true
+    | _ -> false
+
 (* Each integer type has a size in bits. *)
 
 op typeBits (ty:Type | integerType? ty) : Nat =
@@ -1859,7 +1865,6 @@ theorem convertInteger_no_change is
 from values to values: the value is converted to the type returned by op
 'promoteType'. *)
 
-(* FIXME HERE *)
 op promoteValue (val:Value) : Monad Value =
   if integerValue? val then
     convertInteger (val, promoteType (typeOfValue val))
@@ -1884,65 +1889,81 @@ op arithConvertValues (val1:Value, val2:Value) : Monad (Type * Int * Int) =
     error
 
 
-%subsubsection (* Pointer conversions *)
+%subsubsection (* Casts *)
 
-(* FIXME: pointer conversion is covered in [ISO 6.3.2.3] *)
+(* Casts convert an expression from one scalar type to another [ISO 6.5.4].
+Recall that the scalar types are the integer types, the floating-point types
+(which we do not include here), and the pointer types.
 
-(* The compile-time checks formalized earlier allow conversions (i) between
-compatible pointer types (which in our C subset means identical pointer types,
-see op 'compatibleTypes?') and (ii) between pointers to 'void' and pointers to
-non-'void' types. Since our C subset is type-safe, we only allow conversion (ii)
-on null pointers; we disallow conversion (ii) between pointers that reference
-objects, because each object has a well-defined type and it should not be
-"changed" by converting to 'void*' and then to an incompatible pointer type.
+The case of casting between two integer types was already covered above by
+convertInteger.
 
-The following op returns an error outcome if neither (i) nor (ii) apply, because
-the compile-time checks prevent that from happening. In conversion (ii), unless
-the pointer is null, the following op returns a non-standard outcome. *)
+Converting an integer to a pointer yields an implementation-defined result [ISO
+6.3.2.3/5], and could yield a trap representation (i.e., an undefined pointer),
+so this is what we do here. This means that integers can never be converted to
+pointers. The exception is that converting an expression with value 0 to a
+pointer yields a null pointer [ISO 6.3.2.3/3].
 
-(* FIXME HERE NOW: capture pointer conversions to different types! *)
+Converting a pointer to an integer is implementation-defined, and need not in
+fact ever yield an integer in the range of any integer type, in which case the
+result is undefined [ISO 6.3.2.3/6]. This is what we do here, meaning that
+pointers can never be converted to integers.
 
-op convertPointer (val:Value, ty:Type | embed? T_pointer ty) : Monad Value =
-  let ty0 = typeOfValue val in
-  if compatibleTypes? (ty0, ty) then
-    return val
-  else if embed? T_pointer ty0 && (ty0 = T_pointer T_void
-                                     || ty = T_pointer T_void) then
-    if embed? V_nullpointer val then
-      return (V_nullpointer ty)
-    else
-      raiseErr Err_nonstd
+Otherwise, we allow any pointer type to be converted to any other pointer type,
+as long as they are both object pointer types or both function pointer types.
+The only requirement is that, when a pointer is converted to another pointer
+type and then back again, the result should be equal to the original value of
+the pointer [ISO 6.3.2.3/1, ISO 6.3.2.3/7, ISO 6.3.2.3/8]. We deviate from the
+standard slightly, however, in that we ignore alignment [ISO 6.2.8]; in fact,
+our formalization acts as if all types had alignment 1. *)
+op castValue (val:Value, tp:Type | scalarType? tp) : Monad Value =
+  let val_tp = typeOfValue val in
+  if (integerType? val_tp && integerType? tp) then
+    convertInteger (val, tp)
+  else if (integerType? val_tp && pointerType? tp) then
+    return (V_undefined tp)
+  else if (pointerType? val_tp && integerType? tp) then
+    return (V_undefined tp)
+  else if (functionPointerType? val_tp && functionPointerType? tp) ||
+    (~(functionPointerType? val_tp) && ~(functionPointerType? tp)) then
+    case (val, tp) of
+      | (V_pointer (_, ptr), T_pointer ptr_tp) ->
+        V_pointer (ptr_tp, ptr)
+      | (V_nullpointer _, T_pointer ptr_tp) ->
+        V_nullpointer ptr_tp
+      | (V_undefined _, _) -> V_undefined tp
   else
     error
+
+(* FIXME HERE NOW: use castValue where necessary below *)
 
 
 %subsubsection (* Assignment conversions *)
 
-(* In an assignment [ISO 6.5.16.1], the left and right operands must be (i) two
-arithmetic operands, or (ii) two compatible structures, or (iii) two pointers to
-compatible types, or (iv) a pointer to a non-void type and a pointer to void, or
-(v) a pointer (left) and a null pointer constant (right) [ISO 6.5.16.1/1]. Our C
-subset has no notion of atomic, qualified, and unqualified types. The case of a
-left '_Bool' operand does not apply to our C subset. In case (i), the right
-operand is converted into the type of the left operand and stored into it. In
-case (ii), the right operand structure is stored into the left operand,
-unchanged. We consolidate cases (iii), (iv), and (v), which all involve
-pointers, by converting the right operand pointer into the left operand's
-pointer type -- recall that op 'convertPointer' preserves the type safety of our
-C subset by disallowing conversions between non-null pointers of incompatible
-types.
+(* In a simple assignment [ISO 6.5.16.1], which is the only form of assignment
+we allow in our C subset, the value of the right operand (the one being
+assigned) is converted to the type of the left operand (the one being
+overwritten) before storing it. In our C subset, with no atomic or qualified
+types and no '_Bool' type, this conversion requires the two operands to be [ISO
+6.5.16.1/1]: (i) two arithmetic operands; (ii) two compatible structures; (iii)
+two pointers to compatible types; (iv) a pointer to a non-void type and a
+pointer to void; or (v) a pointer (left) and a null pointer constant (right).
 
-The following op captures the process of converting the value of the right
-operand of an assignment to the type of the left operand. An error occurs if
-none of the cases (i)-(v) above holds. *)
+In case (i), the right operand is converted into the type of the left operand
+and stored into it. In case (ii), the right operand structure is stored into the
+left operand, unchanged, and similarly with case (iii). Case (iv) and (v) are
+handled by casting the right-hand side to the left-hand side.
 
+Note that the same conversions apply to conditional expressions [ISO 6.5.15]. *)
 op convertForAssignment (val:Value, ty:Type) : Monad Value =
   if arithmeticType? ty then
     convertInteger (val, ty)
-  else if embed? T_struct ty && compatibleTypes? (typeOfValue val, ty) then
+  else if compatibleTypes? (typeOfValue val, ty) then
     return val
-  else if embed? T_pointer ty then
-    convertPointer (val, ty)
+  else if
+    (typeOfValue val = T_pointer T_void && embed? T_pointer ty) ||
+    (ty = T_pointer T_void && embed? T_pointer (typeOfValue val)) then
+    castValue (val, ty)
   else
     error
 
@@ -2901,7 +2922,12 @@ FIXME HERE: explain why, and explain the basic pattern of evaluating translation
 units basically inside the state-error monad.
 *)
 
-FIXME HERE NOW: update all the below with the new version of XUMonad
+end-spec
+
+blah = spec
+
+
+(* FIXME HERE NOW: update all the below with the new version of XUMonad *)
 
 type ObjectFileElem =
   | ObjFile_Object Value
