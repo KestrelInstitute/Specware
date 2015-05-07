@@ -314,21 +314,20 @@ type Identifier = (String | identifier?)
 
 %subsection (* Types *)
 
-(* Our C subset features the following types [ISO 6.2.5]: the standard
-signed and unsigned integer types, the (plain) char type, structure
-types, pointer types, array types, and the void type. Each of the
-signed/unsigned short/int/long/longlong types can be denoted via
-multiple, equivalent combinations of type specifiers [ISO 6.7.2]; even
-though some of these types may have identical representations in an
-implementation, they are nevertheless different types [ISO 6.2.5/14].
-A structure type is denoted by its name [ISO 6.2.3], which is an
-identifier (we preclude anonymous structure types in this
-formalization). An array type includes the number of elements [ISO
-6.2.5/20]; our C subset only includes array types with known size. *)
-
-(* emw4: added function pointer types *)
-
-type FunType = Type * List Type
+(* Our C subset features the following types [ISO 6.2.5]: the standard signed
+and unsigned integer types, the (plain) char type, structure types, pointer
+types, array types, and the void type. Each of the signed/unsigned
+short/int/long/longlong types can be denoted via multiple, equivalent
+combinations of type specifiers [ISO 6.7.2]; even though some of these types may
+have identical representations in an implementation, they are nevertheless
+different types [ISO 6.2.5/14]. A structure type is denoted by its optional tag,
+where a None tag indicates an anonymous struct, as well as the names and types
+of its members [ISO 6.2.5/20]. In order to handle recursive struct types, we
+allow the member types in a struct type with tag S to refer to that whole struct
+type just by the name S, without containing the member types of S; e.g., the
+type T_struct (Some "S", ("f", T_pointer (T_structName "S"))) defines a struct
+type for a simple linked list. An array type includes the number of elements
+[ISO 6.2.5/20]; our C subset only includes array types with known size. *)
 
 type Type =
   | T_char                        %          char
@@ -342,11 +341,16 @@ type Type =
   | T_slong                       %   signed long
   | T_ullong                      % unsigned long long
   | T_sllong                      %   signed long long
-  | T_struct Identifier           % structure
+  | T_struct StructType           % structure
+  | T_structName Identifier       % recursive reference to a structure type
   | T_pointer Type                % pointer (to type)
   | T_array   Type * Nat          % array (of type of size)
   | T_void                        % void
-  | T_function FunType            % function (with return type and argument types)
+  | T_function (Type * List Type) % function (with return type and argument types)
+
+type StructMemberTypes = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
+type StructType = Option Identifier * StructMemberTypes
+type FunType = Type * List Type
 
 (* The following are the standard signed integer types [ISO 6.2.5/4] *)
 
@@ -452,7 +456,7 @@ op typeBits (ty:Type | integerType? ty) : Nat =
   else llong_bits
 
 (* In our C subset, two types are compatible [ISO 6.2.7] iff they are the same
-type. *)
+type; this is essentially because all our types are complete. *)
 
 op compatibleTypes? (ty1:Type, ty2:Type) : Bool =
   ty1 = ty2
@@ -462,6 +466,98 @@ op compatibleTypes? (ty1:Type, ty2:Type) : Bool =
 
 op compositeType (ty1:Type, ty2:Type | compatibleTypes? (ty1, ty2)) : Type =
   ty1
+
+(* Substitute a full T_struct struct type containing the given field types for
+any T_structName occurrences of the given struct tag in tp. *)
+op substStructMemberTypes (tag : Identifier, membs : StructMemberTypes) (tp : Type) : Type =
+  case tp of
+    | T_structName tag' ->
+      if tag = tag' then
+        T_struct (Some tag, membs)
+      else tp
+    | T_struct (tag_opt, membs') ->
+      if Some tag = tag_opt then
+        (* Avoid name capture *)
+        tp
+      else
+        T_struct (tag_opt,
+                  map (fn (f,f_tp) ->
+                         (f, substStructMemberTypes (tag, membs) f_tp)) membs')
+    | T_pointer tp' ->
+      T_pointer (substStructMemberTypes (tag, membs) tp')
+    | T_array (tp', n) ->
+      T_array (substStructMemberTypes (tag, membs) tp', n)
+    | T_function (retTp, paramsTypes) ->
+      T_function (substStructMemberTypes (tag, membs) retTp,
+                  map (substStructMemberTypes (tag, membs)) paramsTypes)
+    | _ -> tp
+
+(* Expand the field types of a struct type by substituting the whole T_struct
+struct type for occurrences of T_structName in the field types. *)
+op expandStructMemberTypes (struct_tp : StructType) : StructMemberTypes =
+  case struct_tp.1 of
+    | None ->
+      (* No need to expand *)
+      struct_tp.2
+    | Some tag ->
+      map (fn (f,f_tp) -> (f, substStructMemberTypes (tag, struct_tp.2) f_tp)) struct_tp.2
+
+
+%subsubsection (* Sizes of types *)
+
+(* Indicates whether a type has a valid size, i.e., whether sizeof [ISO 6.5.3.4]
+can be called on it. It is an error to take the size of a function type or of
+the void type; also, our representation allows void and/or function types to
+occur in struct or array types, which is technically invalid in C, so we must
+rule these out as well. Additionally, we also rule out bare occurrences of
+T_structName, since it is only supposed to occur inside a T_struct with the same
+name, and only in a pointer type (since a struct type cannot contain itself).
+
+FIXME: add a function to recognize the valid types, filtering out these bad
+cases. *)
+op typeHasSize? (tp:Type) : Bool =
+   case tp of
+     | T_struct (_, membs) ->
+       forall? typeHasSize? (unzip membs).2
+     | T_structName _ -> false
+     | T_array (elem_tp, _) -> typeHasSize? elem_tp
+     | T_void -> false
+     | T_function _ -> false
+     | _ -> true
+
+(* The size of a pointer is implementation-defined *)
+op sizeof_pointer : Nat
+
+(* There might be extra padding in a struct, defined in an
+implementation-defined way [ISO 6.7.2.1/15]. This op describes this
+implementation-defined padding, which we assume can be computed from the list of
+member types in a struct. *)
+op struct_padding : List Type -> Nat
+
+(* Each type has a size, which is returned by the sizeof operator applied to an
+expression of that type [ISO 6.5.3.4]. This op calculates this size from the
+type itself, assuming that sizeof is valid on this type, i.e., that tp has a
+size, as defined by typeHasSize? above. *)
+op sizeof (tp:Type | typeHasSize? tp) : Nat =
+   case tp of
+     | T_char -> 1
+     | T_uchar -> 1
+     | T_schar -> 1
+     | T_ushort -> sizeof_short
+     | T_sshort -> sizeof_short
+     | T_uint -> sizeof_int
+     | T_sint -> sizeof_int
+     | T_ulong -> sizeof_long
+     | T_slong -> sizeof_long
+     | T_ullong -> sizeof_llong
+     | T_sllong -> sizeof_llong
+     | T_struct (_, membs) ->
+       let tps = (unzip membs).2 in
+       foldl (Nat.+) (struct_padding tps) (map sizeof tps)
+     | T_pointer _ -> sizeof_pointer
+     | T_array (elem_tp, len) -> len * sizeof (elem_tp)
+     | T_void -> 0
+     | T_function _ -> 0
 
 
 %subsubsection (* Minimum, maximum, and range of integer types *)
@@ -686,12 +782,15 @@ constructors 'member' and 'memberp', where 'p' suggests that the left operand
 must be a pointer, as required for '->') [ISO 6.5.2.3], array subscripting [ISO
 6.5.2.1], and the null pointer constant [ISO 6.3.2.3/3] '(void* ) 0' (we leave
 one space between the '*' and the ')' because comments in Specware do not nest).
-The fourth argument (a type) of the 'cond' constructor is the type of the result
-of the conditional expression, inferred by the compiler; this is needed because
-the evaluation of conditional expressions depends on this type [ISO 6.5.15]. We
-use a dedicated constructor for the null pointer constant '(void* ) 0' to avoid
-introducing casts in our C subset just for the purpose of modeling this null
-pointer constant. *)
+We use a dedicated constructor for the null pointer constant '(void* ) 0' to
+avoid introducing casts in our C subset just for the purpose of modeling this
+null pointer constant.
+
+C expressions are typed, and the type of an expression determines the meaning of
+the value accessed by it [ISO 6.2.5/1]. Thus, our Expressions contain enough
+additional information to determine the type of an expression; this really only
+includes the return type of conditional expressions.
+*)
 
 type Expression =
   | E_ident     Identifier
@@ -703,12 +802,6 @@ type Expression =
   | E_memberp   Expression * Identifier
   | E_subscript Expression * Expression
   | E_nullconst
-
-(* In our C subset, the only null pointer constant [ISO 6.3.2.3/3] is '(void* )
-0', captured by constructor 'nullconst' above. *)
-
-op nullPointerConst? (expr:Expression) : Bool =
-  embed? E_nullconst expr
 
 
 %subsection (* Type names *)
@@ -920,17 +1013,6 @@ type ExternalDeclaration =
 type TranslationUnit = List ExternalDeclaration
 
 
-%subsection (* Programs *)
-
-(* A C program consists of a set of source files [ISO 5.1.1.1/1]. Since our C
-subset has no '#include' directives [ISO 6.10], a source file coincides with a
-preprocessing translation unit, which, as explained above, coincides with a
-translation unit. Thus, in our C subset a program consists of translation units.
-*)
-
-type Program = List TranslationUnit
-
-
 %section (* Semantics *)
 
 (* Besides syntax and syntactic constraints, [ISO] describes the semantics (i.e.
@@ -1003,56 +1085,50 @@ type Pointer =
 
 %subsection (* Values *)
 
-(* We represent integers in values with a tagged integer type *)
+(* We represent integers in values with a tagged integer type, because values in
+C are always interpreted at a specific type [ISO 3.19] and the type of an
+integer affects the semantics of C in a lot of places *)
 type TypedInt = { ty_i : Type * Int |
                    integerType? ty_i.1 && ty_i.2 in? rangeOfIntegerType ty_i.1 }
 
-(* We now define the values. The C spec defines the values as the contents of an
+(* We now define the values. The C spec defines a value as the contents of an
 object when interpreted at a specific type [ISO 3.19], where an object is a
-region of data storage [ISO 3.15]. This wording suggests that, conceptually, a
-value "includes" a type. Typical implementations only store "raw" bits inside
-objects, without explicit type information, but use the declared type of the
-object to interpret the object's content [ISO 6.5/6].
+region of data storage [ISO 3.15]. To reflect this, we define values to also
+contain (enough information to reconstruct) the type at which they are being
+viewed.
 
-In our formal model of values, it is convenient to include type information. The
-values in our C subset are those of the integer types, of structure types, of
-pointer types, and of array types; those are all the non-'void' types in our C
-subset.
+A structure (value) consists of a list of members, each with a name and a value.
+(We disallow unnamed members, to simplify structs.) It also consists a
+StructType for the struct.
 
-A structure (value) consists of a value assigned to each member, so we use a
-finite map from identifiers (denoting members) to values. We also include the
-tag of the structure, so that we have complete type information.
+A pointer (value) is an element of the Pointer type defined above, along with a
+type tag, identifying the element type at which this pointer is being viewed.
+Note that this element type could actually be different from the actual type
+of the object designated by the pointer in the heap.
 
-A pointer (value) is an element of the Pointer type defined above. There is also
-a separate null pointer [ISO 6.3.2.3/3] value for each type [ISO 6.3.2.3/4].
+Null pointers [ISO 6.3.2.3/3] are represented separately from pointers,
+and also contain the type at which they are being viewed.
 
-An array value consists of a list of values -- the elements of the array. We
-also include the type of the elements in our model of an array value.
+An array value consists of a list of values, which give the elements of the
+array, along with the element type of those values.
 
 When an object declared in automatic storage has no initializer, its initial
 value is indeterminate [ISO 6.7.9/10]. Unlike Java, C does not enforce that such
 objects are assigned a value before first use. Thus, at run time, we may be
-accessing object with indeterminate value. Since we are interested in
+accessing objects with indeterminate value. Since we are interested in
 well-behaved C programs, we introduce, as part of our model of values, special
-'undefined' values, which represent those indeterminate values. These special
-values include their type, but no other information is predictably known.
-
-Even though some types may represent values in the same way, they are still
-separate types [ISO 6.2.5/14] and thus we use a different constructor for each
-different type. *)
+'undefined' values, which represent those indeterminate values. *)
 
 type Value =
   | V_int         TypedInt
-  | V_struct      Identifier * FiniteMap (Identifier, Value)
+  | V_struct      StructType * List (Identifier * Value)
   | V_pointer     Type * Pointer
   | V_array       Type * List Value
   | V_nullpointer Type
   | V_undefined   Type
 
-(* There is an obvious mapping from values to types. Note that this includes
-undefined values, because at run time they are still C values -- we just do not
-know what they are exactly. *)
 
+(* We can extract from a value the type at which we are viewing it *)
 op typeOfValue (val:Value) : Type =
   case val of
   | V_int (ty, _)            -> ty
@@ -1061,6 +1137,7 @@ op typeOfValue (val:Value) : Type =
   | V_array (ty, vals)       -> T_array (ty, length vals)
   | V_nullpointer ty         -> T_pointer ty
   | V_undefined ty           -> ty
+ 
 
 (* We lift some of the predicates that classify types to predicates that
 classify values. Note that undefined values of the correct types are
@@ -1113,15 +1190,13 @@ name identifies that region of storage. We introduce the notion of named storage
 as a mapping from names (of objects) to values (stored in the objects).
 
 As explained earlier, the value of an object arises from interpreting the
-object's content according to the type of the object, i.e. we could model named
+object's content according to the type of the object; we could model named
 storage by associating raw bit lists to names, and then use the named objects'
-types to construct the values. But we prefer to associate typed values to names,
+types to construct the values, but we prefer to associate typed values to names,
 so that the value of an object can be retrieved from a named storage without
 reference to a symbol table or similar information. We could, of course, define
 named storage to also associate a type to each name, but that is really the same
-as associating a typed value to each name, as we do here. We can prove that,
-when all the syntactic constraints formalized earlier are satisfied, the type of
-the value stored into an object always coincides with the type of the object. *)
+as associating a typed value to each name, as we do here. *)
 
 type NamedStorage = FiniteMap (Identifier, Value)
 
@@ -1146,6 +1221,10 @@ list. In order to model deallocation of objects, each AllocatedID is mapped to
 an optional value, where "None" indicates a deallocated object. This is to
 prevent another allocation from re-using an AllocatedID. *)
 
+(* FIXME HERE: should contain the size of each object, and should allow the type
+of the value being stored to change if the new value has a size no greater than
+the size of the allocated object, since the objects in allocated storage are
+allowed to change type [ISO 6.5/6]. *)
 type AllocatedStorage = List (Option Value)
 
 (* We model the global, dynamic storage of a program as containing three fields
@@ -1357,7 +1436,7 @@ op allocatedObjOptLens (alloc_id : AllocatedID) : MLens ((),Option Value) =
    the "upstream" lens, so that the "get" function can modify the given struct
    value, but it is much easier to just never allow undefined struct objects to
    begin with. *)
-op structFieldsLens : MLens (Value,FiniteMap (Identifier, Value)) =
+op structFieldsLens : MLens (Value, List (Identifier * Value)) =
    {mlens_get = fn v -> case v of
                           | V_struct (_, fields) -> return fields
                           | _ -> error,
@@ -1392,7 +1471,7 @@ op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
      | OD_Member (d', ident) ->
        mlens_compose (objectDesignatorLens d',
                       mlens_compose (structFieldsLens,
-                                     mlens_of_key (ident, error, error)))
+                                     mlens_of_alist_key (ident, error, error)))
      | OD_Subscript (d', i) ->
        mlens_compose (objectDesignatorLens d',
                       mlens_compose
@@ -1471,8 +1550,7 @@ an ordered list of typed members, each of which is modeled as a pair
 of a member name and its type. A symbol table for structure specifiers
 associates typed members to structure tags (which are identifiers). *)
 
-type StructMembers = {l:List (Identifier * Type) | noRepetitions? (unzip l).1}
-type StructTable = FiniteMap (Identifier, StructMembers)
+type StructTable = FiniteMap (Identifier, StructMemberTypes)
 
 (* A function table is a mapping from identifiers to monadic functions on zero
 or more values. These monadic functions are restricted so that they cannot
@@ -1510,8 +1588,6 @@ identifiers with internal linkage, i.e., global variables, as well as static
 variables inside functions, that are not visible outside the current file and/or
 function body. *)
 
-(* FIXME HERE: maybe call this TopEnv? *)
-
 type TranslationEnv =
    {xenv_typedefs   : TypedefTable,
     xenv_structures : StructTable,
@@ -1542,10 +1618,12 @@ op lookupTypeDef (name : Identifier) : Monad Type =
   {r <- askR;
    liftOption (r.r_xenv.xenv_typedefs name)}
 
-(* Look up a struct tag *)
-op lookupStructMembers (tag : Identifier) : Monad StructMembers =
+(* Look up the members of a named struct, expanding recursive occurrences of the
+struct name *)
+op lookupStructMemberTypes (tag : Identifier) : Monad StructMemberTypes =
   {r <- askR;
-   liftOption (r.r_xenv.xenv_structures tag)}
+   membs <- liftOption (r.r_xenv.xenv_structures tag);
+   return (expandStructMemberTypes (Some tag, membs))}
 
 (* Look up a function *)
 op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction * FunType) =
@@ -1779,6 +1857,7 @@ theorem convertInteger_no_change is
 from values to values: the value is converted to the type returned by op
 'promoteType'. *)
 
+(* FIXME HERE *)
 op promoteValue (val:Value) : Monad Value =
   if integerValue? val then
     convertInteger (val, promoteType (typeOfValue val))
@@ -1804,6 +1883,8 @@ op arithConvertValues (val1:Value, val2:Value) : Monad (Type * Int * Int) =
 
 
 %subsubsection (* Pointer conversions *)
+
+(* FIXME: pointer conversion is covered in [ISO 6.3.2.3] *)
 
 (* The compile-time checks formalized earlier allow conversions (i) between
 compatible pointer types (which in our C subset means identical pointer types,
@@ -2473,7 +2554,7 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
     {res <- evaluate expr;
      case res of
        | Res_value (V_struct (_, members)) ->
-         (case members mem of
+         (case assoc members mem of
             | Some val ->
               (* If the LHS is a struct value, with the mem struct member,
                  return the value of the mem struct member *)
@@ -2491,7 +2572,7 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
          {val_lhs <- readObject obj;
           case val_lhs of
             | V_struct (_, members) ->
-              (case members mem of
+              (case assoc members mem of
                  | Some _ -> return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
                  | None -> error)
             | _ -> error}
@@ -2506,7 +2587,7 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
          {val_star <- readObject obj;
           case val_star of
             | V_struct (_, members) ->
-              (case members mem of
+              (case assoc members mem of
                  | Some _ ->
                    (* If expr0 yields a pointer to a struct containing mem,
                       return the designator of mem in that struct *)
@@ -2582,16 +2663,18 @@ type name w.r.t. a TypedefTable, by expanding all the typedef names in the type
 name. Note that this is not done in the Monad, so that it can be called by
 evalTranslationUnit. *)
 
-op expandTypeName (table:TypedefTable, tyn:TypeName) : Option Type =
+op expandTypeName (typedefs:TypedefTable, structs:StructTable, tyn:TypeName) : Option Type =
   case tyn of
-  | TN_typedef tdn -> table tdn
+  | TN_typedef tdn -> typedefs tdn
   | TN_pointer tyn ->
-    {ty <- expandTypeName (table, tyn);
+    {ty <- expandTypeName (typedefs, structs, tyn);
      Some (T_pointer ty)}
   | TN_array (tyn, n) ->
-    {ty <- expandTypeName (table, tyn);
+    {ty <- expandTypeName (typedefs, structs, tyn);
      Some (T_array (ty, n))}
-  | TN_struct tag -> Some (T_struct tag)
+  | TN_struct tag ->
+    {membs <- structs tag;
+     Some (T_struct (Some tag, membs))}
   | TN_char  ->  Some T_char
   | TN_uchar  -> Some T_uchar
   | TN_schar  -> Some T_schar
@@ -2608,7 +2691,7 @@ op expandTypeName (table:TypedefTable, tyn:TypeName) : Option Type =
 (* Monadic version of the above, that looks up the current TypedefTable *)
 op expandTypeNameM (tyn:TypeName) : Monad Type =
   {r <- askR;
-   liftOption (expandTypeName (r.r_xenv.xenv_typedefs, tyn))}
+   liftOption (expandTypeName (r.r_xenv.xenv_typedefs, r.r_xenv.xenv_structures, tyn))}
 
 %subsection (* Zero values *)
 
@@ -2631,27 +2714,19 @@ Note that zeroOfType itself is not defined in the Monad, but instead represents
 errors using the Option type; this is so that TranslationUnits can be evaluated
 outside the Monad as well. *)
 
-op zeroOfType (table:StructTable) (ty:Type) : Option Value =
-  case ty of
-  | T_void -> None
-  | T_struct tag ->
-    {membs <- table tag;
-     (mems, tys) <- Some (unzip membs);
-     vals <- zerosOfTypes table tys;
-     Some (V_struct (tag, fromAssocList (zip (mems, vals))))}
-  | T_array (ty0, n) ->
-    {val0 <- zeroOfType table ty0;
-     Some (V_array (ty0, repeat val0 n))}
-  | ty -> Some (zeroOfScalarType ty)
+(* FIXME HERE: rename typeHasSize? to capture it being a value type...? *)
+op zeroOfType (tp:Type | typeHasSize? tp) : Value =
+  case tp of
+    | T_struct (struct_tp) ->
+      V_struct (struct_tp,
+                map (fn (f,f_tp) -> (f, zeroOfType f_tp)) struct_tp.2)
+    | T_array (elem_tp, n) ->
+      V_array (elem_tp, repeat (zeroOfType elem_tp) n)
+    | ty -> zeroOfScalarType ty
 
 (* This just maps zeroOfType over tys *)
-op zerosOfTypes (table:StructTable) (tys:List Type) : Option (List Value) =
-   mapM_opt (zeroOfType table) tys
-
-(* This lifts zeroOfType into Monad *)
-op zeroOfTypeM (ty:Type) : Monad Value =
-  {r <- askR;
-   liftOption (zeroOfType r.r_xenv.xenv_structures ty)}
+op zerosOfTypes (tys:List Type) : List Value =
+   map zeroOfType tys
 
 
 %subsection (* Statements *)
@@ -2803,8 +2878,7 @@ op evalBlockItem (item:BlockItem) : Monad () =
   case item of
   | BlockItem_declaration (tp_name, id) ->
     {tp <- expandTypeNameM tp_name;
-     zero_val <- zeroOfTypeM tp;
-     addLocalBinding (id, zero_val)}
+     addLocalBinding (id, V_undefined tp)}
   | BlockItem_statement stmt -> evalStatement stmt
 
 
@@ -2822,6 +2896,11 @@ Note also that translation units are not evaluated inside the Monad.
 
 FIXME HERE: explain why, and explain the basic pattern of evaluating translation
 units basically inside the state-error monad. *)
+
+(* FIXME HERE NOW: [ISO 6.7.2.3/5] says that declarations of structs in
+different scopes declare distinct types, but [ISO 6.2.7/1] says that these
+different struct declarations in separate translation units can still be
+compatible if they are (in our formalism) equal *)
 
 type TopLevel =
    {top_structs   : StructTable,
@@ -2883,28 +2962,12 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
 (* Expand a TypeName in XUMonad *)
 op expandTypeNameXU (tp:TypeName) : XUMonad Type =
   {top <- xu_get;
-   liftOption_XU (expandTypeName (top.top_typedefs, tp))}
+   liftOption_XU (expandTypeName (top.top_typedefs, top.top_structs, tp))}
 
-(* Call zeroOfType in XUMonad *)
+(* Call expandTypeName followed by zeroOfType in XUMonad *)
 op zeroOfTypeXU (tpName:TypeName) : XUMonad Value =
-  {top <- xu_get;
-   tp <- liftOption_XU (expandTypeName (top.top_typedefs, tpName));
-   liftOption_XU (zeroOfType top.top_structs tp)}
-
-(* Look up a value in an alist *)
-(* FIXME HERE: this should be in a library somewhere... *)
-op [a,b] assoc (l:List (a * b)) (key : a) : Option b =
-  case l of
-    | [] -> None
-    | (x,y)::l' -> if key = x then Some y else assoc l' key
-
-(* Add a key-value pair to an alist in a unique way, returning None if the key
-is already in l *)
-op [a,b] acons_uniq (l:List (a * b)) (key : a) (val : b) : Option (List (a * b)) =
-  case assoc l key of
-    | None -> Some (l ++ [(key,val)])
-    | Some _ -> None
-
+  {tp <- expandTypeNameXU tpName;
+   return (zeroOfType tp)}
 
 (* For typedefs, add it to the typedef table, checking first that the typedef
 name is not already in the typedef table *)
@@ -3009,6 +3072,19 @@ op evalTranslationUnit (unit:TranslationUnit) : Option TopLevel =
 
 
 %subsection (* Programs *)
+
+
+%subsection (* Programs *)
+
+(* A C program consists of a set of source files [ISO 5.1.1.1/1]. Since our C
+subset has no '#include' directives [ISO 6.10], a source file coincides with a
+preprocessing translation unit, which, as explained above, coincides with a
+translation unit. Thus, in our C subset a program consists of translation units.
+*)
+
+type Program = List TranslationUnit
+
+
 
 (* FIXME HERE: document the "tying the knot" stuff here *)
 

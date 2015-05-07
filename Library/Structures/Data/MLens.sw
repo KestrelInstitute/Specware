@@ -64,6 +64,34 @@ op [a,b] mlens_of_key (key:a, getErr:Monad b, setErr:Monad (a -> Option b)) : ML
                      | Some _ ->
                        return (fn a -> if a = key then Some b else m a)) }
 
+
+(* Look up a value in an alist *)
+(* FIXME HERE: this should be in a library somewhere... *)
+op [a,b] assoc (l:List (a * b)) (key : a) : Option b =
+  case l of
+    | [] -> None
+    | (x,y)::l' -> if key = x then Some y else assoc l' key
+
+(* Set the value for a key in an alist, returning None if the key is not already
+in the alist *)
+op [a,b] alist_set (l:List (a * b)) (key : a) (val : b) : Option (List (a * b)) =
+   case l of
+     | [] -> None
+     | (key',val')::l' ->
+       if key = key' then Some ((key,val)::l') else
+         case alist_set l' key val of
+           | Some res_l ->
+             Some ((key',val')::res_l)
+           | None -> None
+
+(* Similar to the above, but using an alist instead of a map. *)
+op [a,b] mlens_of_alist_key (key:a, getErr:Monad b, setErr:Monad (List (a * b))) : MLens (List (a * b),b) =
+   {mlens_get = (fn alist -> mapOptionDefault return getErr (assoc alist key)),
+    mlens_set = (fn alist -> fn b ->
+                   case alist_set alist key b of
+                     | None -> setErr
+                     | Some alist' -> return alist') }
+
 (* The monadic lens for the ith element of a list. As with
    mlens_of_key, it is an error in both the get and the set if a list
    does not have an ith element. *)
