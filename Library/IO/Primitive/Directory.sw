@@ -17,18 +17,15 @@ op directory (pathname : Pathname) : Option (List Pathname) =
 op list_directory            : Pathname -> List Pathname  % when looking for <dir>/*.*
 op list_restricted_directory : Pathname -> List Pathname  % when looking for <dir>/x.* or <dir>/*.y
 
-op list_files_with_type (dir : String, filetype : String) : List Pathname =
- let _ = writeLine "aa" in
- let dir_pathname = parse_namestring dir                     in
- let _ = writeLine "bb" in
- let sw_type      = null_pathname << {file_type = Some "sw"} in
- let _ = writeLine "cc" in
- let _ = writeLine (anyToString sw_type) in
- let _ = writeLine "cc2" in
- let _ = writeLine (print_pathname dir_pathname) in
- let sw_pattern   = merge_pathnames (sw_type, dir_pathname)  in
- let _ = writeLine "dd" in
- list_restricted_directory sw_pattern
+op list_files_with_type (dir : String, file_type : String) : List Pathname =
+ let p1 = parse_namestring dir in
+ let p2 = case p1.file_name  of
+            | None -> p1 << {file_name = Wild}
+            | _ -> p1
+ in
+ let p3 = null_pathname << {file_type = Some file_type} in
+ let p4 = merge_pathnames (p3, p2)                      in
+ list_restricted_directory p4
 
 %% If pathname refers to a directory, list_directory will return Some list of files 
 %% Otherwise it will return None.

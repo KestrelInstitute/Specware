@@ -22,22 +22,27 @@ type RawHost    % some internal lisp structure
 type Host       = | Some RawHost
                   | None
                   | Unspecific
+                  | Wild
 
 type Device     = | Some String 
                   | None
                   | Unspecific
+                  | Wild
 
 type Directory  = | Some (List String)
                   | None
                   | Unspecific
+                  | Wild
 
 type FileName   = | Some String
                   | None
                   | Unspecific
+                  | Wild
 
 type FileType   = | Some String
                   | None
                   | Unspecific
+                  | Wild
 
 type Version    = | Some Int
                   | None          
@@ -106,8 +111,8 @@ op merge_pathnames  : Pathname * Pathname -> Pathname    % merge-pathnames  in C
                              (:|None|       nil)
                              (t             nil)))
 
-          (lisp_directory (case (car sw_device)
-                             (:|Some|       (cdr sw_device))
+          (lisp_directory (case (car sw_directory)
+                             (:|Some|       (cdr sw_directory))
                              (:|Wild|       :Wild)
                              (:|Unspecific| :Unspecific)
                              (:|None|       nil)
@@ -149,25 +154,36 @@ op merge_pathnames  : Pathname * Pathname -> Pathname    % merge-pathnames  in C
          (lisp_name      (pathname-name      lisp_pathname))
          (lisp_type      (pathname-type      lisp_pathname))
          (lisp_version   (pathname-version   lisp_pathname)))
-    (let ((sw_host       `(:|Some| . ,lisp_host))
-          (sw_device     `(:|Some| . ,lisp_device))
+    (let ((sw_host       (case lisp_host
+                            (:Unspecific `(:|Unspecific|))
+                            (:Wild       `(:|Wild|))
+                            ((nil)       `(:|None|))
+                            (t           `(:|Some| . ,lisp_host))))
+          (sw_device     (case lisp_device
+                            (:Unspecific `(:|Unspecific|))
+                            (:Wild       `(:|Wild|))
+                            ((nil)       `(:|None|))
+                            (t           `(:|Some| . ,lisp_device))))
           (sw_directory  (case lisp_directory
-                            (:unspecific `(:|Unspecific|))
-                            (nil         `(:|None|))
+                            (:Unspecific `(:|Unspecific|))
+                            (:Wild       `(:|Wild|))
+                            ((nil)       `(:|None|))
                             (t           `(:|Some| . ,lisp_directory))))
           (sw_name       (case lisp_name
-                            (:unspecific `(:|Unspecific|))
-                            (nil         `(:|None|))
+                            (:Unspecific `(:|Unspecific|))
+                            (:Wild       `(:|Wild|))
+                            ((nil)       `(:|None|))
                             (t           `(:|Some| . ,lisp_name))))
           (sw_type      (case lisp_type
-                            (:unspecific `(:|Unspecific|))
-                            (nil         `(:|None|))
+                            (:Unspecific `(:|Unspecific|))
+                            (:Wild       `(:|Wild|))
+                            ((nil)       `(:|None|))
                             (t           `(:|Some| . ,lisp_type))))
           (sw_version   (case lisp_version
-                            (:unspecific `(:|Unspecific|))
-                            (nil         `(:|None|))
-                            (:Newest     `(:|Newest|))
+                            (:Unspecific `(:|Unspecific|))
                             (:Wild       `(:|Wild|))
+                            ((nil)       `(:|None|))
+                            (:Newest     `(:|Newest|))
                             (t           `(:|Some| . ,lisp_version)))))
 
      (pathname-spec::make_pathname-6 sw_host 
