@@ -1588,22 +1588,24 @@ identifiers with internal linkage, i.e., global variables, as well as static
 variables inside functions, that are not visible outside the current file and/or
 function body. *)
 
+(* FIXME HERE NOW: update above documentation to reflect that the FunctionTable
+is no longer in TranslationEnv *)
+
 type TranslationEnv =
    {xenv_typedefs   : TypedefTable,
-    xenv_structures : StructTable,
-    xenv_functions  : FunctionTable }
+    xenv_structures : StructTable }
 
 op emptyTranslationEnv : TranslationEnv =
    {xenv_typedefs   = empty,
-    xenv_structures = empty,
-    xenv_functions  = empty}
+    xenv_structures = empty}
 
 
 (* The reader type of the monad is the TranslationEnv type, along with a
    designator for the current lexical scope *)
 type Monad.R =
-   {r_xenv     : TranslationEnv,
-    r_curScope : ScopeDesignator }
+   {r_xenv      : TranslationEnv,
+    r_curScope  : ScopeDesignator,
+    r_functions : FunctionTable }
 
 op globalRFromEnv (env : TranslationEnv) : R =
    {r_xenv = env, r_curScope = GlobalScope}
@@ -1630,7 +1632,7 @@ op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction * FunType)
   case f_desig of
     | FunctionDesignator id ->
       {r <- askR;
-       liftOption (r.r_xenv.xenv_functions id)}
+       liftOption (r.r_functions id)}
 
 (* Get the current ScopeDesignator *)
 op getCurrentScopeDesignator : Monad ScopeDesignator =
@@ -1897,6 +1899,8 @@ objects, because each object has a well-defined type and it should not be
 The following op returns an error outcome if neither (i) nor (ii) apply, because
 the compile-time checks prevent that from happening. In conversion (ii), unless
 the pointer is null, the following op returns a non-standard outcome. *)
+
+(* FIXME HERE NOW: capture pointer conversions to different types! *)
 
 op convertPointer (val:Value, ty:Type | embed? T_pointer ty) : Monad Value =
   let ty0 = typeOfValue val in
@@ -2662,18 +2666,18 @@ op evaluateAllToValues (exprs:List Expression) : Monad (List Value) =
 type name w.r.t. a TypedefTable, by expanding all the typedef names in the type
 name. Note that this is not done in the Monad, so that it can be called by
 evalTranslationUnit. *)
-
-op expandTypeName (typedefs:TypedefTable, structs:StructTable, tyn:TypeName) : Option Type =
+(* FIXME HERE: update docs above for new type... *)
+op expandTypeName (xenv:TranslationEnv, tyn:TypeName) : Option Type =
   case tyn of
-  | TN_typedef tdn -> typedefs tdn
+  | TN_typedef tdn -> xenv.xenv_typedefs tdn
   | TN_pointer tyn ->
-    {ty <- expandTypeName (typedefs, structs, tyn);
+    {ty <- expandTypeName (xenv, tyn);
      Some (T_pointer ty)}
   | TN_array (tyn, n) ->
-    {ty <- expandTypeName (typedefs, structs, tyn);
+    {ty <- expandTypeName (xenv, tyn);
      Some (T_array (ty, n))}
   | TN_struct tag ->
-    {membs <- structs tag;
+    {membs <- xenv.xenv_structs tag;
      Some (T_struct (Some tag, membs))}
   | TN_char  ->  Some T_char
   | TN_uchar  -> Some T_uchar
@@ -2884,49 +2888,40 @@ op evalBlockItem (item:BlockItem) : Monad () =
 
 %subsection (* Translation Units *)
 
-(* Translation units are evaluated by building up a semantic object containing
-all the top-level external declarations in that translation unit. This semantic
-object is defined by the type TopLevel, and contains the struct and typedef
-tables along with the top-level identifiers and their object or function values.
-Note that a function in a TopLevel need not be a TopFunction, meaning that it
-can still depend on the function table, because we have not yet "tied the knot";
-this is done when we compile a whole program, below.
+(* Translation units are compiled by turning them into "object files", which
+give the top-level bindings for the objects and functions defined in a
+translation unit. Note that a function in an object file need not be a
+TopFunction, meaning that it can still depend on the function table, because we
+have not yet "tied the knot"; this is done when we compile a whole program,
+below.
 
 Note also that translation units are not evaluated inside the Monad.
 
 FIXME HERE: explain why, and explain the basic pattern of evaluating translation
-units basically inside the state-error monad. *)
+units basically inside the state-error monad.
+*)
 
-(* FIXME HERE NOW: [ISO 6.7.2.3/5] says that declarations of structs in
-different scopes declare distinct types, but [ISO 6.2.7/1] says that these
-different struct declarations in separate translation units can still be
-compatible if they are (in our formalism) equal *)
+FIXME HERE NOW: update all the below with the new version of XUMonad
 
-type TopLevel =
-   {top_structs   : StructTable,
-    top_typedefs  : TypedefTable,
-    top_objects   : FiniteMap (Identifier, Value),
-    top_functions : FiniteMap (Identifier, CFunction * FunType)}
+type ObjectFileElem =
+  | ObjFile_Object Value
+  | ObjFile_Function (CFunction * FunType)
 
-op emptyTopLevel : TopLevel =
-   {top_structs   = empty,
-    top_typedefs  = empty,
-    top_objects   = empty,
-    top_functions = empty}
+type ObjectFile = List (Identifier * ObjectFileElem)
 
 (* The monad for evaluating translation units *)
-type XUMonad a = TopLevel -> Option (TopLevel * a)
+type XUMonad a = TranslationEnv -> Option (ObjectFile * a)
 
 (* XUMonad's return and bind *)
-op [a] return (x:a) : XUMonad a = fn top -> Some (top, x)
+op [a] return (x:a) : XUMonad a = fn xenv -> Some ([], x)
 op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
-  fn top1 -> case m top1 of
-             | Some (top2, b) -> f b top2
+  fn xenv -> case m xenv of
+             | Some (ofile1, b) -> f b top2
              | None -> None
 
 (* Run an XUMonad *)
-op [a] runXU (m : XUMonad a) : Option (TopLevel * a) =
-  m emptyTopLevel
+op [a] runXU (m : XUMonad a) : Option (ObjectFile * a) =
+  m emptyTranslationEnv
 
 (* The map function for XUMonad *)
 op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
@@ -2938,7 +2933,7 @@ op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
         return (new_x :: new_xs)}
 
 (* Get the current TopLevel *)
-op xu_get : XUMonad TopLevel =
+op xu_ask : XUMonad TranslationEnv =
   fn top -> Some (top, top)
 
 (* An error in XUMonad *)
@@ -2946,7 +2941,7 @@ op [a] xu_error : XUMonad a = fn _ -> None
 
 (* Test that a FiniteMap in the current top-level does not have a binding for id *)
 op [a] xu_errorIfBound (id : Identifier, f : TopLevel -> FiniteMap (Identifier, a)) : XUMonad () =
-  {top <- xu_get;
+  {top <- xu_ask;
    if some? (f top id) then xu_error else return ()}
 
 (* Update the TopLevel *)
@@ -2961,7 +2956,7 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
 
 (* Expand a TypeName in XUMonad *)
 op expandTypeNameXU (tp:TypeName) : XUMonad Type =
-  {top <- xu_get;
+  {top <- xu_ask;
    liftOption_XU (expandTypeName (top.top_typedefs, top.top_structs, tp))}
 
 (* Call expandTypeName followed by zeroOfType in XUMonad *)
@@ -3073,16 +3068,16 @@ op evalTranslationUnit (unit:TranslationUnit) : Option TopLevel =
 
 %subsection (* Programs *)
 
-
-%subsection (* Programs *)
-
 (* A C program consists of a set of source files [ISO 5.1.1.1/1]. Since our C
 subset has no '#include' directives [ISO 6.10], a source file coincides with a
 preprocessing translation unit, which, as explained above, coincides with a
 translation unit. Thus, in our C subset a program consists of translation units.
+
+FIXME HERE: fix up the above documentation to include object files / libraries
 *)
 
-type Program = List TranslationUnit
+type Program = {pgm_sources : List TranslationUnit,
+                pgm_libs : List ObjectFile }
 
 
 
@@ -3120,8 +3115,8 @@ op initialEnv (top : TopLevel) : TranslationEnv =
 
 (* Build the TopLevel for all the translation units,  *)
 op evalProgram (pgm : Program) : Monad () =
-   {top <- liftOption {tops <- mapM_opt evalTranslationUnit pgm;
-                       combineTopLevels tops};
+   {top <- liftOption {tops <- mapM_opt evalTranslationUnit pgm.pgm_sources;
+                       combineTopLevels (pgm.pgm_libs ++ tops)};
     initHeap <- return (initialStorage top);
     initEnv <- return (initialEnv top);
     putState initHeap;
