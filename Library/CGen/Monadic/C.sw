@@ -1,4 +1,4 @@
-C qualifying spec
+C1 = C qualifying spec
 
 import /Library/General/TwosComplementNumber
 import /Library/General/OptionExt
@@ -452,6 +452,24 @@ op functionPointerType? (ty:Type) : Bool =
     | T_pointer (T_function _) -> true
     | _ -> false
 
+op pointerType? (tp:Type) : Bool = embed? T_pointer tp
+
+(* Whether tp is a complete object type, i.e., it is not a void or function
+type. This also ensures that the type is well-formed, meaning that it is not a
+struct or array type that transitively contains a void or function type and also
+that it does not contain any "bare" occurrences of T_structName, which is only
+supposed to occur inside a pointer type in a T_struct with the same name.  *)
+op objectType? (tp:Type) : Bool =
+   case tp of
+     | T_struct (_, membs) ->
+       forall? objectType? (unzip membs).2
+     | T_structName _ -> false
+     | T_array (elem_tp, _) -> objectType? elem_tp
+     | T_void -> false
+     | T_function _ -> false
+     | _ -> true
+
+
 (* Each integer type has a size in bits. *)
 
 op typeBits (ty:Type | integerType? ty) : Nat =
@@ -511,26 +529,6 @@ op expandStructMemberTypes (struct_tp : StructType) : StructMemberTypes =
 
 %subsubsection (* Sizes of types *)
 
-(* Indicates whether a type has a valid size, i.e., whether sizeof [ISO 6.5.3.4]
-can be called on it. It is an error to take the size of a function type or of
-the void type; also, our representation allows void and/or function types to
-occur in struct or array types, which is technically invalid in C, so we must
-rule these out as well. Additionally, we also rule out bare occurrences of
-T_structName, since it is only supposed to occur inside a T_struct with the same
-name, and only in a pointer type (since a struct type cannot contain itself).
-
-FIXME: add a function to recognize the valid types, filtering out these bad
-cases. *)
-op typeHasSize? (tp:Type) : Bool =
-   case tp of
-     | T_struct (_, membs) ->
-       forall? typeHasSize? (unzip membs).2
-     | T_structName _ -> false
-     | T_array (elem_tp, _) -> typeHasSize? elem_tp
-     | T_void -> false
-     | T_function _ -> false
-     | _ -> true
-
 (* The size of a pointer is implementation-defined *)
 op sizeof_pointer : Nat
 
@@ -540,11 +538,11 @@ implementation-defined padding, which we assume can be computed from the list of
 member types in a struct. *)
 op struct_padding : List Type -> Nat
 
-(* Each type has a size, which is returned by the sizeof operator applied to an
-expression of that type [ISO 6.5.3.4]. This op calculates this size from the
-type itself, assuming that sizeof is valid on this type, i.e., that tp has a
-size, as defined by typeHasSize? above. *)
-op sizeof (tp:Type | typeHasSize? tp) : Nat =
+(* Each object type has a size, which is returned by the sizeof operator applied
+to an expression of that type [ISO 6.5.3.4]. This op calculates this size from
+the type itself, assuming that sizeof is valid on this type, i.e., that tp is an
+object type. *)
+op sizeof (tp:Type | objectType? tp) : Nat =
    case tp of
      | T_char -> 1
      | T_uchar -> 1
@@ -560,6 +558,7 @@ op sizeof (tp:Type | typeHasSize? tp) : Nat =
      | T_struct (_, membs) ->
        let tps = (unzip membs).2 in
        foldl (Nat.+) (struct_padding tps) (map sizeof tps)
+     | T_structName _ -> 0
      | T_pointer _ -> sizeof_pointer
      | T_array (elem_tp, len) -> len * sizeof (elem_tp)
      | T_void -> 0
@@ -786,11 +785,7 @@ introduced above, conditional expressions [ISO 6.5.15], structure member
 expressions (i.e. the '.' and '->' operators, respectively denoted by the
 constructors 'member' and 'memberp', where 'p' suggests that the left operand
 must be a pointer, as required for '->') [ISO 6.5.2.3], array subscripting [ISO
-6.5.2.1], and the null pointer constant [ISO 6.3.2.3/3] '(void* ) 0' (we leave
-one space between the '*' and the ')' because comments in Specware do not nest).
-We use a dedicated constructor for the null pointer constant '(void* ) 0' to
-avoid introducing casts in our C subset just for the purpose of modeling this
-null pointer constant.
+6.5.2.1], and cast expressions [ISO 6.5.4].
 
 C expressions are typed, and the type of an expression determines the meaning of
 the value accessed by it [ISO 6.2.5/1]. Thus, our Expressions contain enough
@@ -807,7 +802,7 @@ type Expression =
   | E_member    Expression * Identifier
   | E_memberp   Expression * Identifier
   | E_subscript Expression * Expression
-  | E_nullconst
+  | E_cast      {tp:Type | scalarType? tp } * Expression
 
 
 %subsection (* Type names *)
@@ -1193,16 +1188,11 @@ op optValueHasType (opt_v:Option Value, tp:Type) : Bool =
 
 (* An object is a region of storage [ISO 3.15]. When the object has a name, that
 name identifies that region of storage. We introduce the notion of named storage
-as a mapping from names (of objects) to values (stored in the objects).
-
-As explained earlier, the value of an object arises from interpreting the
-object's content according to the type of the object; we could model named
-storage by associating raw bit lists to names, and then use the named objects'
-types to construct the values, but we prefer to associate typed values to names,
-so that the value of an object can be retrieved from a named storage without
-reference to a symbol table or similar information. We could, of course, define
-named storage to also associate a type to each name, but that is really the same
-as associating a typed value to each name, as we do here. *)
+as a mapping from names of objects to the values stored in those objects. Recall
+that values in C are object contents viewed at a specific type [ISO 3.19]; the
+type at which an object is being viewed in a named storage is the effective type
+of the object [ISO 6.5/6], which is the same as the type at which the object was
+declared. *)
 
 type NamedStorage = FiniteMap (Identifier, Value)
 
@@ -1221,17 +1211,15 @@ type LocalScope = {scope_bindings : NamedStorage,
 
 (* As mentioned in the comments for type 'ObjectDesignator', our model of
 storage includes allocated objects, which are identified by the AllocatedID type
-introduced earlier. The allocated storage is modeled as a list, where the
-AllocatedID type, which is just natural numbers, is used to index into this
-list. In order to model deallocation of objects, each AllocatedID is mapped to
-an optional value, where "None" indicates a deallocated object. This is to
-prevent another allocation from re-using an AllocatedID. *)
-
-(* FIXME HERE: should contain the size of each object, and should allow the type
-of the value being stored to change if the new value has a size no greater than
-the size of the allocated object, since the objects in allocated storage are
-allowed to change type [ISO 6.5/6]. *)
-type AllocatedStorage = List (Option Value)
+introduced earlier. The allocated storage is modeled as a list, where
+AllocatedIDs, which are just natural numbers, are used to index into this
+list. In order to model deallocation of objects, the allocated storage list
+contains optional values, where "None" indicates a deallocated object. This is
+to prevent another allocation from re-using an AllocatedID. Allocated objects
+also do not have a declared type, and so can change type when they are assigned
+to [ISO 6.5/6]; the only restriction is the size of the allocated object, which
+does not change, and so this size is included with the allocated object. *)
+type AllocatedStorage = List (Option (Value * Nat))
 
 (* We model the global, dynamic storage of a program as containing three fields
 corresponding to the three storage durations [ISO 6.2.4] of objects (excluding
@@ -1420,7 +1408,7 @@ op getScopeParent (scope_id: ScopeID) : Monad ScopeDesignator =
 (* Build a lens for the optional Value associated with the given AllocatedID in
    allocated storage, where "optional" means the AllocatedID is allowed to be in
    a deallocated state *)
-op allocatedObjOptLens (alloc_id : AllocatedID) : MLens ((),Option Value) =
+op allocatedObjOptLens (alloc_id : AllocatedID) : MLens ((),Option (Value * Nat)) =
   case alloc_id of
     | AllocatedID n ->
       mlens_compose (allocatedStorageLens,
@@ -1473,7 +1461,9 @@ op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
        mlens_compose (scopeDesignatorLens scope_d,
                       mlens_of_key (ident, error, error))
      | OD_Allocated a_id ->
-       mlens_compose (allocatedObjOptLens a_id, mlens_for_option (error, error))
+       mlens_compose (allocatedObjOptLens a_id,
+                      mlens_compose (mlens_for_option (error, error),
+                                     mlens_for_proj1))
      | OD_Member (d', ident) ->
        mlens_compose (objectDesignatorLens d',
                       mlens_compose (structFieldsLens,
@@ -1523,9 +1513,9 @@ op deallocateLocalScope (scope_id:ScopeID) : Monad () =
    (localScopeOptLens scope_id).mlens_set () None
 
 (* Allocate storage for an object in the AllocatedStorage *)
-op allocateObject (val: Value) : Monad AllocatedID =
+op allocateObject (val: Value, size : Nat) : Monad AllocatedID =
   {storage <- getState;
-   putState (storage << {allocated = storage.allocated ++ [Some val]});
+   putState (storage << {allocated = storage.allocated ++ [Some (val, size)]});
    return (AllocatedID (length storage.automatic))}
 
 (* Deallocate an object in the AllocatedStorage *)
@@ -1613,8 +1603,9 @@ type Monad.R =
     r_curScope  : ScopeDesignator,
     r_functions : FunctionTable }
 
-op globalRFromEnv (env : TranslationEnv) : R =
-   {r_xenv = env, r_curScope = GlobalScope}
+(* Build an element of the R type using a global scope *)
+op makeGlobalR (env : TranslationEnv, funs : FunctionTable) : R =
+   {r_xenv = env, r_curScope = GlobalScope, r_functions = funs}
 
 (* Test if a typedef name is currently defined *)
 op testTypeDef (name : Identifier) : Monad Bool =
@@ -1916,26 +1907,28 @@ type and then back again, the result should be equal to the original value of
 the pointer [ISO 6.3.2.3/1, ISO 6.3.2.3/7, ISO 6.3.2.3/8]. We deviate from the
 standard slightly, however, in that we ignore alignment [ISO 6.2.8]; in fact,
 our formalization acts as if all types had alignment 1. *)
-op castValue (val:Value, tp:Type | scalarType? tp) : Monad Value =
+op castValue (tp:Type, val:Value | scalarType? tp) : Monad Value =
   let val_tp = typeOfValue val in
   if (integerType? val_tp && integerType? tp) then
     convertInteger (val, tp)
   else if (integerType? val_tp && pointerType? tp) then
-    return (V_undefined tp)
+    (case (val, tp) of
+       | (V_int (_, 0), T_pointer ptr_tp) -> return (V_nullpointer ptr_tp)
+       | _ -> return (V_undefined tp))
   else if (pointerType? val_tp && integerType? tp) then
-    return (V_undefined tp)
+    (case val of
+       | V_nullpointer _ -> return (V_int (tp, 0))
+       | _ -> return (V_undefined tp))
   else if (functionPointerType? val_tp && functionPointerType? tp) ||
     (~(functionPointerType? val_tp) && ~(functionPointerType? tp)) then
     case (val, tp) of
       | (V_pointer (_, ptr), T_pointer ptr_tp) ->
-        V_pointer (ptr_tp, ptr)
+        return (V_pointer (ptr_tp, ptr))
       | (V_nullpointer _, T_pointer ptr_tp) ->
-        V_nullpointer ptr_tp
-      | (V_undefined _, _) -> V_undefined tp
+        return (V_nullpointer ptr_tp)
+      | (V_undefined _, _) -> return (V_undefined tp)
   else
     error
-
-(* FIXME HERE NOW: use castValue where necessary below *)
 
 
 %subsubsection (* Assignment conversions *)
@@ -1963,7 +1956,7 @@ op convertForAssignment (val:Value, ty:Type) : Monad Value =
   else if
     (typeOfValue val = T_pointer T_void && embed? T_pointer ty) ||
     (ty = T_pointer T_void && embed? T_pointer (typeOfValue val)) then
-    castValue (val, ty)
+    castValue (ty, val)
   else
     error
 
@@ -2326,17 +2319,23 @@ quite operate on values, as formalized below. *)
 
 %subsection (* Expressions *)
 
-(* An C expression designates a possibly side-effecting computation of a value,
+(* A C expression designates a possibly side-effecting computation of a value,
 an object designator (i.e., an lvalue), or a function designator [ISO 6.5/1].
 (Note that we do not in fact allow side-effects in our expressions, as discussed
 above.) We smoosh the latter two into the single case of returning a Pointer,
-yielding the following type for the result of evaluating an expression. Further,
-array expression values are converted to pointers [ISO 6.3.2.1], except for a
-few special cases, and this is also captured in the following type. *)
+which is combined with the result type of the expression, as lvalues, like all
+expressions, are typed, and in fact the type of an lvalue determines the type of
+the object referenced through that lvalue [ISO 6.3.2.1/1]. Further, array
+expression values are converted to pointers [ISO 6.3.2.1], except for a few
+special cases. *)
 type ExpressionValue = {v:Value | ~(arrayValue? v)}
 type ExpressionResult =
-  | Res_pointer Pointer
+  | Res_pointer Type * Pointer
   | Res_value   ExpressionValue
+
+(* FIXME HERE NOW: maybe make Res_pointer take an Option Type, to indicate an
+identifier (which does not have its type)? Or, have lookupIdentifier return the
+type of the identifier... The latter is probably the right choice. *)
 
 (* Convert a FunctionDesignator to a pointer value. This requires looking up the
    type information of the pointer in the function table. *)
@@ -2353,17 +2352,44 @@ op pointerResultForFunction (f_desig : FunctionDesignator) : Monad ExpressionRes
    converted to a value that is not an array or a function [ISO 6.3.2.1].
    Lvalues are converted to the values of the objects designated by them, array
    values are converted to pointers to their first element, and function values
-   are converted to pointers to those function values. These conversions are
-   intuitively part of converting an ExpressionResult to a Value. *)
+   are converted to pointers to those function values. The first of these
+   processes is called lvalue conversion. These conversions are captured here by
+   the conversion from an ExpressionResult to a Value.
+
+   The C spec is rather complex and hard to understand in relation to how the
+   types of lvalues and the types of the values read from them relate during
+   lvalue conversion. The value resulting from lvalue conversion is required to
+   have the type of the lvalue [ISO 6.3.2.1/2], but also the lvalue used to
+   access an object is required to either have the effective type of the object,
+   if any, or character type [ISO 6.5/7]; the effective type of an object is its
+   declared type for automatic and static objects and the last type used to
+   assign to it, if any, for allocated objects [ISO 6.5/6]. The only way the
+   type of an lvalue can differ from the effective type of the object referenced
+   by it, however, is for an indirection expression acting on a pointer with the
+   "wrong" type, since the only other lvalues are identifiers, which always
+   refer to automatic or static objects of the same type as that of the
+   identifier. It is still unclear what happens when a pointer is dereferenced
+   at the "wrong" type; we consider this to be an "invalid" pointer, in which
+   case the dereferencing is undefined [ISO 6.5.3.2/4]. We also consider
+   dereferences at character type to be undefined, since, even though this does
+   return the object representation of the referenced value [ISO 6.2.6.1/4], the
+   actual values of object representations themselves are mostly unspecified
+   [ISO 6.2.6.1/1]. Thus, if an object is accessed via an lvalue with any type
+   that is different from the effective type of the object, we signal undefined
+   behavior. *)
 op expressionValue (res:ExpressionResult) : Monad ExpressionValue =
   case res of
-    | Res_pointer (ptr as (ObjPointer obj)) ->
+    | Res_pointer (expr_tp, ObjPointer obj) ->
       {v <- readObject obj;
-       case v of
-         | V_array (ty, _) -> return (V_pointer (ty, ptr))
-         | _ -> return (V_pointer (typeOfValue v, ptr)) }
-    | Res_pointer (FunPointer f_desig) ->
-      pointerValueForFunction f_desig
+       if compatibleTypes? (expr_tp, typeOfValue v) then
+         case v of
+           | V_array (obj_tp, _) ->
+             return (V_pointer (obj_tp, ObjPointer (OD_Subscript (obj, 0))))
+           | _ -> return v
+       else nonstd }
+    | Res_pointer (ptr_tp, FunPointer f_desig) ->
+      (* FIXME HERE: check that the type is a function pointer type...? *)
+      V_pointer (ptr_tp, f_desig)
     | Res_value val ->
       return val
 
@@ -2414,7 +2440,7 @@ op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad Expressio
      | STAR -> (fn res_m ->
                   {val <- expressionValueM res_m;
                    case val of
-                     | V_pointer (_, ptr)        -> return (Res_pointer ptr)
+                     | V_pointer (tp, ptr)       -> return (Res_pointer (tp, ptr))
                      | V_nullpointer _           -> raiseErr Err_nonstd
                      | V_undefined (T_pointer _) -> raiseErr Err_nonstd
                      | _                         -> error})
@@ -2565,48 +2591,40 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
        ret_val <-
          if ~ isZero then expressionValueM (evaluate expr2)
          else expressionValueM (evaluate expr3);
-       ret_val_converted <-
-         if integerType? ty then
-           convertInteger (ret_val, ty)
-         else if embed? T_pointer ty then
-           convertPointer (ret_val, ty)
-         else if typeOfValue ret_val = ty then
-           return ret_val
-          else
-            error;
+       ret_val_converted <- convertForAssignment (ret_val, ty);
        return (Res_value ret_val_converted)}
-  | E_member (expr, mem) ->
-    {res <- evaluate expr;
-     case res of
-       | Res_value (V_struct (_, members)) ->
-         (case assoc members mem of
-            | Some val ->
-              (* If the LHS is a struct value, with the mem struct member,
-                 return the value of the mem struct member *)
-              return (Res_value val)
-            | None ->
+    | E_member (expr1, mem) ->
+      {res <- evaluate expr1;
+       case res of
+         | Res_value (V_struct (_, members)) ->
+           (case assoc members mem of
+              | Some val ->
+                 (* If the LHS is a struct value, with the mem struct member,
+                  return the value of the mem struct member *)
+                  return (Res_value val)
+              | None ->
               (* If LHS is a struct without member mem, it is an error *)
               error)
-       | Res_value _ ->
+         | Res_value _ ->
          (* Error if the LHS is a non-struct value *)
          error
-       | Res_pointer (ObjPointer obj) ->
-         (* If the LHS is an object designator (i.e., an lvalue), make sure it
-            points to a struct, and then form the lvalue for the mem struct
-            member of that struct *)
-         {val_lhs <- readObject obj;
-          case val_lhs of
-            | V_struct (_, members) ->
-              (case assoc members mem of
-                 | Some _ -> return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
-                 | None -> error)
-            | _ -> error}
-       | Res_pointer (FunPointer _) ->
+         | Res_pointer (ObjPointer obj) ->
+            (* If the LHS is an object designator (i.e., an lvalue), make sure it
+               points to a struct, and then form the lvalue for the mem struct
+               member of that struct *)
+               {val_lhs <- readObject obj;
+                case val_lhs of
+                  | V_struct (_, members) ->
+                    (case assoc members mem of
+                       | Some _ -> return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
+                       | None -> error)
+                  | _ -> error}
+         | Res_pointer (FunPointer _) ->
          (* Error if the LHS is a function designator *)
          error}
-  | E_memberp (expr0, mem) ->
+    | E_memberp (expr1, mem) ->
     (* FIXME: make some op(s) for simplifying all of this *)
-    {val <- expressionValueM (evaluate expr0);
+    {val <- expressionValueM (evaluate expr1);
      case val of
        | V_pointer (_, ObjPointer obj) ->
          {val_star <- readObject obj;
@@ -2614,9 +2632,9 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
             | V_struct (_, members) ->
               (case assoc members mem of
                  | Some _ ->
-                   (* If expr0 yields a pointer to a struct containing mem,
-                      return the designator of mem in that struct *)
-                   return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
+                      (* If expr1 yields a pointer to a struct containing mem,
+                       return the designator of mem in that struct *)
+                       return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
                  | None ->
                  (* Error if we get a pointer to a struct not containing mem *)
                  error)
@@ -2626,29 +2644,31 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
        | _ ->
          (* Error if expr0 does not evaluate to a pointer *)
          error}
-  | E_subscript (expr1, expr2) ->
-    {val1 <- expressionValueM (evaluate expr1);
-     val2 <- expressionValueM (evaluate expr2);
-     j <- intOfValue val2;
-     nonstdIf (j < 0); (* Undefined for negative array subscripts *)
-     obj <-
-       (case val1 of
-          | V_pointer (_, ObjPointer (OD_Subscript (obj, i))) ->
-            (* If the LHS is a pointer to an array element, add the RHS to it *)
-            return (OD_Subscript (obj, i+j))
-          | V_pointer (_, ObjPointer obj) ->
-            (* If the LHS is non-array pointer, subscript it *)
-            return (OD_Subscript (obj, j))
-          | _ ->
-            (* Error if the LHS does not evaluate to an object pointer *)
-            error);
-     (* We read the returned pointer to ensure it is good (i.e., it raises an
-        error if val1 is a pointer to a non-array, and it raises Err_nonstd if
-        the new index is out of bounds) *)
-     readObject obj;
-     return (Res_pointer (ObjPointer obj))}
-  | E_nullconst ->
-    return (Res_value (V_nullpointer (T_pointer T_void)))
+    | E_subscript (expr1, expr2) ->
+      {val1 <- expressionValueM (evaluate expr1);
+       val2 <- expressionValueM (evaluate expr2);
+       j <- intOfValue val2;
+       nonstdIf (j < 0); (* Undefined for negative array subscripts *)
+       obj <-
+         (case val1 of
+            | V_pointer (_, ObjPointer (OD_Subscript (obj, i))) ->
+              (* If the LHS is a pointer to an array element, add the RHS to it *)
+              return (OD_Subscript (obj, i+j))
+            | V_pointer (_, ObjPointer obj) ->
+              (* If the LHS is non-array pointer, subscript it *)
+              return (OD_Subscript (obj, j))
+            | _ ->
+              (* Error if the LHS does not evaluate to an object pointer *)
+              error);
+       (* We read the returned pointer to ensure it is good (i.e., it raises an
+          error if val1 is a pointer to a non-array, and it raises Err_nonstd if
+          the new index is out of bounds) *)
+       readObject obj;
+       return (Res_pointer (ObjPointer obj))}
+    | E_cast (tp, expr1) ->
+      {val1 <- expressionValueM (evaluate expr1);
+       val <- castValue (tp, val1);
+       return (Res_value val)}
 
 
 (* FIXME: figure out how to state and prove this type safety theorem *)
@@ -2698,7 +2718,7 @@ op expandTypeName (xenv:TranslationEnv, tyn:TypeName) : Option Type =
     {ty <- expandTypeName (xenv, tyn);
      Some (T_array (ty, n))}
   | TN_struct tag ->
-    {membs <- xenv.xenv_structs tag;
+    {membs <- xenv.xenv_structures tag;
      Some (T_struct (Some tag, membs))}
   | TN_char  ->  Some T_char
   | TN_uchar  -> Some T_uchar
@@ -2716,7 +2736,7 @@ op expandTypeName (xenv:TranslationEnv, tyn:TypeName) : Option Type =
 (* Monadic version of the above, that looks up the current TypedefTable *)
 op expandTypeNameM (tyn:TypeName) : Monad Type =
   {r <- askR;
-   liftOption (expandTypeName (r.r_xenv.xenv_typedefs, r.r_xenv.xenv_structures, tyn))}
+   liftOption (expandTypeName (r.r_xenv, tyn))}
 
 %subsection (* Zero values *)
 
@@ -2740,7 +2760,7 @@ errors using the Option type; this is so that TranslationUnits can be evaluated
 outside the Monad as well. *)
 
 (* FIXME HERE: rename typeHasSize? to capture it being a value type...? *)
-op zeroOfType (tp:Type | typeHasSize? tp) : Value =
+op zeroOfType (tp:Type | objectType? tp) : Value =
   case tp of
     | T_struct (struct_tp) ->
       V_struct (struct_tp,
@@ -2750,7 +2770,7 @@ op zeroOfType (tp:Type | typeHasSize? tp) : Value =
     | ty -> zeroOfScalarType ty
 
 (* This just maps zeroOfType over tys *)
-op zerosOfTypes (tys:List Type) : List Value =
+op zerosOfTypes (tys:List Type | forall? objectType? tys) : List Value =
    map zeroOfType tys
 
 
@@ -2828,13 +2848,16 @@ op evalStatement (stmt:Statement) : Monad () =
   case stmt of
   | S_assign (expr1, expr2) ->
     {res1 <- evaluate expr1;
-     oldval <- expressionValue res1;
      case res1 of
-     | Res_pointer (ObjPointer obj) ->
-       {newval <- expressionValueM (evaluate expr2);
-        newval' <- convertForAssignment (newval, typeOfValue oldval);
-        writeObject (obj, newval') }
-     | _ -> error}
+       | Res_pointer (ObjPointer (OD_Allocated alloc_id)) ->
+         (* Assignments to allocated objects can change their types *)
+         FIXME HERE NOW
+
+       | Res_pointer (ObjPointer obj) ->
+         {newval <- expressionValueM (evaluate expr2);
+          newval' <- convertForAssignment (newval, typeOfValue oldval);
+          writeObject (obj, newval') }
+       | _ -> error}
   | S_call (lhs_expr_opt, fun_expr, arg_exprs) ->
     (* For a function call, first evaluate the arguments and the function *)
     {arg_values <- evaluateAllToValues arg_exprs;
@@ -3124,7 +3147,7 @@ type MultiFunction = { mf : (Identifier * List Value) -> Monad (Option Value) |
 op multiFunFromTopLevel (top : TopLevel) (env : TranslationEnv) : MultiFunction =
   fn (id, args) -> case top.top_functions id of
                      | None -> error
-                     | Some (cf, _) -> localR (fn _ -> globalRFromEnv env) (cf args)
+                     | Some (cf, _) -> localR (fn _ -> makeGlobalR env) (cf args)
 
 op envForMultiFunction (top : TopLevel) (mf : MultiFunction) : TranslationEnv =
   {xenv_typedefs   = top.top_typedefs,

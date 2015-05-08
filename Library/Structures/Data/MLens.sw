@@ -108,6 +108,12 @@ op [a] mlens_of_list_rindex (i:Nat, getErr:Monad a, setErr:Monad (List a)) : MLe
      mlens_set = (fn l -> fn a ->
                     if i < length l then return (update (l,length l - i,a)) else setErr)}
 
+(* The monadic lens for the first element of a pair. Note that this is a
+standard lens, so there are no errors. *)
+op [a,b] mlens_for_proj1 : MLens (a * b, a) =
+    {mlens_get = (fn tup -> return tup.1),
+     mlens_set = (fn tup -> fn a -> return (a, tup.2))}
+
 (* The monadic lens for an Option type; it is an error to get or set a "None" *)
 op [a] mlens_for_option (getErr : Monad a, setErr : Monad (Option a)) : MLens (Option a, a) =
     {mlens_get = (fn opt ->
