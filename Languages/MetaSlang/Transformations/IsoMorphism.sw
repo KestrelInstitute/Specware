@@ -1051,7 +1051,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                     fn pr as ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
                     % let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
                     case src_ty of
-                      | Base(qid', _, _) ->
+                      | Base(qid', [], _) ->
                         return(pr :: base_iso_info, typeNameInfo, spc, i)
                       | _ ->
                         let dummy_ty_id = "iso-dom-ty"^show i in
