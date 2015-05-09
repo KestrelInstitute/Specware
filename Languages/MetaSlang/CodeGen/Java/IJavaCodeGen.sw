@@ -7,7 +7,7 @@ spec
 
   %% IMPORTS
 
-  import JGen qualifying /Languages/MetaSlang/Specs/Categories/Specs       % AnnSpec.Spec
+ % import JGen qualifying /Languages/MetaSlang/Specs/Categories/Specs       % AnnSpec.Spec
   import /Languages/Java/Java
   import Monad
 

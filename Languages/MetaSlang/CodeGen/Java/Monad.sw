@@ -6,13 +6,15 @@ JGen qualifying spec
 %                  by {Monad._ +-> Env._}
 
 %import Monad qualifying /Library/Structures/Data/Monad/Base
-import JGen qualifying /Languages/MetaSlang/Specs/Categories/Specs       % AnnSpec.Spec
+%import JGen qualifying /Languages/MetaSlang/Specs/Categories/Specs       % AnnSpec.Spec
+import /Languages/MetaSlang/Specs/AnnSpec
 import /Languages/Java/Java
 
 import Errors
 %import IJavaCodeGen
 import /Languages/SpecCalculus/Semantics/Wizard       % op specwareWizard? : Bool
 import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
+import /Library/Legacy/DataStructures/StringMapSplay
 
 type JGenEnv a = State -> (Result a) * State
 

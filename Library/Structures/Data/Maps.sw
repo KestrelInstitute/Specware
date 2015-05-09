@@ -1,3 +1,5 @@
+(* sjw: Doesn't seem to be used and I think it is obsolete *)
+
 \section{Monomorphic Maps}
 
 \begin{spec}

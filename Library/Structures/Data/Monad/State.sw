@@ -14,7 +14,7 @@ do such things, the local operations are safe.
 See below for further notes regarding the safety of these operations.
 *)
 
-MonadicStateInternal = spec
+MonadicStateInternal = MonadicStateInternal qualifying spec
     type VarRef a = | VarRef a
 
     op newGlobalVar   : [a] String * a -> Bool
@@ -109,7 +109,7 @@ variables to the Lisp context (and perhaps even the filesystem).
 *)
 
 State = Monad qualifying spec
-  import MonadicStateInternal qualifying MonadicStateInternal
+  import MonadicStateInternal
   import Exception
   import /Library/Legacy/Utilities/System
 

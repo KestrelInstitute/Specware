@@ -1,4 +1,4 @@
-CFlatten = spec
+CFlatten = CGen qualifying spec
 
 import C
 
