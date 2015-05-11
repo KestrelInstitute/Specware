@@ -329,6 +329,8 @@ type T_struct (Some "S", ("f", T_pointer (T_structName "S"))) defines a struct
 type for a simple linked list. An array type includes the number of elements
 [ISO 6.2.5/20]; our C subset only includes array types with known size. *)
 
+(* FIXME: things might be easier if we separated object vs function types... *)
+
 type Type =
   | T_char                        %          char
   | T_uchar                       % unsigned char
@@ -1107,18 +1109,16 @@ type tag, identifying the element type at which this pointer is being viewed.
 Note that this element type could actually be different from the actual type
 of the object designated by the pointer in the heap.
 
-Null pointers [ISO 6.3.2.3/3] are represented separately from pointers,
-and also contain the type at which they are being viewed.
-
 An array value consists of a list of values, which give the elements of the
 array, along with the element type of those values.
 
-When an object declared in automatic storage has no initializer, its initial
-value is indeterminate [ISO 6.7.9/10]. Unlike Java, C does not enforce that such
-objects are assigned a value before first use. Thus, at run time, we may be
-accessing objects with indeterminate value. Since we are interested in
-well-behaved C programs, we introduce, as part of our model of values, special
-'undefined' values, which represent those indeterminate values. *)
+Null pointers [ISO 6.3.2.3/3] are represented separately from pointers,
+and also contain the type at which they are being viewed.
+
+Finally, our values contain trap representations [ISO 3.19.4], which are
+represented with the V_undefined constructor. These are objects that do not
+denote an actual value of a specified type, and are used for, e.g., the initial
+values of objects with automatic storage (i.e., stack variables). *)
 
 type Value =
   | V_int         TypedInt
@@ -1138,7 +1138,7 @@ op typeOfValue (val:Value) : Type =
   | V_array (ty, vals)       -> T_array (ty, length vals)
   | V_nullpointer ty         -> T_pointer ty
   | V_undefined ty           -> ty
- 
+
 
 (* We lift some of the predicates that classify types to predicates that
 classify values. Note that undefined values of the correct types are
@@ -1161,6 +1161,10 @@ op arrayValue? (val:Value) : Bool =
 
 op scalarValue? (val:Value) : Bool =
   scalarType? (typeOfValue val)
+
+
+(* FIXME HERE NOW: write a version of this that includes a heap typing, and
+checks pointer types *)
 
 (* Return true iff the given value "has" the given type (FIXME: find the ISO
 section for this...) *)
@@ -1242,6 +1246,8 @@ type Storage =
 
 %subsection (* Outcomes *)
 
+(* FIXME HERE: update this documentation! *)
+
 (* [ISO] prescribes the outcomes of certain computations, while leaving the
 outcomes of other computations undefined [ISO 3.4.3] or implementation-defined
 [ISO 3.4.1]. In our formalization, we collectively regard undefined and
@@ -1295,18 +1301,52 @@ op [a,b] mapM_opt (f : a -> Option b) (xs : List a) : Option (List b) =
         new_xs <- mapM_opt f xs';
         Some (new_x :: new_xs)}
 
+
 %subsubsection (* Non-Local Exits *)
 
-(* These are all the non-local exits (FIXME: document them!) *)
+(* These are all the non-local exits in Monad, i.e., the "ways" in which a
+computation in Monad can bypass the normal return mechanism, and return control
+back to the most recent enclosing catchErrs construct.
+
+The first three represent, respectively, undefined behavior [ISO 3.4.3],
+unspecified as well as implementation-defined behavior [ISO 3.4.1, ISO 3.4.4],
+and behaviors that are not implemented by this formalization. These are not ever
+meant to be caught by catchErrs, because they represent situations that it is
+not generally possible to even detect in a C program, and any use of catchErrs
+below always immediately re-raises any of these non-local exits. The reason we
+model these sorts of behaviors as non-local exits is because, in any situation
+where the standard prescribes such a behavior, our formalism can no longer say
+anything about the remainder of the computation.
+
+Note that there is a subtle difference between "error", which represents
+undefined behavior, and "nonstd", which represents unspecified and/or
+implementation-defined behavior: in the former case, the standard does allow a
+program to immediately terminate execution, or basically do anything, so our
+formalization in a sense agrees with the standard; while in the latter case, the
+standard gives a set of choices of possible behaviors, none of which is
+terminating the program, and so in a sense our formalization disagrees with the
+standard, but in a way where it detects and represents this disagreement.
+Behaviors that are not implemented by our formalization are similar to "nonstd"
+in this respect.
+
+The final non-local exit is used to model a return statement, which immediately
+transfers control to the caller of a function. A return also passes an optional
+result value to the caller, which is captured by having Err_return take an
+optional value. Note that this is not really an "error", even though it is
+captured by the "Err" type here. *)
+
 type Monad.Err =
     | Err_error
     | Err_nonstd
-    | Err_return (Option Value)
     | Err_unimplemented
+    | Err_return (Option Value)
 
-(* The error and "non-standard" computations *)
+(* Helper functions for performing non-local exits *)
 op [a] error : Monad a = raiseErr Err_error
 op [a] nonstd : Monad a = raiseErr Err_nonstd
+op [a] unimplemented : Monad a = raiseErr Err_unimplemented
+op [a] returnFromFun (retVal : Option Value) : Monad a =
+   raiseErr (Err_return retVal)
 
 (* Conditionally raise an error *)
 op errorIf (condition:Bool) : Monad () =
@@ -1322,11 +1362,6 @@ op [a] liftOption (opt: Option a) : Monad a =
     | Some x -> return x
     | None -> error
 
-(* Return from the current function. This uses "raiseErr", even though it is not
-   technically an "error", since raiseErr is really just a non-local exit *)
-op [a] returnFromFun (retVal : Option Value) : Monad a =
-   raiseErr (Err_return retVal)
-
 (* Catch any returnFromFuns called in body, returning None if there were none *)
 op catchReturns (body : Monad ()) : Monad (Option Value) =
    catchErrs ({ body; return None },
@@ -1334,6 +1369,7 @@ op catchReturns (body : Monad ()) : Monad (Option Value) =
                  case err of
                    | Err_return retVal -> return retVal
                    | _ -> raiseErr err))
+
 
 % subsection (* Operations on storages *)
 
@@ -1405,14 +1441,20 @@ op getScopeParent (scope_id: ScopeID) : Monad ScopeDesignator =
    {scope <- (localScopeLens scope_id).mlens_get ();
     return scope.scope_parent}
 
-(* Build a lens for the optional Value associated with the given AllocatedID in
-   allocated storage, where "optional" means the AllocatedID is allowed to be in
-   a deallocated state *)
+(* Build a lens for the optional Value + size associated with the given
+   AllocatedID in allocated storage, where "optional" means the AllocatedID is
+   allowed to be in a deallocated state *)
 op allocatedObjOptLens (alloc_id : AllocatedID) : MLens ((),Option (Value * Nat)) =
   case alloc_id of
     | AllocatedID n ->
       mlens_compose (allocatedStorageLens,
                      mlens_of_list_index (n, error, error))
+
+(* Build a lens for the Value + size associated with the given AllocatedID in
+   allocated storage, raising an error if the object has been deallocated. *)
+op allocatedObjLens (alloc_id : AllocatedID) : MLens ((), Value * Nat) =
+   mlens_compose (allocatedObjOptLens alloc_id,
+                  mlens_for_option (error, error))
 
 (* Build a lens for the struct fields of a Value.
 
@@ -1461,9 +1503,7 @@ op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
        mlens_compose (scopeDesignatorLens scope_d,
                       mlens_of_key (ident, error, error))
      | OD_Allocated a_id ->
-       mlens_compose (allocatedObjOptLens a_id,
-                      mlens_compose (mlens_for_option (error, error),
-                                     mlens_for_proj1))
+       mlens_compose (allocatedObjLens a_id, mlens_for_proj1)
      | OD_Member (d', ident) ->
        mlens_compose (objectDesignatorLens d',
                       mlens_compose (structFieldsLens,
@@ -1676,26 +1716,28 @@ op [a] withFreshTopBindings (bindings:NamedStorage) (m : Monad a) : Monad a =
 
 (* Look up an identifier, starting in the designated scope and proceeding to its
    parents, and then falling back on the global function table if necessary. The
-   result is either an object or function designator, i.e., a Pointer. *)
-op lookupIdentifierInScope (id:Identifier, scope:ScopeDesignator) : Monad Pointer =
+   result is either an object or function designator, i.e., a Pointer. Also return
+   the type of the identifier as well. *)
+op lookupIdentifierInScope (id:Identifier, scope:ScopeDesignator) : Monad (Type * Pointer) =
   {bindings <- (scopeDesignatorLens scope).mlens_get ();
-   if some? (bindings id) then
-     (* If id is in the current scope, return the corresponding pointer *)
-     return (ObjPointer (OD_Top (scope, id)))
-   else
-     case scope of
-       | LocalScope scope_id ->
-         (* If id is not in the current scope, proceed to the parent scope *)
-         {parent_scope <- getScopeParent scope_id;
-          lookupIdentifierInScope (id, parent_scope)}
-       | GlobalScope ->
-         (* If no parent scope, check in the function table; we do a lookup and
-            discard the value as a way of ensuring id is in the table *)
-         {_ <- lookupFunction (FunctionDesignator id);
-          return (FunPointer (FunctionDesignator id)) }}
+   case (bindings id) of
+     | Some v ->
+       (* If id is in the current scope, return the corresponding pointer *)
+       return (typeOfValue v, ObjPointer (OD_Top (scope, id)))
+     | None ->
+       (case scope of
+          | LocalScope scope_id ->
+            (* If id is not in the current scope, proceed to the parent scope *)
+            {parent_scope <- getScopeParent scope_id;
+             lookupIdentifierInScope (id, parent_scope)}
+          | GlobalScope ->
+            (* If no parent scope, check in the function table; we do a lookup and
+               discard the value as a way of ensuring id is in the table *)
+            {(_, fun_tp) <- lookupFunction (FunctionDesignator id);
+             return (T_function fun_tp, FunPointer (FunctionDesignator id)) })}
 
 (* Look up an identifier starting in the current scope *)
-op lookupIdentifier (id:Identifier) : Monad Pointer =
+op lookupIdentifier (id:Identifier) : Monad (Type * Pointer) =
   {d <- getCurrentScopeDesignator;
    lookupIdentifierInScope (id, d)}
 
@@ -2095,49 +2137,79 @@ op operator_REM (val1:Value, val2:Value) : Monad Value =
      else
        nonstd}
 
-(* The binary '+' operator requires arithmetic operands (our C subset excludes
-pointer arithmetic) [ISO 6.5.6/2], performs the usual arithmetic conversions
-[ISO 6.5.6/4], and returns the sum [ISO 6.5.6/5].
+(* The binary '+' operator requires either that both operands are arithmetic or
+that one is a pointer and the other is an integer [ISO 6.5.6/2]. In the first
+case, the usual arithmetic conversions are applied [ISO 6.5.6/4], and the result
+is the sum of the operands [ISO 6.5.6/5].  If the operands are unsigned, we
+follow the laws of arithmetic modulo MAX+1 (where MAX is maximum integer
+representable in the operand's type) [ISO 6.2.5/9]. If the operands are signed
+and their sum cannot be represented in the operand's type, the behavior is
+implementation-defined. (Note that [ISO 6.5/5] says this is undefined, but [ISO
+J.3.5 says that this is implementation-defined]).
 
-If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
-(where MAX is maximum integer representable in the operand's type) [ISO
-6.2.5/9].
-
-If the operands are signed and their product cannot be represented in the
-operand's type, the behavior is undefined [ISO 6.5/5]. *)
+If one of the operands is a pointer to the ith element of an array object of
+type T, then adding integer j turns this into a pointer to the i+j-th element
+(starting at 0) of the same array object, provided the array has at least i+j
+elements (meaning that the result can point to one past the last element of the
+array) [ISO 6.5.6/8]. If the array does not have i+j elements, or i+j is
+negative, the result is undefined. *)
 
 op operator_ADD (val1:Value, val2:Value) : Monad Value =
-  {(ty, x1, x2) <- arithConvertValues (val1, val2);
-   let y = x1 + x2 in
-   if unsignedIntegerType? ty then
-     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
-   else
-     if y in? rangeOfIntegerType ty then
-       return (valueOfInt (ty, y))
+  if arithmeticValue? val1 && arithmeticValue? val2 then
+    {(ty, x1, x2) <- arithConvertValues (val1, val2);
+     let y = x1 + x2 in
+     if unsignedIntegerType? ty then
+       return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
      else
-       raiseErr Err_nonstd}
+       if y in? rangeOfIntegerType ty then
+         return (valueOfInt (ty, y))
+       else
+         nonstd}
+  else if integerValue? val1 && pointerValue? val2 then
+    operator_ADD (val2, val1)
+  else if pointerValue? val1 && integerValue? val2 then
+    case val1 of
+      | V_pointer (tp, ObjPointer (OD_Subscript (obj, i))) ->
+        {j <- intOfValue val2;
+         arr <- readObject obj;
+         case arr of
+           | V_array (_, elems) ->
+             if i+j >= 0 && i+j <= length elems then
+               return (V_pointer (tp, ObjPointer (OD_Subscript (obj, i+j))))
+             else error}
+      | _ -> error
+  else error
 
-(* The binary '-' operator requires arithmetic operands (our C subset excludes
-pointer arithmetic) [ISO 6.5.6/3], performs the usual arithmetic conversions
-[ISO 6.5.6/4], and returns the difference [ISO 6.5.6/6].
 
-If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
-(where MAX is maximum integer representable in the operand's type) [ISO
-6.2.5/9].
+(* The binary '-' operator requires that either: both operands are arithmetic;
+both operands are pointers to objects of the same type; or the left operand is a
+pointer to an object and the right operand is an integer [ISO 6.5.6/3]. In the
+first case, subtraction performs the usual arithmetic conversions [ISO 6.5.6/4],
+and returns the difference [ISO 6.5.6/6]. If the operands are unsigned, we
+follow the laws of arithmetic modulo MAX+1 (where MAX is maximum integer
+representable in the operand's type) [ISO 6.2.5/9]. If the operands are signed
+and their difference cannot be represented in the operand's type, the behavior is
+undefined [ISO 6.5/5].
 
-If the operands are signed and their product cannot be represented in the
-operand's type, the behavior is undefined [ISO 6.5/5]. *)
+FIXME HERE: we have not yet implemented pointer difference
+*)
 
 op operator_SUB (val1:Value, val2:Value) : Monad Value =
-  {(ty, x1, x2) <- arithConvertValues (val1, val2);
-   let y = x1 - x2 in
-   if unsignedIntegerType? ty then
-     return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
-   else
-     if y in? rangeOfIntegerType ty then
+  if arithmeticValue? val1 && arithmeticValue? val2 then
+    {(ty, x1, x2) <- arithConvertValues (val1, val2);
+     let y = x1 - x2 in
+     if unsignedIntegerType? ty then
+       return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
+     else if y in? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
-       raiseErr Err_nonstd}
+       error}
+  else if pointerValue? val1 && arithmeticValue? val2 then
+    unimplemented
+  else if pointerValue? val1 && pointerValue? val2 then
+    unimplemented
+  else error
+
 
 (* The '<<' operator requires integer operands [ISO 6.5.7/2], promotes them, and
 left-shifts the first operand E1 by the number of positions E2 indicated by the
@@ -2333,21 +2405,6 @@ type ExpressionResult =
   | Res_pointer Type * Pointer
   | Res_value   ExpressionValue
 
-(* FIXME HERE NOW: maybe make Res_pointer take an Option Type, to indicate an
-identifier (which does not have its type)? Or, have lookupIdentifier return the
-type of the identifier... The latter is probably the right choice. *)
-
-(* Convert a FunctionDesignator to a pointer value. This requires looking up the
-   type information of the pointer in the function table. *)
-op pointerValueForFunction (f_desig : FunctionDesignator) : Monad ExpressionValue =
-  {(_, (ret_ty, param_tys)) <- lookupFunction f_desig;
-   return (V_pointer (T_function (ret_ty, param_tys), FunPointer f_desig))}
-
-(* Convert a FunctionDesignator to an ExpressionResult *)
-op pointerResultForFunction (f_desig : FunctionDesignator) : Monad ExpressionResult =
-  {v <- pointerValueForFunction f_desig;
-   return (Res_value v)}
-
 (* In all but a handfull of special cases, the result of an expression is
    converted to a value that is not an array or a function [ISO 6.3.2.1].
    Lvalues are converted to the values of the objects designated by them, array
@@ -2365,18 +2422,29 @@ op pointerResultForFunction (f_desig : FunctionDesignator) : Monad ExpressionRes
    declared type for automatic and static objects and the last type used to
    assign to it, if any, for allocated objects [ISO 6.5/6]. The only way the
    type of an lvalue can differ from the effective type of the object referenced
-   by it, however, is for an indirection expression acting on a pointer with the
-   "wrong" type, since the only other lvalues are identifiers, which always
-   refer to automatic or static objects of the same type as that of the
-   identifier. It is still unclear what happens when a pointer is dereferenced
-   at the "wrong" type; we consider this to be an "invalid" pointer, in which
-   case the dereferencing is undefined [ISO 6.5.3.2/4]. We also consider
-   dereferences at character type to be undefined, since, even though this does
-   return the object representation of the referenced value [ISO 6.2.6.1/4], the
-   actual values of object representations themselves are mostly unspecified
-   [ISO 6.2.6.1/1]. Thus, if an object is accessed via an lvalue with any type
-   that is different from the effective type of the object, we signal undefined
-   behavior. *)
+   by it, however, is through an indirection operator acting on a pointer with
+   the "wrong" type, either directly or as the left-hand side of one ore more
+   array subscript and/or struct member operations; the only other lvalues are
+   identifiers (on the left of zero or more array subscripts and/or struct
+   member operations), which always refer to automatic or static objects of the
+   same type as that of the identifier. It is still unclear what happens when a
+   pointer is dereferenced at the "wrong" type, however; thus, we simply mark
+   this behavior as "unimplemented" in our formalization.
+
+   Note, however, that lvalue conversion is actually doing the work of the
+   address indirection operator, whose behavior is undefined (i.e., an error) if
+   the pointer is "invalid" [ISO 6.5.3.2/4]. This check is implemented by
+   reading the value / function referenced by the pointer, and is done before
+   the types are compared. Also, for function pointers, the type-check is not
+   needed, since the spec seems to indicate [ISO 6.3.2.3/8] that changing the
+   type of a function pointer only leads to undefined behavior when the wrong
+   function type is called.
+
+   FIXME HERE: still trying to understand the spec on these points; e.g., what
+   if we dereference a pointer to a struct at a struct type that is a prefix of
+   the struct pointer to? This seems like it must be supported by the
+   standard...  *)
+
 op expressionValue (res:ExpressionResult) : Monad ExpressionValue =
   case res of
     | Res_pointer (expr_tp, ObjPointer obj) ->
@@ -2386,10 +2454,11 @@ op expressionValue (res:ExpressionResult) : Monad ExpressionValue =
            | V_array (obj_tp, _) ->
              return (V_pointer (obj_tp, ObjPointer (OD_Subscript (obj, 0))))
            | _ -> return v
-       else nonstd }
-    | Res_pointer (ptr_tp, FunPointer f_desig) ->
-      (* FIXME HERE: check that the type is a function pointer type...? *)
-      V_pointer (ptr_tp, f_desig)
+       else unimplemented }
+    | Res_pointer (T_function fun_tp, FunPointer f_desig) ->
+      {_ <- lookupFunction f_desig;
+       return (V_pointer (T_function fun_tp, FunPointer f_desig))}
+    | Res_pointer (_, FunPointer _) -> nonstd
     | Res_value val ->
       return val
 
@@ -2418,32 +2487,66 @@ op liftValueFun2 (f:ExpressionValue * ExpressionValue -> Monad ExpressionValue)
     v_out <- f (v1, v2);
     return (Res_value v_out)}
 
+(* Dereference a pointer value, as in the address indirection ('*')
+operator. The operand must be a pointer [ISO 6.5.3.2/2], which is returned as an
+object designator [ISO 6.5.3.2/4]. Note that the actual "action" of address
+indirection, including reading the value of the pointer and checking whether the
+object has not yet been deallocated, is handled in lvalue conversion, though the
+operator defined here does do the checking for null values and undefined pointer
+values. *)
+op dereferencePointer (val:Value) : Monad ExpressionResult =
+   case val of
+     | V_pointer (tp, ptr) -> return (Res_pointer (tp, ptr))
+     | _ -> error
+
+(* Access the struct member of an ExpressionResult as in the "." operator.  If
+the operand is an lvalue, the result is an lvalue [ISO 6.5.2.3/3], and is not
+actually read until lvalue conversion (as with dereferencePointer, above). *)
+op accessStructMember (res:ExpressionResult, mem:Identifier) : Monad ExpressionResult =
+   case res of
+     | Res_value (V_struct (_, members)) ->
+       (case assoc members mem of
+          | Some val ->
+            (* If the LHS is a struct value with the mem struct member,
+               return the value of the mem struct member *)
+            (* FIXME: what if the struct type disagrees with the type of
+               the member value? *)
+            return (Res_value val)
+          | None ->
+            (* If LHS is a struct without member mem, it is an error *)
+            error)
+     | Res_pointer (T_struct struct_tp, ObjPointer obj) ->
+       (* If the LHS is an object designator (i.e., an lvalue) with struct
+          type, then form the lvalue for the mem member of that struct *)
+       let memb_tps = expandStructMemberTypes struct_tp in
+       (case assoc memb_tps mem of
+          | Some tp ->
+            return (Res_pointer (tp, ObjPointer (OD_Member (obj, mem))))
+          | None -> error)
+     | _ ->
+       (* Error if the LHS is a non-struct value, a function designator, or
+          an object designator with non-struct type *)
+       error
+
+
 (* The following maps unary operations to functions on ExpressionResult, where
 the input ExpressionResult is the result of evaluating the operand of the
-operation. For the unary '&' operator, the operand must result in an object
-designator [ISO 6.5.3.2/1], which is returned as a pointer value [ISO
-6.5.3.2/3]. For the unary '*' operator, the operand must be a pointer [ISO
-6.5.3.2/2], which is returned as an object designator [ISO 6.5.3.2/4].
-Dereferencing an undefined pointer value yields undefined behavior. There are
-two exceptions to this, which are covered by the evaluate op defined below. *)
+operation. For the unary '&' operator, the operand must result in an object or
+function designator [ISO 6.5.3.2/1], which is returned as a pointer value [ISO
+6.5.3.2/3]. For the unary '*' operator, called address indirection, the operand
+must be a pointer [ISO 6.5.3.2/2], which is returned as an object designator
+[ISO 6.5.3.2/4].   *)
 op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad ExpressionResult =
    case uop of
      | ADDR -> (fn res_m ->
                   {res <- res_m;
                    case res of
                      | Res_value _ -> error
-                     | Res_pointer (FunPointer f_desig) ->
-                       pointerResultForFunction f_desig
-                     | Res_pointer obj ->
-                       {val <- expressionValue res;
-                        return (Res_value (V_pointer (typeOfValue val, obj)))}})
+                     | Res_pointer (tp, ptr) ->
+                       return (Res_value (V_pointer (tp, ptr)))})
      | STAR -> (fn res_m ->
                   {val <- expressionValueM res_m;
-                   case val of
-                     | V_pointer (tp, ptr)       -> return (Res_pointer (tp, ptr))
-                     | V_nullpointer _           -> raiseErr Err_nonstd
-                     | V_undefined (T_pointer _) -> raiseErr Err_nonstd
-                     | _                         -> error})
+                   dereferencePointer val})
      | PLUS  -> liftValueFun1 operator_PLUS
      | MINUS -> liftValueFun1 operator_MINUS
      | NOT   -> liftValueFun1 operator_NOT
@@ -2497,6 +2600,10 @@ op evaluatorForBinaryOp (bop:BinaryOp) :
 
 (* We now formalize all of expression evaluation, as follows.
 
+FIXME HERE: update this documentation.
+
+FIXME HERE: make sure the types are always correct during evaluation
+
 A identifier (i.e., a variable) [ISO 6.5.1/2] evaluates to the object designator
 that the variable references. Note that, in the official C semantics, an
 undeclared identifier is an error, and is in fact a violation of syntax; in our
@@ -2511,20 +2618,13 @@ An integer constant [ISO 6.5.1/3] evaluates to the integer value formalized by
 op 'evaluateIntegerConstant'. A unary or binary expression is evaluated using
 evaluatorForUnaryOp or evaluatorForBinaryOp, respectively, defined above.
 
-There are two special cases for evaluating unary expressions. The first is that
-an expression of the form '&*E' evaluates to the same as E, i.e. '&' and '*' are
-not applied [ISO 6.5.3.2/3]. The difference between the normal evaluation
-procedure and this exception is visible when 'E' is null: dereferencing null
-yields undefined behavior [ISO 6.5.3.2/4].
-
-The second special case for unary expressions is for an expression of the form
-'&E[I]' when I evaluates to 0, which yields just E [ISO 6.5.3.2/3]. Normally,
-this would evaluate to the same as 'E + I', but the distinction makes a
-difference in our C subset if 'E' is null, because in that case the result is
-null instead of being non-standard. If 'E' is null and 'I' is not 0, then 'E +
-I' is undefined according to [ISO 6.5.6/8], just like '&E[I]' is undefined. If
-'E' is not null, then there is no difference between the result of '&E[I]' and
-'E + I'.
+There are two special cases for evaluating the address '&' operator. The first
+is that an expression of the form '&*E' evaluates to the same as E, i.e. '&' and
+'*' are not applied [ISO 6.5.3.2/3]. The difference between the normal
+evaluation procedure and this exception is visible, for instance, when 'E' is
+null, or an 'undefined' value, as in this case *E would be undefined (i.e., an
+error). The second special case for unary expressions is for an expression of
+the form '&E[I]', which yields the same result as E+I [ISO 6.5.3.2/3].
 
 A conditional expression requires a scalar first operand [ISO 6.5.15/2], which
 it evaluates and compares with 0 [ISO 6.5.15/4]. Based on the result of the
@@ -2564,23 +2664,17 @@ it returns a null pointer to void. *)
 op evaluate (expr:Expression) : Monad ExpressionResult =
   case expr of
     | E_ident var -> 
-      {ptr <- lookupIdentifier var;
-       return (Res_pointer ptr)}
+      {ptr_and_tp <- lookupIdentifier var;
+       return (Res_pointer ptr_and_tp)}
     | E_const c ->
       {val <- evaluateIntegerConstant c;
        return (Res_value val)}
     | E_unary (ADDR, E_unary (STAR, expr0)) ->
-      % special treatment for expr of the form '& * expr0':
+      % Special treatment for exprs of the form '&(*E), which equal E
       evaluate expr0
-    | E_unary (ADDR, e_arg as E_subscript (expr1, expr2)) ->
-      % special treatment for expr of the form '& expr1 [ expr2 ]',
-      % if 'expr2' yields 0:
-      {val2 <- expressionValueM (evaluate expr2);
-       i <- intOfValue val2;
-       if i = 0 then
-         evaluate expr1
-       else
-         evaluatorForUnaryOp ADDR (evaluate e_arg)}
+    | E_unary (ADDR, E_subscript (expr1, expr2)) ->
+      % Special treatment for exprs of the form '&(E1[E2]), which equal E1+E2
+      evaluate (E_binary (expr1, ADD, expr2))
     | E_unary (uop, expr1) ->
       evaluatorForUnaryOp uop (evaluate expr1)
     | E_binary (expr1, bop, expr2) ->
@@ -2595,76 +2689,14 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
        return (Res_value ret_val_converted)}
     | E_member (expr1, mem) ->
       {res <- evaluate expr1;
-       case res of
-         | Res_value (V_struct (_, members)) ->
-           (case assoc members mem of
-              | Some val ->
-                 (* If the LHS is a struct value, with the mem struct member,
-                  return the value of the mem struct member *)
-                  return (Res_value val)
-              | None ->
-              (* If LHS is a struct without member mem, it is an error *)
-              error)
-         | Res_value _ ->
-         (* Error if the LHS is a non-struct value *)
-         error
-         | Res_pointer (ObjPointer obj) ->
-            (* If the LHS is an object designator (i.e., an lvalue), make sure it
-               points to a struct, and then form the lvalue for the mem struct
-               member of that struct *)
-               {val_lhs <- readObject obj;
-                case val_lhs of
-                  | V_struct (_, members) ->
-                    (case assoc members mem of
-                       | Some _ -> return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
-                       | None -> error)
-                  | _ -> error}
-         | Res_pointer (FunPointer _) ->
-         (* Error if the LHS is a function designator *)
-         error}
+       accessStructMember (res, mem)}
     | E_memberp (expr1, mem) ->
-    (* FIXME: make some op(s) for simplifying all of this *)
-    {val <- expressionValueM (evaluate expr1);
-     case val of
-       | V_pointer (_, ObjPointer obj) ->
-         {val_star <- readObject obj;
-          case val_star of
-            | V_struct (_, members) ->
-              (case assoc members mem of
-                 | Some _ ->
-                      (* If expr1 yields a pointer to a struct containing mem,
-                       return the designator of mem in that struct *)
-                       return (Res_pointer (ObjPointer (OD_Member (obj, mem))))
-                 | None ->
-                 (* Error if we get a pointer to a struct not containing mem *)
-                 error)
-            | _ ->
-              (* Error if expr0 is a pointer to a non-struct *)
-              error}
-       | _ ->
-         (* Error if expr0 does not evaluate to a pointer *)
-         error}
+      {val <- expressionValueM (evaluate expr1);
+       res <- dereferencePointer val;
+       accessStructMember (res, mem)}
     | E_subscript (expr1, expr2) ->
-      {val1 <- expressionValueM (evaluate expr1);
-       val2 <- expressionValueM (evaluate expr2);
-       j <- intOfValue val2;
-       nonstdIf (j < 0); (* Undefined for negative array subscripts *)
-       obj <-
-         (case val1 of
-            | V_pointer (_, ObjPointer (OD_Subscript (obj, i))) ->
-              (* If the LHS is a pointer to an array element, add the RHS to it *)
-              return (OD_Subscript (obj, i+j))
-            | V_pointer (_, ObjPointer obj) ->
-              (* If the LHS is non-array pointer, subscript it *)
-              return (OD_Subscript (obj, j))
-            | _ ->
-              (* Error if the LHS does not evaluate to an object pointer *)
-              error);
-       (* We read the returned pointer to ensure it is good (i.e., it raises an
-          error if val1 is a pointer to a non-array, and it raises Err_nonstd if
-          the new index is out of bounds) *)
-       readObject obj;
-       return (Res_pointer (ObjPointer obj))}
+      (* Array subscripts E1[E2] are equivalent to *(E1+E2) [ISO 6.5.2.1/2]. *)
+      evaluate (E_unary (STAR, E_binary (expr1, ADD, expr2)))
     | E_cast (tp, expr1) ->
       {val1 <- expressionValueM (evaluate expr1);
        val <- castValue (tp, val1);
@@ -2776,6 +2808,39 @@ op zerosOfTypes (tys:List Type | forall? objectType? tys) : List Value =
 
 %subsection (* Statements *)
 
+(* Perform a simple assignment of val to the result represented by res, which
+must be an lvalue [ISO 6.5.6/2]. *)
+op assignValue (res:ExpressionResult, val:Value) : Monad () =
+  case res of
+    | Res_pointer (ptr_tp, ObjPointer (OD_Allocated alloc_id)) ->
+      (* Assignments to allocated objects can change their types [ISO 6.5/6], so
+         we do not need to check the current type of allocated objects. However,
+         we do need to ensure that the size of the new value is small enough to
+         fit in the allocated object. *)
+      {val' <- convertForAssignment (val, ptr_tp);
+       (_, obj_size) <- (allocatedObjLens alloc_id).mlens_get ();
+       if objectType? ptr_tp && obj_size >= sizeof ptr_tp then
+         writeObject (OD_Allocated alloc_id, val')
+       else
+         error}
+    | Res_pointer (ptr_tp, ObjPointer obj) ->
+      (* Objects with a declared type (i.e., those in automatic or static
+         storage) can only be accessed by an lvalue whose type is compatible
+         with that declared type or char [ISO 6.5/6, ISO 6.5/7]. The declared
+         type of an object can be found in our formalism by looking up the
+         current value of the object. We do not implement modification of an
+         object representation directly, i.e., via the char type. *)
+      {val' <- convertForAssignment (val, ptr_tp);
+       oldval <- readObject obj;
+       if compatibleTypes? (ptr_tp, typeOfValue oldval) then
+         writeObject (obj, val')
+       else if characterType? ptr_tp then
+         unimplemented
+       else error}
+       | _ -> error
+
+
+
 (* We now formalize the execution of statements.
 
 FIXME HERE: update this documentation!
@@ -2848,40 +2913,29 @@ op evalStatement (stmt:Statement) : Monad () =
   case stmt of
   | S_assign (expr1, expr2) ->
     {res1 <- evaluate expr1;
-     case res1 of
-       | Res_pointer (ObjPointer (OD_Allocated alloc_id)) ->
-         (* Assignments to allocated objects can change their types *)
-         FIXME HERE NOW
-
-       | Res_pointer (ObjPointer obj) ->
-         {newval <- expressionValueM (evaluate expr2);
-          newval' <- convertForAssignment (newval, typeOfValue oldval);
-          writeObject (obj, newval') }
-       | _ -> error}
+     val2 <- expressionValueM (evaluate expr2);
+     assignValue (res1, val2)}
   | S_call (lhs_expr_opt, fun_expr, arg_exprs) ->
     (* For a function call, first evaluate the arguments and the function *)
     {arg_values <- evaluateAllToValues arg_exprs;
      fun_value <- expressionValueM (evaluate fun_expr);
      (* Next, look up the function and apply it to the args *)
-     res_opt <-
+     val_opt <-
        case fun_value of
          | V_pointer (_, FunPointer f_desig) ->
            {(f, _) <- lookupFunction f_desig;
             f arg_values}
-         | _ -> error ;
+         | _ -> error;
      (* Finally, assign the result to the LHS, if there is one *)
-     case (lhs_expr_opt, res_opt) of
+     case (lhs_expr_opt, val_opt) of
        | (None, _) -> return ()
-       | (Some lhs_expr, Some res) ->
+       | (Some lhs_expr, Some val) ->
          {lhs_res <- evaluate lhs_expr;
-          case lhs_res of
-            | Res_pointer (ObjPointer obj) ->
-              writeObject (obj, res)
-            | _ -> error}
+          assignValue (lhs_res, val)}
        | (Some _, None) -> error}
   | S_if (cond_expr, then_branch, else_branch_opt) ->
     (* For an if-statement, evaluate the condition, test if it is zero, and
-       then, finally, execute the then or else branch, as appropriate *)
+       then, execute the then or else branch as appropriate *)
     {condition <- expressionValueM (evaluate cond_expr);
      isZero <- zeroScalarValue? condition;
      if ~ isZero then
@@ -2892,13 +2946,12 @@ op evalStatement (stmt:Statement) : Monad () =
          | None -> return ()}
   | S_return (Some expr) ->
     (* For a return statement with an expression, evaluate the expression and
-       then do a non-local exit with Err_return (which is not really an error,
-       see type Monad.Err above) applied to the value of the expression *)
+       then return it from the current function. *)
     {val <- expressionValueM (evaluate expr);
-     raiseErr (Err_return (Some val))}
+     returnFromFun (Some val)}
   | S_return None ->
-    (* For a return statement with no expression, raise Err_return None *)
-    raiseErr (Err_return None)
+    (* For a return with no expression, return None from the current function *)
+    returnFromFun None
   | S_while (cond_expr, body) ->
     (* For loops use mfix (FIXME: document this...?) *)
     mfix ((=),
@@ -2932,25 +2985,20 @@ op evalBlockItem (item:BlockItem) : Monad () =
 
 %subsection (* Translation Units *)
 
-(* Translation units are compiled by turning them into "object files", which
-give the top-level bindings for the objects and functions defined in a
-translation unit. Note that a function in an object file need not be a
+(* Translation units are translated individually into "translated translation
+units". In a standard UNIX environment, this is usually called "file
+compilation", and the results are "object files", so we use these phrases
+instead of the more cumbersome "translation of translation units" and
+"translated translation units".
+
+FIXME HERE NOW: finish the following documentation!
+
+compilation uses translation environments during the compilation,
+but the results are just the top-level functions and the static objects with
+their initial values. Note that a function in an object file need not be a
 TopFunction, meaning that it can still depend on the function table, because we
 have not yet "tied the knot"; this is done when we compile a whole program,
-below.
-
-Note also that translation units are not evaluated inside the Monad.
-
-FIXME HERE: explain why, and explain the basic pattern of evaluating translation
-units basically inside the state-error monad.
-*)
-
-end-spec
-
-blah = spec
-
-
-(* FIXME HERE NOW: update all the below with the new version of XUMonad *)
+below.  *)
 
 type ObjectFileElem =
   | ObjFile_Object Value
@@ -2958,14 +3006,19 @@ type ObjectFileElem =
 
 type ObjectFile = List (Identifier * ObjectFileElem)
 
-(* The monad for evaluating translation units *)
+(* The monad for evaluating translation units. This is a reader transformer for
+TranslationEnv applied to a writer transformer for ObjectFile applied to the
+option monad. *)
 type XUMonad a = TranslationEnv -> Option (ObjectFile * a)
 
 (* XUMonad's return and bind *)
 op [a] return (x:a) : XUMonad a = fn xenv -> Some ([], x)
 op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
   fn xenv -> case m xenv of
-             | Some (ofile1, b) -> f b top2
+             | Some (ofile1, b) ->
+               (case f b xenv of
+                  | Some (ofile2, c) -> Some (ofile1 ++ ofile2, c)
+                  | None -> None)
              | None -> None
 
 (* Run an XUMonad *)
@@ -2981,21 +3034,21 @@ op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
         new_xs <- mapM_XU f xs';
         return (new_x :: new_xs)}
 
-(* Get the current TopLevel *)
+(* Get the current TranslationEnv *)
 op xu_ask : XUMonad TranslationEnv =
-  fn top -> Some (top, top)
+  fn xenv -> Some ([], xenv)
+
+(* Emit an ObjectFile element *)
+op xu_emit1 (id:Identifier, elem:ObjectFileElem) : XUMonad () =
+  fn _ -> Some ([(id,elem)], ())
 
 (* An error in XUMonad *)
 op [a] xu_error : XUMonad a = fn _ -> None
 
 (* Test that a FiniteMap in the current top-level does not have a binding for id *)
-op [a] xu_errorIfBound (id : Identifier, f : TopLevel -> FiniteMap (Identifier, a)) : XUMonad () =
-  {top <- xu_ask;
-   if some? (f top id) then xu_error else return ()}
-
-(* Update the TopLevel *)
-op xu_update (f : TopLevel -> TopLevel) : XUMonad () =
-  fn top -> Some (f top, ())
+op [a] xu_errorIfBound (id : Identifier, f : TranslationEnv -> FiniteMap (Identifier, a)) : XUMonad () =
+  {xenv <- xu_ask;
+   if some? (f xenv id) then xu_error else return ()}
 
 (* Lift an Option into XUMonad *)
 op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
@@ -3005,13 +3058,19 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
 
 (* Expand a TypeName in XUMonad *)
 op expandTypeNameXU (tp:TypeName) : XUMonad Type =
-  {top <- xu_ask;
-   liftOption_XU (expandTypeName (top.top_typedefs, top.top_structs, tp))}
+  {xenv <- xu_ask;
+   liftOption_XU (expandTypeName (xenv, tp))}
 
-(* Call expandTypeName followed by zeroOfType in XUMonad *)
-op zeroOfTypeXU (tpName:TypeName) : XUMonad Value =
-  {tp <- expandTypeNameXU tpName;
-   return (zeroOfType tp)}
+(* FIXME HERE NOW: define op compile by recursing on tunit *)
+op compileXU (tunit : TranslationUnit) : XUMonad ()
+
+op compile (tunit : TranslationUnit) : Option ObjectFile =
+  mapOption (fn x -> x.1) (runXU (compileXU tunit))
+
+end-spec
+
+blah = spec
+
 
 (* For typedefs, add it to the typedef table, checking first that the typedef
 name is not already in the typedef table *)
