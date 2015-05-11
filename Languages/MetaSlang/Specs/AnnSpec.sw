@@ -420,8 +420,9 @@ type Proof.Proof
 
  op unQualifiedSpecElement?(el: SpecElement): Bool =
    case el of
-     | Import (_, spc, elts, _) ->
-       ~(qualifiedSpec? spc) && existsSpecElement? unQualifiedSpecElement? elts
+     % | Import (_, spc, _, _) ->
+     %   ~(qualifiedSpec? spc) 
+       % redundant?  && existsSpecElement? unQualifiedSpecElement? elts
      | Type(Qualified(q, _),_) -> q = UnQualified
      | TypeDef(Qualified(q, _),_) -> q = UnQualified
      | Op(Qualified(q, _),_,_) -> q = UnQualified
