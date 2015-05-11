@@ -3003,26 +3003,25 @@ below.  *)
 type ObjectFileElem =
   | ObjFile_Object Value
   | ObjFile_Function (CFunction * FunType)
+type ObjectFileBinding = Identifier * ObjectFileElem
 
-type ObjectFile = List (Identifier * ObjectFileElem)
+type ObjectFile = List ObjectFileBinding
 
-(* The monad for evaluating translation units. This is a reader transformer for
-TranslationEnv applied to a writer transformer for ObjectFile applied to the
-option monad. *)
-type XUMonad a = TranslationEnv -> Option (ObjectFile * a)
+(* The monad for evaluating translation units. This is a state transformer for
+TranslationEnv, applied to the option monad; the intuition for the former is
+that TranslationEnv is the "state" of the translation environment, while the
+latter is to represent errors. *)
+type XUMonad a = TranslationEnv -> Option (TranslationEnv * a)
 
 (* XUMonad's return and bind *)
-op [a] return (x:a) : XUMonad a = fn xenv -> Some ([], x)
+op [a] return (x:a) : XUMonad a = fn xenv -> Some (xenv, x)
 op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
-  fn xenv -> case m xenv of
-             | Some (ofile1, b) ->
-               (case f b xenv of
-                  | Some (ofile2, c) -> Some (ofile1 ++ ofile2, c)
-                  | None -> None)
+  fn xenv1 -> case m xenv1 of
+             | Some (xenv2, b) -> f b xenv2
              | None -> None
 
 (* Run an XUMonad *)
-op [a] runXU (m : XUMonad a) : Option (ObjectFile * a) =
+op [a] runXU (m : XUMonad a) : Option (TranslationEnv * a) =
   m emptyTranslationEnv
 
 (* The map function for XUMonad *)
@@ -3035,19 +3034,19 @@ op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
         return (new_x :: new_xs)}
 
 (* Get the current TranslationEnv *)
-op xu_ask : XUMonad TranslationEnv =
-  fn xenv -> Some ([], xenv)
+op xu_get : XUMonad TranslationEnv =
+  fn xenv -> Some (xenv, xenv)
 
-(* Emit an ObjectFile element *)
-op xu_emit1 (id:Identifier, elem:ObjectFileElem) : XUMonad () =
-  fn _ -> Some ([(id,elem)], ())
+(* Modify the current TranslationEnv *)
+op xu_update (f: TranslationEnv -> TranslationEnv) : XUMonad () =
+  fn xenv -> Some (f xenv, ())
 
 (* An error in XUMonad *)
 op [a] xu_error : XUMonad a = fn _ -> None
 
 (* Test that a FiniteMap in the current top-level does not have a binding for id *)
 op [a] xu_errorIfBound (id : Identifier, f : TranslationEnv -> FiniteMap (Identifier, a)) : XUMonad () =
-  {xenv <- xu_ask;
+  {xenv <- xu_get;
    if some? (f xenv id) then xu_error else return ()}
 
 (* Lift an Option into XUMonad *)
@@ -3058,44 +3057,29 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
 
 (* Expand a TypeName in XUMonad *)
 op expandTypeNameXU (tp:TypeName) : XUMonad Type =
-  {xenv <- xu_ask;
+  {xenv <- xu_get;
    liftOption_XU (expandTypeName (xenv, tp))}
-
-(* FIXME HERE NOW: define op compile by recursing on tunit *)
-op compileXU (tunit : TranslationUnit) : XUMonad ()
-
-op compile (tunit : TranslationUnit) : Option ObjectFile =
-  mapOption (fn x -> x.1) (runXU (compileXU tunit))
-
-end-spec
-
-blah = spec
-
 
 (* For typedefs, add it to the typedef table, checking first that the typedef
 name is not already in the typedef table *)
 op evalTypedef (typedef:TypeDefinition) : XUMonad () =
   let id = typedef.Typedef_name in
-  {xu_errorIfBound (id, fn top -> top.top_typedefs);
+  {xu_errorIfBound (id, fn xenv -> xenv.xenv_typedefs);
    tp <- expandTypeNameXU typedef.Typedef_type;
-   xu_update (fn top ->
-                top << {top_typedefs = update top.top_typedefs id tp})}
+   xu_update (fn xenv ->
+                xenv << {xenv_typedefs = update xenv.xenv_typedefs id tp})}
 
 (* For object declarations, check that the name is not already in the object
 table or the function table, get the zero value for the given type, and add the
 result to the table. Extern declarations do not go in the current translation
 unit; they are just there for type-checking. *)
-op evalObjectDeclaration (odecl:ObjectDeclaration) : XUMonad () =
-  let id = odecl.ObjDecl_name in
+op evalObjectDeclaration (odecl:ObjectDeclaration) : XUMonad (Option ObjectFileBinding) =
   if odecl.ObjDecl_isExtern then
-    return ()
+    return None
   else
-    {xu_errorIfBound (id, fn top -> top.top_objects);
-     xu_errorIfBound (id, fn top -> top.top_functions);
-     zeroVal <- zeroOfTypeXU (odecl.ObjDecl_type);
-     xu_update (fn top ->
-                  top << {top_objects =
-                              update top.top_objects id zeroVal})}
+    {tp <- expandTypeNameXU odecl.ObjDecl_type;
+     if objectType? tp then return () else xu_error;
+     return (Some (odecl.ObjDecl_name, ObjFile_Object (zeroOfType tp)))}
 
 (* For struct members, expand the type name and make sure it is not void *)
 op evalMemberDeclaration (decl:MemberDeclaration) : XUMonad (Identifier * Type) =
@@ -3110,10 +3094,10 @@ op evalStructSpecifier (sspec:StructSpecifier) : XUMonad () =
   {members <- mapM_XU evalMemberDeclaration sspec.StructSpec_members;
    if members = [] || ~(noRepetitions? (unzip members).1)
      then xu_error else return ();
-   xu_errorIfBound (id, fn top -> top.top_structs);
-   xu_update (fn top ->
-                top << {top_structs =
-                            update top.top_structs id members})}
+   xu_errorIfBound (id, fn xenv -> xenv.xenv_structures);
+   xu_update (fn xenv ->
+                xenv << {xenv_structures =
+                            update xenv.xenv_structures id members})}
 
 (* Expand all the type name in a ParameterDeclaration *)
 op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier * Type) =
@@ -3144,34 +3128,45 @@ op evalCFunction (retTypeName : TypeName,
 
 (* Eval a function definition, by checking that the name is not already defined
 in the object or function table and then calling evalCFunction *)
-op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad () =
-  let id = fdef.FDef_name in
+op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad (Option ObjectFileBinding) =
   case fdef.FDef_body of
     | None ->
       (* Ignore function prototypes in the semantics *)
-      return ()
+      return None
     | Some body ->
       {if fdef.FDef_isExtern then xu_error else return ();
-       xu_errorIfBound (id, fn top -> top.top_objects);
-       xu_errorIfBound (id, fn top -> top.top_functions);
        f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
-       xu_update (fn top ->
-                    top << {top_functions =
-                                update top.top_functions id f_res})}
+       return (Some (fdef.FDef_name, ObjFile_Function f_res))}
 
-(* Evaluate any external declaration *)
-op evalExternalDeclaration (decl:ExternalDeclaration) : XUMonad () =
+(* Translate a single external declaration, possibly creating a binding in the
+resulting object file *)
+op compileXU (decl:ExternalDeclaration) : XUMonad (Option ObjectFileBinding) =
   case decl of
     | EDecl_function fdef -> evalFunctionDeclaration fdef
-    | EDecl_declaration (Decl_struct sspec) -> evalStructSpecifier sspec
+    | EDecl_declaration (Decl_struct sspec) -> {evalStructSpecifier sspec; return None}
     | EDecl_declaration (Decl_object odecl) -> evalObjectDeclaration odecl
-    | EDecl_declaration (Decl_typedef typedef) -> evalTypedef typedef
+    | EDecl_declaration (Decl_typedef typedef) -> {evalTypedef typedef; return None}
 
-(* Evaluate a translation unit *)
-op evalTranslationUnit (unit:TranslationUnit) : Option TopLevel =
-  case runXU (mapM_XU evalExternalDeclaration unit) of
-    | Some (top, _) -> Some top
-    | None -> None
+op [a,b] filterMap (f : a -> Option b) (l : List a) : List b =
+  case l of
+    | [] -> []
+    | x::l' ->
+      (case f x of
+         | Some y -> y :: filterMap f l'
+         | None -> filterMap f l')
+
+op compile (tunit : TranslationUnit) : Option ObjectFile =
+   case runXU (mapM_XU compileXU tunit) of
+     | Some (_, elems) ->
+       let bindings = filterMap id elems in
+       if noRepetitions? (unzip bindings).1 then
+         Some bindings
+       else None
+     | None -> None
+
+end-spec
+
+blah = spec
 
 
 %subsection (* Programs *)
