@@ -15,12 +15,17 @@ MonadNonTerm = Monad qualifying spec
   type fpFun (a,b) = { tup : CPO b * ((a -> Monad b) -> (a -> Monad b)) |
                        monotonic? (monad_PCPO tup.1, monad_PCPO tup.1) tup.2}
 
-  % The monadic fixed-point combinator
-  op [a,b] mfix (f : fpFun (a,b)) : a -> Monad b =
+  % The general monadic fixed-point combinator
+  op [a,b] mfix_any (f : fpFun (a,b)) : a -> Monad b =
     leastFP (monad_PCPO f.1, f.2)
+
+  % The monadic fixed-point combinator where the CPO on b is equality
+  op [a,b] mfix (f : (a -> Monad b) -> a -> Monad b |
+                 monotonic? (monad_PCPO (=), monad_PCPO (=)) f) : a -> Monad b =
+    mfix_any ((=), f)
 
   % Theorem: mfix yields a fixed-point
   theorem mfix_fp is [a,b]
-    fa (f : fpFun (a,b)) mfix f = f.2 (mfix f)
+    fa (f : fpFun (a,b)) mfix_any f = f.2 (mfix_any f)
 
 end-spec
