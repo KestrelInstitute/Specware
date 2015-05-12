@@ -1,4 +1,4 @@
-C1 = C qualifying spec
+C qualifying spec
 
 import /Library/General/TwosComplementNumber
 import /Library/General/OptionExt
@@ -1291,6 +1291,10 @@ op [a,b] mapM (f : a -> Monad b) (xs : List a) : Monad (List b) =
         new_xs <- mapM f xs';
         return (new_x :: new_xs)}
 
+(* Compose two monadic functions *)
+op [a,b,c] composeM (f : a -> Monad b) (g : b -> Monad c) (a:a) : Monad c =
+   monadBind (f a, g)
+
 (* The map function for Option; FIXME: should be in a standard library spec
    somewhere... *)
 op [a,b] mapM_opt (f : a -> Option b) (xs : List a) : Option (List b) =
@@ -1612,9 +1616,15 @@ lifting through the ReaderT transformer does one direction of the isomorphism
 and applying a Monad computation m to any TranslationEnv (an operation also know
 as "runReaderT" in Haskell) is the other direction of the isomorphism. *)
 
+(* FIXME HERE NOW: update documentation with the new FunctionTable and
+FunctionTypes types! *)
+
+type FunctionTypeTable = FiniteMap (Identifier, FunType)
+
 type CFunction = List Value -> Monad (Option Value)
-type TopFunction = { m:CFunction | fa (l,f) localR f (m l) = m l }
-type FunctionTable = FiniteMap (Identifier, TopFunction * FunType)
+(* type TopFunction = { m:CFunction | fa (l,f) localR f (m l) = m l } *)
+type FunctionTable = { mf : (Identifier * List Value) -> Monad (Option Value) |
+                        fa (tup,f) localR f (mf tup) = mf tup }
 
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
 top-level function definitions.
@@ -1629,11 +1639,13 @@ is no longer in TranslationEnv *)
 
 type TranslationEnv =
    {xenv_typedefs   : TypedefTable,
-    xenv_structures : StructTable }
+    xenv_structures : StructTable,
+    xenv_funtypes   : FunctionTypeTable }
 
 op emptyTranslationEnv : TranslationEnv =
    {xenv_typedefs   = empty,
-    xenv_structures = empty}
+    xenv_structures = empty,
+    xenv_funtypes   = empty}
 
 
 (* The reader type of the monad is the TranslationEnv type, along with a
@@ -1665,11 +1677,18 @@ op lookupStructMemberTypes (tag : Identifier) : Monad StructMemberTypes =
    return (expandStructMemberTypes (Some tag, membs))}
 
 (* Look up a function *)
-op lookupFunction (f_desig : FunctionDesignator) : Monad (TopFunction * FunType) =
+op lookupFunction (f_desig : FunctionDesignator) : Monad CFunction =
   case f_desig of
     | FunctionDesignator id ->
       {r <- askR;
-       liftOption (r.r_functions id)}
+       return (fn args -> r.r_functions (id, args))}
+
+(* Look up a function's type *)
+op lookupFunctionType (f_desig : FunctionDesignator) : Monad FunType =
+  case f_desig of
+    | FunctionDesignator id ->
+      {r <- askR;
+       liftOption (r.r_xenv.xenv_funtypes id)}
 
 (* Get the current ScopeDesignator *)
 op getCurrentScopeDesignator : Monad ScopeDesignator =
@@ -1733,13 +1752,32 @@ op lookupIdentifierInScope (id:Identifier, scope:ScopeDesignator) : Monad (Type 
           | GlobalScope ->
             (* If no parent scope, check in the function table; we do a lookup and
                discard the value as a way of ensuring id is in the table *)
-            {(_, fun_tp) <- lookupFunction (FunctionDesignator id);
+            {fun_tp <- lookupFunctionType (FunctionDesignator id);
              return (T_function fun_tp, FunPointer (FunctionDesignator id)) })}
 
 (* Look up an identifier starting in the current scope *)
 op lookupIdentifier (id:Identifier) : Monad (Type * Pointer) =
   {d <- getCurrentScopeDesignator;
    lookupIdentifierInScope (id, d)}
+
+(* Look up an identifier for an object and get its value *)
+op lookupIdentifierValue (id:Identifier) : Monad Value =
+  {(_, ptr) <- lookupIdentifier id;
+   case ptr of
+     | ObjPointer obj_ptr -> readObject obj_ptr
+     | _ -> error}
+
+(* Look up an identifier for an object and get its value as an integer *)
+op lookupIdentifierInt (id:Identifier) : Monad Int =
+  {val <- lookupIdentifierValue id;
+   case val of
+     | V_int (_, i) -> return i
+     | _ -> error}
+
+(* Look up the address of an identifier *)
+op lookupIdentifierAddr (id:Identifier) : Monad Value =
+  {ptr_and_tp <- lookupIdentifier id;
+   return (V_pointer ptr_and_tp)}
 
 
 %subsection (* Computations on integers *)
@@ -2923,7 +2961,7 @@ op evalStatement (stmt:Statement) : Monad () =
      val_opt <-
        case fun_value of
          | V_pointer (_, FunPointer f_desig) ->
-           {(f, _) <- lookupFunction f_desig;
+           {f <- lookupFunction f_desig;
             f arg_values}
          | _ -> error;
      (* Finally, assign the result to the LHS, if there is one *)
@@ -2954,8 +2992,7 @@ op evalStatement (stmt:Statement) : Monad () =
     returnFromFun None
   | S_while (cond_expr, body) ->
     (* For loops use mfix (FIXME: document this...?) *)
-    mfix ((=),
-          fn recurse -> fn unit ->
+    mfix (fn recurse -> fn unit ->
             {condition <- expressionValueM (evaluate cond_expr);
              isZero <- zeroScalarValue? condition;
              if isZero then return () else
@@ -3005,7 +3042,24 @@ type ObjectFileElem =
   | ObjFile_Function (CFunction * FunType)
 type ObjectFileBinding = Identifier * ObjectFileElem
 
-type ObjectFile = List ObjectFileBinding
+type ObjectFile = {l:List ObjectFileBinding | noRepetitions? (unzip l).1 }
+
+(* FIXME HERE: make a type of association lists with no repetitions; or at least
+make such a type for Identifier keys *)
+
+(* Get the object bindings in an object file *)
+op objFileObjectBindings (ofile : ObjectFile) : {l:List (Identifier * Value) | noRepetitions? (unzip l).1 } =
+  filterMap (fn (id, elem) ->
+               case elem of
+                 | ObjFile_Object val -> Some (id, val)
+                 | _ -> None) ofile
+
+(* Get the function bindings in an object file *)
+op objFileFunBindings (ofile : ObjectFile) : {l:List (Identifier * CFunction) | noRepetitions? (unzip l).1 } =
+  filterMap (fn (id, elem) ->
+               case elem of
+                 | ObjFile_Function (f, _) -> Some (id, f)
+                 | _ -> None) ofile
 
 (* The monad for evaluating translation units. This is a state transformer for
 TranslationEnv, applied to the option monad; the intuition for the former is
@@ -3107,12 +3161,12 @@ op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier *
 (* Build a C function that quantifies over a list of argument values and then
    binds those argument values to params in a fresh, top-level scope *)
 (* FIXME HERE: move this to a short section above about C functions *)
-op makeCFunction (retType : Type, params : List (Identifier * Type), body : Statement) : CFunction =
+op makeCFunction (retType : Type, params : List (Identifier * Type), body : Monad ()) : CFunction =
   fn args ->
     if valuesHaveTypes (args, (unzip params).2) then
       {ret <- catchReturns (withFreshTopBindings
                               (fromAssocList (zip ((unzip params).1, args)))
-                              (evalStatement body));
+                              body);
        if optValueHasType (ret, retType) then return ret else error
        }
     else error
@@ -3123,7 +3177,10 @@ op evalCFunction (retTypeName : TypeName,
                   paramDecls : ParameterList, body : Statement) : XUMonad (CFunction * FunType) =
   {retType <- expandTypeNameXU retTypeName;
    params <- mapM_XU evalParameterDeclaration paramDecls;
-   return (makeCFunction (retType, params, body),
+   xenv <- xu_get;
+   return (makeCFunction
+             (retType, params,
+              localR (fn r -> makeGlobalR (xenv, r.r_functions)) (evalStatement body)),
            (retType, (unzip params).2))}
 
 (* Eval a function definition, by checking that the name is not already defined
@@ -3164,10 +3221,6 @@ op compile (tunit : TranslationUnit) : Option ObjectFile =
        else None
      | None -> None
 
-end-spec
-
-blah = spec
-
 
 %subsection (* Programs *)
 
@@ -3182,50 +3235,40 @@ FIXME HERE: fix up the above documentation to include object files / libraries
 type Program = {pgm_sources : List TranslationUnit,
                 pgm_libs : List ObjectFile }
 
-
-
 (* FIXME HERE: document the "tying the knot" stuff here *)
 
 (* FIXME HERE: write this! *)
-op combineTopLevels2 (top1 : TopLevel, top2 : TopLevel) : Option TopLevel
+op linkObjectFiles2 (ofile1 : ObjectFile, ofile2 : ObjectFile) : Option ObjectFile
 
 (* FIXME HERE: use fold to write this *)
-op combineTopLevels (tops : List TopLevel) : Option TopLevel
+op linkObjectFiles (ofiles : List ObjectFile) : Option ObjectFile
 
-op initialStorage (top : TopLevel) : Storage =
-  {static = top.top_objects, automatic = [], allocated = []}
+(* Get the initial storage for an object file *)
+op initialStorage (ofile : ObjectFile) : Storage =
+  {static = fromAssocList (objFileObjectBindings ofile),
+   automatic = [], allocated = []}
 
-type MultiFunction = { mf : (Identifier * List Value) -> Monad (Option Value) |
-                        fa (tup,f) localR f (mf tup) = mf tup }
+(* FIXME HERE NOW: document this! *)
+op iterateFunctionTable (funs : FunctionTable, ofile : ObjectFile) : FunctionTable =
+  fn (id, args) ->
+    case assoc (objFileFunBindings ofile) id of
+      | Some f -> localR (fn r -> r << {r_functions = funs}) (f args)
+      | None -> error
 
-op multiFunFromTopLevel (top : TopLevel) (env : TranslationEnv) : MultiFunction =
-  fn (id, args) -> case top.top_functions id of
-                     | None -> error
-                     | Some (cf, _) -> localR (fn _ -> makeGlobalR env) (cf args)
+op makeFunctionTable (ofile : ObjectFile) : FunctionTable =
+  mfix (fn table -> iterateFunctionTable (table, ofile))
 
-op envForMultiFunction (top : TopLevel) (mf : MultiFunction) : TranslationEnv =
-  {xenv_typedefs   = top.top_typedefs,
-   xenv_structures = top.top_structs,
-   xenv_functions  =
-     fn id -> case top.top_functions id of
-                | None -> None
-                | Some (_, f_tp) -> Some ((fn args -> mf (id, args)), f_tp)}
-
-op initialEnv (top : TopLevel) : TranslationEnv =
-  envForMultiFunction top
-   (mfix ((=),
-          fn mf -> multiFunFromTopLevel top (envForMultiFunction top mf)))
-
-(* Build the TopLevel for all the translation units,  *)
+(* Build the ObjectFile for all the translation units,  *)
 op evalProgram (pgm : Program) : Monad () =
-   {top <- liftOption {tops <- mapM_opt evalTranslationUnit pgm.pgm_sources;
-                       combineTopLevels (pgm.pgm_libs ++ tops)};
-    initHeap <- return (initialStorage top);
-    initEnv <- return (initialEnv top);
+   {ofile <- liftOption {ofiles <- mapM_opt compile pgm.pgm_sources;
+                         linkObjectFiles (pgm.pgm_libs ++ ofiles)};
+    initHeap <- return (initialStorage ofile);
     putState initHeap;
-    localR (fn _ -> globalRFromEnv initEnv)
-      (evalStatement (S_call (None, E_ident "main",
-                              [E_const (T_uint, 0), E_nullconst])))
+    funTable <- return (makeFunctionTable ofile);
+    _ <-
+      localR (fn _ -> makeGlobalR (emptyTranslationEnv, funTable))
+      (funTable ("main", [int0, V_nullpointer (T_pointer (T_pointer T_char))]));
+    return ()
     }
 
 end-spec
