@@ -720,6 +720,8 @@ written, however, also affects the particular integer type that is
 selected for it [ISO 6.4.4.1], so we make the type explicit in integer
 constants as well. *)
 
+(* FIXME: integer constants should use type names, not just types *)
+
 type IntegerConstant = { n_t : Type * Nat |
                           integerType? n_t.1 && n_t.2 in? rangeOfIntegerType n_t.1 }
 
@@ -735,12 +737,12 @@ indirection operators [ISO 6.5.3.2] and the unary arithmetic operators [ISO
 6.5.3.3]. *)
 
 type UnaryOp =
-  | ADDR   % address &
-  | STAR   % indirection *
-  | PLUS   % unary +
-  | MINUS  % unary -
-  | NOT    % bitwise complement ~
-  | NEG    % logical negation !
+  | UOp_ADDR   % address &
+  | UOp_STAR   % indirection *
+  | UOp_PLUS   % unary +
+  | UOp_MINUS  % unary -
+  | UOp_NOT    % bitwise complement ~
+  | UOp_NEG    % logical negation !
 
 
 %subsection (* Binary operators *)
@@ -752,24 +754,24 @@ expressions later. Our C subset includes all the operators in [ISO
 6.5.5-6.5.14]. *)
 
 type BinaryOp =
-  | MUL   % multiplication *
-  | DIV   % division       /
-  | REM   % remainder      %
-  | ADD   % addition       +
-  | SUB   % subtraction    -
-  | SHL   % bitwise shift left  <<
-  | SHR   % bitwise shirt right >>
-  | LT    %    less-than             relation <
-  | GT    % greater-than             relation >
-  | LE    %    less-than-or-equal-to relation <=
-  | GE    % greater-than-or-equal-to relation >=
-  | EQ    %     equal-to relation ==
-  | NE    % not-equal-to relation !=
-  | AND   % bitwise           AND &
-  | XOR   % bitwise exclusive OR  ^
-  | IOR   % bitwise inclusive OR  |
-  | LAND  % logical AND &&
-  | LOR   % logical OR ||
+  | BinOp_MUL   % multiplication *
+  | BinOp_DIV   % division       /
+  | BinOp_REM   % remainder      %
+  | BinOp_ADD   % addition       +
+  | BinOp_SUB   % subtraction    -
+  | BinOp_SHL   % bitwise shift left  <<
+  | BinOp_SHR   % bitwise shirt right >>
+  | BinOp_LT    %    less-than             relation <
+  | BinOp_GT    % greater-than             relation >
+  | BinOp_LE    %    less-than-or-equal-to relation <=
+  | BinOp_GE    % greater-than-or-equal-to relation >=
+  | BinOp_EQ    %     equal-to relation ==
+  | BinOp_NE    % not-equal-to relation !=
+  | BinOp_AND   % bitwise           AND &
+  | BinOp_XOR   % bitwise exclusive OR  ^
+  | BinOp_IOR   % bitwise inclusive OR  |
+  | BinOp_LAND  % logical AND &&
+  | BinOp_LOR   % logical OR ||
 
 
 %subsection (* Expressions *)
@@ -1713,6 +1715,9 @@ op addLocalBinding (id:Identifier, val:Value) : Monad () =
    else
      currentBindingsLens.mlens_set () (update bindings id val)}
 
+op addLocalBindings (bindings: List (Identifier * Value)) : Monad () =
+   {_ <- mapM addLocalBinding bindings; return ()}
+
 (* Perform a computation with a freshly allocated LocalScope, setting that
    LocalScope to be the current scope for the duration of the computation and
    deallocating the scope upon exit *)
@@ -2420,11 +2425,30 @@ op operator_IOR (val1:Value, val2:Value) : Monad Value =
    let bits2 = bitsOfInt (ty, x2) in
    return (valueOfBits (bits1 Bits.ior bits2, ty))}
 
-(* We do not define ops 'operator_LAND' and 'operator_LOR' for the '&&' and '||'
-operators because they are non-strict, i.e. the second value is calculated only
-if the first value does not already determine the result, as formalized below.
-We do not define ops 'operator_ADDR' and 'operator_STAR' because they do not
-quite operate on values, as formalized below. *)
+(* The logical 'and' and 'or' operators are different from the above operators
+because the second operand is only evaluated depending on the value of the
+first. This is represented by having the functions implementing them take in
+computations instead of values, in order to give them control of when and
+whether the computations are executed. *)
+
+op operator_LAND (m1:Monad Value, m2:Monad Value) : Monad Value =
+   {val1 <- m1;
+    isZero1 <- zeroScalarValue? val1;
+    if isZero1 then return int0
+    else
+      {val2 <- m2;
+       isZero2 <- zeroScalarValue? val2;
+       if isZero2 then return int0 else return int1}}
+
+op operator_LOR (m1:Monad Value, m2:Monad Value) : Monad Value =
+   {val1 <- m1;
+    isZero1 <- zeroScalarValue? val1;
+    if ~isZero1 then return int1
+    else
+      {val2 <- m2;
+       isZero2 <- zeroScalarValue? val2;
+       if isZero2 then return int0 else return int1}}
+
 
 
 %subsection (* Expressions *)
@@ -2576,19 +2600,19 @@ must be a pointer [ISO 6.5.3.2/2], which is returned as an object designator
 [ISO 6.5.3.2/4].   *)
 op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad ExpressionResult =
    case uop of
-     | ADDR -> (fn res_m ->
+     | UOp_ADDR -> (fn res_m ->
                   {res <- res_m;
                    case res of
                      | Res_value _ -> error
                      | Res_pointer (tp, ptr) ->
                        return (Res_value (V_pointer (tp, ptr)))})
-     | STAR -> (fn res_m ->
+     | UOp_STAR -> (fn res_m ->
                   {val <- expressionValueM res_m;
                    dereferencePointer val})
-     | PLUS  -> liftValueFun1 operator_PLUS
-     | MINUS -> liftValueFun1 operator_MINUS
-     | NOT   -> liftValueFun1 operator_NOT
-     | NEG   -> liftValueFun1 operator_NEG
+     | UOp_PLUS  -> liftValueFun1 operator_PLUS
+     | UOp_MINUS -> liftValueFun1 operator_MINUS
+     | UOp_NOT   -> liftValueFun1 operator_NOT
+     | UOp_NEG   -> liftValueFun1 operator_NEG
 
 (* The following maps binary operations to binary functions on ExpressionResult.
 In a binary expression with any operator but '&&' and '||', first the operands
@@ -2600,40 +2624,30 @@ e.g., multi-threaded code. *)
 op evaluatorForBinaryOp (bop:BinaryOp) :
    Monad ExpressionResult * Monad ExpressionResult -> Monad ExpressionResult =
    case bop of
-     | MUL -> liftValueFun2 operator_MUL
-     | DIV -> liftValueFun2 operator_DIV
-     | REM -> liftValueFun2 operator_REM
-     | ADD -> liftValueFun2 operator_ADD
-     | SUB -> liftValueFun2 operator_SUB
-     | SHL -> liftValueFun2 operator_SHL
-     | SHR -> liftValueFun2 operator_SHR
-     | LT -> liftValueFun2 operator_LT
-     | GT -> liftValueFun2 operator_GT
-     | LE -> liftValueFun2 operator_LE
-     | GE -> liftValueFun2 operator_GE
-     | EQ -> liftValueFun2 operator_EQ
-     | NE -> liftValueFun2 operator_NE
-     | AND -> liftValueFun2 operator_AND
-     | XOR -> liftValueFun2 operator_XOR
-     | IOR -> liftValueFun2 operator_IOR
-     | LAND -> (fn (res_m1, res_m2) ->
-                  {val1 <- expressionValueM res_m1;
-                   isZero1 <- zeroScalarValue? val1;
-                   if isZero1 then return (Res_value int0)
-                   else
-                     {val2 <- expressionValueM res_m2;
-                      isZero2 <- zeroScalarValue? val2;
-                      if isZero2 then return (Res_value int0)
-                      else return (Res_value int1)}})
-     | LOR -> (fn (res_m1, res_m2) ->
-                  {val1 <- expressionValueM res_m1;
-                   isZero1 <- zeroScalarValue? val1;
-                   if ~ isZero1 then return (Res_value int1)
-                   else
-                     {val2 <- expressionValueM res_m2;
-                      isZero2 <- zeroScalarValue? val2;
-                      if isZero2 then return (Res_value int0)
-                      else return (Res_value int1)}})
+     | BinOp_MUL -> liftValueFun2 operator_MUL
+     | BinOp_DIV -> liftValueFun2 operator_DIV
+     | BinOp_REM -> liftValueFun2 operator_REM
+     | BinOp_ADD -> liftValueFun2 operator_ADD
+     | BinOp_SUB -> liftValueFun2 operator_SUB
+     | BinOp_SHL -> liftValueFun2 operator_SHL
+     | BinOp_SHR -> liftValueFun2 operator_SHR
+     | BinOp_LT -> liftValueFun2 operator_LT
+     | BinOp_GT -> liftValueFun2 operator_GT
+     | BinOp_LE -> liftValueFun2 operator_LE
+     | BinOp_GE -> liftValueFun2 operator_GE
+     | BinOp_EQ -> liftValueFun2 operator_EQ
+     | BinOp_NE -> liftValueFun2 operator_NE
+     | BinOp_AND -> liftValueFun2 operator_AND
+     | BinOp_XOR -> liftValueFun2 operator_XOR
+     | BinOp_IOR -> liftValueFun2 operator_IOR
+     | BinOp_LAND -> (fn (res_m1, res_m2) ->
+                        {val <- operator_LAND (expressionValueM res_m1,
+                                               expressionValueM res_m2);
+                         return (Res_value val)})
+     | BinOp_LOR -> (fn (res_m1, res_m2) ->
+                        {val <- operator_LOR (expressionValueM res_m1,
+                                               expressionValueM res_m2);
+                         return (Res_value val)})
 
 
 (* We now formalize all of expression evaluation, as follows.
@@ -2707,12 +2721,12 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
     | E_const c ->
       {val <- evaluateIntegerConstant c;
        return (Res_value val)}
-    | E_unary (ADDR, E_unary (STAR, expr0)) ->
+    | E_unary (UOp_ADDR, E_unary (UOp_STAR, expr0)) ->
       % Special treatment for exprs of the form '&(*E), which equal E
       evaluate expr0
-    | E_unary (ADDR, E_subscript (expr1, expr2)) ->
+    | E_unary (UOp_ADDR, E_subscript (expr1, expr2)) ->
       % Special treatment for exprs of the form '&(E1[E2]), which equal E1+E2
-      evaluate (E_binary (expr1, ADD, expr2))
+      evaluate (E_binary (expr1, BinOp_ADD, expr2))
     | E_unary (uop, expr1) ->
       evaluatorForUnaryOp uop (evaluate expr1)
     | E_binary (expr1, bop, expr2) ->
@@ -2734,7 +2748,7 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
        accessStructMember (res, mem)}
     | E_subscript (expr1, expr2) ->
       (* Array subscripts E1[E2] are equivalent to *(E1+E2) [ISO 6.5.2.1/2]. *)
-      evaluate (E_unary (STAR, E_binary (expr1, ADD, expr2)))
+      evaluate (E_unary (UOp_STAR, E_binary (expr1, BinOp_ADD, expr2)))
     | E_cast (tp, expr1) ->
       {val1 <- expressionValueM (evaluate expr1);
        val <- castValue (tp, val1);
