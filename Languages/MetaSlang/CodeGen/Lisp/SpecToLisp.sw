@@ -1520,7 +1520,29 @@ op lisp (slice : Slice) : LispSpec =
                  else
                    [])
  in
- let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
+ let opnames = 
+     case opsInImplementation slice of
+       | [] -> 
+         let _ = writeLine("No ops found in implementation slice, so using all ops") in
+         foldriAQualifierMap (fn (q, id, info, opnames) ->
+                                mkQualifiedId (q, id) :: opnames)
+                             []
+                             spc.ops
+       | opnames_in_slice -> 
+         opnames_in_slice 
+ in
+ let defs = foldl (fn (defs, opname as Qualified(q,id)) ->
+                     case findTheOp (spc, opname) of
+                       | Some op_info -> mkLOpDef (q, id, op_info, defs) 
+                       | _ -> 
+                         if q = "TranslationBuiltIn" then 
+                           defs
+                         else 
+                           let _ = writeLine("Could not find op " ^ show opname) in 
+                           defs)
+                  []
+                  opnames
+ in
 
  let _ = warn_about_non_constructive_defs defs in
 
@@ -1760,9 +1782,15 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
 op toLispSpec (substBaseSpecs? : Bool) (slice? : Bool) (ms_spec : Spec) 
   : LispSpec =
   let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts ms_spec                        in 
-  let _                    = case (top_ops, top_types) of
-                               | ([], []) -> writeLine (";;; No toplevel ops or types in spec.")
-                               | _ -> ()
+  let slice?               = case (top_ops, top_types) of
+                               | ([], []) -> 
+                                 if slice? then
+                                   let _ = writeLine (";;; No toplevel ops or types in spec, so not slicing.") in
+                                   false
+                                 else
+                                   false
+                               | _ -> 
+                                 slice?
   in
   toLispSpecOps substBaseSpecs? slice? ms_spec top_ops top_types 
 
@@ -1772,14 +1800,18 @@ op toLispSpecOps (substBaseSpecs? : Bool)
                  (top_ops         : OpNames)
                  (top_types       : TypeNames)
  : LispSpec =
- % let _ = case (top_ops, top_types) of
- %          | ([],[]) -> writeLine ("No ops or types to generate code for")
- %          | _ -> ()
- % in
- let slice?    = case top_ops of [] -> slice? | _ -> true               in
+ let slice?    = case top_ops of 
+                   | [] -> 
+                     if slice? then
+                       let _ = writeLine("No toplevel ops in spec, so not slicing.") in
+                       false
+                     else
+                       false
+                   | _ -> 
+                     true
+ in
  let ms_spec   = transformSpecForLispGen substBaseSpecs? slice? ms_spec in
  let slice     = sliceForLispGen         ms_spec top_ops top_types      in
- %% note: slicing is still not effective
  let lisp_spec = lisp slice in
  lisp_spec               
 
@@ -1794,7 +1826,6 @@ op SpecTransform.genLisp (original_ms_spec    : Spec,
                           tracing?            : Bool)
  : () =
  let preamble  = "" in
- %% note: slicing is still not effective
  let lisp_spec = toLispSpecOps true true original_ms_spec root_op_names [] in
  let filename  = 
      if (length filename < 5) || (implode (suffix (explode filename, 5)) ~= ".lisp") then
