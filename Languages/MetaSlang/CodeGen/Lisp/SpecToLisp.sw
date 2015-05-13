@@ -1815,6 +1815,20 @@ op toLispSpecOps (substBaseSpecs? : Bool)
  let lisp_spec = lisp slice in
  lisp_spec               
 
+op lispFilePreamble() : String =
+ ";; THIS FILE IS GENERATED FROM SPECWARE SOURCE. DO NOT HAND-EDIT THIS FILE.\n" ^    
+ "(eval-when (:compile-toplevel :load-toplevel :execute)\n" ^
+ " (require \"SpecwareRuntime\" \""
+ ^(case getEnv "SPECWARE4" of
+     | Some path -> translate (fn ch ->	  % \ to / for windows
+                                 case ch of
+                                   | #\\ -> "/"
+                                   | _ -> show ch)
+       path
+                                   | None -> "")
+ ^"/Library/SpecwareRuntime.lisp\"))\n\n"
+                          
+                          
 op SpecTransform.genLisp (original_ms_spec    : Spec,
                           root_op_names       : OpNames, 
                           % root_op_names_b     : OpNames, 
@@ -1825,13 +1839,12 @@ op SpecTransform.genLisp (original_ms_spec    : Spec,
                           filename            : String,
                           tracing?            : Bool)
  : () =
- let preamble  = "" in
+ let preamble  = lispFilePreamble()                                        in
  let lisp_spec = toLispSpecOps true true original_ms_spec root_op_names [] in
- let filename  = 
-     if (length filename < 5) || (implode (suffix (explode filename, 5)) ~= ".lisp") then
-       filename ^ ".lisp"
-     else
-       filename
+ let filename  = if (length filename < 5) || (implode (suffix (explode filename, 5)) ~= ".lisp") then
+                   filename ^ ".lisp"
+                 else
+                   filename
  in
  ppSpecToFile (lisp_spec, filename, preamble)
 

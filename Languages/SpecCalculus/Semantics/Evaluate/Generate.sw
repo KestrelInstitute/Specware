@@ -47,20 +47,6 @@ SpecCalc qualifying spec
                         "attempting to generate code from an object that is not a specification"))
         }
 
-  def lispFilePreamble() =
-      ";; THIS FILE IS GENERATED FROM SPECWARE SOURCE. DO NOT HAND-EDIT THIS FILE.\n" ^    
-      "(eval-when (:compile-toplevel :load-toplevel :execute)\n" ^
-      " (require \"SpecwareRuntime\" \""
-      ^(case getEnv "SPECWARE4" of
-          | Some path -> translate (fn ch ->	  % \ to / for windows
-                                      case ch of
-                                        | #\\ -> "/"
-                                        | _ -> show ch)
-            path
-                                        | None -> "")
-      ^"/Library/SpecwareRuntime.lisp\"))\n\n"
-                          
-                          
 
   %% Need to add error detection code
   def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName, slicing?) =
