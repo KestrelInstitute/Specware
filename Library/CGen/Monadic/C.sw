@@ -969,10 +969,7 @@ a type name and a name. A parameter list [ISO 6.7.6/1] is a list of parameter
 declarations. In our C subset, a parameter list is also a parameter type list
 [ISO 6.7.6/1], because we disallow ellipsis in function definitions. *)
 
-type ParameterDeclaration =
-  {PDecl_type : TypeName,
-   PDecl_name : Identifier}
-
+type ParameterDeclaration = TypeName * Identifier
 type ParameterList = List ParameterDeclaration
 
 (* We combine function declarations [ISO 6.7.6.3] and definitions [ISO 6.9.1]
@@ -3170,8 +3167,8 @@ op evalStructSpecifier (sspec:StructSpecifier) : XUMonad () =
 
 (* Expand all the type name in a ParameterDeclaration *)
 op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier * Type) =
-   {ty <- expandTypeNameXU (param.PDecl_type);
-    return (param.PDecl_name, ty)}
+   {ty <- expandTypeNameXU (param.1);
+    return (param.2, ty)}
 
 (* Build a C function that quantifies over a list of argument values and then
    binds those argument values to params in a fresh, top-level scope *)
@@ -3212,7 +3209,7 @@ op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad (Option ObjectFi
 
 (* Translate a single external declaration, possibly creating a binding in the
 resulting object file *)
-op compileXU (decl:ExternalDeclaration) : XUMonad (Option ObjectFileBinding) =
+op compile1XU (decl:ExternalDeclaration) : XUMonad (Option ObjectFileBinding) =
   case decl of
     | EDecl_function fdef -> evalFunctionDeclaration fdef
     | EDecl_declaration (Decl_struct sspec) -> {evalStructSpecifier sspec; return None}
@@ -3228,7 +3225,7 @@ op [a,b] filterMap (f : a -> Option b) (l : List a) : List b =
          | None -> filterMap f l')
 
 op compile (tunit : TranslationUnit) : Option ObjectFile =
-   case runXU (mapM_XU compileXU tunit) of
+   case runXU (mapM_XU compile1XU tunit) of
      | Some (_, elems) ->
        let bindings = filterMap id elems in
        if noRepetitions? (unzip bindings).1 then

@@ -6,9 +6,14 @@ spec
      void copyByte (int src, int *dest) { *dest = src; }
 
    *)
-  op copyByte : CFunction =
-    makeCFunction (T_void, [("src",T_uint), ("dest", T_pointer T_uint)],
-                   ASSIGN (LSTAR (VAR "dest"), VAR "src"))
+  op copyByte : ExtDecl =
+    FUNCTION (TN_void, "copyByte",
+              [(TN_uint,"src"), (TN_pointer TN_uint, "dest")],
+              ASSIGN (LSTAR (VAR "dest"), VAR "src"))
+
+  (* This is the specification for the syntax, in the form of a top-level
+  external declaration, whose semantics equals copyByte *)
+  op copyByte_C : { d:ExternalDeclaration | compile1XU d = copyByte }
 
   (* This is the semantic object for the following function:
 
@@ -29,19 +34,24 @@ spec
        fn (src, dest) -> (src, src)
 
    *)
-  op copyBytes : CFunction =
-    makeCFunction (T_void, [("src", T_pointer T_uchar), ("src_len", T_uint),
-                            ("dest", T_pointer T_uchar),
-                            ("dest_len", T_pointer T_uint)],
-                   BLOCK ([(TN_uint, "i")],
-                          [ASSIGN (LVAR "i", ICONST 0),
-                           WHILE (LAND (LT (VAR "i", VAR "src_len"),
-                                        LT (VAR "i", STAR (VAR "dest_len"))),
-                                  BLOCK
-                                    ([],
-                                     [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
-                                              SUBSCRIPT (VAR "src", VAR "i")),
-                                      ASSIGN (LVAR "i", ADD (VAR "i", ICONST 1))])),
-                           ASSIGN (LSTAR (VAR "dest_len"), STAR (VAR "i"))]))
+  op copyBytes : ExtDecl =
+    FUNCTION (TN_void, "copyBytes",
+              [(TN_pointer TN_uchar, "src"), (TN_uint, "src_len"),
+               (TN_pointer TN_uchar, "dest"),
+               (TN_pointer TN_uint, "dest_len")],
+              BLOCK ([(TN_uint, "i")],
+                     [ASSIGN (LVAR "i", ICONST 0),
+                      WHILE (LAND (LT (VAR "i", VAR "src_len"),
+                                   LT (VAR "i", STAR (VAR "dest_len"))),
+                             BLOCK
+                               ([],
+                                [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
+                                         SUBSCRIPT (VAR "src", VAR "i")),
+                                 ASSIGN (LVAR "i", ADD (VAR "i", ICONST 1))])),
+                      ASSIGN (LSTAR (VAR "dest_len"), STAR (VAR "i"))]))
+
+  (* This is the specification for the syntax, in the form of a top-level
+  external declaration, whose semantics equals copyBytes *)
+  op copyBytes_C : { d:ExternalDeclaration | compile1XU d = copyBytes }
 
 end-spec
