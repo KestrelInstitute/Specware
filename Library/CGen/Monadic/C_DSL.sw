@@ -331,5 +331,17 @@ C_DSL qualifying spec
                                     FDef_body     = Some body,
                                     FDef_isExtern = false})
 
+  theorem FUNCTION_correct_2 is
+    fa (retTypeName, name, params, body, d, m)
+     d = EDecl_function {FDef_retType  = retTypeName,
+                         FDef_name     = name,
+                         FDef_params   = params,
+                         FDef_body     = Some body,
+                         FDef_isExtern = false}
+       && m = evalStatement body
+   => compile1XU d
+      = FUNCTION (retTypeName, name, params, m)
+
+
 
 end-spec
