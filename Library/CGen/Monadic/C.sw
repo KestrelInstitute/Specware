@@ -1766,6 +1766,7 @@ op lookupIdentifier (id:Identifier) : Monad (Type * Pointer) =
    lookupIdentifierInScope (id, d)}
 
 (* Look up an identifier for an object and get its value *)
+(* FIXME HERE: handle function designators *)
 op lookupIdentifierValue (id:Identifier) : Monad Value =
   {(_, ptr) <- lookupIdentifier id;
    case ptr of
@@ -2607,8 +2608,8 @@ op evaluatorForUnaryOp (uop:UnaryOp) : Monad ExpressionResult -> Monad Expressio
                      | Res_pointer (tp, ptr) ->
                        return (Res_value (V_pointer (tp, ptr)))})
      | UOp_STAR -> (fn res_m ->
-                  {val <- expressionValueM res_m;
-                   dereferencePointer val})
+                      {val <- expressionValueM res_m;
+                       dereferencePointer val})
      | UOp_PLUS  -> liftValueFun1 operator_PLUS
      | UOp_MINUS -> liftValueFun1 operator_MINUS
      | UOp_NOT   -> liftValueFun1 operator_NOT
@@ -2889,7 +2890,7 @@ op assignValue (res:ExpressionResult, val:Value) : Monad () =
        else if characterType? ptr_tp then
          unimplemented
        else error}
-       | _ -> error
+    | _ -> error
 
 
 

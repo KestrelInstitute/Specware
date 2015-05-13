@@ -11,8 +11,6 @@ C_DSL qualifying spec
   (* Variables *)
   op VAR (id:Identifier) : Monad Value =
     lookupIdentifierValue id
-  op VAR_ADDR (id:Identifier) : Monad Value =
-    lookupIdentifierAddr id
 
   (* Integer constants *)
   (* FIXME HERE: do the actual type assignment of C for ints *)
@@ -57,12 +55,41 @@ C_DSL qualifying spec
   op LAND : Operator2 = operator_LAND
   op LOR : Operator2 = operator_LOR
 
+  (* Array subscripting *)
+  op SUBSCRIPT : Operator2 = fn (m1,m2) -> STAR (ADD (m1,m2))
+
+
+  (* LValue combinators, which have type Monad (Type * ObjectDesignator) *)
+
+  type LValue = Type * ObjectDesignator
+
+  op LVAR (id:Identifier) : Monad LValue =
+    {(tp,ptr) <- lookupIdentifier id;
+     case ptr of
+       | ObjPointer d -> return (tp,d)
+       | _ -> error}
+
+  op ADDR (e : Monad LValue) : Monad Value =
+    {(tp,d) <- e;
+     return (V_pointer (tp, ObjPointer d))}
+
+  op LSTAR (m : Monad Value) : Monad LValue =
+    {val <- m;
+     case val of
+       | V_pointer (tp, ObjPointer d) -> return (tp, d)
+       | _ -> error}
+
+  (* Array subscripting *)
+  op LSUBSCRIPT (arr : Monad Value, ind : Monad Value) : Monad LValue =
+    LSTAR (ADD (arr, ind))
+
 
   (* Statement combinators, which have type Monad () *)
 
   (* Assignment, which takes expressions lhs and rhs and performs *lhs = rhs *)
-  op ASSIGN_PTR (lhs : Monad Value, rhs : Monad Value) : Monad () =
-    {lhs_val <- lhs; rhs_val <- rhs; writePtrValue (lhs_val, rhs_val)}
+  op ASSIGN (lhs : Monad LValue, rhs : Monad Value) : Monad () =
+    {(tp, d) <- lhs; rhs_val <- rhs;
+     assignValue (Res_pointer (tp, ObjPointer d), rhs_val)}
 
   (* If-then-else statements *)
   op IFTHENELSE (expr : Monad Value,

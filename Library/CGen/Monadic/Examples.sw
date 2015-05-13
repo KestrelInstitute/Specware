@@ -8,7 +8,7 @@ spec
    *)
   op copyByte : CFunction =
     makeCFunction (T_void, [("src",T_uint), ("dest", T_pointer T_uint)],
-                   ASSIGN_PTR (VAR_ADDR "dest", VAR "src"))
+                   ASSIGN (LVAR "dest", VAR "src"))
 
   (* This is the semantic object for the following function:
 
@@ -34,13 +34,13 @@ spec
                             ("dest", T_pointer T_uchar),
                             ("dest_len", T_pointer T_uint)],
                    BLOCK ([("i", T_uint)],
-                          [ASSIGN_PTR (VAR_ADDR "i", ICONST 0),
+                          [ASSIGN (LVAR "i", ICONST 0),
                            WHILE (LAND (LT (VAR "i", VAR "src_len"),
                                         LT (VAR "i", STAR (VAR "dest_len"))),
                                   BLOCK
                                     ([],
-                                     [ASSIGN_PTR (ADD (VAR "dest", VAR "i"),
-                                                  STAR (ADD (VAR "dest", VAR "i")))])),
-                           ASSIGN_PTR (VAR "dest_len", STAR (VAR "i"))]))
+                                     [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
+                                              SUBSCRIPT (VAR "dest", VAR "i"))])),
+                           ASSIGN (LSTAR (VAR "dest_len"), STAR (VAR "i"))]))
 
 end-spec
