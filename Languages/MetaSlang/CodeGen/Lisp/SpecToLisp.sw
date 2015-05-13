@@ -1779,8 +1779,30 @@ op toLispSpecOps (substBaseSpecs? : Bool)
  let slice?    = case top_ops of [] -> slice? | _ -> true               in
  let ms_spec   = transformSpecForLispGen substBaseSpecs? slice? ms_spec in
  let slice     = sliceForLispGen         ms_spec top_ops top_types      in
+ %% note: slicing is still not effective
  let lisp_spec = lisp slice in
  lisp_spec               
+
+op SpecTransform.genLisp (original_ms_spec    : Spec,
+                          root_op_names       : OpNames, 
+                          % root_op_names_b     : OpNames, 
+                          % stateful_type_names : TypeNames,
+                          % global_type_name    : TypeName,
+                          % opt_global_var_id   : Option Id,
+                          % opt_ginit           : Option OpName,
+                          filename            : String,
+                          tracing?            : Bool)
+ : () =
+ let preamble  = "" in
+ %% note: slicing is still not effective
+ let lisp_spec = toLispSpecOps true true original_ms_spec root_op_names [] in
+ let filename  = 
+     if (length filename < 5) || (implode (suffix (explode filename, 5)) ~= ".lisp") then
+       filename ^ ".lisp"
+     else
+       filename
+ in
+ ppSpecToFile (lisp_spec, filename, preamble)
 
 op toLispFile (spc             : Spec, 
                file            : String, 
