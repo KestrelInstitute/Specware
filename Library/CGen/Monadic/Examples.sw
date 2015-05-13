@@ -33,7 +33,7 @@ spec
     makeCFunction (T_void, [("src", T_pointer T_uchar), ("src_len", T_uint),
                             ("dest", T_pointer T_uchar),
                             ("dest_len", T_pointer T_uint)],
-                   BLOCK ([("i", T_uint)],
+                   BLOCK ([(TN_uint, "i")],
                           [ASSIGN (LVAR "i", ICONST 0),
                            WHILE (LAND (LT (VAR "i", VAR "src_len"),
                                         LT (VAR "i", STAR (VAR "dest_len"))),
