@@ -120,10 +120,9 @@
 
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
-(defvar *current-command-processor* 'process-sw-shell-command)
+(defvar *current-command-processor* 'old-process-sw-shell-command)
 (defvar *raw-command*)
 
-(defvar *current-command-processor* 'process-sw-shell-command)
 
 (defun aux-specware-shell (exiting-lisp?
                           *current-command-processor*
@@ -292,7 +291,7 @@
 ;;This is currently a top-level entry point (called from sw-init.el):
 (defun specware-shell (exiting-lisp?)
   (Specware::check-license)
-  (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
+  (aux-specware-shell exiting-lisp? #'old-process-sw-shell-command))
 
 ;;This is currently a top-level entry point (called from bin/specware-shell).
 (defun specware-shell-no-emacs ()
@@ -331,7 +330,9 @@
 
 ;; Specware uses this for *current-command-processor*
 ;; Other systems (e.g. prism or accord) may use related functions...
-(defun process-sw-shell-command (command argstr)
+
+;; begin to deprecate this in favor of new specware op: processShellCommand
+(defun old-process-sw-shell-command (command argstr)
   (cond ((and (consp command) (null argstr))
          (lisp-value (multiple-value-list (eval command))))
         ((symbolp command)
