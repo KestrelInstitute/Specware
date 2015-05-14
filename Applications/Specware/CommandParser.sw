@@ -112,14 +112,14 @@ op parseCommandArgs (s : String) : Result CommandArgs =
                Error ("cannot parse arg: " ^ implode unread_chars)
 
    def aux (unread_chars, rev_args) : Result (Chars * CommandArgs) =
-     case parse_arg unread_chars of
-       | Good (unread_chars, arg) ->
-         let rev_args = arg :: rev_args in
-         (case unread_chars of
-            | [] -> Good ([], reverse rev_args)
-            | _ ->
-              aux (unread_chars, rev_args))
-       | Error msg -> Error msg
+     case unread_chars of
+       | [] -> Good ([], reverse rev_args)
+       | _ ->
+         case parse_arg unread_chars of
+           | Good (unread_chars, arg) ->
+             let rev_args = arg :: rev_args in
+             aux (unread_chars, rev_args)
+           | Error msg -> Error msg
          
  in
  case aux (explode s, []) of

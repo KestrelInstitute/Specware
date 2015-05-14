@@ -16,13 +16,17 @@ op dispatch (cmd : String, args : CommandArgs, ctxt : CommandContext)
  : Result CommandContext =
  case (cmd, args) of
   (*
-   | ("cd",         [])          -> cd    ()
+   | ("cd",         [])          -> showCurrentDirectory ctxt
+   | ("cd",         [Name dir]   -> connectToDirectory   (dir, ctxt)
+   | ("ls",         [])          -> listFileInDirectory  ("",  false, ctxt)
+   | ("ls",         [Name dir])  -> listFileInDirectory  (dir, false, ctxt)
+   | ("dir",        [])          -> listFileInDirectory  ("",  false, ctxt)
+   | ("dir",        [Name dir])  -> listFileInDirectory  (dir, false, ctxt)
+   | ("dirr"        [])          -> listFileInDirectory  ("",  true,  ctxt)
+   | ("dirr",       [Name dir])  -> listFileInDirectory  (dir, true,  ctxt)
+
    | ("cinit",      [])          -> cinit ()
    | ("ctext",      [])          -> ctext ()
-   | ("dir",        [Name name]) -> (cl-user::ls   name)
-   | ("dir",        [])          -> (cl-user::ls   "")
-   | ("dirr",       [Name name]) -> (cl-user::dirr name)
-   | ("dirr"        [])          -> (cl-user::dirr "")
    | ("e",          [Name name]) -> eval_1 (name)
    | ("e",          [])          -> eval_0 ()
    | ("eval",       [Name name]) -> eval_1 (name)
@@ -32,7 +36,6 @@ op dispatch (cmd : String, args : CommandArgs, ctxt : CommandContext)
    | "el"                        -> eval_lisp ()
 
    | "help"                      -> help  ()
-   | "ls"                        -> (cl-user::ls     (or argstr "")))
    | "path  "                    -> (cl-user::swpath argstr))
    | "p"                         -> (cl-user::sw     argstr) 
    | "proc "                     -> (cl-user::sw     argstr) 
@@ -149,27 +152,60 @@ op oldProcessSpecwareShellCommand (cmd : String, args_str : String) : () % imple
 %% This will supplant old-process-sw-shell-command (defined in Handwritten/Lisp/sw-shell.lisp)
 %% as the new top-level specware shell command processor
 
-op processSpecwareShellCommand (cmd : String, args_str : String) : CommandContext =
+op processSpecwareShellCommand (cmd : String, args_str : String) : () =
  let old_ctxt = getCommandContext () in
  case parseCommandArgs args_str of
    | Good args ->
      (case dispatch (cmd, args, old_ctxt) of
         | Good new_ctxt -> 
-          setCommandContext new_ctxt
+          let _ = setCommandContext new_ctxt in
+          ()
 
         | NotYetImplemented ->
           let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
-          old_ctxt
+          ()
 
         | Error msg ->
           let _ = writeLine ("problem processing shell command using new processor, reverting to old one: " ^ msg) in
           let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
-          old_ctxt)
+          ())
 
    | Error msg ->
      let _ = writeLine ("could not parse args, reverting to old shell processor: " ^ msg) in
      let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
-     old_ctxt
+     ()
+
+#translate lisp
+-verbatim
+(defun SpecwareShell::getCommandContext-0 ()
+  (let ((current_dir  (Specware::current-directory))
+        (current_path (or (Specware::getenv "SWPATH") "")))
+    (SpecwareShell::mkCommandContext-2 current_dir current_path)))
+
+(defun SpecwareShell::setCommandContext (ctxt)
+  (let ((current_dir  (SpecwareShell::currentDir  ctxt))
+        (current_path (SpecwareShell::currentPath ctxt)))
+    (Specware::cd              current_dir)
+    (SpecwareShell::setswpath  current_path)
+    (SpecwareShell::getCommandContext-0)))
+
+(defun SpecwareShell::setswpath (str)
+  (setq str (strip-extraneous str))
+  (let ((newpath (if (or (null str) (equal str ""))
+		     (or (Specware::getenv "SWPATH") "")
+		   (let ((str (normalize-path (string str) nil)))
+		     (if (SpecCalc::checkSpecPathsExistence str)
+			 (progn (Specware::setenv "SWPATH" (string str))
+				(setq cl-user::*saved-swpath* nil)
+				(string str))
+		       (progn (format t "Keeping old path:~%")
+			      (Specware::getenv "SWPATH")))))))
+   (princ (normalize-path newpath t))
+   (values)))
+
+-end
+#end
+
 
 end-spec
 
