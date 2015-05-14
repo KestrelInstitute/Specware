@@ -15,6 +15,10 @@ HigherOrderMatching qualifying spec
  import Simplify
  import Interpreter
 
+ %%% This means we assume that expressions being matched satisfy their subtype conditions
+ %%% In particular if f: (S | p) -> T then when matching f x we can assume p x
+ op assumeTypeCorrectness?: Bool = true
+
  type SubstC    = StringMap MSType * NatMap.Map MSTerm * MSTerms
 
  op match : Context -> MSTerm * MSTerm -> List SubstC
@@ -1299,16 +1303,16 @@ closedTermV detects existence of free variables not included in the argument
     | Unify     SubstC 
 
   op [a] unifyL(subst: SubstC, ty1: MSType, ty2: MSType, l1: List a, l2: List a,
-                equals: List(MSType * MSType), optTerm: Option MSTerm,
+                equals: List(MSType * MSType), optTerms: List(Option MSTerm),
                 unify_p: (SubstC * a * a * a * List(MSType * MSType)
                       * Option MSTerm -> List Unification))
     : List Unification = 
-      case (l1,l2)
-        of ([],[]) -> [Unify subst]
-         | (e1::l1,e2::l2) -> 
+      case (l1,l2,optTerms)
+        of ([],[],_) -> [Unify subst]
+         | (e1::l1,e2::l2,optTerm::r_optTerms) -> 
 	   (foldr (fn (r1,r) ->
                      case r1 of
-                       | Unify subst -> unifyL(subst,ty1,ty2,l1,l2,equals,None,unify_p) ++ r
+                       | Unify subst -> unifyL(subst,ty1,ty2,l1,l2,equals,r_optTerms,unify_p) ++ r
                        | notUnify -> Cons(notUnify, r) )
               []  (unify_p(subst,e1,e2,e1,equals,optTerm)))
          | _ -> [NotUnify(ty1,ty2)]
@@ -1339,16 +1343,20 @@ closedTermV detects existence of free variables not included in the argument
 	       | None -> ty)
 	 | _ -> ty
 
-  op conditionalMatch?(unifiers: List SubstC): Bool =
+  %% There is a match except for subtype conditions
+  op nearMatch?(unifiers: List SubstC, ty1: MSType, ty2: MSType, spc: Spec): Bool =
     case unifiers of
-      | [(_, _, conds)] -> conds ~= []
+      | [] -> equivTypeSubType? spc (ty1, ty2) true
+      | (_, _, conds)::_ -> conds ~= []
       | _ -> false
 
   op unifyTypes2(context: Context, subst: SubstC, ty1: MSType, ty2: MSType, OT: Option MSType,
                  optTerm: Option MSTerm, M: MSTerm, N: MSTerm): List SubstC = 
     let main_unifiers = unifyTypes(context, subst, ty1, ty2, optTerm, M, N) in
     case OT of
-      | Some ctxt_ty2 | conditionalMatch? main_unifiers && ~(equalType?(ty2, ctxt_ty2)) ->
+      | Some ctxt_ty2 | assumeTypeCorrectness?
+                          && nearMatch?(main_unifiers, ty1, ty2, context.spc)
+                          && ~(equalType?(ty2, ctxt_ty2)) ->
         % let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
         unifyTypes(context, subst, ty1, ctxt_ty2, optTerm, M, N) ++ main_unifiers
       | _ -> main_unifiers
@@ -1365,35 +1373,43 @@ closedTermV detects existence of free variables not included in the argument
         def addCondition(condn: MSTerm, subst as (typeSubst,termSubst,condns): SubstC): SubstC =
           if trueTerm? condn || termIn?(condn,condns) then subst
             else (typeSubst,termSubst,Cons(condn,condns))
-	def unifyCP(subst,ty1,ty2,r1,r2,equals):List Unification = 
-	    unifyL(subst,ty1,ty2,r1,r2,equals,None,
-		   fn(subst,(id1,s1),(id2,s2),_,equals,_) -> 
+	def unifyCP(subst,ty1,ty2,r1,r2,equals,optTerm): List Unification = 
+	    unifyL(subst,ty1,ty2,r1,r2,equals, map (fn _ -> optTerm) r1,
+		   fn(subst,(id1,s1),(id2,s2),_,equals,o_tm) -> 
 		      if id1 = id2 
 			then 
 			(case (s1,s2)
 			   of (None,None) -> [Unify subst] 
-			    | (Some s1,Some s2) -> unify(subst,s1,s2,s1,equals,None)
+			    | (Some s1,Some s2) ->
+                              unify(subst,s1,s2,s1,equals,
+                                    case o_tm of
+                                      | Some(Apply(Fun(Op(qid,_),_,_), arg_tm, _)) | qid = id1 -> Some arg_tm
+                                      | _ -> None)
 			    | _ -> [NotUnify(ty1,ty2)])
 		      else [NotUnify(ty1,ty2)])
-	def unifyP(subst,ty1,ty2,r1,r2,equals): List Unification = 
-	    unifyL(subst,ty1,ty2,r1,r2,equals,None,
-		   fn(subst,(id1,s1),(id2,s2),_,equals,_) -> 
+	def unifyP(subst,ty1,ty2,r1,r2,equals,optTerm): List Unification =
+	    unifyL(subst,ty1,ty2,r1,r2,equals,
+                   case optTerm
+                     | Some(Record(prs, _)) ->
+                       map (fn (_,stm) -> Some stm) prs
+                     | _ -> map (fn _ -> None) r1,
+		   fn(subst,(id1,s1),(id2,s2),_,equals,o_tm) -> 
 		      if id1 = id2 
-			then unify(subst,s1,s2,s1,equals,None)
+			then unify(subst,s1,s2,s1,equals,o_tm)
 		      else [NotUnify(ty1,ty2)])
 	def unify(subst,ty1:MSType,ty2:MSType,ty1_orig:MSType,equals,optTerm: Option MSTerm): List Unification =
-            % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
-            %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
-            % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
+             % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
+             %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
+             % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
             if equivType? spc (ty1, ty2)
               then [Unify subst]
             else
 	     case (ty1, ty2) of
                % | (Boolean _, Boolean_) -> [Unify subst]
                | (CoProduct(r1,_),CoProduct(r2,_)) -> 
-		 unifyCP(subst,ty1,ty2,r1,r2,equals)
+		 unifyCP(subst,ty1,ty2,r1,r2,equals,optTerm)
 	       | (Product(r1,_),Product(r2,_)) -> 
-		 unifyP(subst,ty1,ty2,r1,r2,equals)
+		 unifyP(subst,ty1,ty2,r1,r2,equals,optTerm)
 	       | (Arrow(t1,t2,_),Arrow(s1,s2,_)) -> 
 		 foldr (fn (r1,r) ->
                           case r1 of
@@ -1422,16 +1438,23 @@ closedTermV detects existence of free variables not included in the argument
 		 else 
 		 if id1 = id2 
 		    then
-                      % let (n_ty1, n_ty2) = raiseSubtypes(bty1, bty2, spc) in
+                      % let (n_ty1, n_ty2) = (raiseSubtype(bty1, spc), raiseSubtype(bty2, spc)) in
                       % let _ = writeLine("Lifted types:\n"^printType(n_ty1)^"\n"^printType n_ty2) in
-                      unifyL(subst,bty1,bty2,ts1,ts2,equals,None,unify)
+                      (case unifyL(subst,bty1,bty2,ts1,ts2,equals, map (fn _ -> None) ts1, unify)
+                         | result1 as [NotUnify _] | some? optTerm && equivTypeSubType? spc (bty1, bty2) true ->
+                           let s1 = unfoldBaseOne(spc, bty1) in
+                           let s2 = unfoldBaseOne(spc, bty2) in
+                           if s1 = s2 then result1
+                             else unify(subst,s1,s2,ty1_orig,
+                                        (bty1,bty2)::equals,optTerm)
+                         | result1 -> result1)
 	         else
                  (case (tryUnfoldBase spc bty1, tryUnfoldBase spc bty2) of
                     | (None, None) -> [NotUnify (bty1,bty2)]
                     | (Some s1, Some s2) ->
                       if possiblySubtypeOf?(bty1, bty2, spc)
                         then unify(subst,s1,bty2,ty1_orig,
-                                   Cons((bty1,bty2),equals),optTerm)
+                                   (bty1,bty2)::equals,optTerm)
                         else if possiblySubtypeOf?(bty2, bty1, spc)
                         then unify(subst,bty1,s2,ty1_orig,
                                    Cons((bty1,bty2),equals),optTerm)
@@ -1522,10 +1545,10 @@ closedTermV detects existence of free variables not included in the argument
                  unify(subst,ty,ty2,ty1_orig,equals,optTerm)
 	       | _ -> [NotUnify(ty1,ty2)]
       in
-      let results = unifyL(subst,ty1,ty2,[ty1],[ty2],[],optTerm,unify) in
+      let results = unifyL(subst,ty1,ty2,[ty1],[ty2],[],[optTerm],unify) in
       let good_results = removeDuplicates(filter (embed? Unify) results) in
-      let _ = if length good_results > 1 then writeLine("unifyTypes: "^show (length good_results)^" results!\n"
-                                                          ^anyToPrettyString(map (fn Unify x -> x) good_results)) else () in
+      % let _ = if length good_results > 1 then writeLine("unifyTypes: "^show (length good_results)^" results!\n"
+      %                                                     ^anyToPrettyString(map (fn Unify x -> x) good_results)) else () in
       let results = if good_results = [] then results else good_results in
       foldr (fn (r1,r) ->
              case r1 of
