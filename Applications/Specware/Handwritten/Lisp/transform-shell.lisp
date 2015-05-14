@@ -12,6 +12,7 @@
 (defpackage :MetaTransform)
 (defpackage :Proof)
 (defpackage :State)
+(defpackage :SpecwareShell)
 (defpackage :SWShell)
 (in-package :SWShell)
 
