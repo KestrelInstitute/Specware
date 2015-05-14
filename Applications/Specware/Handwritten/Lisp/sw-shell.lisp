@@ -17,6 +17,19 @@
 (defvar *developer?* nil)
 ;(defparameter *specware-shell-readtable* (make-readtable))
 
+(defun SpecwareShell::getCommandContext-0 ()
+  (let ((current_dir  (Specware::current-directory))
+        (current_path (cl-user::swpath "")))
+    (SpecwareShell::mkCommandContext-2 current_dir current_path)))
+
+(defun SpecwareShell::setCommandContext (ctxt)
+  (let ((current_dir  (SpecwareShell::currentDir  ctxt))
+        (current_path (SpecwareShell::currentPath ctxt)))
+    (Specware::cd    current_dir)
+    (cl-user::swpath current_path)
+    (SpecwareShell::getCommandContext-0)))
+
+
 (defparameter *sw-shell-help-strings*
   '(("help"      . "[command] Prints help information for command, or, with no argument, all commands.")
     ("cd"        . "[dir] Connect to directory. With no argument, displays the current directory.")

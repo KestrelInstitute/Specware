@@ -14,6 +14,29 @@ type Result a = | Good  a
                 | Error String
                 | NotYetImplemented
 
+type DirectoryName = String
+type SearchPath    = List DirectoryName
+
+type CommandContext = {current_dir  : DirectoryName,
+                       current_path : SearchPath}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op mkCommandContext (current_dir  : DirectoryName,
+                     current_path : SearchPath)
+ : CommandContext =
+ {current_dir  = current_dir,
+  current_path = current_path}
+
+op currentDir  (ctxt : CommandContext) : DirectoryName = ctxt.current_dir
+op currentPath (ctxt : CommandContext) : SearchPath    = ctxt.current_path
+
+%% ad-hoc interface to lisp-based command state
+%% deprecate when toplevel command processing loop is translated from lisp to specware 
+
+op getCommandContext () : CommandContext
+op setCommandContext (ctxt : CommandContext) : CommandContext
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op parseCommandArgs (s : String) : Result CommandArgs =

@@ -12,7 +12,8 @@ import WizardCommands
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op dispatch (cmd : String, args : CommandArgs) : Result () =
+op dispatch (cmd : String, args : CommandArgs, ctxt : CommandContext) 
+ : Result CommandContext =
  case (cmd, args) of
   (*
    | ("cd",         [])          -> cd    ()
@@ -148,22 +149,27 @@ op oldProcessSpecwareShellCommand (cmd : String, args_str : String) : () % imple
 %% This will supplant old-process-sw-shell-command (defined in Handwritten/Lisp/sw-shell.lisp)
 %% as the new top-level specware shell command processor
 
-op processSpecwareShellCommand (cmd : String, args_str : String) : () =
+op processSpecwareShellCommand (cmd : String, args_str : String) : CommandContext =
+ let old_ctxt = getCommandContext () in
  case parseCommandArgs args_str of
    | Good args ->
-     (case dispatch (cmd, args) of
-        | Good _ -> 
-          ()
+     (case dispatch (cmd, args, old_ctxt) of
+        | Good new_ctxt -> 
+          setCommandContext new_ctxt
+
         | NotYetImplemented ->
-          oldProcessSpecwareShellCommand (cmd, args_str)
+          let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
+          old_ctxt
+
         | Error msg ->
           let _ = writeLine ("problem processing shell command using new processor, reverting to old one: " ^ msg) in
-          oldProcessSpecwareShellCommand (cmd, args_str))
+          let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
+          old_ctxt)
 
    | Error msg ->
      let _ = writeLine ("could not parse args, reverting to old shell processor: " ^ msg) in
-     oldProcessSpecwareShellCommand (cmd, args_str)
-
+     let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
+     old_ctxt
 
 end-spec
 
