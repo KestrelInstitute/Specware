@@ -299,9 +299,12 @@ C_DSL qualifying spec
   (** Statements **)
 
   theorem ASSIGN_correct is
-    fa (e1,e2)
-      ASSIGN (evalLValue e1, evalRValue e2)
-      = evalStatement (S_assign (e1, e2))
+    fa (e1,e2,stmt,lv,rv)
+    stmt = S_assign (e1, e2)
+     && evalLValue e1 = lv
+     && evalRValue e2 = rv
+   => evalStatement (stmt)
+      = ASSIGN (lv, rv)
 
   theorem IFTHENELSE_correct is
     fa (e,s1,s2)
@@ -338,7 +341,7 @@ C_DSL qualifying spec
                          FDef_params   = params,
                          FDef_body     = Some body,
                          FDef_isExtern = false}
-       && m = evalStatement body
+       && evalStatement body = m
    => compile1XU d
       = FUNCTION (retTypeName, name, params, m)
 
