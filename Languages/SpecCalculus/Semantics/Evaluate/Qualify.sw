@@ -23,8 +23,9 @@ SpecCalc qualifying spec
    {
     value_info as (value, ts, uids) <- SpecCalc.evaluateTermInfo sc_term;
     case coerceToSpec value of
-      | Spec spc -> 
-        {
+      | Spec spc ->  % let _ = writeLine("evalqualify: "^new_q^" at "^printAll pos^"\n"^showSCTerm sc_term) in 
+        { 
+
 	 qualified_spec <- qualifySpec spc new_q [] pos;
 	 return (Spec qualified_spec, ts, uids)
 	}
@@ -46,7 +47,6 @@ SpecCalc qualifying spec
     %% qualification, so we need only check the ids of the "local" ops
     %% (as opposed to checking against the full name).
     %let _ = writeLine("qs: "^anyToString(findAQualifierMap (spc.types, UnQualified, "Complex"))) in
-
     let
 
       def check_for_type_collisions () =
@@ -202,7 +202,7 @@ SpecCalc qualifying spec
       | Import (sp_tm, sp, els, a) ->
         if qualifiedSpec? sp then 
 	  return el
-	else
+	else  % let _ = writeLine("recursive qualify: "^new_q^" at "^printAll a^"\n"^showSCTerm sp_tm) in 
           {%print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
            q_sp <- qualifySpec sp new_q immune_ids a;
 

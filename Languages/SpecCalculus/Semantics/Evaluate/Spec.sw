@@ -149,6 +149,7 @@ op doImport (spc : Spec) (term : SCTerm, imported_spec : Spec, pos : Position) :
  {(term, imported_spec) <- 
     if ~(qualifiedSpec? imported_spec) && qualifiedSpec? spc then
       let Some qual = spc.qualifier in
+      % let _ = writeLine("implicit qualify: "^qual^" at "^printAll pos^"\n"^showSCTerm term^"\n"^anyToString (markQualifiedStatus imported_spec)) in 
       {impSpec <- qualifySpec imported_spec qual [] pos;
        return ((Qualify (term, qual), noPos), impSpec)}
     else 

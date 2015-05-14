@@ -494,7 +494,9 @@ op simpleRwTerm?(t: MSTerm): Bool =
  op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof, tyvars: TyVars)
       : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   assertRulesRec(context, term, desc, rsp, dirn, o_prf, tyvars, [], [], None, false)
+   let rules = assertRulesRec(context, term, desc, rsp, dirn, o_prf, tyvars, [], [], None, false) in
+   % let _ = app printRule rules in
+   rules
 
  op assertRulesRec (context   : Context,
                     term      : MSTerm, 

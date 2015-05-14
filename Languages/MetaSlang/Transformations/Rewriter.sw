@@ -1293,25 +1293,25 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
         if traceDepth > maxTraceDepth
           then unit history
         else
-          let ts = termSize term0 in
-          if traceDepth > minTraceDepth && termSize term0 > context.termSizeLimit
-            then (warn("Rewriting terminated because term size of "^show ts^" exceeded limit of "^show context.termSizeLimit);
-                unit history)
-          else
-            let def rewrite(strategy, rules) =
+        let ts = termSize term0 in
+        if traceDepth > minTraceDepth && termSize term0 > context.termSizeLimit
+          then (warn("Rewriting terminated because term size of "^show ts^" exceeded limit of "^show context.termSizeLimit);
+              unit history)
+        else
+        let def rewrite(strategy, rules) =
               % let _ = writeLine("Rules:") in
               % let _ = app printRule (listRules rules) in
               let context = setTopTerm (context, term0) in
               rewriteTerm 
-              ({strategy = strategy,
-                rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),
-                context = context},
-               boundVars1, term0, path0, rules)
-            in
-            if historyRepetition(history)
-              then unit (tail history)
-            else
-	% let rews = (rewrite(Innermost, unconditional) >>= 
+                ({strategy = strategy,
+                  rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),
+                  context = context},
+                 boundVars1, term0, path0, rules)
+        in
+        if historyRepetition(history)
+          then unit (tail history)
+        else
+      % let rews = (rewrite(Innermost, unconditional) >>= 
 	let rews = (rewrite(Outermost, rules0) >>= 
 		    (fn (term, (subst, rule, path, boundVarsRl, rules1)) ->  
 			unit (term, (subst, rule, path, boundVarsRl, rules1))) 
@@ -1336,10 +1336,6 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
               % well as any type unification conditions from higher-order matching, which include
               % any subtype predicates on the free variables of the rules.
               let (_, _, conds) = subst in
-              % let conds = case rule.condition of
-              %               | None -> typeConds
-              %               | Some cond -> Cons(cond, typeConds)
-              % in
               let opt_subst_pf =
                 if conds = [] then
                   (traceRule(context, rule); Some (subst, prove_true))
