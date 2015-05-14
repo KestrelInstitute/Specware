@@ -441,7 +441,9 @@
   (if (null *transform-commands*)
       (format t "No transformations")
       (Script::printScript (Script::mkSteps (reverse *transform-commands*))))
-  (setq *current-command-processor* 'process-sw-shell-command)
+  (setq *current-command-processor* (if (fboundp 'SpecwareShell::processSpecwareShellCommand-2)
+                                        'SpecwareShell::newProcessSpecwareShellCommand
+                                        'old-process-sw-shell-command))
   (setq *prompt* "* ")
   (Emacs::eval-in-emacs "(setq *sw-slime-prompt* \"*\")")
   (values))
@@ -582,7 +584,7 @@
                       (if (Script::termTransformFn?-2 MetaSlang::unQualified (symbol-name *raw-command*))
                           (parse-and-execute-transform-string *raw-command* argstr)
                         ;; (interpret-command (Script::mkTermTransform (symbol-name *raw-command*)) t)
-                        (process-sw-shell-command command argstr))))))))
+                        (SpecwareShell::newProcessSpecwareShellCommand command argstr))))))))
 	((and (constantp command) (null argstr))
 	 (values command))
 	(t
