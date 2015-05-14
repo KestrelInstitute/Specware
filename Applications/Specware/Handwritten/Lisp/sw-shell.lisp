@@ -6,7 +6,8 @@
 (defpackage :CoqTermPrinter)
 (defpackage :Refs)
 (defpackage :Haskell)
-(defpackage :SWShell)
+(defpackage :SpecwareShell) ; new 
+(defpackage :SWShell)       ; deprecated
 (in-package :SWShell)
 
 (defparameter *prompt* "* ")
@@ -120,7 +121,9 @@
 
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
-(defvar *current-command-processor* 'old-process-sw-shell-command)
+(defvar *current-command-processor* (if (fboundp 'SpecwareShell::processSpecwareShellCommand-2)
+                                        'SpecwareShell::processSpecwareShellCommand-2
+                                        'old-process-sw-shell-command))
 (defvar *raw-command*)
 
 
@@ -291,8 +294,11 @@
 ;;This is currently a top-level entry point (called from sw-init.el):
 (defun specware-shell (exiting-lisp?)
   (Specware::check-license)
-  (aux-specware-shell exiting-lisp? #'old-process-sw-shell-command))
-
+  (aux-specware-shell exiting-lisp? 
+                      (if (fboundp 'SpecwareShell::processSpecwareShellCommand-2)
+                          #'SpecwareShell::processSpecwareShellCommand-2
+                          #'old-process-sw-shell-command)))
+  
 ;;This is currently a top-level entry point (called from bin/specware-shell).
 (defun specware-shell-no-emacs ()
   (progn (setq Emacs::*use-emacs-interface?* nil) 
@@ -331,7 +337,13 @@
 ;; Specware uses this for *current-command-processor*
 ;; Other systems (e.g. prism or accord) may use related functions...
 
-;; begin to deprecate this in favor of new specware op: processShellCommand
+;; fallback interface from processSpecwareShellCommand defined in SpecwareShell.sw
+;; as that handles more cases directly, this will be called less often until it
+;; is finally eliminated
+(defun SpecwareShell::oldProcessSpecwareShellCommand-2 (command argstr)
+  (old-process-sw-shell-command command argstr))
+
+;; previous shell command, being superseded by processSpecwareShellCommand in SpecwareShell.sw
 (defun old-process-sw-shell-command (command argstr)
   (cond ((and (consp command) (null argstr))
          (lisp-value (multiple-value-list (eval command))))
