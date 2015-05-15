@@ -315,11 +315,11 @@
 ;;; Used by slime-based interface
 ;;; From slime.el:  (defvar sw:*shell-command-function* "SWShell::process-raw-command")
 (defun process-raw-command (command argstr)
-  ;; Note: swank will barf on command lines such as
-  ;; '(33 33 33)
-  ;; before it ever reaches here, parsing it as
-  ;;  '(33   "33 33)"
-  ;; But we can at least deal gracefully with whatever does reach here.
+  ;; Note: 
+  ;;  Swank intercepts some commands before ever coming here, including those
+  ;;  that start with a parenthesis, symbols such as quit or exit, and "".
+  ;;  It also parses '(1 2 3) as command |'(1| and argstr "2 3)".
+  ;; 
   (incf *commands-in-process*)
   (let* ((*raw-command* (intern (symbol-name command) *sw-shell-pkg*))
          (command (intern (Specware::fixCase (symbol-name command)) *sw-shell-pkg*))
@@ -330,9 +330,9 @@
                             command)
                         argstr))))
     (decf *commands-in-process*)
-    (if (null val)
-       (swank::repl-suppress-output)
-       (values-list val))))
+    (if (or (null val) (equal val '(nil)))
+        (swank::repl-suppress-output)
+        (values-list val))))
 
 ;; Specware uses this for *current-command-processor*
 ;; Other systems (e.g. prism or accord) may use related functions...

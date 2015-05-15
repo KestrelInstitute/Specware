@@ -43,7 +43,7 @@ op parseCommandArgs (s : String) : Result CommandArgs =
  let
 
    def name_char? c =
-     isAlphaNum c || c in? [#-, #/, ##, #.] % include chars that often appear in filenames
+     isAlphaNum c || c in? [#~, #-, #/, ##, #.] % include chars that often appear in filenames
 
    def parse_string (unread_chars, rev_str_chars) : Result (Chars * CommandArg) =
      case unread_chars of
