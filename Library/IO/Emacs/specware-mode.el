@@ -596,8 +596,9 @@ Mode map
 (defun sw:process-current-file-and-return ()
   (when sw:process-on-load
     (let ((buf (current-buffer)))
-      (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
-        (lisp-or-specware-command-quiet ":sw " "proc " filename))
+        (unless (or (eq (point) (point-max)) (eq ?~ (elt buffer-file-name (- (length buffer-file-name) 1))))
+          (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
+            (lisp-or-specware-command-quiet ":sw " "proc " filename)))
       ;(pop-to-buffer buf)
       )))
 
