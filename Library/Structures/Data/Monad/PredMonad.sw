@@ -42,7 +42,7 @@ PredMonad qualifying spec
   op [a,b] mforall : (a -> MPred b) -> MPred b
   op [a,b] mexists : (a -> MPred b) -> MPred b
 
-  axiom satisfaction_monotone is [a]
+  axiom satisfies_monotone is [a]
     fa (P1,P2,m:Monad a) mpred_leq (P1,P2) => m |= P1 => m |= P2
   axiom mforall_lower_bound is [a,b]
     fa (Q:a -> MPred b, x) mpred_leq (mforall Q, Q x)
@@ -55,17 +55,82 @@ PredMonad qualifying spec
     fa (P,Q:a -> MPred b)
       (fa (x) mpred_leq (Q x, P)) => mpred_leq (mexists Q, P)
 
+  (* We define 'and' and 'or' via forall and exists, using the two-element type
+  Bool to form 2-element "function-sets". *)
+  op [a] m_and (P1 : MPred a, P2 : MPred a) : MPred a =
+    mforall (fn b -> if b then P1 else P2)
+  op [a] m_or (P1 : MPred a, P2 : MPred a) : MPred a =
+    mexists (fn b -> if b then P1 else P2)
 
-  (* FIXME: define the interaction between the monad ops and the logical ops *)
+  theorem satisfies_and is [a]
+    fa (P1,P2,m:Monad a)
+      m |= m_and (P1,P2) <=> (m |= P1 && m |= P2)
+  theorem satisfies_or is [a]
+    fa (P1,P2,m:Monad a)
+      m |= m_or (P1,P2) <=> (m |= P1 || m |= P2)
+
 
   (* The top and bottom elements correspond to "true" and "false", respectively *)
   op [a] mtrue : MPred a = mexists id
   op [a] mfalse : MPred a = mforall id
 
-  (* FIXME: do these need to be axioms? *)
+  (* The fact that true always holds and false never does is equivalent to the
+  existence, for each m, of predicates that m does and does not satisfy,
+  respectively. We state the latter properties as axioms, and the former follow
+  from them. *)
+  axiom mpred_separation is [a]
+    fa (m:Monad a) ex (P1,P2) m |= P1 && ~(m |= P2)
+
   theorem mtrue_is_true is [a]
     fa (m:Monad a) m |= mtrue
   theorem mfalse_is_false is [a]
     fa (m:Monad a) ~(m |= mfalse)
+
+
+  (* Implication makes a predicate monad into a complete Heyting algebra, which
+  means there is an operation mimplies with a Galois connection with mforall.
+  Note that this is weaker than making MPred a Boolean algebra, which would be
+  inherently non-constructive. *)
+  op [a] mimplies (P1 : MPred a, P2 : MPred a) : MPred a
+
+  axiom mimplies_galois is [a]
+    fa (P1,P2,P3:MPred a)
+      mpred_leq (m_and (P1,P2), P3) <=> mpred_leq (P1, (mimplies (P2, P3)))
+
+  (* FIXME: is this true? *)
+  theorem satisfies_mimplies is [a]
+    fa (P1,P2,m:Monad a)
+      m |= mimplies(P1,P2) <=> (m |= P1 => m |= P2)
+
+
+  (* Negation is just implication of false *)
+  op [a] mnot (P : MPred a) : MPred a = mimplies (P, mfalse)
+  theorem satisfies_mnot is [a]
+    fa (m,P:MPred a) m |= P <=> ~(m |= mnot P)
+
+
+  (* The return and bind of MPred recognize the return and bind of Monad *)
+  axiom satisfies_return is [a]
+    fa (m,x:a) m |= return x <=> m = return x
+  axiom satisfies_bind is [a,b]
+    fa (m,P,Q:a -> MPred b)
+      (ex (m',f) m' |= P && (fa (x) f x |= Q x)) =>
+      m |= monadBind (P,Q) <=>
+      (ex (m',f) m' |= P && (fa (x) f x |= Q x) && m = monadBind (m',f))
+
+
+  (* FIXME: need to commute return and bind with logical operators! Also need to
+  lift propositions into MPred, and maybe even equality with an m *)
+
+  (* Lift propositions to predicates (in a very non-constructive way!) *)
+  op [a] liftProp (prop : Bool) : MPred a =
+    if prop then mtrue else mfalse
+
+  (* NOTE: This is how one would liftProp constructively... *)
+  (*
+  op [a] liftProp (prop : Prop) : MPred a =
+    mexists (fn (p : prop) -> mtrue)
+  *)
+
 
 end-spec
