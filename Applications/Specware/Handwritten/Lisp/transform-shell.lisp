@@ -297,7 +297,7 @@
     (if (equal new-spec *transform-spec*)
         ()   ;(format t "No effect!")
       (progn 
-        (push-state `(interpret-spec-command ,command))
+        (push-state `(apply-spec-command ,command))
         (setq *transform-spec* new-spec)
         (push command *transform-commands*)
         (format t "~a" (AnnSpecPrinter::printSpec new-spec))))
