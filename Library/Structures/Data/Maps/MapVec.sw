@@ -6,7 +6,7 @@
 
 %% Note: The lisp code for these functions is in Handwritten/Lisp/MapAsVector.lisp.
 
-% MapVec qualifying % this would cause problems for SimpleAsVector
+MapVec qualifying % this would cause problems for SimpleAsVector
 spec
 
   %% SimpleAsVector imports this file with the qualifier VMap, and expects Map to be qualified as VMap.Map
@@ -15,32 +15,32 @@ spec
 
   import Simple#Map  %% TODO This brings in Map as an unqualified type name.
 
-  op MapVec.V_empty_map : [key,a] Map (key,a)
-  op MapVec.V_numItems  : [a,key] Map (key,a) -> Nat
+  op V_empty_map : [key,a] Map (key,a)
+  op V_numItems  : [a,key] Map (key,a) -> Nat
 
-  op MapVec.V_apply : [key,a] Map(key,a) * key -> Option a
+  op V_apply : [key,a] Map(key,a) * key -> Option a
  %TODO require that the key is present in the map?
-  op MapVec.V_eval  : [key,a] Map(key,a) * key -> a
-  op MapVec.V_map_eval  : [key,a] Map(key,a) * key * a -> a
+  op V_eval  : [key,a] Map(key,a) * key -> a
+  op V_map_eval  : [key,a] Map(key,a) * key * a -> a
 
-  op MapVec.V_update      : [key,a] Map (key,a) * key * a -> Map (key,a)
-  op MapVec.V_remove      : [a,key] Map (key,a) * key -> Map (key,a)
+  op V_update      : [key,a] Map (key,a) * key * a -> Map (key,a)
+  op V_remove      : [a,key] Map (key,a) * key -> Map (key,a)
   %% TODO delete this?  There seems to be no code for it.
-  %% op MapVec.V_inDomain?   : [key,a] Map (key,a) * key -> Bool
-  op MapVec.V_mapi        : [key,a,b] (key * a -> b)        * Map (key,a) -> Map (key,b)
-  op MapVec.V_map         : [key,a,b] (a       -> b)        * Map (key,a) -> Map (key,b)
-  op MapVec.V_mapPartial  : [key,a,b] (a       -> Option b) * Map (key,a) -> Map (key,b)
-  op MapVec.V_mapiPartial : [key,a,b] (key * a -> Option b) * Map (key,a)  -> Map (key,b)
+  %% op V_inDomain?   : [key,a] Map (key,a) * key -> Bool
+  op V_mapi        : [key,a,b] (key * a -> b)        * Map (key,a) -> Map (key,b)
+  op V_map         : [key,a,b] (a       -> b)        * Map (key,a) -> Map (key,b)
+  op V_mapPartial  : [key,a,b] (a       -> Option b) * Map (key,a) -> Map (key,b)
+  op V_mapiPartial : [key,a,b] (key * a -> Option b) * Map (key,a)  -> Map (key,b)
 
-  op MapVec.V_app   : [key,a] (a -> ()) * Map (key,a) -> ()
-  op MapVec.V_appi  : [key,a] (key * a -> ()) * Map (key,a) -> ()
+  op V_app   : [key,a] (a -> ()) * Map (key,a) -> ()
+  op V_appi  : [key,a] (key * a -> ()) * Map (key,a) -> ()
 
   %TODO change the type vars of this for consistency?
-  op MapVec.V_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
+  op V_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
 
-  op MapVec.V_imageToList  : [key,a] Map (key,a) -> List a
-  op MapVec.V_mapToList    : [key,a] Map (key,a) -> List (key * a)
-  op MapVec.V_domainToList : [key,a] Map (key,a) -> List key
+  op V_imageToList  : [key,a] Map (key,a) -> List a
+  op V_mapToList    : [key,a] Map (key,a) -> List (key * a)
+  op V_domainToList : [key,a] Map (key,a) -> List key
 
 #translate Lisp
 -import

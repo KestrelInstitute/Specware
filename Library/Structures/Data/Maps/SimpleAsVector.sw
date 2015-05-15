@@ -8,33 +8,32 @@
 SimpleAsVector = VMap qualifying
 spec
   import Simple
-  import MapVec  %% This adds the VMap qualifier to the Map type.
+  import translate MapVec by {MapVec.Map +-> VMap.Map}
 
-  def emptyMap      = MapVec.V_empty_map
-  def numItems      = MapVec.V_numItems
-  def apply         = MapVec.V_apply
-  def eval          = MapVec.V_eval
-  def update(x,y,z) = MapVec.V_update(x,y,z)
-  def remove        = MapVec.V_remove
-  % TODO why not call MapVec.V_inDomain? ?  Maybe because there is no code for it?
+  def emptyMap      = V_empty_map
+  def numItems      = V_numItems
+  def apply         = V_apply
+  def eval          = V_eval
+  def update(x,y,z) = V_update(x,y,z)
+  def remove        = V_remove
+  % TODO why not call V_inDomain? ?  Maybe because there is no code for it?
   def inDomain? (m, x) =
     case apply (m, x) of
       | None -> false
       | Some _ -> true
 
-  def mapi        f m = MapVec.V_mapi        (f,m)
-  def map         f m = MapVec.V_map         (f,m)
-  def mapiPartial f m = MapVec.V_mapiPartial (f,m)
-  def mapPartial  f m = MapVec.V_mapPartial  (f,m)
+  def mapi        f m = V_mapi        (f,m)
+  def map         f m = V_map         (f,m)
+  def mapiPartial f m = V_mapiPartial (f,m)
+  def mapPartial  f m = V_mapPartial  (f,m)
 
-  def app  f m = MapVec.V_app  (f,m)
-  def appi f m = MapVec.V_appi (f,m)
+  def app  f m = V_app  (f,m)
+  def appi f m = V_appi (f,m)
 
-  def foldi f e m = MapVec.V_foldi(f,e,m)
+  def foldi f e m = V_foldi(f,e,m)
 
-  def imageToList  = MapVec.V_imageToList
-  def mapToList    = MapVec.V_mapToList
-  def domainToList = MapVec.V_domainToList
+  def imageToList  = V_imageToList  def mapToList    = V_mapToList
+  def domainToList = V_domainToList
 
 end-spec
 
