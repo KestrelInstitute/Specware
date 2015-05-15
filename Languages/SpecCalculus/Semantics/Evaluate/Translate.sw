@@ -861,7 +861,7 @@ SpecCalc qualifying spec
 				  info.names;
 	       new_names <- return (reverse new_names);
 	       let new_info = info << {names = new_names} in
-	       return (mergeOpInfo spc ops new_info)
+	       return (mergeOpInfo spc ops new_info false)
 	      }
 	in
 	  foldOverQualifierMap translateOpInfo emptyAQualifierMap old_ops 

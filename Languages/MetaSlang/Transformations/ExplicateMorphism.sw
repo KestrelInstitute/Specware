@@ -53,7 +53,7 @@ op mergeImportElt(spc: Spec, imp_el: SpecElement): Spec =
   let new_types = foldriAQualifierMap (fn (q,id,info,new_types) -> mergeTypeInfo new_spc new_types info)
                     spc.types i_spc.types
   in
-  let new_ops = foldriAQualifierMap (fn (q,id,info,new_ops) -> mergeOpInfo new_spc new_ops info)
+  let new_ops = foldriAQualifierMap (fn (q,id,info,new_ops) -> mergeOpInfo new_spc new_ops info false)
                     spc.ops i_spc.ops
   in
   new_spc << {types = new_types,

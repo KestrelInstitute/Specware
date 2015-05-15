@@ -134,7 +134,7 @@ op auxApplySpecMorphismSubstitution (sm    : Morphism)
                                                 spec_replacements));
     translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
     %% Add the elements separately so we can put preserve order
-    new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
+    new_spec <- specUnion [cod_spec << {elements = []}, translated_residue] pos;     % M(S - dom(M)) U cod(M)
     new_spec <- return (new_spec << {elements = 
                                        replaceImportStub (new_spec.elements,
                                                           Import (cod_spec_term, cod_spec, cod_spec.elements, noPos))});

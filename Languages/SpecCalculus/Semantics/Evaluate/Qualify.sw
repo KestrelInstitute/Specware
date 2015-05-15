@@ -140,7 +140,7 @@ SpecCalc qualifying spec
 	    %% Translation can cause names to become duplicated, so remove duplicates
 	    let new_names = reverse (removeDuplicates (List.map (qualifyOpId revised_q immune_ids) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
-	    return (mergeOpInfo spc ops new_info)
+	    return (mergeOpInfo spc ops new_info false)
 	in
 	  foldOverQualifierMap qualify_opinfo emptyAQualifierMap ops 
   

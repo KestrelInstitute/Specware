@@ -193,7 +193,7 @@ op mergeImport (spec_term     : SCTerm)
                else 
                  %% TODO: fold over just infos?
                  foldOverQualifierMap (fn (_, _, info, ops) ->
-                                         return (mergeOpInfo new_spec ops info)) % Which should it be: old_spec, imported_spec, or new_spec ?
+                                         return (mergeOpInfo new_spec ops info false)) % Which should it be: old_spec, imported_spec, or new_spec ?
                                       ops
                                       imported_spec.ops;
 

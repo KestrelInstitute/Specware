@@ -76,7 +76,7 @@ SpecUnion qualifying spec
 			let Qualified (primary_q, primary_id) = primaryOpName info in
 			if q = primary_q && id = primary_id then
 			  %% Assertion: We take this branch exactly once per new info.
-			  mergeOpInfo next_spec ops info % may introduce duplicate defs
+			  mergeOpInfo next_spec ops info true % may introduce duplicate defs
 			else
 			  ops)
                        ops 

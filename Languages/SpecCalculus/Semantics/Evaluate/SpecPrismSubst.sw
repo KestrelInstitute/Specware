@@ -309,7 +309,7 @@ SpecCalc qualifying spec
 	       let new_info       = info << {names = new_names, 
 					     dfn   = new_dfn}      
 	       in
-	       return (mergeOpInfo spc ops new_info)
+	       return (mergeOpInfo spc ops new_info true)
 	      }
 	in
 	  foldOverQualifierMap translateOpInfo emptyAQualifierMap old_ops 

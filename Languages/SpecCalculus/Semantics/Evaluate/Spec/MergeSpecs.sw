@@ -6,10 +6,10 @@ import /Languages/MetaSlang/Specs/Utilities
 import /Library/Structures/Data/Sets/AsSTHarray
  
 
-op [a] compatibleTypes1? (ty1: AType a, ty2: AType a) : Bool =
+op [a] compatibleTypes1? (ty1: AType a, ty2: AType a, ignore_subtypes?: Bool) : Bool =
  anyType? ty1 || 
  anyType? ty2 || 
- equalTypeSubtype? (ty1, ty2, false)
+ equalTypeSubtype? (ty1, ty2, ignore_subtypes?)
 
 op  mergeTypeInfo (_ : Spec) (types : TypeMap) (info : TypeInfo) : TypeMap =
  let 
@@ -80,7 +80,7 @@ op printOptPosition (o_p : Option Position) : String =
 
    | _ -> ""
 
-op mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
+op mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo) (ignore_subtypes?: Bool): OpMap =
  let
    def aux (new_info, Qualified (q, id)) =
      case findAQualifierMap (ops, q, id) of
@@ -112,7 +112,7 @@ op mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
                                    (old_tvs, old_ty, old_dfn))
                                  ->
                                  ~ (new_tvs = old_tvs                   
-                                    && compatibleTypes1? (new_ty,  old_ty)
+                                    && compatibleTypes1? (new_ty,  old_ty, ignore_subtypes?)
                                     && compatibleTerms?  (new_dfn, old_dfn)))
                               (zip (sub_pref_type_tms, 
                                     non_pref_sub_type_tms))
