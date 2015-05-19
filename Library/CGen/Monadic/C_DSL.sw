@@ -116,12 +116,15 @@ C_DSL qualifying spec
 
      { int x; *(&x) = 1; }
     *)
-  op BLOCK (vars : List (C.TypeName * Identifier), body : List (Monad ())) : Monad () =
+  op BLOCK_helper (vars : List (C.TypeName * Identifier), body : List (Monad ())) : Monad () =
     {var_addrs <- mapM (fn (tp_name,id) ->
                           {tp <- expandTypeNameM tp_name;
                            addLocalBinding (id, V_undefined tp)}) vars;
      _ <- mapM id body;
      return ()}
+
+  op BLOCK (vars : List (C.TypeName * Identifier), body : List (Monad ())) : Monad () =
+    withFreshLocalBindings empty (BLOCK_helper (vars, body))
 
 
   (* External declarations, which have type XUMonad (Option ObjectFileBinding) *)
@@ -379,11 +382,32 @@ C_DSL qualifying spec
       evalStatement stmt = WHILE (rv, m)
 
   theorem BLOCK_correct is
-    fa (decls,ms,stmt,stmts)
-      stmt = S_block (map BlockItem_declaration decls
-                        ++ map BlockItem_statement stmts) &&
-      ms = map evalStatement stmts &&
+    fa (decls,ms,stmt,blockitems)
+      stmt = S_block blockitems &&
+      evalBlockItems blockitems = BLOCK_helper (decls, ms)
+      =>
       evalStatement stmt = BLOCK (decls, ms)
+
+  theorem BLOCK_helper_correct1 is
+    fa (decl,decls,ms,blockitems,blockitems')
+      blockitems = (BlockItem_declaration decl) :: blockitems' &&
+      evalBlockItems blockitems' = BLOCK_helper (decls, ms)
+      =>
+      evalBlockItems blockitems = BLOCK_helper (decl::decls, ms)
+
+  theorem BLOCK_helper_correct2 is
+    fa (stmt,m,ms,blockitems,blockitems')
+      blockitems = (BlockItem_statement stmt) :: blockitems' &&
+      evalStatement stmt = m &&
+      evalBlockItems blockitems' = BLOCK_helper ([], ms)
+      =>
+      evalBlockItems blockitems = BLOCK_helper ([], m::ms)
+
+  theorem BLOCK_helper_correct3 is
+    fa (blockitems)
+      blockitems = []
+      =>
+      evalBlockItems blockitems = BLOCK_helper ([], [])
 
 
   (* External Declarations *)
@@ -400,7 +424,17 @@ C_DSL qualifying spec
 
   op generateC_RuleNames: QualifiedIds =
     map (fn id -> Qualified("C_DSL", id))
-      ["FUNCTION_correct"]
+
+      ["VAR_correct", "ICONST_correct", "STAR_correct", "PLUS_correct",
+       "MINUS_correct", "NOT_correct", "NEG_correct", "MUL_correct",
+       "DIV_correct", "REM_correct", "ADD_correct", "SUB_correct",
+       "SHL_correct", "SHR_correct", "LT_correct", "GT_correct", "LE_correct",
+       "GE_correct", "EQ_correct", "NE_correct", "AND_correct", "XOR_correct",
+       "IOR_correct", "LAND_correct", "LOR_correct", "SUBSCRIPT_correct",
+       "LVAR_correct", "ADDR_correct", "LSTAR_correct", "LSUBSCRIPT_correct",
+       "ASSIGN_correct", "IFTHENELSE_correct", "WHILE_correct", "BLOCK_correct",
+       "BLOCK_helper_correct1", "BLOCK_helper_correct2",
+       "BLOCK_helper_correct3", "FUNCTION_correct"]
 
   op MSTermTransform.generateC (spc: Spec) (path_term: PathTerm) (qid: TransOpName) (options: RewriteOptions): MSTerm * Proof =
     rewrite spc path_term qid
