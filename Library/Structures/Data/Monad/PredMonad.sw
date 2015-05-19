@@ -97,10 +97,13 @@ PredMonad qualifying spec
     fa (P1,P2,P3:MPred a)
       mpred_leq (m_and (P1,P2), P3) <=> mpred_leq (P1, (mimplies (P2, P3)))
 
-  (* FIXME: is this true? *)
+  (* mimplies implies implication (say that 5 times fast!), but it need not be
+  equivalent to it; i.e., the predicate monad need not be as strong as the
+  meta-logic in which it is formalized *)
+
   theorem satisfies_mimplies is [a]
     fa (P1,P2,m:Monad a)
-      m |= mimplies(P1,P2) <=> (m |= P1 => m |= P2)
+      m |= mimplies(P1,P2) => (m |= P1 => m |= P2)
 
 
   (* Negation is just implication of false *)
