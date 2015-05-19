@@ -341,7 +341,12 @@
 ;; as that handles more cases directly, this will be called less often until it
 ;; is finally eliminated
 (defun SpecwareShell::oldProcessSpecwareShellCommand-2 (command argstr)
-  (old-process-sw-shell-command command argstr))
+  (let ((arg (if (equal argstr "") nil argstr))) ; backwards compatiblity, until each dispatch fn can hanble ""
+    (let ((values (multiple-value-list (swshell::old-process-sw-shell-command command arg))))
+      ;; backwards compatiblity, until each dispatch fn handles its own printing
+      (dolist (value values)
+        (print value))
+      (values))))
 
 (defun SpecwareShell::newProcessSpecwareShellCommand (command argstr)
   (SpecwareShell::processSpecwareShellCommand-2 command (or argstr "")))
