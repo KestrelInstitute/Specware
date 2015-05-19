@@ -151,126 +151,179 @@ C_DSL qualifying spec
   op evalRValue (e : Expression) : Monad Value = expressionValueM (evaluate e)
 
   theorem VAR_correct is
-    fa (id) VAR id = evalRValue (E_ident id)
+    fa (id,e) e = E_ident id => evalRValue e = VAR id
 
   theorem ICONST_correct is
-    fa (n) ICONST n = evalRValue (E_const (T_sint, n))
+    fa (n,e)
+      e = E_const (T_sint, n) =>
+      evalRValue e = ICONST n
 
   (* Unary operators *)
 
   theorem STAR_correct is
-    fa (e) STAR (evalRValue e) = evalRValue (E_unary (UOp_STAR, e))
+    fa (e1,rv1,e)
+      e = E_unary (UOp_STAR, e1) && evalRValue e1 = rv1
+      =>
+      evalRValue e = STAR rv1
 
   theorem PLUS_correct is
-    fa (e) PLUS (evalRValue e) = evalRValue (E_unary (UOp_PLUS, e))
+    fa (e1,rv1,e)
+      e = E_unary (UOp_PLUS, e1) && evalRValue e1 = rv1
+      =>
+      evalRValue e = PLUS rv1
 
   theorem MINUS_correct is
-    fa (e) MINUS (evalRValue e) = evalRValue (E_unary (UOp_MINUS, e))
+    fa (e1,rv1,e)
+      e = E_unary (UOp_MINUS, e1) && evalRValue e1 = rv1
+      =>
+      evalRValue e = MINUS rv1
 
   theorem NOT_correct is
-    fa (e) NOT (evalRValue e) = evalRValue (E_unary (UOp_NOT, e))
+    fa (e1,rv1,e)
+      e = E_unary (UOp_NOT, e1) && evalRValue e1 = rv1
+      =>
+      evalRValue e = NOT rv1
 
   theorem NEG_correct is
-    fa (e) NEG (evalRValue e) = evalRValue (E_unary (UOp_NEG, e))
+    fa (e1,rv1,e)
+      e = E_unary (UOp_NEG, e1) && evalRValue e1 = rv1
+      =>
+      evalRValue e = NEG rv1
 
   (* Binary operators *)
 
   theorem MUL_correct is
-    fa (e1,e2)
-      MUL (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_MUL, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_MUL, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = MUL (rv1, rv2)
 
   theorem DIV_correct is
-    fa (e1,e2)
-      DIV (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_DIV, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_DIV, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = DIV (rv1, rv2)
 
   theorem REM_correct is
-    fa (e1,e2)
-      REM (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_REM, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_REM, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = REM (rv1, rv2)
 
   theorem ADD_correct is
-    fa (e1,e2)
-      ADD (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_ADD, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_ADD, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = ADD (rv1, rv2)
 
   theorem SUB_correct is
-    fa (e1,e2)
-      SUB (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_SUB, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_SUB, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = SUB (rv1, rv2)
 
   theorem SHL_correct is
-    fa (e1,e2)
-      SHL (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_SHL, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_SHL, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = SHL (rv1, rv2)
 
   theorem SHR_correct is
-    fa (e1,e2)
-      SHR (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_SHR, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_SHR, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = SHR (rv1, rv2)
 
   theorem LT_correct is
-    fa (e1,e2)
-      LT (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_LT, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_LT, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = LT (rv1, rv2)
 
   theorem GT_correct is
-    fa (e1,e2)
-      GT (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_GT, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_GT, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = GT (rv1, rv2)
 
   theorem LE_correct is
-    fa (e1,e2)
-      LE (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_LE, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_LE, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = LE (rv1, rv2)
 
   theorem GE_correct is
-    fa (e1,e2)
-      GE (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_GE, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_GE, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = GE (rv1, rv2)
 
   theorem EQ_correct is
-    fa (e1,e2)
-      EQ (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_EQ, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_EQ, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = EQ (rv1, rv2)
 
   theorem NE_correct is
-    fa (e1,e2)
-      NE (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_NE, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_NE, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = NE (rv1, rv2)
 
   theorem AND_correct is
-    fa (e1,e2)
-      AND (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_AND, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_AND, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = AND (rv1, rv2)
 
   theorem XOR_correct is
-    fa (e1,e2)
-      XOR (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_XOR, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_XOR, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = XOR (rv1, rv2)
 
   theorem IOR_correct is
-    fa (e1,e2)
-      IOR (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_IOR, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_IOR, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = IOR (rv1, rv2)
 
   theorem LAND_correct is
-    fa (e1,e2)
-      LAND (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_LAND, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_LAND, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = LAND (rv1, rv2)
 
   theorem LOR_correct is
-    fa (e1,e2)
-      LOR (evalRValue e1, evalRValue e2)
-      = evalRValue (E_binary (e1, BinOp_LOR, e2))
+    fa (e1,e2,rv1,rv2,e)
+      e = E_binary (e1, BinOp_LOR, e2) &&
+      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = LOR (rv1, rv2)
 
   (* Array subscripts *)
   theorem SUBSCRIPT_correct is
-    fa (e1,e2)
-      SUBSCRIPT (evalRValue e1,
-                 evalRValue e2)
-      = evalRValue (E_subscript (e1, e2))
+    fa (e1,e2,e,rv1,rv2)
+      e = E_subscript (e1, e2) && evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalRValue e = SUBSCRIPT (rv1, rv2)
 
 
   (** LValues **)
@@ -282,18 +335,26 @@ C_DSL qualifying spec
        | _ -> error}
 
   theorem LVAR_correct is
-    fa (id) LVAR id = evalLValue (E_ident id)
+    fa (id,e)
+      e = E_ident id => evalLValue e = LVAR id
 
   theorem ADDR_correct is
-    fa (e) ADDR (evalLValue e) = evalRValue (E_unary (UOp_ADDR, e))
+    fa (e1,lv1,e)
+      evalLValue e1 = lv1 && e = E_unary (UOp_ADDR, e1)
+      =>
+      ADDR lv1 = evalRValue e
 
   theorem LSTAR_correct is
-    fa (e) LSTAR (evalRValue e) = evalLValue (E_unary (UOp_STAR, e))
+    fa (e1,rv1,e)
+      e = E_unary (UOp_STAR, e1) && evalRValue e1 = rv1
+      =>
+      evalLValue e = LSTAR rv1
 
   theorem LSUBSCRIPT_correct is
-    fa (e1,e2)
-      LSUBSCRIPT (evalRValue e1, evalRValue e2)
-      = evalLValue (E_subscript (e1, e2))
+    fa (e1,e2,expr,rv1,rv2)
+      expr = E_subscript (e1, e2) && evalRValue e1 = rv1 && evalRValue e2 = rv2
+      =>
+      evalLValue expr = LSUBSCRIPT (rv1, rv2)
 
 
   (** Statements **)
@@ -302,16 +363,18 @@ C_DSL qualifying spec
     fa (e1,e2,stmt,lv,rv)
       stmt = S_assign (e1, e2) && evalLValue e1 = lv && evalRValue e2 = rv
       =>
-      evalStatement (stmt) = ASSIGN (lv, rv)
+      evalStatement stmt = ASSIGN (lv, rv)
 
   theorem IFTHENELSE_correct is
-    fa (e,s1,s2)
-      IFTHENELSE (evalRValue e, evalStatement s1, evalStatement s2)
-      = evalStatement (S_if (e, s1, Some s2))
+    fa (e,s1,s2,rv,m1,m2,stmt)
+      stmt = S_if (e, s1, Some s2) && evalRValue e = rv &&
+      evalStatement s1 = m1 && evalStatement s2 = m2
+      =>
+      evalStatement stmt = IFTHENELSE (rv, m1, m2)
 
   theorem WHILE_correct is
     fa (e,body,rv,m,stmt)
-      stmt = S_while (e, body) && m = evalStatement body && rv = evalRValue e
+      stmt = S_while (e, body) && evalRValue e = rv && evalStatement body = m
       =>
       evalStatement stmt = WHILE (rv, m)
 
