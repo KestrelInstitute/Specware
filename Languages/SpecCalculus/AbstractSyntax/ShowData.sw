@@ -1570,7 +1570,7 @@ op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
 
 op printValueTop (value : Value, uid : UnitId, showImportedSpecs? : Bool) : String =
   printValue {printTypes? = true,
-              printPositionInfo? = true,
+              printPositionInfo? = false,
               fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
               %currentUID = uid,
               %uidsSeen = [uid],
