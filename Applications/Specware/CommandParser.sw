@@ -6,7 +6,7 @@ type Chars = List Char
 
 type CommandArgs = List CommandArg
 type CommandArg  = | String String
-                   | Name   String
+                   | UnitId String
                    | Number Integer
                    | List   CommandArgs
 
@@ -39,11 +39,15 @@ op setCommandContext (ctxt : CommandContext) : CommandContext
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+op unitIdChar? (c : Char) : Bool =
+ isAlphaNum c || c in? [#/, #:, ##, #_, #-, #~, #.]
+
+%% this is unused for now, but deprecates cl-user::unitIdString? in toplevel.lisp
+op unitIdString? (str) : Bool =
+ forall? unitIdChar? (explode str)
+
 op parseCommandArgs (s : String) : Result CommandArgs =
  let
-
-   def name_char? c =
-     isAlphaNum c || c in? [#~, #-, #/, ##, #.] % include chars that often appear in filenames
 
    def parse_string (unread_chars, rev_str_chars) : Result (Chars * CommandArg) =
      case unread_chars of
@@ -53,15 +57,15 @@ op parseCommandArgs (s : String) : Result CommandArgs =
        | c :: chars ->
          parse_string (chars, c :: rev_str_chars)
 
-   def parse_name (unread_chars, rev_name_chars) =
+   def parse_uid (unread_chars, rev_uid_chars) =
      case unread_chars of
        | [] ->
-         Good ([], Name (implode (reverse rev_name_chars)))
+         Good ([], UnitId (implode (reverse rev_uid_chars)))
        | c :: chars ->
-         if name_char? c then
-           parse_name (chars, c :: rev_name_chars)
+         if unitIdChar? c then
+           parse_uid (chars, c :: rev_uid_chars)
          else
-           Good (unread_chars, Name (implode (reverse rev_name_chars)))
+           Good (unread_chars, UnitId (implode (reverse rev_uid_chars)))
 
    def parse_number (unread_chars, rev_number_chars) =
      case unread_chars of
@@ -106,8 +110,8 @@ op parseCommandArgs (s : String) : Result CommandArgs =
            | _ ->
              if isNum c then
                parse_number (unread_chars, [])
-             else if name_char? c then
-               parse_name (unread_chars, [])
+             else if unitIdChar? c then
+               parse_uid (unread_chars, [])
              else
                Error ("cannot parse arg: " ^ implode unread_chars)
 

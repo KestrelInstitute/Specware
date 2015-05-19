@@ -45,13 +45,15 @@
 ;;    (":bash" . "With no args, run the bash shell.\nFor bash fn arg1 .. argn, run fn on args in bash shell [no spaces allowed in any arg]")
     ))
 
-(defun sw-help (&optional command)
-  (if command
-      (let ((pr (assoc command *sw-help-strings* :test 'equal)))
-        (if pr (print-command-doc (car pr) (cdr pr))
-            (format t "No documentation for command.")))
+(defun sw-help (&optional argstr)
+  ;; argstr should always be a string now, but test for null anyways
+  (if (or  (null argstr) (equal argstr ""))  
       (loop for (com . helpstr) in *sw-help-strings* do
-            (print-command-doc com helpstr)))
+           (print-command-doc com helpstr))
+      (let ((pr (assoc argstr *sw-help-strings* :test 'equal)))
+        (if pr 
+            (print-command-doc (car pr) (cdr pr))
+            (format t "No documentation for command: ~A." argstr))))
   (values))
 
 (defun print-command-doc (com helpstr)
@@ -82,6 +84,7 @@
       str)))
 
 ;;; Code for handling specalc terms as well as just unitid strings
+;;; deprecated, but still in use -- see CommandParser.sw
 (defun unitIdString? (str)
   (loop for i from 0 to (- (length str) 1)
         always (let ((ch (elt str i)))

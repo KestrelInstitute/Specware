@@ -44,10 +44,13 @@ op SpecCalc.getSpecPath0(): List UnitId =
     case getEnv "SWPATH" of
       | Some str ->
         let paths = splitStringAt(str, specPathSeparator) in
-        paths
-          ++ (if specware4Dirs = [] || head specware4Dirs in? paths
-               then [] else specware4Dirs)
-      | _ -> ["/"] ++ specware4Dirs
+        ["/"] ++ paths ++
+        (if specware4Dirs = [] || head specware4Dirs in? paths then
+           [] 
+         else 
+           specware4Dirs)
+      | _ -> 
+        ["/"] ++ specware4Dirs
   in
     map (fn str -> pathStringToCanonicalUID(str,true)) strings
 
