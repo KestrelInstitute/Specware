@@ -300,11 +300,9 @@ C_DSL qualifying spec
 
   theorem ASSIGN_correct is
     fa (e1,e2,stmt,lv,rv)
-    stmt = S_assign (e1, e2)
-     && evalLValue e1 = lv
-     && evalRValue e2 = rv
-   => evalStatement (stmt)
-      = ASSIGN (lv, rv)
+      stmt = S_assign (e1, e2) && evalLValue e1 = lv && evalRValue e2 = rv
+      =>
+      evalStatement (stmt) = ASSIGN (lv, rv)
 
   theorem IFTHENELSE_correct is
     fa (e,s1,s2)
@@ -312,38 +310,30 @@ C_DSL qualifying spec
       = evalStatement (S_if (e, s1, Some s2))
 
   theorem WHILE_correct is
-    fa (e,body)
-      WHILE (evalRValue e, evalStatement body)
-      = evalStatement (S_while (e, body))
+    fa (e,body,rv,m,stmt)
+      stmt = S_while (e, body) && m = evalStatement body && rv = evalRValue e
+      =>
+      evalStatement stmt = WHILE (rv, m)
 
   theorem BLOCK_correct is
-    fa (decls,stmts)
-      BLOCK (decls, map evalStatement stmts)
-      = evalStatement (S_block
-                         (map BlockItem_declaration decls
-                            ++ map BlockItem_statement stmts))
+    fa (decls,ms,stmt,stmts)
+      stmt = S_block (map BlockItem_declaration decls
+                        ++ map BlockItem_statement stmts) &&
+      ms = map evalStatement stmts &&
+      evalStatement stmt = BLOCK (decls, ms)
 
 
   (* External Declarations *)
   theorem FUNCTION_correct is
-    fa (retTypeName, name, params, body)
-      FUNCTION (retTypeName, name, params, evalStatement body)
-      = compile1XU (EDecl_function {FDef_retType  = retTypeName,
-                                    FDef_name     = name,
-                                    FDef_params   = params,
-                                    FDef_body     = Some body,
-                                    FDef_isExtern = false})
-
-  theorem FUNCTION_correct_2 is
     fa (retTypeName, name, params, body, d, m)
-     d = EDecl_function {FDef_retType  = retTypeName,
-                         FDef_name     = name,
-                         FDef_params   = params,
-                         FDef_body     = Some body,
-                         FDef_isExtern = false}
-       && evalStatement body = m
-   => compile1XU d
-      = FUNCTION (retTypeName, name, params, m)
+      d = EDecl_function {FDef_retType  = retTypeName,
+                          FDef_name     = name,
+                          FDef_params   = params,
+                          FDef_body     = Some body,
+                          FDef_isExtern = false}
+      && evalStatement body = m
+      =>
+      compile1XU d = FUNCTION (retTypeName, name, params, m)
 
 
 
