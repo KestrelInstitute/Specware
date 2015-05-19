@@ -3,25 +3,25 @@
 interpreters *)
 
 C_DSL qualifying spec
-  import C
+  import C, /Languages/MetaSlang/Transformations/Script
 
 
   (* Expression combinators, which have type Monad Value *)
 
   (* Variables *)
-  op VAR (id:Identifier) : Monad Value =
+  op VAR (id:Identifier) : Monad C.Value =
     lookupIdentifierValue id
 
   (* Integer constants *)
   (* FIXME HERE: do the actual type assignment of C for ints *)
-  op ICONST (n : Nat) : Monad Value =
+  op ICONST (n : Nat) : Monad C.Value =
     if n in? rangeOfIntegerType T_sint then
       evaluateIntegerConstant (T_sint, n)
     else error
 
   (* Unary operators *)
-  type Operator1 = Monad Value -> Monad Value
-  op liftOperator1 (f : Value -> Monad Value) : Operator1 =
+  type Operator1 = Monad C.Value -> Monad C.Value
+  op liftOperator1 (f : C.Value -> Monad C.Value) : Operator1 =
     fn m -> {val <- m; f val}
 
   op STAR : Operator1 = liftOperator1 readPtrValue
@@ -31,8 +31,8 @@ C_DSL qualifying spec
   op NEG : Operator1 = liftOperator1 operator_NEG
 
   (* Binary operators *)
-  type Operator2 = Monad Value * Monad Value -> Monad Value
-  op liftOperator2 (f : Value * Value -> Monad Value) : Operator2 =
+  type Operator2 = Monad C.Value * Monad C.Value -> Monad C.Value
+  op liftOperator2 (f : C.Value * C.Value -> Monad C.Value) : Operator2 =
     fn (m1,m2) -> {val1 <- m1; val2 <- m2; f (val1, val2)}
 
   op MUL : Operator2 = liftOperator2 operator_MUL
@@ -69,37 +69,37 @@ C_DSL qualifying spec
        | ObjPointer d -> return (tp,d)
        | _ -> error}
 
-  op ADDR (e : Monad LValue) : Monad Value =
+  op ADDR (e : Monad LValue) : Monad C.Value =
     {(tp,d) <- e;
      return (V_pointer (tp, ObjPointer d))}
 
-  op LSTAR (m : Monad Value) : Monad LValue =
+  op LSTAR (m : Monad C.Value) : Monad LValue =
     {val <- m;
      case val of
        | V_pointer (tp, ObjPointer d) -> return (tp, d)
        | _ -> error}
 
   (* Array subscripting *)
-  op LSUBSCRIPT (arr : Monad Value, ind : Monad Value) : Monad LValue =
+  op LSUBSCRIPT (arr : Monad C.Value, ind : Monad C.Value) : Monad LValue =
     LSTAR (ADD (arr, ind))
 
 
   (* Statement combinators, which have type Monad () *)
 
   (* Assignment, which takes expressions lhs and rhs and performs *lhs = rhs *)
-  op ASSIGN (lhs : Monad LValue, rhs : Monad Value) : Monad () =
+  op ASSIGN (lhs : Monad LValue, rhs : Monad C.Value) : Monad () =
     {(tp, d) <- lhs; rhs_val <- rhs;
      assignValue (Res_pointer (tp, ObjPointer d), rhs_val)}
 
   (* If-then-else statements *)
-  op IFTHENELSE (expr : Monad Value,
+  op IFTHENELSE (expr : Monad C.Value,
                  then_branch : Monad (), else_branch : Monad ()) : Monad () =
     {condition <- expr;
      isZero <- zeroScalarValue? condition;
      if ~ isZero then then_branch else else_branch}
 
   (* While statements *)
-  op WHILE (expr : Monad Value, body : Monad ()) : Monad () =
+  op WHILE (expr : Monad C.Value, body : Monad ()) : Monad () =
     mfix (fn recurse -> fn unit ->
           {condition <- expr;
            isZero <- zeroScalarValue? condition;
@@ -116,7 +116,7 @@ C_DSL qualifying spec
 
      { int x; *(&x) = 1; }
     *)
-  op BLOCK (vars : List (TypeName * Identifier), body : List (Monad ())) : Monad () =
+  op BLOCK (vars : List (C.TypeName * Identifier), body : List (Monad ())) : Monad () =
     {var_addrs <- mapM (fn (tp_name,id) ->
                           {tp <- expandTypeNameM tp_name;
                            addLocalBinding (id, V_undefined tp)}) vars;
@@ -129,8 +129,8 @@ C_DSL qualifying spec
   type ExtDecl = XUMonad (Option ObjectFileBinding)
 
   (* Function combinator *)
-  op FUNCTION (retTypeName : TypeName, name : Identifier,
-               paramDecls : List (TypeName * Identifier),
+  op FUNCTION (retTypeName : C.TypeName, name : Identifier,
+               paramDecls : List (C.TypeName * Identifier),
                body : Monad ()) : ExtDecl =
     {retType <- expandTypeNameXU retTypeName;
      params <- mapM_XU evalParameterDeclaration paramDecls;
@@ -148,7 +148,7 @@ C_DSL qualifying spec
 
   (** Expressions **)
 
-  op evalRValue (e : Expression) : Monad Value = expressionValueM (evaluate e)
+  op evalRValue (e : Expression) : Monad C.Value = expressionValueM (evaluate e)
 
   theorem VAR_correct is
     fa (id,e) e = E_ident id => evalRValue e = VAR id
@@ -398,6 +398,13 @@ C_DSL qualifying spec
       =>
       compile1XU d = FUNCTION (retTypeName, name, params, m)
 
+  op generateC_RuleNames: QualifiedIds =
+    map (fn id -> Qualified("C_DSL", id))
+      ["FUNCTION_correct"]
 
+  op MSTermTransform.generateC (spc: Spec) (path_term: PathTerm) (qid: TransOpName) (options: RewriteOptions): MSTerm * Proof =
+    rewrite spc path_term qid
+      (map Strengthen generateC_RuleNames)
+      (options << {allowUnboundVars? = true})
 
 end-spec
