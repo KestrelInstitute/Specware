@@ -3,6 +3,7 @@ SpecwareShell qualifying spec
 import /Library/Legacy/Utilities/IO      % read
 import /Library/Legacy/Utilities/System  % writeLine
 
+import TypedValues
 import CommandParser
 import SystemCommands
 import SpecwareCommands
@@ -12,8 +13,8 @@ import WizardCommands
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op dispatch (cmd : String, args : CommandArgs, ctxt : CommandContext) 
- : Result CommandContext =
+op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext) 
+ : Result (TypedValues * CommandContext) =
  case (cmd, args) of
   (*
    | ("cd",         [])          -> showCurrentDirectory ctxt
@@ -147,33 +148,30 @@ op dispatch (cmd : String, args : CommandArgs, ctxt : CommandContext)
      NotYetImplemented
      
 
-op oldProcessSpecwareShellCommand (cmd : String, args_str : String) : () % implemented in handwritten lisp code
+op oldProcessSpecwareShellCommand (cmd : String, args_str : String) : TypedValues % implemented in handwritten lisp code
 
 %% This will supplant old-process-sw-shell-command (defined in Handwritten/Lisp/sw-shell.lisp)
 %% as the new top-level specware shell command processor
 
-op processSpecwareShellCommand (cmd : String, args_str : String) : () =
+op processSpecwareShellCommand (cmd : String, args_str : String) : TypedValues =
  let old_ctxt = getCommandContext () in
  case parseCommandArgs args_str of
    | Good args ->
      (case dispatch (cmd, args, old_ctxt) of
-        | Good new_ctxt -> 
+        | Good (typed_values, new_ctxt) -> 
           let _ = setCommandContext new_ctxt in
-          ()
+          typed_values
 
         | NotYetImplemented ->
-          let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
-          ()
+          oldProcessSpecwareShellCommand (cmd, args_str)
 
         | Error msg ->
           let _ = writeLine ("problem processing shell command using new processor, reverting to old one: " ^ msg) in
-          let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
-          ())
+          oldProcessSpecwareShellCommand (cmd, args_str) )
 
    | Error msg ->
      let _ = writeLine ("could not parse args, reverting to old shell processor: " ^ msg) in
-     let _ = oldProcessSpecwareShellCommand (cmd, args_str) in
-     ()
+     oldProcessSpecwareShellCommand (cmd, args_str) 
 
 #translate lisp
 -verbatim

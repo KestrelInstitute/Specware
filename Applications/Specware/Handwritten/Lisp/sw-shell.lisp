@@ -126,82 +126,86 @@
                                         'old-process-sw-shell-command))
 (defvar *raw-command*)
 
-
 (defun aux-specware-shell (exiting-lisp?
-                          *current-command-processor*
-                          &optional
-                          (banner        "Specware Shell~%")
-                          (abort-message "Return to Specware Shell top level.")
-                          (exit-message  "Exiting Specware Shell. :sw-shell to reenter."))
+                           *current-command-processor* ;; special binding -- some commands may change this
+                           &optional
+                             (banner        "Specware Shell~%")
+                             (abort-message "Return to Specware Shell top level.")
+                             (exit-message  "Exiting Specware Shell. :sw-shell to reenter."))
   (let  ((magic-eof-cookie (cons :eof nil))
-        (number-of-eofs 0)
-        (cl:*package* cl:*package*)
-        (sw-shell-pkg (find-package :SWShell))
-        (*print-level* *sw-shell-print-level*)
-        (*print-length* *sw-shell-print-length*)
-        (start-up t)
-        * ** ***
-        / // ///
-        ch)
+         (number-of-eofs 0)
+         (cl:*package* cl:*package*)
+         (sw-shell-pkg (find-package :SWShell))
+         (*print-level* *sw-shell-print-level*)
+         (*print-length* *sw-shell-print-length*)
+         (start-up t)
+         * ** ***
+         / // ///
+         ch)
     (Emacs::eval-in-emacs "(set-comint-prompt)")
     (setq *emacs-eval-form-after-prompt* nil)
     (format t banner)
     (unwind-protect
-       (loop
-
-         (set-specware-shell t)
-         (fresh-line *standard-output*)
-         (print-shell-prompt)
-         (when *emacs-eval-form-after-prompt*
-           (Emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
-           (setq *emacs-eval-form-after-prompt* nil))
-         (catch ':top-level-reset	; Used by allegro :reset command
-           (with-simple-restart (abort abort-message)
-                                       ;(set-specware-shell t)
-                                (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
-                                  do;; If user types a newline give a new prompt
-                                  (when (and (eq ch #\Newline) (not start-up))
-                                    (print-shell-prompt)))
-                                (setq start-up nil)
-                                (when ch
-                                  (unread-char ch))
-                                (catch #+allegro 'tpl::top-level-break-loop
-                                       #+mcl :toplevel
-                                       #-(or allegro mcl) nil
-                                       (let* ((form (command-read magic-eof-cookie))
-                                               (*raw-command* (intern (symbol-name form) sw-shell-pkg)))
-                                         (when (symbolp form)
-                                            (setq form (intern (Specware::fixCase (symbol-name form)) sw-shell-pkg)))
-                                         (cond ((member form '(quit exit))
-                                                (setq exiting-lisp? t)
-                                                (Specware::exit))
-                                               ((member form '(OK |ok|))
-                                                (return))
-                                               ((not (eq form magic-eof-cookie))
-                                                (let* (;(*raw-command* )
-                                                        (results
-                                                         (multiple-value-list
-                                                          (sw-shell-command *current-command-processor*
-                                                                            form))))
-                                                  (dolist (result results)
-                                                    (fresh-line)
-                                                    (prin1 result)))
-                                                (setf number-of-eofs 0))
-                                               ((eql (incf number-of-eofs) 1)
-                                                (let ((stream (make-synonym-stream '*terminal-io*)))
-                                                  (setf *standard-input* stream)
-                                                  (setf *standard-output* stream)
-                                                  (format t "~&Received EOF on *standard-input*, switching to *terminal-io*.~%")))
-                                               ((> number-of-eofs eofs-before-quit)
-                                                (format t "~&Received more than ~D EOFs; Aborting.~%"
-                                                        eofs-before-quit)
-                                                (Specware::exit))
-                                               (t
-                                                (format t "~&Received EOF.~%"))))))))
-
+         (loop
+            (set-specware-shell t)
+            (fresh-line *standard-output*)
+            (print-shell-prompt)
+            (when *emacs-eval-form-after-prompt*
+              (Emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
+              (setq *emacs-eval-form-after-prompt* nil))
+            (catch ':top-level-reset  ; Used by allegro :reset command
+              (with-simple-restart (abort abort-message)
+                                        ;(set-specware-shell t)
+                (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
+                   do ;; If user types a newline give a new prompt
+                     (when (and (eq ch #\Newline) (not start-up))
+                       (print-shell-prompt)))
+                (setq start-up nil)
+                (when ch
+                  (unread-char ch))
+                (catch #+allegro          'tpl::top-level-break-loop
+                       #+mcl              :toplevel
+                       #-(or allegro mcl) nil
+                       (let ((form (command-read magic-eof-cookie)))
+                         (if (symbolp form)
+                             (let ((*raw-command* (intern (symbol-name form) sw-shell-pkg)))
+                               (when (symbolp form)
+                                 (setq form (intern (Specware::fixCase (symbol-name form)) sw-shell-pkg)))
+                               (cond ((member form '(quit exit))
+                                      (setq exiting-lisp? t)
+                                      (Specware::exit))
+                                     ((member form '(OK |ok|))
+                                      (return))
+                                     ((not (eq form magic-eof-cookie))
+                                      (let* ( ;(*raw-command* )
+                                             (results
+                                              (multiple-value-list
+                                               ;; note: some commands change the value of *current-command-processor*,
+                                               ;;       so this is not neccessarily the value we entered with
+                                               (sw-shell-command *current-command-processor* form))))
+                                        (dolist (result results)
+                                          (fresh-line)
+                                          (prin1 result)))
+                                      (setf number-of-eofs 0))
+                                     ((eql (incf number-of-eofs) 1)
+                                      (let ((stream (make-synonym-stream '*terminal-io*)))
+                                        (setf *standard-input* stream)
+                                        (setf *standard-output* stream)
+                                        (format t "~&Received EOF on *standard-input*, switching to *terminal-io*.~%")))
+                                     ((> number-of-eofs eofs-before-quit)
+                                      (format t "~&Received more than ~D EOFs; Aborting.~%"
+                                              eofs-before-quit)
+                                      (Specware::exit))
+                                     (t
+                                      (format t "~&Received EOF.~%"))))
+                             (let ((results (multiple-value-list (eval form))))
+                               (dolist (result results)
+                                 (fresh-line)
+                                 (prin1 result)))))))))
+      ;; unwind-protect undo:
       (set-specware-shell nil)
       (unless exiting-lisp?
-       (format t "~%~A~%" exit-message)))))
+        (format t "~%~A~%" exit-message)))))
 
 (defvar *command-read-table* (copy-readtable))
 
@@ -227,7 +231,7 @@
 
 (defmacro with-break-possibility (&rest fms)
   `(progn (set-specware-shell nil)
-         ,@fms))
+          ,@fms))
 
 (defun lisp-value (val)
   (when val
@@ -291,28 +295,27 @@
 (defun cl-user::sw-shell ()
   (specware-shell nil))
 
-;;This is currently a top-level entry point (called from sw-init.el):
 (defun specware-shell (exiting-lisp?)
   (Specware::check-license)
-  (aux-specware-shell exiting-lisp? 
-                      (if (fboundp 'SpecwareShell::processSpecwareShellCommand-2)
-                          #'SpecwareShell::newProcessSpecwareShellCommand
-                          #'old-process-sw-shell-command)))
+  (aux-specware-shell exiting-lisp? *current-command-processor*))
   
-;;This is currently a top-level entry point (called from bin/specware-shell).
+(defvar *sw-shell-pkg* (find-package :SWShell))
+
+(defvar *commands-in-process* 0)
+
+;;; ================================================================================
+;;; TWO TOP LEVEL ENTRIES: one for unix command line and one for slime interface
+;;; ================================================================================
+
+;;; TOP LEVEL ENTRY when running bin/specware-shell
 (defun specware-shell-no-emacs ()
   (progn (setq Emacs::*use-emacs-interface?* nil) 
          (format t "Welcome to Specware version ~a!~%" cl-user::*Specware-Version*)
          (Specware::initializeSpecware-0)
          (SWShell::specware-shell t)
-         (sb-unix:unix-exit 0)))
+         (sb-sys:os-exit 0)))
 
-
-(defvar *sw-shell-pkg* (find-package :SWShell))
-
-(defvar *commands-in-process* 0)
-
-;;; Used by slime-based interface
+;;; TOP LEVEL ENTRY when using slime
 ;;; From slime.el:  (defvar sw:*shell-command-function* "SWShell::process-raw-command")
 (defun process-raw-command (command argstr)
   ;; Note: 
@@ -323,16 +326,18 @@
   (incf *commands-in-process*)
   (let* ((*raw-command* (intern (symbol-name command) *sw-shell-pkg*))
          (command (intern (Specware::fixCase (symbol-name command)) *sw-shell-pkg*))
-         (val (multiple-value-list
-               (funcall *current-command-processor*
-                        (if (symbolp command)
-                            (intern (symbol-name command) *sw-shell-pkg*)
-                            command)
-                        argstr))))
+         (results (multiple-value-list
+                   (funcall *current-command-processor*
+                            (if (symbolp command)
+                                (intern (symbol-name command) *sw-shell-pkg*)
+                                command)
+                            argstr))))
     (decf *commands-in-process*)
-    (if (or (null val) (equal val '(nil)))
+    (if (null results)
         (swank::repl-suppress-output)
-        (values-list val))))
+        (values-list results))))
+
+;;; ================================================================================
 
 ;; Specware uses this for *current-command-processor*
 ;; Other systems (e.g. prism or accord) may use related functions...
@@ -340,16 +345,19 @@
 ;; fallback interface from processSpecwareShellCommand defined in SpecwareShell.sw
 ;; as that handles more cases directly, this will be called less often until it
 ;; is finally eliminated
+
 (defun SpecwareShell::oldProcessSpecwareShellCommand-2 (command argstr)
   (let ((arg (if (equal argstr "") nil argstr))) ; backwards compatiblity, until each dispatch fn can hanble ""
-    (let ((values (multiple-value-list (swshell::old-process-sw-shell-command command arg))))
-      ;; backwards compatiblity, until each dispatch fn handles its own printing
-      (dolist (value values)
-        (print value))
-      (values))))
+    (let* ((lisp_values (multiple-value-list (swshell::old-process-sw-shell-command command arg)))
+           (sw_values   (SpecwareShell::type_values lisp_values)))
+      sw_values)))
 
 (defun SpecwareShell::newProcessSpecwareShellCommand (command argstr)
-  (SpecwareShell::processSpecwareShellCommand-2 command (or argstr "")))
+  (let* ((argstr      (or argstr "")) ; argument to processSpecwareShellCommand must be a string
+         (sw_values   (SpecwareShell::processSpecwareShellCommand-2 command argstr))
+         ;; each typed value is something like (:string "..."), (:integer 33), etc.
+         (lisp_values (SpecwareShell::untype_values sw_values)))
+    (values-list lisp_values)))
 
 ;; previous shell command, being superseded by processSpecwareShellCommand in SpecwareShell.sw
 (defun old-process-sw-shell-command (command argstr)
@@ -622,6 +630,7 @@
                      (when (member command '(quit exit ok)) (return))                         
                      (funcall *current-command-processor* command argstring))))))))))
 
+#|
 (defun parse-and-execute-MSTerm-string (input_str)
   (let* ((Emacs::*goto-file-position-store?* t)
 	 (Emacs::*goto-file-position-stored* nil)
@@ -650,3 +659,4 @@
               (force-output)
               (Emacs::eval-in-emacs emacs-command))
             (format t "~%Error not specified"))))))
+|#

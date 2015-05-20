@@ -2,13 +2,9 @@ SpecwareShell qualifying spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type Chars = List Char
+import TypedValues
 
-type CommandArgs = List CommandArg
-type CommandArg  = | String String
-                   | UnitId String
-                   | Number Integer
-                   | List   CommandArgs
+type Chars = List Char
 
 type Result a = | Good  a
                 | Error String
@@ -39,6 +35,11 @@ op setCommandContext (ctxt : CommandContext) : CommandContext
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+op symbolChar? (c : Char) : Bool =
+ isAlphaNum c || 
+ %% many special characters, but not quotes, parens, brackets, backslash, colon, semicolon, or comma
+ c in? [#~, #!, #@, ##, #$, #%, #^, #&, #*, #_, #-, #+, #=, #|, #:, #<, #>, #., #?, #/]
+
 op unitIdChar? (c : Char) : Bool =
  isAlphaNum c || c in? [#/, #:, ##, #_, #-, #~, #.]
 
@@ -46,10 +47,10 @@ op unitIdChar? (c : Char) : Bool =
 op unitIdString? (str) : Bool =
  forall? unitIdChar? (explode str)
 
-op parseCommandArgs (s : String) : Result CommandArgs =
+op parseCommandArgs (s : String) : Result TypedValues =
  let
 
-   def parse_string (unread_chars, rev_str_chars) : Result (Chars * CommandArg) =
+   def parse_string (unread_chars, rev_str_chars) =
      case unread_chars of
        | [] -> Error "String not terminated by quote"
        | #" :: chars ->
@@ -57,45 +58,57 @@ op parseCommandArgs (s : String) : Result CommandArgs =
        | c :: chars ->
          parse_string (chars, c :: rev_str_chars)
 
-   def parse_uid (unread_chars, rev_uid_chars) =
+   def parse_symbol (unread_chars, rev_sym_chars) =
      case unread_chars of
        | [] ->
-         Good ([], UnitId (implode (reverse rev_uid_chars)))
+         Good ([], Symbol (implode (reverse rev_sym_chars)))
        | c :: chars ->
-         if unitIdChar? c then
-           parse_uid (chars, c :: rev_uid_chars)
+         if symbolChar? c then
+           parse_symbol (chars, c :: rev_sym_chars)
          else
-           Good (unread_chars, UnitId (implode (reverse rev_uid_chars)))
+           Good (unread_chars, Symbol (implode (reverse rev_sym_chars)))
 
-   def parse_number (unread_chars, rev_number_chars) =
+   def parse_integer (unread_chars, rev_int_chars) =
      case unread_chars of
        | [] ->
-         let n_str = implode (reverse rev_number_chars) in
+         let n_str = implode (reverse rev_int_chars) in
          if intConvertible n_str then
-           Good (unread_chars, Number (stringToInt n_str))
+           Good (unread_chars, Int (stringToInt n_str))
          else
-           Error ("Cannot parse number: " ^ implode unread_chars)
+           Error ("Cannot parse integer: " ^ implode unread_chars)
        | c :: chars ->
          if isNum c then
-           parse_number (chars, c :: rev_number_chars)
+           parse_integer (chars, c :: rev_int_chars)
          else
-           let n_str = implode (reverse rev_number_chars) in
+           let n_str = implode (reverse rev_int_chars) in
            if intConvertible n_str then
-             Good (unread_chars, Number (stringToInt n_str))
+             Good (unread_chars, Int (stringToInt n_str))
            else
-             Error ("Cannot parse number: " ^ implode unread_chars)
+             Error ("Cannot parse integer: " ^ implode unread_chars)
 
-   def parse_list (unread_chars, rev_elements) =
+   def parse_sw_list (unread_chars, rev_elements) =
      case unread_chars of
        | [] -> Error "List not terminated by closing bracket"
        | #, :: chars ->
-         parse_list (chars, rev_elements)
+         parse_sw_list (chars, rev_elements)
        | #] :: chars ->
          Good (chars, List (reverse rev_elements))
        | _ ->
          case parse_arg unread_chars of
            | Good (unread_chars, element) ->
-             parse_list (unread_chars, element :: rev_elements)
+             parse_sw_list (unread_chars, element :: rev_elements)
+           | error ->
+             error
+
+   def parse_lisp_list (unread_chars, rev_elements) =
+     case unread_chars of
+       | [] -> Error "List not terminated by closing bracket"
+       | #) :: chars ->
+         Good (chars, List (reverse rev_elements))
+       | _ ->
+         case parse_arg unread_chars of
+           | Good (unread_chars, element) ->
+             parse_lisp_list (unread_chars, element :: rev_elements)
            | error ->
              error
 
@@ -106,16 +119,17 @@ op parseCommandArgs (s : String) : Result CommandArgs =
          case c of 
            | #\s -> parse_arg chars
            | #" -> parse_string (chars, [])
-           | #[ -> parse_list   (chars, [])
+           | #[ -> parse_sw_list   (chars, [])
+           | #( -> parse_lisp_list (chars, [])
            | _ ->
              if isNum c then
-               parse_number (unread_chars, [])
-             else if unitIdChar? c then
-               parse_uid (unread_chars, [])
+               parse_integer (unread_chars, [])
+             else if symbolChar? c then
+               parse_symbol (unread_chars, [])
              else
                Error ("cannot parse arg: " ^ implode unread_chars)
 
-   def aux (unread_chars, rev_args) : Result (Chars * CommandArgs) =
+   def aux (unread_chars, rev_args) =
      case unread_chars of
        | [] -> Good ([], reverse rev_args)
        | _ ->
