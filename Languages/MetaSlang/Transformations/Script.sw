@@ -362,7 +362,7 @@ spec
   op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context, rule_specs: RuleSpecs): List RewriteRule =
     if ~addContextRules? then []
     else
-    let def collectRules(tm, path, sbst) =
+    let def collectRules(tm, path, sbst, par) =
           % let _ = writeLine("collectRules: "^anyToString path^"\n"^printTerm tm) in
           case path of
             | [] -> []
@@ -407,7 +407,7 @@ spec
                        (flatten new_rules)
                           % ++ collectRules(fn_tm, reverse(pathToLambdaBody fn_tm), [])
                           ++ guard_rules
-                          ++ collectRules(pred, r_path, sbst)
+                          ++ collectRules(pred, r_path, sbst, tm)
                      | _ -> []
                in
                post_condn_rules ++ param_rls)
@@ -446,9 +446,23 @@ spec
                   let subterm_on_path = (immediateSubTerms tm)@i in
                   foldl (fn (new_rules, (pat, _, tm_i)) ->
                            if tm_i = subterm_on_path
-                             then let guards = getAllPatternGuards pat in
-                                  if guards = [] then []
+                             then
+                               let pat_conds = case par of
+                                                 | Apply(lam, e, _) | lam = tm ->
+                                                   (case patternToTerm pat of
+                                                      | None -> []
+                                                      | Some pat_tm ->
+                                                        let eq_tm = mkEquality(inferType(context.spc, e), e, pat_tm) in
+                                                        assertRulesDirn(context, eq_tm, "case", Context, Either,
+                                                                        rule_specs,
+                                                                        None, % ??
+                                                                        freeTyVarsInTerm eq_tm))
+                                                 | _ -> []
+                               in
+                               let guards = getAllPatternGuards pat in
+                                  if guards = [] then pat_conds
                                     else let condn = mkConj guards in
+                                         pat_conds ++
                                          assertRulesDirn(context, condn, "lambda guard", Context,
                                                          Either, rule_specs,
                                                          Some(simpProofByMetis(condn, "lambda_guard", condn, sbst)),
@@ -457,7 +471,7 @@ spec
                      [] rules
                 | _ -> []
           in
-          rls ++ collectRules(ithSubTerm(tm, i), r_path, sbst)
+          rls ++ collectRules(ithSubTerm(tm, i), r_path, sbst, tm)
        def parameterRules(ty: MSType) =
          case ty of
            | Arrow(dom, rng, _) ->
@@ -470,7 +484,7 @@ spec
              dom_rls ++ parameterRules rng
            | _ -> []
     in
-    collectRules (top_term, reverse path, [])
+    collectRules (top_term, reverse path, [], top_term)
 
   op lambdaGuards(tm: MSTerm): MSTerms =
     case tm of
@@ -492,26 +506,30 @@ spec
   op namedContextTerms(ptm: PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
     namedAssumptions(ptm, qid, spc)
 
-  op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
-    case top_term of
-      | TypedTerm(fn_tm, ty, _) ->
-        let guard = ("lambda_guard", mkConj(lambdaGuards fn_tm)) in
-        (if path ~= [] && last path = 1
-           then
-             case varProjections(ty, spc) of
-               | Some(pred, var_projs as _ :: _)->
-                 let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
-                 let rng = range_*(spc, ty, true) in
-                 let fn_val_tms = map (fn (v as (_, v_ty), proj?) ->
-                                         case proj? of
-                                           | None -> mkEquality(v_ty, mkVar v, result_tm)
-                                           | Some id1 -> mkEquality(v_ty, mkVar v, mkApply(mkProject(id1, rng, v_ty), result_tm)))
-                                    var_projs                                                 
-                 in
-                 [guard, ("fn_value", mkConj fn_val_tms), ("new_postcondition", pred)]
-               | _ -> [guard]
-         else [guard])
-      | _ -> []
+  op namedAssumptions(ptm: PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
+    let ctxt_rules = contextRulesFromPath(ptm, qid, makeContext spc, []) in
+    map (fn rr -> (rr.name, mkEquality(inferType(spc, rr.lhs), rr.lhs, rr.rhs))) ctxt_rules
+
+  % op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
+  %   case top_term of
+  %     | TypedTerm(fn_tm, ty, _) ->
+  %       let guard = ("lambda_guard", mkConj(lambdaGuards fn_tm)) in
+  %       (if path ~= [] && last path = 1
+  %          then
+  %            case varProjections(ty, spc) of
+  %              | Some(pred, var_projs as _ :: _)->
+  %                let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+  %                let rng = range_*(spc, ty, true) in
+  %                let fn_val_tms = map (fn (v as (_, v_ty), proj?) ->
+  %                                        case proj? of
+  %                                          | None -> mkEquality(v_ty, mkVar v, result_tm)
+  %                                          | Some id1 -> mkEquality(v_ty, mkVar v, mkApply(mkProject(id1, rng, v_ty), result_tm)))
+  %                                   var_projs                                                 
+  %                in
+  %                [guard, ("fn_value", mkConj fn_val_tms), ("new_postcondition", pred)]
+  %              | _ -> [guard]
+  %        else [guard])
+  %     | _ -> []
 
   op addContextToProof(prf: Proof, ptm: PathTerm, qid: QualifiedId, spc: Spec): Proof =
     let named_assumps = namedAssumptions(ptm, qid, spc) in
