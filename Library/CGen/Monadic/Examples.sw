@@ -27,12 +27,6 @@ Examples_spec = spec
        }
        *dest_len = i;
      }
-
-     op copyBytes (List Byte * List Byte) : List Byte * List Byte =
-       
-
-       fn (src, dest) -> (src, src)
-
    *)
   op copyBytes : ExtDecl =
     FUNCTION (TN_void, "copyBytes",
