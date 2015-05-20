@@ -3,7 +3,7 @@
 interpreters *)
 
 C_DSL qualifying spec
-  import C, /Languages/MetaSlang/Transformations/Script
+  import C
 
 
   (* Expression combinators, which have type Monad Value *)
