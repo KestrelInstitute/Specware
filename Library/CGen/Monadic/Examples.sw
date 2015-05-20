@@ -1,4 +1,4 @@
-spec
+Examples_spec = spec
   import C_DSL
 
   (* Below is the semantic object for the following function:
@@ -55,3 +55,10 @@ spec
   op copyBytes_C : { d:ExternalDeclaration | compile1XU d = copyBytes }
 
 end-spec
+
+% README: need to load lisp for GenerateC.sw before running this!
+Examples_impl =
+transform Examples_spec by
+{at copyByte_C { unfold copyByte; generateC};
+ at copyBytes_C { unfold copyBytes; generateC}
+ }
