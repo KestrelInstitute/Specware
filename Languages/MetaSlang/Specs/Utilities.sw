@@ -3021,6 +3021,32 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     | (Embed _) -> Some f
     | _ -> None
 
+%% True for nullary polymorphic constructors such as Nil
+op nullPolyConstructorFun?(f: MSFun, ty: MSType, spc: Spec): Bool =
+  let def checkIfNullPolyQId (op_qid, ty_qid) =
+        case findTheType(spc, ty_qid) of
+          | None -> false
+          | Some ty_info ->
+        case unpackType(ty_info.dfn) of
+          | (_::_, CoProduct(fields, _)) ->
+            (case findLeftmost (fn (fld_qid, _) -> op_qid = fld_qid) fields of
+               | Some(_, None) -> true
+               | None -> false)
+          | (_::_, Base(ty_qid1, _, _)) -> checkIfNullPolyQId(op_qid, ty_qid1)
+          | (_::_, Subtype(Base(ty_qid1, _, _), _, _)) -> checkIfNullPolyQId(op_qid, ty_qid1)
+          | _ -> false
+      def checkIfNullPoly(op_qid, ty) =
+        case ty of
+          | Base(qid, _, _) -> checkIfNullPolyQId(op_qid, qid)
+          | Arrow(_, s_ty, _) -> checkIfNullPoly(op_qid, s_ty)
+          | Subtype(s_ty, _, _) -> checkIfNullPoly(op_qid, s_ty)
+          | _ -> false
+  in
+  case f of
+    | Op(op_qid, _) -> checkIfNullPoly(op_qid, ty)
+    | Embed(qid, false) -> checkIfNullPoly(qid, ty)
+    | _ -> false
+
  op explicateEmbed (spc: Spec) (tm: MSTerm): MSTerm =
    case tm of
     | Fun(Op(op_qid, _), ty, a) ->

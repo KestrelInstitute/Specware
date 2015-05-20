@@ -523,6 +523,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
  op turnOffHOMatchTracing(): () =
    debugHOM := 0
 
+ op turnOnHOMatchTracing(n: Nat): () =
+   debugHOM := n
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,None,emptyStack))
@@ -1355,10 +1357,15 @@ closedTermV detects existence of free variables not included in the argument
     let main_unifiers = unifyTypes(context, subst, ty1, ty2, optTerm, M, N) in
     case OT of
       | Some ctxt_ty2 | assumeTypeCorrectness?
-                          && nearMatch?(main_unifiers, ty1, ty2, context.spc)
-                          && ~(equalType?(ty2, ctxt_ty2)) ->
-        % let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
-        unifyTypes(context, subst, ty1, ctxt_ty2, optTerm, M, N) ++ main_unifiers
+                          && nearMatch?(main_unifiers, ty1, ty2, context.spc) ->
+        if  ~(equalType?(ty2, ctxt_ty2))
+          then
+            % let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
+            unifyTypes(context, subst, ty1, ctxt_ty2, optTerm, M, N) ++ main_unifiers
+        else (case optTerm of
+                | Some(Fun(f, ty, _)) | nullPolyConstructorFun?(f, ty, context.spc) ->
+                  [subst]
+                | _ -> main_unifiers)
       | _ -> main_unifiers
 
 

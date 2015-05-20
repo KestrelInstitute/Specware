@@ -807,6 +807,13 @@ spec
                          allowUnboundVars?      : Bool         % Allow result to contain unmatched pattern vars
                          }
 
+  op maxFlexNumInTerm(tm: MSTerm): Nat =
+    foldSubTerms (fn (tm, m) ->
+                    case flexVarNum tm of
+                      | Some n -> max(m, n)
+                      | None -> m)
+      0 tm
+
   op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: TransOpName) (rules: RuleSpecs)
     (options: RewriteOptions): MSTerm * Proof =
     let context = makeContext spc in
@@ -830,7 +837,8 @@ spec
                                                else if options.expansionFactor > 0
                                                  then options.expansionFactor * termSize (fromPathTerm path_term)
                                                  else context.termSizeLimit,
-                     allowUnboundVars?       = options.allowUnboundVars?}
+                     allowUnboundVars?       = options.allowUnboundVars?,
+                     counter                 = Ref (1 + maxFlexNumInTerm(fromPathTerm path_term))}
     in
     % let _ = printContextOptions context in
     if options.noSideEffects?

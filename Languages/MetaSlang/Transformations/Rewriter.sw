@@ -744,7 +744,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  % Return a SubstC that "freshens up" all the flex variables in term,
  % so that they do not clash with any rules. We cheat by just adding
  % maxRuleFlexVar to the numbers of all flex vars in term.
- op fresheningSubstFor (term : MSTerm, rules : Demod RewriteRule) : SubstC =
+ op fresheningSubstFor (context: Context, term : MSTerm) : SubstC =
    mkFresheningSubstC
      (foldSubTerms (fn (M,result) ->
                       case flexVarNum M of
@@ -756,10 +756,14 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                (warn ("fresheningSubstFor: occurrences of flex var with different types!");
                                 result)
                              | None ->
-                               (n,n+maxRuleFlexVar,termType M) :: result)
+                               let num = ! context.counter in
+                               (context.counter := num + 1;
+                                (n, num, termType M) :: result))
                         | None -> result)
         [] term)
 
+ op sanitizeFlexVars (context: Context, term : MSTerm): MSTerm =
+   dereferenceAll (fresheningSubstFor(context, term)) term
 
  (* FIXME HERE: remove the following *)
  (*
@@ -1324,7 +1328,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 % 				     unconditional = unconditional}))))
                     )
 	in
-	(rews >>=
+	(rews >>= 
            (fn (term, (subst, rule, path, boundVarsRl, rules1)) ->
               % let _ = writeLine("boundVarsRl: "^anyToString boundVarsRl) in
 
@@ -1357,7 +1361,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   %
                   % We need to freshen up the free flex variables of cond before we try to rewrite
                   % it so that none of them clash with free flex variables in our rules
-                  let fresh_subst = fresheningSubstFor (cond, rules1) in
+                  let fresh_subst = fresheningSubstFor (context, cond) in
                   % README: don't need dereferenceAllAsSubst here because fresh_subst just replaces
                   % flex vars with other flex vars, so substitution and grafting are the same
                   let cond = dereferenceAll fresh_subst cond in
@@ -1384,6 +1388,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   % because we want grafting, not substitution, i.e., we are rewriting subterms of
                   % term that might contain variables bound in term.
                   let term = dereferenceAll final_subst term in
+
+                  % If there are any remaining flex vars we sanitize them to ops
+                  let term = if context.allowUnboundVars? then sanitizeFlexVars (context, term) else term in
 
                   % To build the proof that the input term, term0, equals the output term, term, we
                   % first undo the rewrite that was applied to get term, to get
