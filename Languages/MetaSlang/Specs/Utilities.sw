@@ -9,7 +9,7 @@ Utilities qualifying spec
  import ../AbstractSyntax/Fold
  import /Languages/Lisp/Suppress
 
- op varNames (vs: MSVars): List Id = map (fn (vn,_) -> vn) vs
+ op [a] varNames (vs: AVars a): List Id = map (fn (vn,_) -> vn) vs
 
  op substitute  : MSTerm * MSVarSubst -> MSTerm
  op freeVars    : [a] ATerm a -> AVars a
@@ -313,32 +313,32 @@ Utilities qualifying spec
    let vars = freeVarsRec M true in
    removeDuplicateVars vars
 
- op freeVarsAll (M: MSTerm): MSVars =
+ op [a] freeVarsAll (M: ATerm a): AVars a =
   %% Include conditions of simple lambdas. E.g. fn (x | p x) -> ...
    let vars = freeVarsRec M false in
    removeDuplicateVars vars
 
-
-  op inVars?(v: MSVar, vs: MSVars): Bool =
+  op [a] inVars?(v: AVar a, vs: AVars a): Bool =
     exists? (fn v1 -> equalVar?(v,v1)) vs
 
-  op disjointVars?(vs1: MSVars, vs2: MSVars): Bool =
+  op [a] disjointVars?(vs1: AVars a, vs2: AVars a): Bool =
      ~(exists? (fn v -> inVars?(v, vs1)) vs2)
 
-  op hasRefTo?(t: MSTerm, vs: MSVars): Bool =
+  op [a] hasRefTo?(t: ATerm a, vs: AVars a): Bool =
     existsSubTerm (fn t -> case t of
                              | Var(v,_) -> inVars?(v, vs)
                              | _ -> false)
       t
 
- op hasVarNameConflict?(tm: MSTerm, vs: MSVars): Bool =
+ op [a] hasVarNameConflict?(tm: ATerm a, vs: AVars a): Bool =
    let names = map (project 1) vs in
-   existsSubTerm (fn t -> case t of
+   (existsSubTerm (fn t -> case t of
                             | Var((nm,_),_) -> nm in? names
                             | _ -> false)
-     tm
+     tm)
+     && exists? (fn (nm, _) -> nm in? names) (freeVars tm)
 
- op disjointVarNames?(vs1: MSVars, vs2: MSVars): Bool =
+ op [a] disjointVarNames?(vs1: AVars a, vs2: AVars a): Bool =
    forall? (fn (vn1, _) -> forall? (fn (vn2, _) -> vn1 ~= vn2) vs2) vs1
 
  op [a] removeDuplicateVars: AVars a -> AVars a
@@ -517,7 +517,7 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
    let _ = appTerm(fn _ -> (),vr,fn _ -> ()) tm in
    ! vars
 
- op boundVars(t: MSTerm): MSVars =
+ op [a] boundVars(t: ATerm a): AVars a =
    case t of
      | Let(decls, _, _) -> flatten (map (fn (pat, _) -> patternVars pat) decls)
      | LetRec (decls, _, _) ->  map (fn (v, _) -> v) decls
@@ -525,10 +525,10 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
      | Bind (_, bound, _, _) -> bound
      | _ -> []
 
- op boundVarsIn(t: MSTerm): MSVars =
+ op [a] boundVarsIn(t: ATerm a): AVars a =
    removeDuplicateVars(foldSubTerms (fn (t,r) -> boundVars t ++ r) [] t)
 
- op boundVarNamesIn(t: MSTerm): List Id =
+ op [a] boundVarNamesIn(t: ATerm a): List Id =
    varNames(boundVarsIn t)
 
  % This implementation of substitution 
@@ -973,7 +973,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      let
 	def loopP(p:APattern a,vs) = 
 	    case p
-	      of VarPat(v,_) -> Cons(v,vs)
+	      of VarPat(v,_) -> v :: vs
 	       | RecordPat(fields,_) -> 
 		 foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
 	       | EmbedPat(_,None,_,_) -> vs
@@ -985,6 +985,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	       | _ -> vs
      in
      loopP(p,[])
+
+ op [a] patternVarsL (pats: List (APattern a)): AVars a =
+   List.foldl (fn (pvs, pat) ->
+            List.foldl (fn (pvs, v) -> if inVars?(v, pvs) then pvs else v :: pvs) pvs (patternVars pat))
+     [] pats
 
  op  mkLetWithSubst: MSTerm * MSVarSubst -> MSTerm
  def mkLetWithSubst(tm,sb) =
@@ -2243,10 +2248,17 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
            (zip(pat_fields, tm_fields))
        | _ -> false
 
+   op substFromCompatiblePatternTerm(pat: MSPattern, tm: MSTerm): MSVarSubst =
+     case (pat, tm) of
+       | (RecordPat(pat_fields, _), Record(tm_fields, _)) ->
+         foldr (fn (((_, fld_pat), (_, fld_tm)), sbst) -> substFromCompatiblePatternTerm(fld_pat, fld_tm) ++ sbst)
+           [] (zip(pat_fields, tm_fields))
+       | (VarPat(v, _), _) -> [(v, tm)]
+
    op flattenCompatiblePatternTerm(pat: MSPattern, tm: MSTerm): List(MSPattern * MSTerm) =
      case (pat, tm) of
        | (RecordPat(pat_fields, _), Record(tm_fields, _)) ->
-         List.foldr (fn (((_, fld_pat), (_, fld_tm)), pairs) -> flattenCompatiblePatternTerm(fld_pat, fld_tm) ++ pairs)
+         foldr (fn (((_, fld_pat), (_, fld_tm)), pairs) -> flattenCompatiblePatternTerm(fld_pat, fld_tm) ++ pairs)
            [] (zip(pat_fields, tm_fields))
        | _ -> [(pat, tm)]
 

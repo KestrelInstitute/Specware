@@ -102,7 +102,8 @@ type LispTerms   = List LispTerm
 type LispDecls   = List LispDecl
 type Definitions = List Definition
 
-op lispFileLineLength: Nat = 250
+op lispFileLineLength: Nat = 200
+op minIndent: Nat = 1
 
 op emptySpec : LispSpec = 
  {name           = "BASESPECS",
@@ -123,12 +124,12 @@ op ops (term : LispTerm, names : Set.Set String) : Set.Set String =
    | Var     _                -> names
    | Set     (_,  term)       -> ops(term,names)
    | Lambda  (_,_,term)       -> ops(term,names)
-   | Apply   (term, terms)    -> List.foldl (fn (names,tm) -> ops (tm, names)) (ops (term, names)) terms
+   | Apply   (term, terms)    -> foldl (fn (names,tm) -> ops (tm, names)) (ops (term, names)) terms
    | If      (t1, t2, t3)     -> ops (t1,ops (t2, ops (t3, names)))
    | IfThen  (t1, t2)         -> ops (t1,ops (t2, names))
-   | Let     (_, terms, body) -> List.foldl (fn (names, tm) -> ops (tm, names)) (ops (body, names)) terms
-   | Letrec  (_, terms, body) -> List.foldl (fn (names, tm) -> ops (tm, names)) (ops (body, names)) terms
-   | Seq     terms            -> List.foldr ops names terms
+   | Let     (_, terms, body) -> foldl (fn (names, tm) -> ops (tm, names)) (ops (body, names)) terms
+   | Letrec  (_, terms, body) -> foldl (fn (names, tm) -> ops (tm, names)) (ops (body, names)) terms
+   | Seq     terms            -> foldr ops names terms
 
 op moveDefparamsToEnd? : Bool = true
 
@@ -158,8 +159,8 @@ op typeDefs (defs : Definitions) : Definitions =
        | None -> [] 
        | Some l -> l 
  in
- let names = TopSort.topSort (EQUAL,find,List.map (fn (n, _) -> n) defs)    in
- let defs  = List.mapPartial (fn name -> STHMap.apply (defMap, name)) names in
+ let names = topSort (EQUAL, find, List.map (fn (n, _) -> n) defs)    in
+ let defs  = mapPartial (fn name -> STHMap.apply (defMap, name)) names in
  let defs  = if moveDefparamsToEnd? then
                let defparams = filter nonLambdaDef? defs in
                let defs = List.map (fn defn ->
@@ -167,7 +168,7 @@ op typeDefs (defs : Definitions) : Definitions =
                                         makeDefNil defn
                                       else 
                                         defn)
-                                   defs
+                            defs
                in
                defs ++ defparams
              else 
@@ -177,10 +178,10 @@ op typeDefs (defs : Definitions) : Definitions =
 
 %% Printing of characters is temporarily wrong due to bug in lexer.
 
-op ppDecl (decl : LispDecl) : PrettyPrint.Pretty =
+op ppDecl (decl : LispDecl) : Pretty =
  case decl of
    | Ignore names -> prettysLinearDelim ("(declare (ignore ", " ", ")) ")
-                                        (List.map string names)
+                                        (map string names)
 
 op allSelfQuoting? (tms: LispTerms) : Bool =
  forall? (fn tm -> case tm of
@@ -192,7 +193,7 @@ op allSelfQuoting? (tms: LispTerms) : Bool =
          tms
 
 
-op ppTerm (t : LispTerm) : PrettyPrint.Pretty =
+op ppTerm (t : LispTerm) : Pretty =
  case t of
    | Const v    -> (case (v : Val) of
                       | Boolean b      -> string (if b then "t" else "nil")
@@ -209,14 +210,13 @@ op ppTerm (t : LispTerm) : PrettyPrint.Pretty =
 
    | Set (s, t) -> 
      blockFill (0, [(0, strings ["(setq ", s, " "]),
-                    (2, prettysNone [ppTerm t, string ")"])])
+                    (minIndent, prettysNone [ppTerm t, string ")"])])
 
    | Lambda (ss, decls, t) -> 
      blockFill (0, [(0, prettysLinearDelim
                        ("#'(lambda (", " ", ") ")
-                       (List.map string ss)),
-                    (3, prettysAll ((List.map ppDecl decls) ++ 
-                                      [prettysNone [ppTerm t, string ")"]]))])
+                       (map string ss)),
+                    (minIndent+2, prettysAll ((map ppDecl decls) ++ [prettysNone [ppTerm t, string ")"]]))])
 
    | Apply (Op "list", params) | allSelfQuoting? params ->
      prettysFillDelim ("'(", " ",")")
@@ -230,15 +230,15 @@ op ppTerm (t : LispTerm) : PrettyPrint.Pretty =
        strings ["(list ", v, ")"]
 
    | Apply (Op s, ts) ->
-     prettysLinearDelim ("(", " ",")")
-                        (Cons (string s, List.map ppTerm ts))
+     prettysFillDelim ("(", " ",")")
+       (Cons (string s, map ppTerm ts))
 
    | Apply (t, ts) ->
      prettysLinearDelim ("(funcall ", " ",")")
-                        (Cons (ppTerm t, List.map ppTerm ts))
+                        (Cons (ppTerm t, map ppTerm ts))
 
    | If (p, c, a) ->
-     prLines 2 [prLines 4 [prConcat[string "(if ", ppTerm p], ppTerm c], prConcat [ppTerm a, string ")"]]
+     prLines minIndent [prLines (2*minIndent) [prConcat[string "(if ", ppTerm p], ppTerm c], prConcat [ppTerm a, string ")"]]
 
    | IfThen (p, c) ->
      prettysLinearDelim ("(if ", " ", ")")
@@ -252,11 +252,11 @@ op ppTerm (t : LispTerm) : PrettyPrint.Pretty =
                                        ("(", " ", ")")
                                        [string s, ppTerm t])
                          (ss, ts))),
-                   (2, prettysNone [ppTerm t, string ")"])])
+                   (minIndent, prettysNone [ppTerm t, string ")"])])
 
    | Letrec (ss, ts, t) ->
-     blockFill (0, [(0, string "(labels "),
-                    (2, prettysAllDelim
+     blockAll (0, [(0, string "(labels "),
+                    (minIndent, prettysAllDelim
                        ("(", "", ") ")
                        (ListPair.map (fn (s, Lambda (args, decls, body)) ->
                                         prettysAllDelim
@@ -264,40 +264,47 @@ op ppTerm (t : LispTerm) : PrettyPrint.Pretty =
                                         [prConcat[string s, string " ",
                                                   prettysLinearDelim ("(", " ", ")")
                                                     (map string args)],
-                                         prettysAll ((List.map ppDecl decls) ++ [prettysNone [ppTerm body]])
+                                         prettysAll ((map ppDecl decls) ++ [prettysNone [ppTerm body]])
                                          ])
                                      (ss, ts))),
-                    (2, prettysNone [ppTerm t, string ")"])])
+                    (minIndent, prettysNone [ppTerm t, string ")"])])
 
    | Seq ts ->
+     let ts = expandSeqs ts in
      prettysLinearDelim ("(progn ", " ", ")")
-                        (List.map ppTerm ts)
+                        (map ppTerm ts)
+
+op expandSeqs(tms: LispTerms): LispTerms =
+  case tms of
+    | [] -> []
+    | (Seq s_tms) :: r_tms -> expandSeqs s_tms ++ expandSeqs r_tms
+    | tm :: r_tms -> tm :: expandSeqs r_tms
 
 op warnAboutSuppressingDefuns? : Bool = false
 
-op ppOpDefn (s : String, term : LispTerm) : PrettyPrint.Pretty = 
- if  s in? SpecToLisp.SuppressGeneratedDefuns then
+op ppOpDefn (s : String, term : LispTerm) : Pretty = 
+ if s in? SpecToLisp.SuppressGeneratedDefuns then
    let comment = ";;; Suppressing generated def for " ^ s in
    let _ = if warnAboutSuppressingDefuns? then
              toScreen (comment ^ "\n")
            else
              ()
    in
-   blockFill (0, [(0, string comment), (0, PrettyPrint.newline ())])
+   blockFill (0, [(0, string comment), (0, newline ())])
  else
    case term of
      | Lambda (args, decls, body) ->
-       prLines 2 [prBreak 2 [string "(defun ", string s,
-                             prettysLinearDelim (" (", " ", ") ")
-                               (map string args)],
-                  prettysAll ((map ppDecl decls) ++ [prettysNone [ppTerm body, string ")"]]),
-                  emptyPretty()]
+       prLines minIndent [prBreak minIndent [string "(defun ", string s,
+                                             prettysLinearDelim (" (", " ", ") ")
+                                               (map string args)],
+                          prettysAll ((map ppDecl decls) ++ [prettysNone [ppTerm body, string ")"]]),
+                          emptyPretty()]
      | _ -> 
        blockFill (0, [(0, string "(defparameter "),
                       (0, string s),
                       (0, string " "),
-                      (2, prettysNone [ppTerm term,string ")"]),
-                      (0, PrettyPrint.newline ())])
+                      (minIndent, prettysNone [ppTerm term,string ")"]),
+                      (0, newline ())])
 
 op section (title : String, ps : Prettys) : Prettys =
  Cons (emptyPretty (),
@@ -314,7 +321,7 @@ op ppDefToStream (ldef : Definition, stream : Stream) : () =
  streamWriter (stream, "\n")
 
   
-op maxDefsPerFile: Int = 2500         % Not sure this really matters
+op maxDefsPerFile: Int = 25000         % Not sure this really matters
 
 op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
  %% Rewritten to not use ppSpec which requires a lot of space for large specs
@@ -373,7 +380,7 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
                          IO.withOpenFileForWrite (subfile, 
                                                   fn substream ->
                                                     let _ = streamWriter (substream, "(in-package :" ^ spc.name ^ ")\n\n") in
-                                                    List.app (fn ldef -> ppDefToStream (ldef, substream))
+                                                    app (fn ldef -> ppDefToStream (ldef, substream))
                                                              (subFromTo (rem_defs,
                                                                          0, 
                                                                          min (maxDefsPerFile, num_remaining))))
@@ -413,20 +420,20 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
  in
  IO.withOpenFileForWrite (file, writer)
 
-op ppSpec (s : LispSpec) : PrettyPrint.Pretty =
+op ppSpec (s : LispSpec) : Pretty =
  let defs = typeDefs(s.opDefns)	in
  let name = s.name              in
  prettysAll ((section (";;; Lisp spec",
-                       (List.map (fn pkgName -> string ("(defpackage \"" ^ pkgName ^ "\")"))
+                       (map (fn pkgName -> string ("(defpackage \"" ^ pkgName ^ "\")"))
                                  s.extraPackages)
                          ++
                          [string ("(defpackage :" ^ name ^ ")"),
                           string ("(in-package :" ^ name ^ ")")])) 
                ++ 
-               (section (";;; Definitions",     List.map ppOpDefn     defs))
-               %     List.++ [string "#||"] 
-               %     List.++ section (";;; Axioms",             List.map ppTerm       s.axioms)
-               %     List.++ [string "||#", emptyPretty ()]
+               (section (";;; Definitions",     map ppOpDefn     defs))
+               %     ++ [string "#||"] 
+               %     ++ section (";;; Axioms",             map ppTerm       s.axioms)
+               %     ++ [string "||#", emptyPretty ()]
                )
 
 op ppSpecToTerminal (spc : LispSpec) : () =
@@ -435,7 +442,7 @@ op ppSpecToTerminal (spc : LispSpec) : () =
  toTerminal t
 
 op ppSpecsToFile (specs : LispSpecs, file : String, preamble : Text) : () =
- let ps = List.map ppSpec specs in
+ let ps = map ppSpec specs in
  let p  = prettysAll ps in
  let t  = format (lispFileLineLength, p) in
  toFile (file, t ++ preamble)
@@ -518,7 +525,7 @@ else
 op addDefinitions (defns : List (String * Definition), 
                    lspc  : LispSpec) 
  : LispSpec =
- List.foldl (fn(lspc,(modulename,defn)) ->
+ foldl (fn(lspc,(modulename,defn)) ->
                addDefinition (modulename, defn, lspc)) 
             lspc 
             defns
