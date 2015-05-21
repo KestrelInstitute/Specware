@@ -710,24 +710,211 @@ op arithConvertTypes
 floating [ISO 6.4.4.2], enumeration [ISO 6.4.4.3], or character [ISO 6.4.4.4]
 constants.
 
-Rather than formalizing the string representation of a constant, we
-assume that conversion to and from strings is handled by the parser
-and/or pretty-printer, and so, in the abstract sytax formalized here,
-integer constants are just represented as Specware natural numbers.
-(Negative integer constants are written in C using the unary negation
-operator applied to positive integer constants.) How the constant is
-written, however, also affects the particular integer type that is
-selected for it [ISO 6.4.4.1], so we make the type explicit in integer
-constants as well. *)
+A decimal constant is a sequence of one or more digits, not starting with 0. *)
 
-(* FIXME: integer constants should use type names, not just types *)
+op decimalConstant? (str:String) : Bool =
+  let chars = explode str in
+  nonEmpty? chars &&
+  forall? digit? chars &&
+  head chars ~= #0
 
-type IntegerConstant = { n_t : Type * Nat |
-                          integerType? n_t.1 && n_t.2 in? rangeOfIntegerType n_t.1 }
+(* An octal constant is a sequence of one or more octal digits (i.e. decimal
+except for 8 and 9), starting with 0. *)
 
-op integerConstantValue (c:IntegerConstant) : Nat = c.2
+op octalDigit? (ch:Char) : Bool =
+  digit? ch && ch ~= #8 && ch ~= #9  % 0-7
 
-op integerConstantType (c:IntegerConstant) : Type = c.1
+op octalConstant? (str:String) : Bool =
+  let chars = explode str in
+  nonEmpty? chars &&
+  forall? octalDigit? chars &&
+  head chars = #0
+
+(* A hexadecimal constant is a sequence of one or more hexadecimal digits (i.e.
+decimal plus a-f and A-F), prepended by the prefix 0x or 0X. *)
+
+op hexadecimalDigit? (ch:Char) : Bool =
+  digit? ch ||                               % 0-9
+  (ord #A <= ord ch && ord ch <= ord #F) ||  % A-F
+  (ord #a <= ord ch && ord ch <= ord #f)     % a-f
+
+op hexadecimalConstant? (str:String) : Bool =
+  ex(digits:String)
+    (str = "0x" ^ digits || str = "0X" ^ digits) &&  % prefix
+    (let chars = explode digits in
+    nonEmpty? chars &&
+    forall? hexadecimalDigit? chars)
+
+(* An integer constant has an optional suffix, which consists of an unsigned
+suffix and/or a long or long long suffix. *)
+
+op unsignedSuffix? (str:String) : Bool =
+  str = "u" || str = "U"
+
+op longSuffix? (str:String) : Bool =
+  str = "l" || str = "L"
+
+op longLongSuffix? (str:String) : Bool =
+  str = "ll" || str = "LL"
+
+(* The following op captures an optional unsigned suffix, i.e. either nothing
+(the empty string) or an unsigned suffix. This op does not directly correspond
+to any non-terminal symbol in the grammar in [ISO 6.4.4.1], but we introduce it
+for convenience. *)
+
+op signSuffix? (str:String) : Bool =
+  str = "" || unsignedSuffix? str
+
+(* Similarly, the following op captures an optional long or long suffix, i.e.
+either nothing (the empty string) or a long suffix or a long long suffix. This
+op does not directly correspond to any non-terminal symbol in the grammar in
+[ISO 6.4.4.1], but we introduce it for convenience. *)
+
+op lengthSuffix? (str:String) : Bool =
+  str = "" || longSuffix? str || longLongSuffix? str
+
+(* We can then say that an optional integer suffix consists of a sign suffix and
+a length suffix, in any order. Note that they can be both empty. *)
+
+op integerSuffix? (str:String) : Bool =
+  ex (ssuffix:String, lsuffix:String)
+    signSuffix? ssuffix &&
+    lengthSuffix? lsuffix &&
+    (str = ssuffix ^ lsuffix || str = lsuffix ^ ssuffix)
+
+(* Finally, we define an integer constant as a decimal, octal, or hexadecimal
+constant, followed by an optional integer suffix. *)
+
+op integerConstant? (str:String) : Bool =
+  ex (const:String, suffix:String)
+    str = const ^ suffix
+    &&
+    (decimalConstant?     const ||
+     octalConstant?       const ||
+     hexadecimalConstant? const)
+    &&
+    integerSuffix? suffix
+
+type IntegerConstant = (String | integerConstant?)
+
+(* We can easily remove the suffix of an integer constant, if any. *)
+
+op unsuffixedIntegerConstant (c:IntegerConstant) : String =
+  the(str:String)
+     (ex(suffix:String) c = str ^ suffix && integerSuffix? suffix)
+
+
+(* The value of an integer constant [ISO 6.4.4.1/4] is known at compile time. It
+is a natural number.
+
+We start with the value of a digit, including hex(adecimal) digits. *)
+
+op digitValue (ch:Char | digit? ch) : Nat =
+  ord ch - ord #0
+
+op hexDigitValue (ch:Char | hexadecimalDigit? ch) : Nat =
+  if digit? ch then digitValue ch
+  else if isUpperCase ch then ord ch - ord #A + 10
+                         else ord ch - ord #a + 10
+
+(* The digits of a decimal, octal, or hexadecimal constant are in big endian
+format. So, we use the library op fromBigEndian with argument base 10, 8, and
+16. For hexadecimal constant, we need to remove the 2-character 0x/0X prefix
+first. *)
+
+op decimalConstantValue (str:String | decimalConstant? str) : Nat =
+  fromBigEndian (map digitValue (explode str), 10)
+
+op octalConstantValue (str:String | octalConstant? str) : Nat =
+  fromBigEndian (map digitValue (explode str), 8)
+
+op hexadecimalConstantValue (str:String | hexadecimalConstant? str) : Nat =
+  let digits = removePrefix (explode str, 2) in
+  fromBigEndian (map hexDigitValue digits, 16)
+
+(* To calculate the value of an integer constant, we remove the suffix (if any)
+and then we use one of the three ops just defined. Note that the suffix does not
+contribute to the value of the constant. *)
+
+op integerConstantValue (c:IntegerConstant) : Nat =
+  let unsuffixed:String = unsuffixedIntegerConstant c in
+       if decimalConstant? unsuffixed then     decimalConstantValue unsuffixed
+  else if   octalConstant? unsuffixed then       octalConstantValue unsuffixed
+  else                                     hexadecimalConstantValue unsuffixed
+
+
+
+(* Since u/U are not (hex) digits or the prefix 0x/0X, to test whether an
+integer constant includes an unsigned suffix it suffices to check whether an
+integer suffix occurs anywhere in the constant. Analogous reasoning applies to
+ll/LL long long suffixes. For the l/L long suffixes, we use the same test, after
+making sure that there are no long long suffixes, because l/L is a substring of
+ll/LL. *)
+
+op unsignedConstant? (c:IntegerConstant) : Bool =
+  ex (str1:String, u:String, str2:String)
+    c = str1 ^ u ^ str2 &&
+    unsignedSuffix? u
+
+op longLongConstant? (c:IntegerConstant) : Bool =
+  ex (str1:String, ll:String, str2:String)
+    c = str1 ^ ll ^ str2 &&
+    longLongSuffix? ll
+
+op longConstant? (c:IntegerConstant) : Bool =
+  ~ (longLongConstant? c) &&
+  (ex (str1:String, l:String, str2:String)
+     c = str1 ^ l ^ str2 &&
+     longSuffix? l)
+
+(* An integer constant must have a type into which the value of the constant
+fits [ISO 6.4.4.1/5]. The type is determined using the table in [ISO 6.4.4.1/5],
+which associates to each integer constant a list of candidate types, based on
+the suffixes and the base of the constant. The type of the constant is the first
+in the associated list into which the constant's value fits. The checking op for
+integer constants returns the type of the constant, or 'None' if the constant
+cannot be assigned any type. *)
+
+op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
+  let unsuffixed:String = unsuffixedIntegerConstant c in
+  let decimal?:Bool = decimalConstant? unsuffixed in
+  if ~ (unsignedConstant? c) &&
+     ~ (longConstant? c) &&
+     ~ (longLongConstant? c) then
+    if decimal? then [T_sint, T_slong, T_sllong]
+                else [T_sint, T_uint, T_slong, T_ulong, T_sllong, T_ullong]
+  else if unsignedConstant? c &&
+          ~ (longConstant? c) &&
+          ~ (longLongConstant? c)
+  then
+    [T_uint, T_ulong, T_ullong]
+  else if ~ (unsignedConstant? c) &&
+          longConstant? c then
+    if decimal? then [T_slong, T_sllong]
+                else [T_slong, T_ulong, T_sllong, T_ullong]
+  else if unsignedConstant? c &&
+          longConstant? c then
+    [T_ulong, T_ullong]
+  else if ~ (unsignedConstant? c) &&
+          longLongConstant? c then
+    if decimal? then [T_sllong]
+                else [T_sllong, T_ullong]
+  else
+    [T_ullong]
+
+op integerConstantType (c:IntegerConstant) : Option Type =
+  let tys = integerConstantCandidateTypes c in
+  let val:Nat = integerConstantValue c in
+  if (ex(i:Nat) i < length tys && (val:Int) in? rangeOfIntegerType (tys @ i))
+  then
+    let firstFitIndex:Nat = the(firstFitIndex:Nat)
+        firstFitIndex < length tys &&
+        (val:Int) in? rangeOfIntegerType (tys @ firstFitIndex) &&
+        (firstFitIndex = 0 ||  % first type in candidate list
+         (val: Int) nin? rangeOfIntegerType (tys @ (firstFitIndex - 1))) in
+    Some (tys @ firstFitIndex)
+  else
+    None
 
 
 %subsection (* Unary operators *)
@@ -806,7 +993,7 @@ type Expression =
   | E_member    Expression * Identifier
   | E_memberp   Expression * Identifier
   | E_subscript Expression * Expression
-  | E_cast      {tp:Type | scalarType? tp } * Expression
+  | E_cast      TypeName * Expression
 
 
 %subsection (* Type names *)
@@ -2054,7 +2241,8 @@ whose mathematical integer value is the one returned by op 'integerConstValue'.
 If the constant is too large to fit in a value, error is returned. *)
 
 op evaluateIntegerConstant (c:IntegerConstant) : Monad Value =
-  return (valueOfInt (integerConstantType c, integerConstantValue c))
+  {tp <- liftOption (integerConstantType c);
+   return (valueOfInt (tp, integerConstantValue c))}
 
 
 %subsection (* Unary and binary operators *)
@@ -2747,8 +2935,9 @@ op evaluate (expr:Expression) : Monad ExpressionResult =
     | E_subscript (expr1, expr2) ->
       (* Array subscripts E1[E2] are equivalent to *(E1+E2) [ISO 6.5.2.1/2]. *)
       evaluate (E_unary (UOp_STAR, E_binary (expr1, BinOp_ADD, expr2)))
-    | E_cast (tp, expr1) ->
-      {val1 <- expressionValueM (evaluate expr1);
+    | E_cast (tp_name, expr1) ->
+      {tp <- expandTypeNameM tp_name;
+       val1 <- expressionValueM (evaluate expr1);
        val <- castValue (tp, val1);
        return (Res_value val)}
 

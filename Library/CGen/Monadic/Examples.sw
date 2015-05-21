@@ -34,14 +34,14 @@ Examples_spec = spec
                (TN_pointer TN_uchar, "dest"),
                (TN_pointer TN_uint, "dest_len")],
               BLOCK ([(TN_uint, "i")],
-                     [ASSIGN (LVAR "i", ICONST 0),
+                     [ASSIGN (LVAR "i", ICONST "0"),
                       WHILE (LAND (LT (VAR "i", VAR "src_len"),
                                    LT (VAR "i", STAR (VAR "dest_len"))),
                              BLOCK
                                ([],
                                 [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
                                          SUBSCRIPT (VAR "src", VAR "i")),
-                                 ASSIGN (LVAR "i", ADD (VAR "i", ICONST 1))])),
+                                 ASSIGN (LVAR "i", ADD (VAR "i", ICONST "1"))])),
                       ASSIGN (LSTAR (VAR "dest_len"), STAR (VAR "i"))]))
 
   (* This is the specification for the syntax, in the form of a top-level

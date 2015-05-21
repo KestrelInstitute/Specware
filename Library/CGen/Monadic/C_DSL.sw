@@ -13,11 +13,8 @@ C_DSL qualifying spec
     lookupIdentifierValue id
 
   (* Integer constants *)
-  (* FIXME HERE: do the actual type assignment of C for ints *)
-  op ICONST (n : Nat) : Monad C.Value =
-    if n in? rangeOfIntegerType T_sint then
-      evaluateIntegerConstant (T_sint, n)
-    else error
+  op ICONST (str : String) : Monad C.Value =
+    evaluateIntegerConstant str
 
   (* Unary operators *)
   type Operator1 = Monad C.Value -> Monad C.Value
@@ -157,9 +154,9 @@ C_DSL qualifying spec
     fa (id,e) e = E_ident id => evalRValue e = VAR id
 
   theorem ICONST_correct is
-    fa (n,e)
-      e = E_const (T_sint, n) =>
-      evalRValue e = ICONST n
+    fa (str,e)
+      e = E_const str =>
+      evalRValue e = ICONST str
 
   (* Unary operators *)
 
