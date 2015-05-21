@@ -1,5 +1,5 @@
 GenerateC qualifying spec
-  import C_DSL, /Languages/MetaSlang/Transformations/Script
+  import /Languages/MetaSlang/Transformations/Script
 
   op generateC_RuleNames: QualifiedIds =
     map (fn id -> Qualified("C_DSL", id))
@@ -18,7 +18,7 @@ GenerateC qualifying spec
   op MSTermTransform.generateC (spc: Spec) (path_term: PathTerm) (qid: TransOpName) (options: RewriteOptions): MSTerm * Proof =
     rewrite spc path_term qid
       (map Strengthen generateC_RuleNames)
-      (options << {allowUnboundVars? = true})
+      (options << {allowUnboundVars? = true, depth = 10000})
 
 end-spec
 
