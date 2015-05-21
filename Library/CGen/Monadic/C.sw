@@ -1090,6 +1090,12 @@ Our 'if' statement captures both the variant with 'else' and the
 variant without 'else', based on the presence of the second, optional statement.
 A 'return' statement [ISO 6.8.6.4] includes an optional expression.
 
+Because of our treatment of assignments and function calls as statements, we use
+statements as the first and third (optional) expressions of a 'for' statement.
+Later in our model we restrict such statements to assignments and function
+calls. Expressions in our model have no side effects, so allowing expressions in
+(our model of) 'for' statements would not be very useful.
+
 Besides statements, we only allow object declarations as block items [ISO
 6.8.2], not other kinds of declarations. *)
 
@@ -1100,6 +1106,7 @@ type Statement =
   | S_return Option Expression
   | S_while  Expression * Statement
   | S_do     Statement * Expression
+  | S_for    Statement * Expression * Statement * Statement
   | S_block  List BlockItem
 
 type BlockItem =
@@ -3192,7 +3199,7 @@ op evalStatement (stmt:Statement) : Monad () =
     (* For a return with no expression, return None from the current function *)
     returnFromFun None
   | S_while (cond_expr, body) ->
-    (* For loops use mfix (FIXME: document this...?) *)
+    (* while loops use mfix (FIXME: document this...?) *)
     mfix (fn recurse -> fn unit ->
             {condition <- expressionValueM (evaluate cond_expr);
              isZero <- zeroScalarValue? condition;
@@ -3203,6 +3210,12 @@ op evalStatement (stmt:Statement) : Monad () =
     (* For do loops, execute the body once and then do a while loop *)
     {_ <- evalStatement body;
      evalStatement (S_while (cond_expr, body))}
+  | S_for (stmt1, cond_expr, stmt3, body) ->
+    (* For loops use mfix (FIXME: document this...?) *)
+    {_ <- evalStatement stmt1;
+     evalStatement (S_while (cond_expr,
+                             S_block [BlockItem_statement body,
+                                      BlockItem_statement stmt3]))}
   | S_block items ->
     withFreshLocalBindings empty (evalBlockItems items)
 
