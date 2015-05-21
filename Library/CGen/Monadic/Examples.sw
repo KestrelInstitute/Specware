@@ -53,6 +53,13 @@ end-spec
 % README: need to load lisp for GenerateC.sw before running this!
 Examples_impl =
 transform Examples_spec by
-{at copyByte_C { unfold copyByte; generateC};
- at copyBytes_C { unfold copyBytes; generateC}
+{at copyByte_C { unfold copyByte; generateC}
+ %  ;
+ %at copyBytes_C { unfold copyBytes; generateC}
  }
+
+Examples_printed = spec
+  import Examples_impl, CPrettyPrinter
+
+  op copyByte_String : String = printTranslationUnitToString [copyByte_C]
+end-spec
