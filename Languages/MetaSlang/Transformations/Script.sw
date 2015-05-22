@@ -359,18 +359,19 @@ spec
 
 
   op addContextRules?: Bool = true
-  op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context, rule_specs: RuleSpecs): List RewriteRule =
-    if ~addContextRules? then []
+  op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context, rule_specs: RuleSpecs)
+  : List RewriteRule * List(String * MSTerm) =
+    if ~addContextRules? then ([], [])
     else
     let def collectRules(tm, path, sbst, par) =
           % let _ = writeLine("collectRules: "^anyToString path^"\n"^printTerm tm) in
           case path of
-            | [] -> []
+            | [] -> ([], [])
             | i :: r_path ->
           case tm of
             | TypedTerm(fn_tm, ty, _) | i = 1 ->
-              (let param_rls = parameterRules ty in
-               let post_condn_rules =
+              (% redundant?? let (param_rules, parameter_sources) = parameterRules ty in  
+               let (post_condn_rules, post_condn_sources) =
                    case varProjections(ty, context.spc) of
                      | Some(pred, var_projs as _ :: _)->
                        let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
@@ -389,6 +390,7 @@ spec
                                                               freeTyVarsInTerm eq_tm))
                                          sbst
                        in
+                       let fn_val_assert = mkConj(map (fn (v as (_, ty), fn_tm) -> mkEquality(ty, mkVar v, fn_tm)) sbst) in
                        let guards = lambdaGuards fn_tm in
                        let guard = mkConj guards in
                        let guard_rules =
@@ -404,20 +406,27 @@ spec
                        in
                        % let _ = writeLine("sbst:\n"^anyToString sbst) in
                        % let _ = List.app printRule (flatten new_rules) in
-                       (flatten new_rules)
-                          % ++ collectRules(fn_tm, reverse(pathToLambdaBody fn_tm), [])
+                       let (l_rules, l_sources) = collectRules(pred, r_path, sbst, tm) in
+                       (flatten new_rules
                           ++ guard_rules
-                          ++ collectRules(pred, r_path, sbst, tm)
-                     | _ -> []
+                          ++ l_rules,
+                        (if guards = [] then [] else [("lambda guard", guard)])
+                          ++ (if sbst = [] then [] else [("fn value", fn_val_assert)])
+                          ++ l_sources)
+                     | _ -> ([], [])
                in
-               post_condn_rules ++ param_rls)
+               (post_condn_rules,   % ++ param_rules,
+                post_condn_sources  % ++ parameter_sources
+                ))
             | _ ->
-          let rls =
+          let (rules, sources) =
               case tm of
                 | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRulesDirn(context, p, "if then", Context, Either, rule_specs, None, freeTyVarsInTerm p)
+                  (assertRulesDirn(context, p, "if then", Context, Either, rule_specs, None, freeTyVarsInTerm p),
+                   [("if then", p)])
                 | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRulesDirn(context,negate p,"if else", Context, Either, rule_specs, None, freeTyVarsInTerm p)
+                  (assertRulesDirn(context,negate p,"if else", Context, Either, rule_specs, None, freeTyVarsInTerm p),
+                   [("if else", negate p)])
                 | Apply(Fun(And,_,_), _,_) | i = 1 && r_path ~= [] && head r_path = 1 ->
                   let def getSisterConjuncts(pred, path, i) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
@@ -437,52 +446,138 @@ spec
                                             i + 1))
                                      ([], i) sister_cjs
                                in
-                               new_rules ++ getSisterConjuncts(q, r_path, i + length sister_cjs)
+                               let (old_rules, old_sources) = getSisterConjuncts(q, r_path, i + length sister_cjs) in
+                               (new_rules ++ old_rules, ("new postcondition", p) :: old_sources)
+                             | _ -> ([], []))
+                          | _ -> ([], [])
+                  in
+                  getSisterConjuncts(tm, path, 0)
+                | Lambda(rules, _) ->
+                  let subterm_on_path = (immediateSubTerms tm)@i in
+                  foldl (fn ((new_rules, new_sources), (pat, _, tm_i)) ->
+                           if tm_i = subterm_on_path
+                             then
+                               let (pat_conds, pat_source) =
+                                   case par of
+                                     | Apply(lam, e, _) | lam = tm ->
+                                       (case patternToTerm pat of
+                                          | None -> ([], [])
+                                          | Some pat_tm ->
+                                            let eq_tm = mkEquality(inferType(context.spc, e), e, pat_tm) in
+                                            (assertRulesDirn(context, eq_tm, "case", Context, Either,
+                                                             rule_specs,
+                                                             None, % ??
+                                                             freeTyVarsInTerm eq_tm),
+                                             [("case", eq_tm)]))
+                                     | _ -> ([], [])
+                               in
+                               let guards = getAllPatternGuards pat in
+                                  if guards = [] then (pat_conds, pat_source)
+                                    else let condn = mkConj guards in
+                                         (pat_conds ++
+                                            assertRulesDirn(context, condn, "lambda guard", Context,
+                                                            Either, rule_specs,
+                                                            Some(simpProofByMetis(condn, "lambda_guard", condn, sbst)),
+                                                            freeTyVarsInTerm condn),
+                                          pat_source ++ [("lambda guard", condn)])
+                                          
+                             else ([], []))
+                     ([], []) rules
+                | _ -> ([], [])
+          in
+          let (l_rules, l_sources) = collectRules(ithSubTerm(tm, i), r_path, sbst, tm) in
+          (rules ++ l_rules, sources ++ l_sources)
+       def parameterRules(ty: MSType) =
+         case ty of
+           | Arrow(dom, rng, _) ->
+             let (dom_rules, dom_sources) =
+                 case dom of
+                    | Subtype(_, Lambda([(_, _, pred)], _), _) ->
+                      (assertRulesFromPreds(context, None, getConjuncts pred), [(ruleName pred, pred)])
+                    | _ -> ([], [])
+             in
+             let (rules, sources) = parameterRules rng in
+             (dom_rules ++ rules, dom_sources ++ sources)
+           | _ -> ([], [])
+    in
+    collectRules (top_term, reverse path, [], top_term)
+
+  op gatherContextFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context, rule_specs: RuleSpecs)
+  : List(String * MSTerm) =
+    if ~addContextRules? then []
+    else
+    let def collectRules(tm, path, sbst, par) =
+          % let _ = writeLine("collectRules: "^anyToString path^"\n"^printTerm tm) in
+          case path of
+            | [] -> []
+            | i :: r_path ->
+          case tm of
+            | TypedTerm(fn_tm, ty, _) | i = 1 ->
+              (% redundant?? let (param_rules, parameter_sources) = parameterRules ty in  
+               let post_condn_sources =
+                   case varProjections(ty, context.spc) of
+                     | Some(pred, var_projs as _ :: _)->
+                       let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+                       let rng = range_*(context.spc, ty, true) in
+                       let sbst = map (fn (v, proj?) ->
+                                         case proj? of
+                                           | None -> (v, result_tm)
+                                           | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
+                                    var_projs                                                 
+                       in
+                       let fn_val_assert = mkConj(map (fn (v as (_, ty), fn_tm) -> mkEquality(ty, mkVar v, fn_tm)) sbst) in
+                       let guards = lambdaGuards fn_tm in
+                       let guard = mkConj guards in
+                       % let _ = writeLine("sbst:\n"^anyToString sbst) in
+                       % let _ = List.app printRule (flatten new_rules) in
+                       (if guards = [] then [] else [("lambda guard", guard)])
+                         ++ (if sbst = [] then [] else [("fn value", fn_val_assert)])
+                         ++ collectRules(pred, r_path, sbst, tm)
+                     | _ -> []
+               in
+               post_condn_sources)
+            | _ ->
+          let sources =
+              case tm of
+                | IfThenElse(p, _, _, _) | i = 1 ->
+                  [("if then", p)]
+                | IfThenElse(p, _, _, _) | i = 2 ->
+                  [("if else", negate p)]
+                | Apply(Fun(And,_,_), _,_) | i = 1 && r_path ~= [] && head r_path = 1 ->
+                  let def getSisterConjuncts(pred, path, i) =
+                        % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
+                        case pred of
+                          | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
+                            (case path of
+                             | 1 :: 1 :: r_path ->
+                               let sister_cjs = getConjuncts p in
+                               ("new postcondition", p) :: getSisterConjuncts(q, r_path, i + length sister_cjs)
                              | _ -> [])
                           | _ -> []
                   in
                   getSisterConjuncts(tm, path, 0)
                 | Lambda(rules, _) ->
                   let subterm_on_path = (immediateSubTerms tm)@i in
-                  foldl (fn (new_rules, (pat, _, tm_i)) ->
+                  List.foldl (fn (new_sources, (pat, _, tm_i)) ->
                            if tm_i = subterm_on_path
                              then
-                               let pat_conds = case par of
-                                                 | Apply(lam, e, _) | lam = tm ->
-                                                   (case patternToTerm pat of
-                                                      | None -> []
-                                                      | Some pat_tm ->
-                                                        let eq_tm = mkEquality(inferType(context.spc, e), e, pat_tm) in
-                                                        assertRulesDirn(context, eq_tm, "case", Context, Either,
-                                                                        rule_specs,
-                                                                        None, % ??
-                                                                        freeTyVarsInTerm eq_tm))
-                                                 | _ -> []
+                               let pat_source =
+                                   case par of
+                                     | Apply(lam, e, _) | lam = tm ->
+                                       (case patternToTerm pat of
+                                          | None -> []
+                                          | Some pat_tm ->
+                                            [("case", mkEquality(inferType(context.spc, e), e, pat_tm))])
+                                     | _ -> []
                                in
                                let guards = getAllPatternGuards pat in
-                                  if guards = [] then pat_conds
-                                    else let condn = mkConj guards in
-                                         pat_conds ++
-                                         assertRulesDirn(context, condn, "lambda guard", Context,
-                                                         Either, rule_specs,
-                                                         Some(simpProofByMetis(condn, "lambda_guard", condn, sbst)),
-                                                         freeTyVarsInTerm condn)
+                               if guards = [] then pat_source
+                               else  pat_source ++ [("lambda guard", mkConj guards)]
                              else [])
                      [] rules
                 | _ -> []
           in
-          rls ++ collectRules(ithSubTerm(tm, i), r_path, sbst, tm)
-       def parameterRules(ty: MSType) =
-         case ty of
-           | Arrow(dom, rng, _) ->
-             let dom_rls =
-                 case dom of
-                    | Subtype(_, Lambda([(_, _, pred)], _), _) ->
-                      assertRulesFromPreds(context, None, getConjuncts pred)
-                    | _ -> []
-             in
-             dom_rls ++ parameterRules rng
-           | _ -> []
+          sources ++ collectRules(ithSubTerm(tm, i), r_path, sbst, tm)
     in
     collectRules (top_term, reverse path, [], top_term)
 
@@ -498,7 +593,7 @@ spec
            else
              writeLine
                (let tm_str = printTerm tm in
-                if length tm_str > 60
+                if length tm_str > printWidth
                   then "\""^str^"\":\n"^ tm_str
                   else "\""^str^"\": "^ tm_str))
      prs
@@ -507,8 +602,7 @@ spec
     namedAssumptions(ptm, qid, spc)
 
   op namedAssumptions(ptm: PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
-    let ctxt_rules = contextRulesFromPath(ptm, qid, makeContext spc, []) in
-    map (fn rr -> (rr.name, mkEquality(inferType(spc, rr.lhs), rr.lhs, rr.rhs))) ctxt_rules
+    gatherContextFromPath(ptm, qid, makeContext spc, [])
 
   % op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
   %   case top_term of
@@ -627,7 +721,7 @@ spec
        let path = pathTermPath path_term in
        %let rules = map (etaExpand context) rules in   % Not sure if necessary
        %let rules = prioritizeRules rules in
-       let ctxt_rules = contextRulesFromPath(path_term, qid, context, filter contextRuleSpec? rule_specs) in
+       let (ctxt_rules, _) = contextRulesFromPath(path_term, qid, context, filter contextRuleSpec? rule_specs) in
        let ctxt_rules = filter (fn rl -> ~(exists? (fn rl_spec -> embed? Omit rl_spec
                                                                 && contextRuleSpecNamed? rl.name rl_spec)
                                              rule_specs))
