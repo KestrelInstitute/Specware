@@ -2,7 +2,6 @@ C qualifying spec
 
 import /Library/General/TwosComplementNumber
 import /Library/General/OptionExt
-import /Library/General/Stream
 
 %section (* Introduction *)
 
@@ -814,20 +813,23 @@ op hexDigitValue (ch:Char | hexadecimalDigit? ch) : Nat =
   else if isUpperCase ch then ord ch - ord #A + 10
                          else ord ch - ord #a + 10
 
-(* The digits of a decimal, octal, or hexadecimal constant are in big endian
-format. So, we use the library op fromBigEndian with argument base 10, 8, and
-16. For hexadecimal constant, we need to remove the 2-character 0x/0X prefix
-first. *)
+(* Combine a sequence of digit values into a number value *)
+
+op combineDigitValues (digits : List Nat, base : Nat) : Nat =
+  foldl (fn (val, digit) -> digit + val * base) 0 digits
+
+
+(* Conversion functions for tur *)
 
 op decimalConstantValue (str:String | decimalConstant? str) : Nat =
-  fromBigEndian (map digitValue (explode str), 10)
+  combineDigitValues (map digitValue (explode str), 10)
 
 op octalConstantValue (str:String | octalConstant? str) : Nat =
-  fromBigEndian (map digitValue (explode str), 8)
+  combineDigitValues (map digitValue (explode str), 8)
 
 op hexadecimalConstantValue (str:String | hexadecimalConstant? str) : Nat =
   let digits = removePrefix (explode str, 2) in
-  fromBigEndian (map hexDigitValue digits, 16)
+  combineDigitValues (map hexDigitValue digits, 16)
 
 (* To calculate the value of an integer constant, we remove the suffix (if any)
 and then we use one of the three ops just defined. Note that the suffix does not
@@ -850,7 +852,7 @@ cannot be assigned any type. *)
 
 op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
   let (unsuffixed,suffixes) = removeIntegerSuffixes c in
-  let decimal?:Bool = decimalConstant? unsuffixed in
+  let decimal? = decimalConstant? unsuffixed in
   if ~ (suffixes.unsigned_suffix) &&
      ~ (suffixes.long_suffix) &&
      ~ (suffixes.longlong_suffix) then
@@ -874,7 +876,7 @@ op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
 
 op integerConstantType (c:IntegerConstant) : Option Type =
   let tys = integerConstantCandidateTypes c in
-  let val:Nat = integerConstantValue c in
+  let val = integerConstantValue c in
   findLeftmost (fn tp -> (val:Int) in? rangeOfIntegerType tp) tys
 
 
@@ -1958,7 +1960,7 @@ op valueOfInt (i : TypedInt) : Value =
 (* Create a list of bits from an integer, given a type *)
 op bitsOfInt (ty:Type, i:Int |
                 integerType? ty && i in? rangeOfIntegerType ty) : List Bit
-(* FIXME: write bitsOfInt! *)
+(* FIXME HERE: write bitsOfInt! *)
 
 (* Create a value from a list of bits, given a type *)
 op valueOfBits (b:List Bit, ty:Type |
