@@ -978,9 +978,9 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 %%%
 
 % Keep global assumption names distinct from local assumption names
-op mkGlobalAssumpName (nm : String) : String = nm ^ "_"
+op mkGlobalAssumpName (nm : String) : String = replaceString(nm, " ", "_") ^ "_"
 
-op spreadAssumpNames: List String = ["fn_value"]
+op spreadAssumpNames: List String = ["fn_value", "fn value"]
 op ppTermOrConjsNonNorm (c: Context) (assump_name: String) (t: MSTerm) : Prettys =
   let cjs = getConjuncts1 t in
   let cjs = if length cjs <= 1 || assump_name in? spreadAssumpNames
