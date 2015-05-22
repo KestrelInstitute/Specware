@@ -1109,17 +1109,15 @@ spec
   %    postcondition in ty' implies the old in top_ty.
   op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool)
     : SpecCalc.Env (MSTerm * Bool * Proof) =
-    let typed_path_term = (TypedTerm(def_term, top_ty, termAnn def_term),
-                           [if anyTerm? def_term && some?(postCondn? top_ty)
-                              then 1 else 0])
-    in
+    let top_path = [if anyTerm? def_term && some?(postCondn? top_ty) then 1 else 0] in
+    let typed_path_term = (TypedTerm(def_term, top_ty, termAnn def_term), top_path) in
     {when tracing? 
        (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
      (new_path_term, tracing?, prf)
        <- interpretPathTerm(spc, script, typed_path_term, qid,
                             tracing?, false,
                             prove_refinesRefl typed_path_term);
-     prf_with_context <- return(addContextToProof(prf, new_path_term, qid, spc));
+     prf_with_context <- return(addContextToProof(prf, (topTerm new_path_term, top_path), qid, spc));
      return(topTerm new_path_term, tracing?, prf_with_context)}
 
 
