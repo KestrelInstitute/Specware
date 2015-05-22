@@ -813,7 +813,8 @@ op hexDigitValue (ch:Char | hexadecimalDigit? ch) : Nat =
   else if isUpperCase ch then ord ch - ord #A + 10
                          else ord ch - ord #a + 10
 
-(* Combine a sequence of digit values into a number value *)
+(* Combine a sequence of digit values into a number value. We do not use
+fromBigEndian, because that operation is not executable. *)
 
 op combineDigitValues (digits : List Nat, base : Nat) : Nat =
   foldl (fn (val, digit) -> digit + val * base) 0 digits
@@ -1957,24 +1958,27 @@ op intOfValue (val:Value) : Monad Int =
 op valueOfInt (i : TypedInt) : Value =
    V_int i
 
-op bitsForNat (n : Nat, len : Nat) : List Bool =
+op bitsForNat (n : Nat, len : Nat) : List Bit =
   if len > 0 then
     if n >= 2 ** len then
-      true :: (bitsForNat (n - 2 ** len, len - 1))
+      B1 :: (bitsForNat (n - 2 ** len, len - 1))
     else
-      false :: (bitsForNat (n, len - 1))
+      B0 :: (bitsForNat (n, len - 1))
   else
     []
 
 (* Create a list of bits from an integer, given a type *)
 op bitsOfInt (ty:Type, i:Int |
-                integerType? ty && i in? rangeOfIntegerType ty) : List Bool =
+                integerType? ty && i in? rangeOfIntegerType ty) : List Bit =
   bitsForNat (i, typeBits ty)
 
 (* Create a value from a list of bits, given a type *)
-op valueOfBits (bits:List Bool, ty:Type |
+op valueOfBits (bits:List Bit, ty:Type |
                   integerType? ty && length bits <= typeBits ty) : Value =
-   V_int (ty, combineDigitValues (map (fn b -> if b then 1 else 0) bits, 2))
+   V_int (ty, combineDigitValues (map (fn b ->
+                                         case b of
+                                           | B1 -> 1
+                                           | B0 -> 0) bits, 2))
 
 (* Each scalar type has a "zero" value. For integers, it is the representation
 of the mathematical 0. For pointers, it is the null pointer. *)
@@ -2263,7 +2267,7 @@ op operator_NOT (val:Value) : Monad Value =
   {val' <- promoteValue val;
    x <- intOfValue val';
    bits <- return (bitsOfInt (typeOfValue val', x));
-   return (valueOfBits (map (fn b -> ~b) bits, typeOfValue val'))}
+   return (valueOfBits (Bits.not bits, typeOfValue val'))}
 
 (* The '!' operator requires a scalar operand [ISO 6.5.3.3/1] and returns the
 signed int 1 or 0 depending on whether the operator compares equal or unequal to
@@ -2576,19 +2580,19 @@ op operator_AND (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let bits1 = bitsOfInt (ty, x1) in
    let bits2 = bitsOfInt (ty, x2) in
-   return (valueOfBits (map2 (fn (b1,b2) -> b1 && b2) (bits1, bits2), ty))}
+   return (valueOfBits (Bits.and (bits1, bits2), ty))}
 
 op operator_XOR (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let bits1 = bitsOfInt (ty, x1) in
    let bits2 = bitsOfInt (ty, x2) in
-   return (valueOfBits (map2 (fn (b1,b2) -> (b1 && ~b2) || (~b1 && b2)) (bits1, bits2), ty))}
+   return (valueOfBits (Bits.xor (bits1, bits2), ty))}
 
 op operator_IOR (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let bits1 = bitsOfInt (ty, x1) in
    let bits2 = bitsOfInt (ty, x2) in
-   return (valueOfBits (map2 (fn (b1,b2) -> b1 || b2) (bits1, bits2), ty))}
+   return (valueOfBits (Bits.ior (bits1, bits2), ty))}
 
 (* The logical 'and' and 'or' operators are different from the above operators
 because the second operand is only evaluated depending on the value of the
