@@ -54,8 +54,8 @@ end-spec
 Examples_impl =
 transform Examples_spec by
 {at copyByte_C { unfold copyByte; generateC}
- %  ;
- %at copyBytes_C { unfold copyBytes; generateC}
+   ;
+ at copyBytes_C { unfold copyBytes; generateC}
  }
 
 Examples_printed = spec

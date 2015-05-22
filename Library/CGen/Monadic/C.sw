@@ -739,69 +739,66 @@ op hexadecimalDigit? (ch:Char) : Bool =
   (ord #a <= ord ch && ord ch <= ord #f)     % a-f
 
 op hexadecimalConstant? (str:String) : Bool =
-  ex(digits:String)
-    (str = "0x" ^ digits || str = "0X" ^ digits) &&  % prefix
-    (let chars = explode digits in
-    nonEmpty? chars &&
-    forall? hexadecimalDigit? chars)
+  let chars = explode str in
+  length chars > 2 && chars @ 0 = #0 && chars @ 1 = #x &&
+  forall? hexadecimalDigit? (removePrefix (chars, 2))
 
-(* An integer constant has an optional suffix, which consists of an unsigned
-suffix and/or a long or long long suffix. *)
+(* Remove any unsigned suffix, and return whether it was removed *)
+op removeUnsignedSuffix (str:String) : String * Bool =
+  let chars = explode str in
+  if length chars > 0 && (last chars = #u || last chars = #U) then
+    (implode (butLast chars), true)
+  else
+    (str, false)
 
-op unsignedSuffix? (str:String) : Bool =
-  str = "u" || str = "U"
+(* Remove any long long suffix, and return whether it was removed *)
+op removeLongLongSuffix (str:String) : String * Bool =
+  let chars = explode str in
+  if length chars > 1 && (suffix (chars, 2) = [#l, #l] || suffix (chars, 2) = [#L, #L]) then
+    (implode (removeSuffix (chars, 2)), true)
+  else
+    (str, false)
 
-op longSuffix? (str:String) : Bool =
-  str = "l" || str = "L"
+(* Remove any long long suffix, and return whether it was removed *)
+op removeLongSuffix (str:String) : String * Bool =
+  let chars = explode str in
+  if length chars > 0 && (last chars = #l || last chars = #L) then
+    (implode (butLast chars), true)
+  else
+    (str, false)
 
-op longLongSuffix? (str:String) : Bool =
-  str = "ll" || str = "LL"
 
-(* The following op captures an optional unsigned suffix, i.e. either nothing
-(the empty string) or an unsigned suffix. This op does not directly correspond
-to any non-terminal symbol in the grammar in [ISO 6.4.4.1], but we introduce it
-for convenience. *)
+(* Remove any optional suffixes from an integer constant, and return the triple
+(prefix, {unsigned?, longlong?, long?}) *)
 
-op signSuffix? (str:String) : Bool =
-  str = "" || unsignedSuffix? str
+type IntegerSuffixes =
+   {unsigned_suffix : Bool,
+    long_suffix : Bool,
+    longlong_suffix : Bool}
 
-(* Similarly, the following op captures an optional long or long suffix, i.e.
-either nothing (the empty string) or a long suffix or a long long suffix. This
-op does not directly correspond to any non-terminal symbol in the grammar in
-[ISO 6.4.4.1], but we introduce it for convenience. *)
-
-op lengthSuffix? (str:String) : Bool =
-  str = "" || longSuffix? str || longLongSuffix? str
-
-(* We can then say that an optional integer suffix consists of a sign suffix and
-a length suffix, in any order. Note that they can be both empty. *)
-
-op integerSuffix? (str:String) : Bool =
-  ex (ssuffix:String, lsuffix:String)
-    signSuffix? ssuffix &&
-    lengthSuffix? lsuffix &&
-    (str = ssuffix ^ lsuffix || str = lsuffix ^ ssuffix)
+op removeIntegerSuffixes (str:String) : String * IntegerSuffixes =
+  let (str1, unsigned1?) = removeUnsignedSuffix str in
+  let (str2, longlong?) = removeLongLongSuffix str1 in
+  let (str3, long?) =
+    if longlong? then (str2, false) else removeLongLongSuffix str2
+  in
+  let (str4, unsigned?) =
+    if unsigned1? then (str3, true) else removeUnsignedSuffix str3
+  in
+  (str4, {unsigned_suffix = unsigned?,
+          longlong_suffix = longlong?,
+          long_suffix = long?})
 
 (* Finally, we define an integer constant as a decimal, octal, or hexadecimal
 constant, followed by an optional integer suffix. *)
 
 op integerConstant? (str:String) : Bool =
-  ex (const:String, suffix:String)
-    str = const ^ suffix
-    &&
-    (decimalConstant?     const ||
-     octalConstant?       const ||
-     hexadecimalConstant? const)
-    &&
-    integerSuffix? suffix
+  let (prefix, _) = removeIntegerSuffixes str in
+  (decimalConstant? prefix
+     || octalConstant? prefix
+     || hexadecimalConstant? prefix)
 
 type IntegerConstant = (String | integerConstant?)
-
-(* We can easily remove the suffix of an integer constant, if any. *)
-
-op unsuffixedIntegerConstant (c:IntegerConstant) : String =
-  the(str:String)
-     (ex(suffix:String) c = str ^ suffix && integerSuffix? suffix)
 
 
 (* The value of an integer constant [ISO 6.4.4.1/4] is known at compile time. It
@@ -836,36 +833,12 @@ op hexadecimalConstantValue (str:String | hexadecimalConstant? str) : Nat =
 and then we use one of the three ops just defined. Note that the suffix does not
 contribute to the value of the constant. *)
 
-op integerConstantValue (c:IntegerConstant) : Nat =
-  let unsuffixed:String = unsuffixedIntegerConstant c in
+op integerConstantValue (str:IntegerConstant) : Nat =
+  let (unsuffixed,_) = removeIntegerSuffixes str in
        if decimalConstant? unsuffixed then     decimalConstantValue unsuffixed
   else if   octalConstant? unsuffixed then       octalConstantValue unsuffixed
   else                                     hexadecimalConstantValue unsuffixed
 
-
-
-(* Since u/U are not (hex) digits or the prefix 0x/0X, to test whether an
-integer constant includes an unsigned suffix it suffices to check whether an
-integer suffix occurs anywhere in the constant. Analogous reasoning applies to
-ll/LL long long suffixes. For the l/L long suffixes, we use the same test, after
-making sure that there are no long long suffixes, because l/L is a substring of
-ll/LL. *)
-
-op unsignedConstant? (c:IntegerConstant) : Bool =
-  ex (str1:String, u:String, str2:String)
-    c = str1 ^ u ^ str2 &&
-    unsignedSuffix? u
-
-op longLongConstant? (c:IntegerConstant) : Bool =
-  ex (str1:String, ll:String, str2:String)
-    c = str1 ^ ll ^ str2 &&
-    longLongSuffix? ll
-
-op longConstant? (c:IntegerConstant) : Bool =
-  ~ (longLongConstant? c) &&
-  (ex (str1:String, l:String, str2:String)
-     c = str1 ^ l ^ str2 &&
-     longSuffix? l)
 
 (* An integer constant must have a type into which the value of the constant
 fits [ISO 6.4.4.1/5]. The type is determined using the table in [ISO 6.4.4.1/5],
@@ -876,27 +849,24 @@ integer constants returns the type of the constant, or 'None' if the constant
 cannot be assigned any type. *)
 
 op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
-  let unsuffixed:String = unsuffixedIntegerConstant c in
+  let (unsuffixed,suffixes) = removeIntegerSuffixes c in
   let decimal?:Bool = decimalConstant? unsuffixed in
-  if ~ (unsignedConstant? c) &&
-     ~ (longConstant? c) &&
-     ~ (longLongConstant? c) then
+  if ~ (suffixes.unsigned_suffix) &&
+     ~ (suffixes.long_suffix) &&
+     ~ (suffixes.longlong_suffix) then
     if decimal? then [T_sint, T_slong, T_sllong]
                 else [T_sint, T_uint, T_slong, T_ulong, T_sllong, T_ullong]
-  else if unsignedConstant? c &&
-          ~ (longConstant? c) &&
-          ~ (longLongConstant? c)
+  else if (suffixes.unsigned_suffix) &&
+          ~ (suffixes.long_suffix) &&
+          ~ (suffixes.longlong_suffix)
   then
     [T_uint, T_ulong, T_ullong]
-  else if ~ (unsignedConstant? c) &&
-          longConstant? c then
+  else if ~ (suffixes.unsigned_suffix) && (suffixes.long_suffix) then
     if decimal? then [T_slong, T_sllong]
                 else [T_slong, T_ulong, T_sllong, T_ullong]
-  else if unsignedConstant? c &&
-          longConstant? c then
+  else if suffixes.unsigned_suffix && suffixes.long_suffix then
     [T_ulong, T_ullong]
-  else if ~ (unsignedConstant? c) &&
-          longLongConstant? c then
+  else if ~ suffixes.unsigned_suffix && suffixes.longlong_suffix then
     if decimal? then [T_sllong]
                 else [T_sllong, T_ullong]
   else
@@ -905,16 +875,7 @@ op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
 op integerConstantType (c:IntegerConstant) : Option Type =
   let tys = integerConstantCandidateTypes c in
   let val:Nat = integerConstantValue c in
-  if (ex(i:Nat) i < length tys && (val:Int) in? rangeOfIntegerType (tys @ i))
-  then
-    let firstFitIndex:Nat = the(firstFitIndex:Nat)
-        firstFitIndex < length tys &&
-        (val:Int) in? rangeOfIntegerType (tys @ firstFitIndex) &&
-        (firstFitIndex = 0 ||  % first type in candidate list
-         (val: Int) nin? rangeOfIntegerType (tys @ (firstFitIndex - 1))) in
-    Some (tys @ firstFitIndex)
-  else
-    None
+  findLeftmost (fn tp -> (val:Int) in? rangeOfIntegerType tp) tys
 
 
 %subsection (* Unary operators *)
