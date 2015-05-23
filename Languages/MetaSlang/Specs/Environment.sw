@@ -189,6 +189,13 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
        map (fn (_,x) -> x) fields
      | _ -> [ty1]
 
+ op recordIdTypes(sp: Spec, ty1: MSType): List(Id * MSType) =
+   let ty = unfoldBase(sp, ty1) in
+   case stripSubtypes (sp, ty)
+    of Product (fields, _) ->
+       fields
+     | _ -> []                          % 
+
  op coproduct? (sp : Spec, srt : MSType): Bool =
     case stripSubtypes (sp, srt) of
       | CoProduct _ -> true

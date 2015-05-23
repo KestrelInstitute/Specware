@@ -1,10 +1,8 @@
-ListUtilities qualifying spec {
-  import /Library/Base
-
+ListUtilities qualifying spec 
   % Ad hoc utility for removing duplicate elements in list
 
   op removeDuplicates  : [T] List T -> List T
-  op ListUtilities.insert: [T] T * List T -> List T
+  op insert            : [T] T * List T -> List T
   op listUnion         : [T] List T * List T -> List T
   op delete            : [T] T * List T -> List T
   op enumerate         : Nat * Nat -> List Nat
@@ -35,14 +33,14 @@ ListUtilities qualifying spec {
 
   op tailListList: [a] List a * List a -> Option (List a)
 
-  def ListUtilities.insert (e, l) = 
+  def insert (e, l) = 
     case l of
       | [] -> [e]
       | e1::l1 ->
           if e = e1 then
             l
           else
-            Cons (e1, ListUtilities.insert (e, l1))
+            Cons (e1, insert (e, l1))
 
   def delete(e,l) = 
     case l of
@@ -56,9 +54,24 @@ ListUtilities qualifying spec {
   def removeDuplicates(l) = 
     case l of
       | [] -> l 
-      | elem::l -> ListUtilities.insert (elem,removeDuplicates(l))
+      | elem::l -> insert (elem,removeDuplicates(l))
 
-  def listUnion (l1, l2)  = foldl (fn (result,x) -> ListUtilities.insert(x,result)) l1 l2
+  op [a] memberEquiv? (x: a, l: List a, equiv: a * a -> Bool): Bool =
+    case l of
+      | [] -> false
+      | elem::rl ->
+        equiv(x, elem) || memberEquiv?(x, rl, equiv)
+
+  op [a] removeDuplicatesEquiv (l: List a, equiv: a * a -> Bool): List a =
+    case l of
+      | [] -> []
+      | elem::rl ->
+        let r = removeDuplicatesEquiv(rl, equiv) in
+        if memberEquiv?(elem, rl, equiv)
+          then r
+          else elem :: r
+
+  def listUnion (l1, l2)  = foldl (fn (result,x) -> insert(x,result)) l1 l2
 
   def enumerate (i, j) = 
     if i > j then
@@ -223,4 +236,4 @@ ListUtilities qualifying spec {
 	then Some (removePrefix(l1, length(l2)))
       else None
 
-}
+end-spec

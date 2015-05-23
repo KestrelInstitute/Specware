@@ -1621,6 +1621,24 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                              ^"at "^print(termAnn term)))
      | _ -> System.fail("Product type expected for mkProjectTerm: "^printTermWithTypes term)
 
+  op projectionFun(f: MSFun, spc: Spec): Option Id =
+    case f of
+      | Project id -> Some id
+      | Op(qid, _) ->
+        (case findTheOp(spc, qid) of
+           | None -> None
+           | Some info ->
+             let (_, ty, tm) = unpackFirstTerm info.dfn in
+             case tm of
+               | Fun(f, _, _) -> projectionFun(f, spc)
+               | Lambda([(VarPat((v, _), _),_, Apply(Fun(f, _, _), Var((vr,_), _), _))], _) | v = vr ->
+                 projectionFun(f, spc)
+               | _ -> None)
+      | _ -> None
+
+  op projectionFun?(f: MSFun, spc: Spec): Bool =
+    some?(projectionFun(f, spc))
+
 %%  moved to RecordMerge.sw
 %%
 %% op  translateRecordMergeInSpec : Spec -> Spec

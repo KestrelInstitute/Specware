@@ -248,12 +248,11 @@ PrettyPrint qualifying spec
 
   op blockLinear (newlines : Nat, lines : Lines) : Pretty =
     let width = widthLines lines in
-    pretty
-    (width,
-     fn (columns : Nat, text : Text) ->
-       if fits? (columns, width, text)
-       then formatPretty (columns, blockNone (newlines, lines), text)
-       else formatPretty (columns, blockAll  (newlines, lines), text))
+    pretty (width,
+            fn (columns : Nat, text : Text) ->
+              if fits? (columns, width, text)
+                then formatPretty (columns, blockNone (newlines, lines), text)
+              else formatPretty (columns, blockAll  (newlines, lines), text))
 
 
   %%% Text output

@@ -1243,7 +1243,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
    let rules = makeRules (context, spc, rules, []) in
    rewriteRecursive (context, [], splitConditionalRules rules, term)
 
- def rewriteWithRules (spc: Spec, rules: RuleSpecs, term: MSTerm) =
+ def rewriteWithRules (spc: Spec, rules: RuleSpecs, term: MSTerm): MSTerm * Proof =
    case rewriteWithRules_opt (spc, rules, term) of
      | Some res -> res
      | None -> (term, prove_equalRefl (inferType (spc, term), term))

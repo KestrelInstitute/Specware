@@ -542,8 +542,9 @@
                (pc                 (print-current-term nil))
                (pcv                (print-current-term t))
                (context            (if *current-qid*
-                                       (Script::printContextRules
-                                        (Script::namedContextTerms-3 *transform-term* *current-qid* *transform-spec*))
+                                       (progn (Script::printContextRules
+                                                (Script::namedContextTerms-3 *transform-term* *current-qid* *transform-spec*))
+                                              (values))
                                      (format t "Need to do an \"at\" command")))
                ((undo back)        (undo-command (and argstr (String-Spec::removeWhiteSpace argstr)) nil))
                (redo               (redo-command (and argstr (String-Spec::removeWhiteSpace argstr)) nil))

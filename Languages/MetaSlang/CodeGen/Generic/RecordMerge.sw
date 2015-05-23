@@ -17,8 +17,8 @@ Transform qualifying spec
             let (src_tms, new_fields) =
                 foldr (fn ((id1, t), (src_tms, new_fields)) ->
                          case t of
-                           | Apply (Fun (Project id2, _, _), src_tm, _)
-                               | id1 = id2 && equivTypeSubType? spc (termType src_tm, rec_ty) true 
+                           | Apply (Fun (f, _, _), src_tm, _)
+                               | projectionFun(f, spc) = Some id1 && equivTypeSubType? spc (termType src_tm, rec_ty) true 
                              ->
                              (if termIn? (src_tm, src_tms) then 
                                 src_tms 
