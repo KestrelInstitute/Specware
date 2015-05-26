@@ -175,8 +175,8 @@ op findOpsToLock (spc : Spec, stateful_type_names : TypeNames)
          foldOpInfos (fn (opinfo, ops_and_locks) -> 
                         let op_name            = primaryOpName   opinfo     in
                         let (tvs, op_type, tm) = unpackFirstTerm opinfo.dfn in
-                        case getStateVarAndPostCondn (op_type, stateful_type, spc) of
-                          | Some (result_var, deref?, post_cond) ->
+                        case getStateVarsAndPostCondn (op_type, stateful_type, spc) of
+                          | Some (result_vars, deref?, post_cond) ->
                             if has_stateful_update? (spc, [stateful_type], opinfo.dfn) then
                               let makeMutex_term = make_mutex global_mutex_name in
                               add_op_and_lock (op_name, makeMutex_term, ops_and_locks)
