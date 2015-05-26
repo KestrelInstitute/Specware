@@ -27,5 +27,4 @@ PredMonad qualifying spec
   axiom satisfies_putState is
     fa (m,st) m |= putState st <=> m = putState st
 
-
 end-spec
