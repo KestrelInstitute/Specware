@@ -2,7 +2,7 @@
 %% The spec for monads with error-reporting
 %%
 
-MonadError = Monad qualifying spec
+Monad qualifying spec
   import ../Monad
 
   type Err % The type of errors

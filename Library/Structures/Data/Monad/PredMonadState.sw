@@ -1,12 +1,12 @@
-PredMonadState qualifying spec
+(* This file defines predicate monads for reasoning about stateful monadic
+computations. To make Monad represent stateful computations, Monad must be a
+state monad, and to reason about these stateful computations, we add
+state-related combinators to MPred, to recognize uses of state-related
+combinators in Monad. Thus, technically, MPred is a state monad as well. *)
+
+PredMonad qualifying spec
   import MonadState
   import PredMonad
-
-  (* This file defines predicate monads for reasoning about stateful monadic
-  computations. To make Monad represent stateful computations, Monad must be a
-  state monad, and to reason about these stateful computations, we add
-  state-related combinators to MPred, to recognize uses of state-related
-  combinators in Monad. Thus, technically, MPred is a state monad as well. *)
 
   (* State monad combinators for MPred *)
   op getState : MPred St
