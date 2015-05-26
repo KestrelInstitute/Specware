@@ -1,6 +1,8 @@
-%%
-%% The spec for monads with error-reporting
-%%
+(* This file defines predicate monads for reasoning about monadic computations
+that can potentially raise errors, i.e., monads that satisfy the MonadError
+spec.  To reason about these computations, we add error-related combinators to
+MPred, to recognize uses of error-related combinators in Monad. Thus,
+technically, MPred is an error monad as well. *)
 
 PredMonad qualifying spec
   import PredMonad
