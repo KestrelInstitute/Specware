@@ -56,6 +56,8 @@ transform Examples_spec by
 {at copyByte_C { unfold copyByte; generateC}
    ;
  at copyBytes_C { unfold copyBytes; generateC}
+   ;
+ makeDefsFromPostConditions [copyByte_C, copyBytes_C]
  }
 
 Examples_printed = spec
