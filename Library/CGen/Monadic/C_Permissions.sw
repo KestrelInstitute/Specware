@@ -5,13 +5,54 @@ C_Permissions qualifying spec
   import C_Predicates
 
 
-  (* Universal type for representing C values; can be refined to an actual type
-  using finalizeInductiveType *)
+  (***
+   *** Value representations
+   ***)
+
+  (* To represent C values in logic, we define a universal type for representing
+     C values; can be refined to an actual type using finalizeInductiveType *)
   type VRepr
 
-  (* VRepr includes lists (FIXME: add other ops for mklist_VRepr) *)
-  op VRepr_mklist : List VRepr -> VRepr
+  (* VRepr includes lists (FIXME: add other ops for VRepr_list) *)
+  op VRepr_list : List VRepr -> VRepr
 
 
+  (***
+   *** Permissions and permission domains
+   ***)
+
+  (* FIXME: document these types! *)
+
+  type SplittingLetter = | SplitL | SplitR
+  type SplittingWord = List SplittingLetter
+  type PermName = Nat
+  type ObjectPerm = | ObjectPerm ObjectDesignator * PermName * Option SplittingWord
+
+  type PermSet = { s : ObjectPerm -> Bool |
+                    fa (d,n,w)
+                      s (ObjectPerm (d, n, Some (SplitL :: w))) &&
+                      s (ObjectPerm (d, n, Some (SplitR :: w))) =>
+                      s (ObjectPerm (d, n, Some w)) }
+
+  op perm_sets_compatible? (s1 : PermSet, s2 : PermSet) : Bool =
+    fa (obj_perm) ~(s1 obj_perm && s2 obj_perm)
+
+  op perm_sets_combine (s1 : PermSet, s2 : PermSet | perm_sets_compatible? (s1, s2)) : PermSet =
+    fn (obj_perm) -> s1 obj_perm || s2 obj_perm
+
+
+  type PermDomElem =
+    | SplittablePermRepr
+      (Storage -> ObjectDesignator -> VRepr -> Bool) *
+      (Storage -> Value -> List (ObjectDesignator * List PermDomElem)) *
+      (VRepr * VRepr -> VRepr -> Bool)
+    | NonSplittablePermRepr
+      (Storage -> ObjectDesignator -> VRepr -> Bool) *
+      (Storage -> Value -> List (ObjectDesignator * List PermDomElem))
+  type PermDom = List PermDomElem
+  type PermDomAssignment = Map (ObjectDesignator, PermDom)
+
+  type StorageRepr = Map (ObjectPerm, VRepr)
+  type ValueRepr = StorageRepr -> Value -> VRepr -> Bool
 
 end-spec
