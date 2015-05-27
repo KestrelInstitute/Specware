@@ -64,4 +64,5 @@ Examples_printed = spec
   import Examples_impl, CPrettyPrinter
 
   op copyByte_String : String = printTranslationUnitToString [copyByte_C]
+  op copyBytes_String : String = printTranslationUnitToString [copyBytes_C]
 end-spec
