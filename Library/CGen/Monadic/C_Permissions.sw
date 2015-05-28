@@ -23,22 +23,36 @@ C_Permissions qualifying spec
 
   (* FIXME: document these types! *)
 
+  type PermName = String
+
+  type ValueReprRel =
+     | SplittableReprRel
+       TypeName * TypedefTable * StructTable *
+       (Map (ObjectDesignator * PermName, VRepr) -> Value -> VRepr -> Bool) *
+       (VRepr * VRepr -> VRepr -> Bool)
+     | NonSplittableReprRel
+       TypeName * TypedefTable * StructTable *
+       (Map (ObjectDesignator * PermName, VRepr) -> Value -> VRepr -> Bool)
+
+
   type SplittingLetter = | SplitL | SplitR
   type SplittingWord = List SplittingLetter
-  type PermName = Nat
   type ObjectPerm = | ObjectPerm ObjectDesignator * PermName * Option SplittingWord
 
   type PermSet = { s : ObjectPerm -> Bool |
-                    fa (d,n,w)
-                      s (ObjectPerm (d, n, Some (SplitL :: w))) &&
-                      s (ObjectPerm (d, n, Some (SplitR :: w))) =>
-                      s (ObjectPerm (d, n, Some w)) }
+                    (fa (d,n,w,l)
+                       s (ObjectPerm (d, n, Some w)) =>
+                       s (ObjectPerm (d, n, Some (l :: w)))) &&
+                    (fa (d,n,w)
+                       s (ObjectPerm (d, n, Some (SplitL :: w))) &&
+                       s (ObjectPerm (d, n, Some (SplitR :: w))) =>
+                       s (ObjectPerm (d, n, Some w))) }
 
   op perm_sets_compatible? (s1 : PermSet, s2 : PermSet) : Bool =
     fa (obj_perm) ~(s1 obj_perm && s2 obj_perm)
 
-  op perm_sets_combine (s1 : PermSet, s2 : PermSet | perm_sets_compatible? (s1, s2)) : PermSet =
-    fn (obj_perm) -> s1 obj_perm || s2 obj_perm
+  op combine_perm_sets (s1 : PermSet, s2 : PermSet | perm_sets_compatible? (s1, s2)) : PermSet =
+    fn obj_perm -> s1 obj_perm || s2 obj_perm
 
 
   type PermDomElem =
@@ -53,6 +67,5 @@ C_Permissions qualifying spec
   type PermDomAssignment = Map (ObjectDesignator, PermDom)
 
   type StorageRepr = Map (ObjectPerm, VRepr)
-  type ValueRepr = StorageRepr -> Value -> VRepr -> Bool
 
 end-spec
