@@ -1675,6 +1675,10 @@ op objectDesignatorLens (d:ObjectDesignator) : MLens ((),Value) =
                         (arrayElementsLens,
                          mlens_of_list_index (i, nonstd, nonstd)))
 
+(* Helper predicate for saying an object has a value in a given Storage *)
+op objectHasValue storage d v : Bool =
+  {putState storage; (objectDesignatorLens d).mlens_get ()} = {putState storage; return v}
+
 (* Helper functions for reading from and writing to designated objects *)
 op readObject (d:ObjectDesignator) : Monad Value =
    (objectDesignatorLens d).mlens_get ()
@@ -2956,6 +2960,8 @@ op evaluateAllToValues (exprs:List Expression) : Monad (List Value) =
 
 
 %subsection (* Type names *)
+
+(* FIXME HERE: this goes above evaluate, since the latter uses it for cast expressions *)
 
 (* A type name denotes a type. The following op returns the type denoted by a
 type name w.r.t. a TypedefTable, by expanding all the typedef names in the type
