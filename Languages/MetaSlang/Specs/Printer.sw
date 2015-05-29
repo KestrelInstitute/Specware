@@ -314,9 +314,9 @@ AnnSpecPrinter qualifying spec
 	   % case pattern matching
            enclose(~(embed? Top parentTerm), pp,
                    blockAll (0, 
-                             [(0, prettysNone [pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
+                             [(1, prettysNone [pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
                               (1, prettysNone 
-                                 [printLambda (context, [0] ++ path, pp.Of, rules, false, true)])]))
+                                    [printLambda (context, [0] ++ path, pp.Bar, rules, false, true)])]))
 	   % Print tuple projection using
 	   % dot notation.
 	 | (Fun (Project p, srt1, _), Var ((id, srt2), _)) ->
@@ -1220,15 +1220,13 @@ AnnSpecPrinter qualifying spec
          | Any _ ->
            (case opt_ty of
               | None -> []
-              | Some ty -> [(0, string ": "),
-                            (4, blockNone (0, [%(0, string " "), 
+              | Some ty -> [(4, blockNone (0, [(0, string ": "),
                                                (4, ppType context
                                                      ([index, opIndex], Top) ty)]))])
 	 | _ ->
            (case opt_ty of
               | None -> []
-              | Some ty -> [(0, string ": "),
-                            (4, blockNone (0, [%(0, string " "), 
+              | Some ty -> [(4, blockNone (0, [(0, string ": "),
                                                (4, ppType context
                                                      ([index, opIndex], Top) ty)]))])
            ++ 
@@ -1242,7 +1240,7 @@ AnnSpecPrinter qualifying spec
        % let _ = writeLine("ppDef:\n"^printTerm tm^":: "^printType ty) in
        let prettys = ppDefAux (context, [index, defIndex], Some ty, tm)
        in
-       (0, blockFill (0, 
+       (0, blockLinear (0, 
 		      [(0, blockFill (0, 
 				      [(0, button1), 
 				       (0, button2)]
