@@ -64,7 +64,7 @@ Units (specs, morphisms, diagrams, ...)
      * Unit-identifier
    - * *unit-id* ``=`` *unit-term*
      * Unit-definition
-   - * **spec** *declaration* ... **endspec**
+   - * **spec** *declaration* ... **end-spec**
      * Returns spec-form
    - * *qualifier* **qualifying** *spec*
      * Qualifies unqualified type- and op-names

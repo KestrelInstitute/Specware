@@ -10,5 +10,5 @@ Elem qualifying spec
 
   type Elem
   op pp : Elem -> WLPretty
-end
+end-spec
 \end{spec}

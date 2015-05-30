@@ -488,8 +488,8 @@ special meaning and must not be used for :token:`simple_names`:
    def          false     infixr     prove         type
    else         fn        is         qualifying    where
    
-   :        ||       |       =        <=>       <-       ``
-   ::       &&       ~       ~=       =>        ->       +->
+   :        ||       |       =        <=>       <-       <<
+   ::       &&       ~=      =>        ->       +->
    
 
 They each count as a single :token:`symbol`, and no whitespace is
@@ -3066,7 +3066,7 @@ Expressions
                   : & | 
                   : = | 
                   : ~= | 
-                  : ``
+                  : |lt||lt|
 
 (The distinctions :token:`tight_` and :token:`closed_` for
 :token:`expressions` lack semantic significance, and merely serve the

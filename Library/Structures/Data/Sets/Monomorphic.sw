@@ -49,7 +49,7 @@ These don't belong here
   op toList : Set -> List Elem
 %  op addList : Set -> List Elem -> Set
 %  op fromList : List Elem -> Set
-end
+end-spec
 \end{spec}
 
 Intuitively, when \typeref{Set} = \typeref{List} then,

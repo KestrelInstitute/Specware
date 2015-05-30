@@ -36,7 +36,7 @@ These shouldn't be here.
   op toList   : [a] Set  a -> List a
   op fromList : [a] List a -> Set  a
  %op addList  : [a] Set  a -> List a -> Set a
-end
+end-spec
 \end{spec}
 
 One could argue that monomorphic sets can be obtained as an instance of
@@ -47,7 +47,7 @@ spec
   import PolySets
   type Elem
   type Set' = Set Elem
-end
+end-spec
 \end{verbatim}
 
 But, of course, this doesn't quite work. It defines a new type, Set',

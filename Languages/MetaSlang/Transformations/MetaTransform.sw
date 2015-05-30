@@ -130,7 +130,6 @@ op [a] extractValue (chooser: AnnTypeValue -> Option a) (tf: TypedFun): Option a
 
 op extractMSTerm(tf: TypedFun): Option MSTerm =
   extractValue (fn | TermV tm -> Some tm
-                   | TransTermV tm -> Some tm
                    | _ -> None)
     tf
 
@@ -304,7 +303,7 @@ op ppAnnTypeValue (atv: AnnTypeValue): Doc =
   case atv of
     | SpecV _ -> ppString "spec"
     | MorphismV _ -> ppString "morphism"
-    | TermV _ -> ppString "term"
+    | TermV tm -> ppString ("term: "^printTerm tm)
     | TransTermV _ -> ppString "transTerm"
     | ArrowsV atvs -> ppSep (ppString " ") (map ppAnnTypeValue atvs)
     | StrV str -> ppString str
@@ -512,7 +511,7 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
   case tyi of
     | Spec -> mkOp(Qualified("MetaTransform", "extractSpec"), mkArrow(annTypeValueType, specType))
     | Morphism -> mkOp(Qualified("MetaTransform", "extractMorphism"), mkArrow(annTypeValueType, morphismType))
-    | Term -> mkOp(Qualified("MetaTransform", "extractMSTerm"), mkArrow(annTypeValueType, msTermType))
+    | Term -> mkOp(Qualified("MetaTransform", "extractTerm"), mkArrow(annTypeValueType, msTermType))
     | TransTerm -> mkOp(Qualified("MetaTransform", "extractTransTerm"), mkArrow(annTypeValueType, transTermType))
     | PathTerm -> mkOp(Qualified("MetaTransform", "extractPathTerm"), mkArrow(annTypeValueType, msTermType))
     % | Arrow(doms, ran) ->

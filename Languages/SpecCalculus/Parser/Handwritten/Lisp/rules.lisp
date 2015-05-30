@@ -92,6 +92,8 @@
    ((:tuple "with")         "with")
    ((:tuple "/")            "/")
    ((:tuple "*")            "*")
+   ((:tuple "`")            "`")
+   ;((:tuple "<<")            "<<")
    ((:tuple "\\_times")     "\\_times")
    ((:tuple "UID")          "UID")
    ((:tuple "at")           "at")
