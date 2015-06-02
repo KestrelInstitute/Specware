@@ -174,7 +174,7 @@ accepted in lieu of prompting."
 (defun sw:x-symbol-toggle ()
   (customize-set-variable 'sw:use-x-symbol (not sw:use-x-symbol))
   (unless (eq sw:use-x-symbol x-symbol-mode)
-    (x-symbol-mode)))
+    (funcall x-symbol-mode)))
 
 (defvar hs-minor-mode nil) ;; declared in hideshow.el, which is dynamically loaded
 
@@ -583,7 +583,7 @@ Mode map
   (easy-menu-add specware-mode-menu)
   (setq indent-tabs-mode nil)		; Don't use tabs when doing automatic indentation
   (if sw:use-x-symbol
-      (x-symbol-mode t))
+      (funcall x-symbol-mode t))
   (run-mode-hooks 'sw:specware-mode-hook))           ; Run the hook
 
 (when sw:use-hide-show

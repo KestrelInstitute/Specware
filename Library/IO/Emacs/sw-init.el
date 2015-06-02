@@ -1,3 +1,5 @@
+(require 'sw-slime)
+
 (defvar lisp-emacs-interface-type)
 (defvar *windows-system-p*)
 

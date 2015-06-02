@@ -244,7 +244,7 @@ If NEWLINE is true then add a newline at the end of the input."
 
 (defun specware-listener-mode-init ()
   (when sw:use-x-symbol
-    (x-symbol-mode))
+    (funcall x-symbol-mode))
   (setq slime-words-of-encouragement
 	'("Welcome to Specware!"))
   (add-specware-listener-key-bindings specware-listener-mode-map))
