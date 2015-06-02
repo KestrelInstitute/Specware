@@ -1,3 +1,5 @@
+(require 'specware-mode)
+
 (defvar lisp-emacs-interface-type 'franz)
 (defvar sw:common-lisp-buffer-name "*Specware Shell*")
 (defvar sw:common-lisp-image-arguments nil)
