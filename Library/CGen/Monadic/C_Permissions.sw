@@ -63,7 +63,7 @@ C_Permissions qualifying spec
 
 
   (***
-   *** Value representations and permissions
+   *** Value Representations
    ***)
 
   (* FIXME: document all of this! *)
@@ -71,17 +71,53 @@ C_Permissions qualifying spec
   type PermName = String
   type StorageFValues = Map (ObjectDesignator * PermName, FValue)
 
-  type ValueReprRel = SplittingWord -> StorageFValues -> Value -> FValue -> Bool
-
-  type ReprCombineRel = FValue * FValue -> FValue -> Bool
+  type ValueReprH =
+    {repr_type_name : TypeName,
+     repr_rel : SplittingWord -> StorageFValues -> Value -> FValue -> Bool,
+     repr_combines_to : FValue * FValue -> FValue -> Bool}
 
   type ValueRepr =
-    {repr_type_name : TypeName,
-     repr_xenv_pred : TranslationEnv -> Bool,
-     repr_rel : ValueReprRel,
-     repr_combines_to : ReprCombineRel,
-     repr_deps : (Storage -> Value -> Map (ObjectDesignator * PermName,
-                                           ValueReprRel * ReprCombineRel))}
+    ValueReprH * (Storage -> Value ->
+                    Map (ObjectDesignator * PermName, ValueReprH))
+
+  (* Well-formedness of a ValueReprH w.r.t. a predicate on the R type *)
+  op valueReprH_well_formed (r_pred : R -> Bool) (reprh : ValueReprH) : Bool =
+    (* The any Value related by the relation has the correct type *)
+    (fa (w,s,v,fv,r)
+       r_pred r && reprh.repr_rel w s v fv =>
+       expandTypeName (r.r_xenv, reprh.repr_type_name) = Some (typeOfValue v))
+    &&
+    (* The combine function commutes with the relation; note that the
+    implication only goes one way, because, e.g., fv1 and fv2 might combine to
+    fv at some other word that is not w *)
+    (fa (w,s,v,fv1,fv2,fv)
+       reprh.repr_rel (SplitL::w) s v fv1 &&
+       reprh.repr_rel (SplitR::w) s v fv2 &&
+       reprh.repr_combines_to (fv1,fv2) fv =>
+       reprh.repr_rel w s v fv
+       )
+    &&
+    (* There is always a way to split an FValue relative to the relation; this
+    is somewhat like a converse to the last condition *)
+    (fa (w,s,v,fv)
+       reprh.repr_rel w s v fv =>
+       (ex (fv1,fv2)
+          reprh.repr_rel (SplitL::w) s v fv1 &&
+          reprh.repr_rel (SplitR::w) s v fv2 &&
+          reprh.repr_combines_to (fv1,fv2) fv
+          ))
+
+  (* Well-formedness of a ValueRepr; requires the top-level ValueReprH and all
+  the dependent ValueReprHs to be well-formed *)
+  op valueRepr_well_formed (r_pred : R -> Bool) (repr : ValueRepr) : Bool =
+    valueReprH_well_formed r_pred repr.1 &&
+    (fa (s,v,d,n,reprh)
+       repr.2 s v (d,n) = Some reprh => valueReprH_well_formed r_pred reprh)
+
+
+  (***
+   *** Permissions
+   ***)
 
   type ObjectPerm = | ObjectPerm ObjectDesignator * PermName * SplittingWord
   type Perm = ObjectPerm * ValueRepr
@@ -148,6 +184,12 @@ C_Permissions qualifying spec
         perm_compatible_with_set? true (perm, perms2) &&
         perm_sets_compatible? (perms1', perms2)
 
+  (* Compatibility is symmetric *)
+  theorem perm_sets_compatible?_sym is
+    fa (perms1,perms2)
+      perm_sets_compatible? (perms1,perms2) =>
+      perm_sets_compatible? (perms2,perms1)
+
   (* Add a permission to a permission set *)
   op add_perm_to_set (perm : Perm, perms : PermSet |
                         perm_compatible_with_set? true (perm, perms)) : PermSet =
@@ -166,6 +208,17 @@ C_Permissions qualifying spec
       | [] -> perms2
       | perm :: perms1' ->
         add_perm_to_set (perm, combine_perm_sets (perms1', perms2))
+
+  (* Combining perm sets is symmetric *)
+  theorem combine_perm_sets_sym is
+    fa (perms1,perms2)
+      perm_sets_compatible? (perms1,perms2) =>
+      combine_perm_sets (perms1,perms2) = combine_perm_sets (perms2,perms1)
+
+  (* 3 permission sets are compatible with each other *)
+  op perm_sets_compatible3? (perms1 : PermSet, perms2 : PermSet, perms3 : PermSet) : Bool =
+    perm_sets_compatible? (perms2, perms3) &&
+    perm_sets_compatible? (perms1, combine_perm_sets (perms2, perms3))
 
 
   (***
@@ -192,42 +245,40 @@ C_Permissions qualifying spec
                   | _ -> None
 
   (* FIXME: document this! *)
-  op storage_repr_as? (heap : PermSet, held : PermSet |
-                         perm_sets_compatible? (heap, held))
-                      (s : Storage, srepr : StorageRepr) : Bool =
-    let perms = combine_perm_sets (heap, held) in
-    (fa (d,n,w)
-       let p = ObjectPerm (d,n,w) in
-       case (perm_set_lookup (p, perms), srepr p) of
-         | (None, None) -> true
-         | (None, Some _) -> false
-         | (Some _, None) -> false
-         | (Some repr, Some (fv, flag)) ->
-           (if flag then perm_set_lookup (p, heap) = Some repr
-            else perm_set_lookup (p, heap) = None) &&
-           (ex (v)
-              (* There is a value v at object designator d *)
-              objectHasValue s d v &&
-              (* v has the right type for all xenvs that satisfy the predicate *)
-              (fa (xenv) repr.repr_xenv_pred xenv =>
-                 expandTypeName (xenv, repr.repr_type_name) = Some (typeOfValue v)) &&
-              (* v and fv satisfy the predicate *)
-              repr.repr_rel w (storage_repr_values_heap w srepr) v fv &&
-              (* The two values below fv combine to fv *)
-              (case (srepr (ObjectPerm (d,n,SplitL :: w)),
-                     srepr (ObjectPerm (d,n,SplitR :: w))) of
-                 | (Some (fv_l, _), Some (fv_r, _)) ->
-                   repr.repr_combines_to (fv_l, fv_r) fv
-                 | _ -> false) &&
-              (* The perms set uses the required relations repr depends on *)
-              (fa (d',n',rel',combine')
-                 repr.repr_deps s v (d',n') = Some (rel', combine') =>
-                 (case (perm_set_lookup (ObjectPerm (d', n', w), perms)) of
-                    | Some repr' ->
-                      rel' = repr'.repr_rel && combine' = repr'.repr_combines_to
-                    | None -> false))
-              )
-           )
+  op storage_repr_as_h? (heap : PermSet, my_held : PermSet, other_held : PermSet)
+                        (s : Storage, srepr : StorageRepr) : Bool =
+    perm_sets_compatible? (my_held, other_held) &&
+    perm_sets_compatible? (heap, combine_perm_sets (my_held, other_held)) &&
+    (let held = combine_perm_sets (my_held, other_held) in
+     let perms = combine_perm_sets (heap, held) in
+     (fa (d,n,w)
+        let p = ObjectPerm (d,n,w) in
+        case (perm_set_lookup (p, perms), srepr p) of
+          | (None, None) -> true
+          | (None, Some _) -> false
+          | (Some _, None) -> false
+          | (Some repr, Some (fv, flag)) ->
+            (if flag then perm_set_lookup (p, heap) = Some repr
+             else perm_set_lookup (p, heap) = None) &&
+            (ex (v)
+               (* There is a value v at object designator d *)
+               objectHasValue s d v &&
+               (* v and fv satisfy the predicate *)
+               repr.1.repr_rel w (storage_repr_values_heap w srepr) v fv &&
+               (* The two values below fv combine to fv *)
+               (case (srepr (ObjectPerm (d,n,SplitL :: w)),
+                      srepr (ObjectPerm (d,n,SplitR :: w))) of
+                  | (Some (fv_l, _), Some (fv_r, _)) ->
+                    repr.1.repr_combines_to (fv_l, fv_r) fv
+                  | _ -> false) &&
+               (* The perm set uses the required relations repr depends on *)
+               (fa (d',n',reprh)
+                  repr.2 s v (d',n') = Some reprh =>
+                  (ex (deps')
+                     perm_set_lookup (ObjectPerm (d', n', w), perms)
+                     = Some (reprh, deps')))
+               )
+            ))
 
   (***
    *** Permission Set Terms
@@ -237,10 +288,17 @@ C_Permissions qualifying spec
 
   type PermSetTerm
 
+  op permSetTerm_well_formed (r_pred : R -> Bool) (t : PermSetTerm) : Bool
+
   op evalPermSetTerm (r : R, ws : List SplittingWord) (t : PermSetTerm) : PermSet
 
   op valsForPermSetTerm (r : R, ws : List SplittingWord)
-                        (t : PermSetTerm) (srepr : StorageRepr) : List FValue
+                        (srepr : StorageRepr, t : PermSetTerm) : List FValue
+
+  op storage_repr_as? (r : R, ws : List SplittingWord)
+                      (heap : PermSetTerm, my_held : PermSetTerm,
+                       other_held : PermSetTerm)
+                      (s : Storage, srepr : StorageRepr) : Bool
 
 
   (***
@@ -250,30 +308,28 @@ C_Permissions qualifying spec
   op stmt_correct (r_pred : R -> Bool)
                   (perms_in : PermSetTerm, perms_out : PermSetTerm)
                   (f : List FValue -> List FValue) (m : Monad ()) () : Bool =
-    fa (other_held,heap,srepr_in,ws)
-      ex (heap',srepr_out)
+    fa (other_held,heap_in,srepr_in,ws)
+      ex (heap_out,srepr_out)
         totally_correct
         (fn r -> fn s_in ->
+           (* The r_predicate holds *)
            r_pred r &&
-           (let my_held_in = evalPermSetTerm (r,ws) perms_in in
-            perm_sets_compatible? (my_held_in, other_held) &&
-            (let held_in = combine_perm_sets (my_held_in, other_held) in
-             perm_sets_compatible? (heap, held_in) &&
-             storage_repr_as? (heap, held_in) (s_in, srepr_in))))
+           (* srepr_in is a valid representation of s_in *)
+           storage_repr_as? (r,ws) (heap_in, perms_in, other_held) (s_in, srepr_in)
+           )
         m
         (fn r -> fn s_in -> fn s_out ->
+           (* The pre-conditions still hold on the input state *)
            r_pred r &&
-           (let my_held_in = evalPermSetTerm (r,ws) perms_in in
-            perm_sets_compatible? (my_held_in, other_held) &&
-            (let held_in = combine_perm_sets (my_held_in, other_held) in
-             perm_sets_compatible? (heap, held_in) &&
-             storage_repr_as? (heap, held_in) (s_in, srepr_in) &&
-             (let my_held_out = evalPermSetTerm (r,ws) perms_out in
-              perm_sets_compatible? (my_held_out, other_held) &&
-              (let held_out = combine_perm_sets (my_held_out, other_held) in
-               storage_repr_as? (heap, held_out) (s_out, srepr_out) &&
-               valsForPermSetTerm (r,ws) perms_out srepr_out
-               = f (valsForPermSetTerm (r,ws) perms_in srepr_in)))))
+           storage_repr_as? (r,ws) (heap_in, perms_in, other_held) (s_in, srepr_in) &&
+           (* srepr_out is a valid representation of s_out *)
+           storage_repr_as? (r,ws) (heap_out, perms_out, other_held) (s_out, srepr_out) &&
+           (* The function f relates my input and output representations *)
+           valsForPermSetTerm (r, ws) (srepr_out, perms_out)
+           = valsForPermSetTerm (r, ws) (srepr_in, perms_in) &&
+           (* The other representations do not change on output *)
+           valsForPermSetTerm (r, ws) (srepr_in, other_held)
+           = valsForPermSetTerm (r, ws) (srepr_out, other_held)
            )
 
 end-spec
