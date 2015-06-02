@@ -23,10 +23,18 @@ C_Predicates qualifying spec
                             putState st_post)})}
 
   (* The computation m is totally correct, in the sense of Hoare logic, with
-     respect to pre- and post-conditions pre and post, respectively *)
-  % FIXME: figure out how to state termination
+     respect to pre- and post-conditions pre and post, respectively. This is
+     stated by saying that, for some f, m is equivalent to a computation that
+     modifies the current Storage by applying f, assuming the precondition is
+     true, and that doing this always satisfies the post-condition. *)
   op totally_correct (pre: R -> Storage -> Bool) (m : Monad ())
-                     (post : R -> Storage -> Storage -> Bool) : Bool
+                     (post : R -> Storage -> Storage -> Bool) : Bool =
+    m |= mexists (fn f ->
+                    {r <- askR;
+                     st_pre <- getState;
+                     mimplies (liftProp (pre r st_pre),
+                               m_and (putState (f r st_pre),
+                                      liftProp (post r st_pre (f r st_pre))))})
 
 
 end-spec
