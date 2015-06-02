@@ -1194,3 +1194,5 @@ sLisp Heap Image File: ")
 		      sw:common-lisp-image-file))
     (goto-char (point-max))
     ))
+
+(provide 'sw-init)

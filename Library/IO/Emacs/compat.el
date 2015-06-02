@@ -1,3 +1,4 @@
+(require 'sw-init)
 (require 'specware-mode)
 
 (defvar lisp-emacs-interface-type 'franz)
