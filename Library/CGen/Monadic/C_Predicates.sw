@@ -22,4 +22,11 @@ C_Predicates qualifying spec
                      m_and (liftProp (post r st_pre st_post),
                             putState st_post)})}
 
+  (* The computation m is totally correct, in the sense of Hoare logic, with
+     respect to pre- and post-conditions pre and post, respectively *)
+  % FIXME: figure out how to state termination
+  op totally_correct (pre: R -> Storage -> Bool) (m : Monad ())
+                     (post : R -> Storage -> Storage -> Bool) : Bool
+
+
 end-spec
