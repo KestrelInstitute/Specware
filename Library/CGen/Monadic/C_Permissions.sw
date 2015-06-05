@@ -68,8 +68,7 @@ C_Permissions qualifying spec
 
   (* FIXME: document all of this! *)
 
-  type PermName = String
-  type StorageFValues = Map (ObjectDesignator * PermName, FValue)
+  type StorageFValues = Map (ObjectDesignator, FValue)
 
   type ValueReprH =
     {repr_type_name : TypeName,
@@ -77,8 +76,7 @@ C_Permissions qualifying spec
      repr_combines_to : FValue * FValue -> FValue -> Bool}
 
   type ValueRepr =
-    ValueReprH * (Storage -> Value ->
-                    Map (ObjectDesignator * PermName, ValueReprH))
+    ValueReprH * (Storage -> Value -> Map (ObjectDesignator, ValueReprH))
 
   (* Well-formedness of a ValueReprH w.r.t. a predicate on the R type *)
   op valueReprH_well_formed (r_pred : R -> Bool) (reprh : ValueReprH) : Bool =
@@ -111,43 +109,43 @@ C_Permissions qualifying spec
   the dependent ValueReprHs to be well-formed *)
   op valueRepr_well_formed (r_pred : R -> Bool) (repr : ValueRepr) : Bool =
     valueReprH_well_formed r_pred repr.1 &&
-    (fa (s,v,d,n,reprh)
-       repr.2 s v (d,n) = Some reprh => valueReprH_well_formed r_pred reprh)
+    (fa (s,v,d,reprh)
+       repr.2 s v d = Some reprh => valueReprH_well_formed r_pred reprh)
 
 
   (***
    *** Permissions
    ***)
 
-  type ObjectPerm = | ObjectPerm ObjectDesignator * PermName * SplittingWord
+  type ObjectPerm = | ObjectPerm ObjectDesignator * SplittingWord
   type Perm = ObjectPerm * ValueRepr
 
   (* The extension of splitting_word_leq to object permissions *)
   op object_perm_leq : CPO.PartialOrder ObjectPerm =
   (fn tup ->
      case tup of
-       | (ObjectPerm (d1,n1,w1), ObjectPerm (d2,n2,w2)) ->
-         d1 = d2 && n1 = n2 && splitting_word_leq (w1, w2))
+       | (ObjectPerm (d1,w1), ObjectPerm (d2,w2)) ->
+         d1 = d2 && splitting_word_leq (w1, w2))
 
   (* Whether two permissions are compatible *)
   op perms_compatible? (combinable?:Bool) (perm1 : Perm, perm2 : Perm) : Bool =
     case (perm1, perm2) of
-      | ((ObjectPerm (d1,n1,w1), repr1), (ObjectPerm (d2,n2,w2), repr2)) ->
-        d1 = d2 && n1 = n2 && splitting_words_compatible (w1,w2) &&
+      | ((ObjectPerm (d1,w1), repr1), (ObjectPerm (d2,w2), repr2)) ->
+        d1 = d2 && splitting_words_compatible (w1,w2) &&
         (combinable? || ~(splitting_words_combinable (w1,w2)))
 
   (* Whether two permissions can be combined *)
   op perms_combinable? (perm1 : Perm, perm2 : Perm) : Bool =
     case (perm1, perm2) of
-      | ((ObjectPerm (d1,n1,w1), repr1), (ObjectPerm (d2,n2,w2), repr2)) ->
-        d1 = d2 && n1 = n2 && repr1 = repr2 && splitting_words_combinable (w1, w2)
+      | ((ObjectPerm (d1,w1), repr1), (ObjectPerm (d2,w2), repr2)) ->
+        d1 = d2 && repr1 = repr2 && splitting_words_combinable (w1, w2)
 
   (* Whether two permissions can be combined *)
   op combine_perms (perm1 : Perm, perm2 : Perm |
                       perms_combinable? (perm1, perm2)) : Perm =
     case (perm1, perm2) of
-      | ((ObjectPerm (d,n,w1), repr), (ObjectPerm (_,_,w2), _)) ->
-        (ObjectPerm (d,n,combine_splitting_words (w1, w2)), repr)
+      | ((ObjectPerm (d,w1), repr), (ObjectPerm (_,w2), _)) ->
+        (ObjectPerm (d,combine_splitting_words (w1, w2)), repr)
 
   (* Whether a single permission is compatible with a list of permissions, where
   the combinable? flag indicates whether it can be combinable with them *)
@@ -233,16 +231,16 @@ C_Permissions qualifying spec
   (* Convert a StorageRepr to a "slice", for a particular splitting word, of
      FValues for each permission on each object in the Storage. *)
   op storage_repr_values (w : SplittingWord) (r : StorageRepr) : StorageFValues =
-    fn (d,n) -> case r (ObjectPerm (d,n,w)) of
-                  | Some (fv, _) -> Some fv
-                  | None -> None
+    fn d -> case r (ObjectPerm (d,w)) of
+              | Some (fv, _) -> Some fv
+              | None -> None
 
   (* Convert a StorageRepr to a "slice", for a particular splitting word, of
      FValues for each permission held by the Storage on each object. *)
   op storage_repr_values_heap (w : SplittingWord) (srepr : StorageRepr) : StorageFValues =
-    fn (d,n) -> case srepr (ObjectPerm (d,n,w)) of
-                  | Some (fv, true) -> Some fv
-                  | _ -> None
+    fn d -> case srepr (ObjectPerm (d,w)) of
+              | Some (fv, true) -> Some fv
+              | _ -> None
 
   (* FIXME: document this! *)
   op storage_repr_as_h? (heap : PermSet, my_held : PermSet, other_held : PermSet)
@@ -251,8 +249,8 @@ C_Permissions qualifying spec
     perm_sets_compatible? (heap, combine_perm_sets (my_held, other_held)) &&
     (let held = combine_perm_sets (my_held, other_held) in
      let perms = combine_perm_sets (heap, held) in
-     (fa (d,n,w)
-        let p = ObjectPerm (d,n,w) in
+     (fa (d,w)
+        let p = ObjectPerm (d,w) in
         case (perm_set_lookup (p, perms), srepr p) of
           | (None, None) -> true
           | (None, Some _) -> false
@@ -266,16 +264,16 @@ C_Permissions qualifying spec
                (* v and fv satisfy the predicate *)
                repr.1.repr_rel w (storage_repr_values_heap w srepr) v fv &&
                (* The two values below fv combine to fv *)
-               (case (srepr (ObjectPerm (d,n,SplitL :: w)),
-                      srepr (ObjectPerm (d,n,SplitR :: w))) of
+               (case (srepr (ObjectPerm (d,SplitL :: w)),
+                      srepr (ObjectPerm (d,SplitR :: w))) of
                   | (Some (fv_l, _), Some (fv_r, _)) ->
                     repr.1.repr_combines_to (fv_l, fv_r) fv
                   | _ -> false) &&
                (* The perm set uses the required relations repr depends on *)
-               (fa (d',n',reprh)
-                  repr.2 s v (d',n') = Some reprh =>
+               (fa (d',reprh)
+                  repr.2 s v d' = Some reprh =>
                   (ex (deps')
-                     perm_set_lookup (ObjectPerm (d', n', w), perms)
+                     perm_set_lookup (ObjectPerm (d', w), perms)
                      = Some (reprh, deps')))
                )
             ))
@@ -286,7 +284,9 @@ C_Permissions qualifying spec
 
   (* FIXME HERE: write this stuff! *)
 
-  type PermSetTerm
+  type SplittingTerm = | AllPerms | PermVar Nat
+  type ObjTerm = | VarObj Identifier | ValueObj Nat
+  type PermSetTerm = SplittingTerm * ObjTerm
 
   op permSetTerm_well_formed (r_pred : R -> Bool) (t : PermSetTerm) : Bool
 
