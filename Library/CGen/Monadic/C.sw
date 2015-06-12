@@ -3368,7 +3368,8 @@ op makeCFunction (retType : Type, params : List (Identifier * Type), body : Mona
     else error
 
 (* Build a function by evaluating its return and parameter type names and then
-calling makeCFunction *)
+calling makeCFunction. Note that the body of the function uses the translation
+environment from where the function is evaluated, not where it is called. *)
 op evalCFunction (retTypeName : TypeName,
                   paramDecls : ParameterList, body : Statement) : XUMonad (CFunction * FunType) =
   {retType <- expandTypeNameXU retTypeName;
@@ -3376,7 +3377,7 @@ op evalCFunction (retTypeName : TypeName,
    xenv <- xu_get;
    return (makeCFunction
              (retType, params,
-              localR (fn r -> makeGlobalR (xenv, r.r_functions)) (evalStatement body)),
+              localR (fn r -> r << {r_xenv=xenv}) (evalStatement body)),
            (retType, (unzip params).2))}
 
 (* Eval a function definition, by checking that the name is not already defined
