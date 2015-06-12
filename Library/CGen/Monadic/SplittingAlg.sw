@@ -115,12 +115,79 @@ S = SplittingAlg qualifying spec
 
 
   (***
-   *** Fragment Terms
+   *** Fragment Trees
    ***)
 
-  type RawFragmentTerm =
-      | FragmentTermNone
-      | FragmentTermSplitting Splitting
-      | FragmentTermCombine RawFragmentTerm * RawFragmentTerm
+  (* FIXME: explain fragment trees *)
+  type RawFragTree =
+      | FragTreeEmpty
+      | FragTreeSplitting Splitting
+      | FragTreeCombine FragTree * FragTree
+
+  (* Interpret a raw fragment tree as a fragment, if possible *)
+  op interp_raw_fragment_tree (ft: RawFragTree) : Option Fragment =
+    case ft of
+      | FragTreeEmpty -> Some []
+      | FragTreeSplitting spl -> Some [spl]
+      | FragTreeCombine (ft1, ft2) ->
+        (case (interp_raw_fragment_tree ft1, interp_fragment_tree ft2) of
+           | (Some frag1, Some frag2) ->
+             if fragments_compatible? (frag1, frag2) then
+               Some (combine_fragments (frag1, frag2))
+             else None
+           | _ -> None)
+
+  (* A raw fragment tree is canonical iff it does not contain a combine applied
+  to splitting words SplitL::w and SplitR::w or two empty and empty *)
+  op raw_fragment_tree_canonical? (ft: RawFragTree) : Bool =
+    case ft of
+      | FragTreeEmpty -> true
+      | FragTreeSplitting spl -> true
+      | FragTreeCombine (FragTreeSplitting (SplitL::w1), FragTreeSplitting (SplitR::w2)) ->
+        ~(w1 = w2)
+      | FragTreeCombine (FragTreeEmpty, FragTreeEmpty) -> false
+      | FragTreeCombine (ft1, ft2) ->
+        raw_fragment_tree_canonical? ft1 && raw_fragment_tree_canonical? ft2
+
+  (* A fragment tree is a raw fragment tree with a valid interpretation *)
+  type FragTree = { rft : RawFragTree |
+                     raw_fragment_tree_canonical? rft &&
+                     ex (frag) interp_raw_fragment_tree rft = Some frag }
+
+  (* Interpret a fragment tree that is known to be valid *)
+  op interp_fragment_tree (ft: FragTree) : Fragment =
+    case interp_raw_fragment_tree ft of Some frag -> frag
+
+  (* Fragment trees are compatible iff their interpretations are *)
+  op fragment_trees_compatble? (ft1 : FragTree, ft2 : FragTree) : Bool =
+    fragments_compatible? (interp_fragment_tree ft1, interp_fragment_tree ft2)
+
+  (* Combine compatible fragment trees *)
+  op combine_fragment_trees (ft1 : FragTree, ft2 : FragTree |
+                               fragment_trees_compatble? (ft1, ft2)) : FragTree =
+    case (ft1, ft2) of
+      | (FragTreeEmpty, FragTreeEmpty) -> FragTreeEmpty
+      | (FragTreeSplitting (SplitL::w1), FragTreeSplitting (SplitR::w2)) ->
+        if w1 = w2 then FragTreeSplitting w1 else
+          FragTreeCombine (FragTreeSplitting (SplitL::w1), FragTreeSplitting (SplitR::w2))
+      | _ -> FragTreeCombine (ft1, ft2)
+
+  (*  *)
+
+  (* The ordering on fragment terms, which orders them by their associated
+  fragments. The optional variables are required to be the same, because,
+  intuitively, two different variables could be instantiated to arbitrary  *)
+
+  (* Two fragment terms are compatible iff their fragments are compatible and
+  their optional variables are the same *)
+  op fragment_terms_compatible? (ft1 : FragTree, ft2 : FragTree) : Bool =
+    fragments_compatible? (fragment_term_fragment ft1,
+                           fragment_term_fragment ft2) &&
+    ft1.2 = ft2.2
+
+  (* Combine compatible fragment terms by combining their fragments *)
+  op combine_fragment_terms (ft1 : FragTree, ft2 : FragTree |
+                               fragment_terms_compatible? (ft1, ft2)) : FragTree =
+    (combine_fragments (ft1, ft2), ft1.2)
 
 end-spec
