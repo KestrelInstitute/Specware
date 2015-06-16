@@ -721,7 +721,7 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
 
 %% op SpecTransform.doNothing(spc: Spec): Spec = spc
 
-op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List RuleSpec): Env Spec =
+op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds, observer_qids: QualifiedIds) (rules: List RuleSpec): Env Spec =
   let _ = writeLine("finalizeCoType") in
   case qids of
     | [] -> raise(Fail("No type to realize!"))
@@ -730,7 +730,7 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List Rul
     | None -> raise(Fail("type "^show state_qid^" not found!"))
     | Some type_info ->
   {new_spc <- return spc;
-   stored_qids <- return(reverse(findStoredOps(spc, state_qid)));
+   stored_qids <- return(if observer_qids ~= [] then observer_qids else reverse(findStoredOps(spc, state_qid)));
    print("stored_qids: "^anyToString (map show stored_qids)^"\n");
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
    record_ty <- return(mkCanonRecordType(field_pairs));
