@@ -85,7 +85,7 @@ theorem distribute_concat_over_if is [a]
     lst1 ++ (if p then lst2a else lst2b) = (if p then lst1++lst2a else lst1++lst2b)
 
 theorem last_of_append is [a]
-  fa(lst:List a, elt:a) last(lst <| a) = a
+  fa(lst:List a, elt:a) last(lst <| elt) = elt
 
 %% TODO: Move to Sets library:
   theorem set_insert_does_nothing_rewrite is [a]
