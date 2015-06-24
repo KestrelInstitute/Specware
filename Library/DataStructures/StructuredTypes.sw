@@ -1844,4 +1844,8 @@ proof Isa simplify_gt4a
 apply(metis add_gr_0 div_0 neq0_conv semiring_div_class.mod_div_equality')
 end-proof
 
+proof Isa last_of_append
+  apply(metis List__e_lt_bar_def last_snoc)
+end-proof
+
 end-spec
