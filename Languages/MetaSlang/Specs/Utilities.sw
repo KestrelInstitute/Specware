@@ -1258,6 +1258,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                              | _ -> false)
       term
 
+  op [a] containsRefToOps?(term: ATerm a, qids: QualifiedIds): Bool =
+    existsSubTerm (fn t -> case t of
+                             | Fun(Op(qid1,_),_,_) -> qid1 in? qids
+                             | _ -> false)
+      term
+
+
   op opsInTerm(tm: MSTerm): QualifiedIds =
     foldTerm (fn opids -> fn t ->
                 case t of
@@ -1798,6 +1805,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
         Some bod
       | Bind(_, vs, Fun (Bool false,_,_), _) -> Some falseTerm
       | Bind(_, vs, Fun (Bool true,_,_), _) | forall? (fn (_,tyi) -> knownNonEmpty?(tyi, spc)) vs -> Some trueTerm
+      | Apply(Fun(Embedded(qid1), ty1, _), arg, _) ->
+        (case constructorTerm spc arg
+           | Some(qid2, _) -> Some(mkBool(qid1 = qid2))
+           | _ -> None)
       | _ -> None
 
  op tryEval1(term: MSTerm): Option MSTerm =
@@ -1864,6 +1875,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
         %% let pat = e in bod --> bod  if variables in pat don't occur in bod
       | Let([(pat, tm)], bod, _) | sideEffectFree tm && disjointVars?(patternVars pat, freeVars bod) ->
         Some bod
+      | Apply(Fun(Embedded(qid1), ty1, _), arg, _) ->
+        (case arg
+           | Fun(Embed(qid2, _), _, _) -> Some(mkBool(qid1 = qid2))
+           | Apply(Fun(Embed(qid2, _), _, _), _, _) -> Some(mkBool(qid1 = qid2))
+           | Fun(Op(qid2, _), _, _) | qid1 = qid2 -> Some(mkBool true)
+           | Apply(Fun(Embedded(qid1), ty1, _), Apply(Fun(Op(qid2, _), _, _), _, _), _) | qid1 = qid2 -> Some(mkBool true)
+           | _ -> None)
       | _ -> None
 
  op reduceTerm1(term: MSTerm): MSTerm =
@@ -2997,15 +3015,16 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
      | Apply(Fun(Embed(qid, _), _, _), _, _) -> Some(qid, [])
      | Fun(f as Op(qid, _), ty, _) ->
        (case findTheOp(spc, qid) of
-        | None -> None
-        | Some info ->
+          | None -> None
+          | Some info ->
         case constructorFun?(f, ty, spc) of
-        | Some f -> Some(qid, [])
-        | None -> 
+          | Some f -> Some(qid, [])
+          | None -> 
         let (_, _, dfn) = unpackFirstTerm info.dfn in
         case constructorTerm spc dfn of
-        | None -> None
-        | Some(id, qids) -> Some(id, qid :: qids))
+          | None -> None
+          | Some(id, qids) -> Some(id, qid :: qids))
+     | Apply(f as Fun(Op _, _, _), _, _) -> constructorTerm spc f
      | _ -> None
 
  op constructorOfType? (spc: Spec) (op_qid: QualifiedId) (ty: MSType): Bool =
