@@ -103,6 +103,10 @@ SpecCalc qualifying spec
   %         return ((memo_s', STHMap.update (memo_i', key, res)), res) }
 
 
+  op compatibleQId? (Qualified(pat_q, pat_id): QualifiedId) (Qualified(src_q, src_id): QualifiedId): Bool =
+    pat_id = src_id && (pat_q = src_q || pat_q = UnQualified)
+
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% Perhaps evaluating a translation should yield a morphism rather than just 
@@ -203,6 +207,7 @@ SpecCalc qualifying spec
     })
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  op allowShadowingOfWild?: Bool = true
 
   op  makeTranslators : Bool -> Spec -> Renaming -> QualifiedIds -> Bool -> SpecCalc.Env Translators
   def makeTranslators allow_exceptions? dom_spec (renaming_rules, position) immune_op_names allow_extra_rules? =
@@ -212,6 +217,7 @@ SpecCalc qualifying spec
     let types = dom_spec.types in
     let ops   = dom_spec.ops   in
     let props = allProperties dom_spec in
+    let dom_prop_names = removeDuplicates(map propertyName props) in
     let 
       def op_fixity(qid: QualifiedId): Fixity =
         case findTheOp(dom_spec, qid) of
@@ -296,20 +302,14 @@ SpecCalc qualifying spec
 		return ()
 	       }
 
-      def complain_if_prop_collision (props, prop_translator: Translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
+      def complain_if_prop_collision (prop_translator: Translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
 	let collisions =
 	    foldriAQualifierMap (fn (other_dom_q, other_dom_id, other_target, collisions) ->
 				 case other_target of
 				   | (other_new_qid, _) ->
 				     if other_new_qid = this_new_qid then
 				       let other_dom_qid = Qualified (other_dom_q, other_dom_id) in
-				       let Some this_info = findAQualifierMap (props, this_dom_q, this_dom_id) in
-				       if other_dom_qid in? this_info.names then
-					 %% ok to map aliases to same new name
-					 collisions
-				       else
-					 %% not legal to map unrelated type names to the same new name
-					 collisions ++ [other_dom_qid]
+                                       collisions ++ [other_dom_qid]
 				     else
 				       collisions)
 	                        []
@@ -436,8 +436,7 @@ SpecCalc qualifying spec
 		    {raise_later (TranslationError ("Illegal to translate from base type : "
                                                       ^ (explicitPrintQualifiedId dom_qid),
 						    rule_pos));
-		     return translators
-		    }
+		     return translators}
 		  else
                     let type_translator = translators.types in
 		    case findAQualifierMap (type_translator, dom_q, dom_id) of
@@ -456,29 +455,23 @@ SpecCalc qualifying spec
                                           (new_type_translator, primary_q, primary_id, (cod_qid, cod_aliases))
                                       else 
                                         new_type_translator);
-			 return (translators << {types = new_type_translator})
-			 }
+			 return (translators << {types = new_type_translator})}
 		      | _  -> 
 			{raise_later (TranslationError ("Multiple rules for source type "
                                                           ^ (explicitPrintQualifiedId dom_qid),
 							rule_pos));
-			 return translators
-			}
+			 return translators}
 		else 
-		  {
-		   raise_later (TranslationError ("Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid), 
+		  {raise_later (TranslationError ("Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid), 
 						  rule_pos));
-		   return translators
-		  })
+		   return translators})
 	      | _ -> 
 		if allow_extra_rules? then
 		  return translators
 		else
-		  {
-		   raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
+		  {raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
 						  rule_pos));
-		   return translators
-		  }
+		   return translators}
 		  
 	      
 	  def add_op_rule translators (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
@@ -537,6 +530,45 @@ SpecCalc qualifying spec
 		   return translators
 		  }
 		  
+          def add_prop_rule translators (dom_qid as Qualified (dom_q, dom_id))
+                dom_props cod_qid cod_aliases =
+	    case dom_props of
+	      | (primary_dom_qid as Qualified (primary_q, primary_id)) :: other_props ->
+	        (if other_props = [] || primary_q = UnQualified then
+                   let prop_translator = translators.props in
+                   case findAQualifierMap (prop_translator, dom_q, dom_id) of
+                     | None -> 
+                       {when allow_exceptions?
+                          (complain_if_prop_collision(prop_translator, dom_q, dom_id, cod_qid, rule_pos));
+                        new_prop_translator
+                          <- return (insertAQualifierMap
+                                       (prop_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
+                        new_prop_translator
+                          <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+                                       %% in rule X +-> Y, X refers to A.X
+                                       %% so both X and A.X should translate to Y
+                                       insertAQualifierMap
+                                         (new_prop_translator, primary_q, primary_id, (cod_qid, cod_aliases))
+                                     else 
+                                       new_prop_translator);
+                        return (translators << {props = new_prop_translator})}
+                     | _  -> 
+                       {raise_later (TranslationError ("Multiple rules for source prop "
+                                                         ^ (explicitPrintQualifiedId dom_qid),
+                                                         rule_pos));
+                        return translators}
+                 else 
+                   {raise_later (TranslationError ("Ambiguous source prop " ^ (explicitPrintQualifiedId dom_qid), 
+                                                   rule_pos));
+                    return translators})
+	      | _ -> 
+            if allow_extra_rules? then
+              return translators
+            else
+              {raise_later (TranslationError ("Unrecognized source prop " ^ (explicitPrintQualifiedId dom_qid),
+                                              rule_pos));
+               return translators}
+
 	  def add_wildcard_rules translators dom_q cod_q cod_aliases =
 	    %% Special hack for aggregate translators: X._ +-> Y._
 	    %% Find all dom types/ops qualified by X, and requalify them with Y
@@ -564,9 +596,10 @@ SpecCalc qualifying spec
 			 }
 		       | _ -> 
 			 {
-			  raise_later (TranslationError ("Multiple (wild) rules for source type "^
-							 (explicitPrintQualifiedId (mkQualifiedId (type_q, type_id))),
-							 rule_pos));
+			  when (~ allowShadowingOfWild?)
+                            (raise_later (TranslationError ("Multiple (wild) rules for source type "^
+                                                              (explicitPrintQualifiedId (mkQualifiedId (type_q, type_id))),
+                                                            rule_pos)));
 			  return type_translator
 			  }
 		   else
@@ -607,9 +640,10 @@ SpecCalc qualifying spec
 		       | _ -> 
 			 %% Candidate already has a rule (e.g. via some explicit mapping)...
 			 {
-			  raise_later (TranslationError ("Multiple (wild) rules for source op "^
-							 (explicitPrintQualifiedId (mkQualifiedId (op_q, op_id))),
-							 rule_pos));
+			  when (~ allowShadowingOfWild?)
+                            (raise_later (TranslationError ("Multiple (wild) rules for source op "^
+			    				     (explicitPrintQualifiedId (mkQualifiedId (op_q, op_id))),
+							   rule_pos)));
 			  return op_translator
 			  }
 						  
@@ -645,15 +679,16 @@ SpecCalc qualifying spec
 					          new_cod_qid
 						  cod_aliases);
 			  when allow_exceptions? 
-			   (complain_if_prop_collision (ops, prop_translator, prop_q, prop_id, new_cod_qid, rule_pos));
+			   (complain_if_prop_collision (prop_translator, prop_q, prop_id, new_cod_qid, rule_pos));
 			  return (insertAQualifierMap (prop_translator, prop_q, prop_id, (new_cod_qid, [new_cod_qid])))
 			 }
 		       | _ -> 
 			 %% Candidate already has a rule (e.g. via some explicit mapping)...
 			 {
-			  raise_later (TranslationError ("Multiple (wild) rules for source prop "^
-							 (explicitPrintQualifiedId (mkQualifiedId (prop_q, prop_id))),
-							 rule_pos));
+			  when (~ allowShadowingOfWild?)
+                            (raise_later (TranslationError ("Multiple (wild) rules for source prop "^
+                                                              (explicitPrintQualifiedId (mkQualifiedId (prop_q, prop_id))),
+                                                            rule_pos)));
 			  return prop_translator
 			  }
 						  
@@ -668,7 +703,7 @@ SpecCalc qualifying spec
 		  %% Check each dom type and op to see if this abstract ambiguous rule applies...
 		  types' <- foldOverQualifierMap extend_type_translator translators.types types;
 		  ops'   <- foldOverQualifierMap extend_op_translator   translators.ops   ops;
-		  props'   <- foldM extend_prop_translator translators.props (allPropertyNames dom_spec);
+		  props'   <- foldM extend_prop_translator translators.props dom_prop_names;
 		  return (translators << { types = types', ops = ops', props = props'})
 		 })
 
@@ -730,8 +765,9 @@ SpecCalc qualifying spec
 	    %% Find a type or an op, and proceed as above
 	    let dom_types = findAllTypes (dom_spec, dom_qid) in
 	    let dom_ops   = if dom_qid in? immune_op_names then [] else findAllOps (dom_spec, dom_qid) in
-	    case (dom_types, dom_ops) of
-	      | ([], []) ->
+            let dom_props = filter (compatibleQId? dom_qid) dom_prop_names in
+	    case (dom_types, dom_ops, dom_props) of
+	      | ([], [], []) ->
                 {
                  if dom_qid in? immune_op_names
                       && ~ (empty? (findAllOps (dom_spec, dom_qid))) then
@@ -748,20 +784,21 @@ SpecCalc qualifying spec
                                                     rule_pos));
                      return translators
                      }
-	      | (_,  []) -> add_type_rule translators dom_qid dom_types cod_qid cod_aliases
-	      | ([], _)  -> add_op_rule   translators dom_qid dom_ops   cod_qid cod_aliases
-	      | (_,  _)  -> {
-			     raise_later (TranslationError ("Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid),
-							    rule_pos));
-			     return translators
-			    }
+	      | (_,  [], []) -> add_type_rule translators dom_qid dom_types cod_qid cod_aliases
+	      | ([], _, [])  -> add_op_rule   translators dom_qid dom_ops   cod_qid cod_aliases
+	      | ([], [], _)  -> add_prop_rule translators dom_qid dom_props cod_qid cod_aliases
+	      | (_,  _, _)   -> {
+                                 raise_later (TranslationError ("Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid),
+                                                                rule_pos));
+                                 return translators
+                                }
     in
       {
        translators <- foldM insert emptyTranslators renaming_rules;
        when allow_exceptions?
         {complain_if_type_collisions_with_priors (types, translators.types);
 	 complain_if_op_collisions_with_priors   (ops, translators.ops);
-	 complain_if_prop_collisions_with_priors   (props, translators.props)};
+	 complain_if_prop_collisions_with_priors (props, translators.props)};
        return translators
        }
 
@@ -942,10 +979,18 @@ SpecCalc qualifying spec
 	if new_qid = qid then pat else EmbedPat(new_qid, o_p, ty, pos)
       | _ -> pat
 
+  op translateSpecElementsAux(translators: Translators, opt_renaming: Option Renaming, elements: SpecElements,
+                              currentUID?: Option UnitId, base: Spec): MemoMonad SpecElements =
+    case elements  of
+      | [] -> return []
+      | x::xs -> {xNew <- translateSpecElement translators opt_renaming currentUID? base x;
+                  xsNew <- translateSpecElementsAux(translators, opt_renaming, xs, currentUID?, base);
+                  return (xNew :: xsNew)}
+
   op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> MemoMonad SpecElements
   def translateSpecElements translators opt_renaming elements currentUID? =
     let base = getBaseSpec() in
-    mapM (translateSpecElement translators opt_renaming currentUID? base) elements
+    translateSpecElementsAux(translators, opt_renaming, elements, currentUID?, base)
 
   op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> Spec -> SpecElement -> MemoMonad SpecElement
   def translateSpecElement translators opt_renaming currentUID? base el =
@@ -960,7 +1005,9 @@ SpecCalc qualifying spec
         (case opt_renaming of
            | _ | spc = base || opt_renaming = None ->
              % If we are translating the base spec, or we have no renaming, no need to do anything
-             return (Import (sp_tm, spc, els, a))
+             {new_els <- if spc = base then return els
+                           else translateSpecElementsAux(translators, opt_renaming, els, currentUID?, base);
+              return (Import (sp_tm, spc, new_els, a))}
 
            | Some (renaming as (rules, pos)) ->
              % let _ = writeLine ("translating import: evaluating "
