@@ -47,7 +47,7 @@ op [a,b,c] optlens_compose (l1 : OptLens (a,b), l2 : OptLens (b,c)) : OptLens (a
                     l1.optlens_set a b_new})}
 
 (* Separation of two option lenses: the writes commute *)
-op [a,b,c] oplens_separate? (l1: OptLens (a,b), l2: OptLens (a,c)) : Bool =
+op [a,b,c] optlens_separate? (l1: OptLens (a,b), l2: OptLens (a,c)) : Bool =
   fa (a,b,c)
     {a' <- l1.optlens_set a b; l2.optlens_set a c} =
     {a' <- l2.optlens_set a c; l1.optlens_set a b}
