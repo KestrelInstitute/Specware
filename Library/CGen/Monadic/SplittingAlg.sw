@@ -1,6 +1,6 @@
 (* Splitting Algebras (FIXME: documentation) *)
 
-S = SplittingAlg qualifying spec
+SplittingAlg qualifying spec
   import /Library/Structures/Data/Monad/CPO
 
   (***
@@ -26,16 +26,17 @@ S = SplittingAlg qualifying spec
         | [] -> false
         | _ :: spl1' -> splitting_leq (spl1', spl2)))
 
+  (* The splitting that represents all of an entity *)
+  op splitting_unity : Splitting = []
+
+  (* Any splitting is a sub-portion of unity *)
+  theorem leq_splitting_unity is
+    fa (spl) splitting_leq (spl, splitting_unity)
+
   (* Two splittings are compatible iff they represent non-overlapping portions;
   i.e., iff they are incomparable w.r.t. the above partial order *)
   op splittings_compatible? (spl1: Splitting, spl2: Splitting) : Bool =
     ~(splitting_leq (spl1, spl2)) && ~(splitting_leq (spl2, spl1))
-
-  (* A splitting is compatible with a list iff it is compatible with each
-  element of the list *)
-  op splitting_compatible_with_list? (spl: Splitting,
-                                      spls: List Splitting) : Bool =
-    forall? (fn spl' -> splittings_compatible? (spl, spl')) spls
 
   (* Two splittings are combinable iff their two portions can be combined into a
   whole; i.e., iff they are the left and right splits of the same splitting *)
@@ -53,141 +54,255 @@ S = SplittingAlg qualifying spec
       | (SplitR :: spl1', SplitL :: spl2') -> spl1'
       | _ -> []
 
+
+  (***
+   *** Lists of Splittings
+   ***)
+
+  (* A splitting is compatible with a list iff it is compatible with each
+  element of the list *)
+  op splitting_compatible_with_list? (spl: Splitting,
+                                      spls: List Splitting) : Bool =
+    forall? (fn spl' -> splittings_compatible? (spl, spl')) spls
+
   (* Whether a splitting can be combined with some element of a list *)
   op splitting_combinable_with_list? (spl: Splitting,
                                       spls: List Splitting) : Bool =
   exists? (fn spl' -> splittings_combinable? (spl, spl')) spls
 
+  (* Combine a splitting with a list of splittings *)
+  op combine_splitting_with_list (spl: Splitting, spls: List Splitting |
+                                  splitting_combinable_with_list? (spl, spls)) : List Splitting =
+    case spls of
+      | [] -> [] (* This case cannot actually happen *)
+      | spl'::spls' ->
+        if splittings_combinable? (spl, spl') then
+          combine_splittings (spl, spl') :: spls'
+        else
+          spl' :: combine_splitting_with_list (spl, spls')
+
+  (* combine_splitting_with_list yields a list of the same size as the input *)
+  theorem combine_splitting_with_list_length is
+    fa (spl,spls)
+      splitting_combinable_with_list? (spl, spls) =>
+      length (combine_splitting_with_list (spl, spls)) = length spls
+
+  (* A splitting is "in" a splitting set iff the portion of an entity
+  represented by the splitting is contained in the portion represented by the
+  splitting set. This is essentially an extension of the splitting_leq partial
+  order. *)
+  op splitting_in? (spl: Splitting, spls: List Splitting) : Bool =
+    exists? (fn spl' -> splitting_leq (spl, spl')) spls
+
+  (* Combining a splitting with a list preserves splitting_in *)
+  theorem combine_splitting_in? is
+    fa (spl,spl',spls)
+      splitting_combinable_with_list? (spl',spls) =>
+      splitting_in? (spl, spl'::spls) <=>
+        splitting_in? (spl, combine_splitting_with_list (spl', spls))
+
 
   (***
-   *** Fragments
+   *** Splitting Sets
    ***)
 
-  (* A fragment represents some portion of a splittable entity; e.g., a fragment
-  might contain the left split and also the right split of the right split of an
-  entity. Fragments are represented as lists of splitting words which are all
-  compatible, since a portion of an object cannot contain the same sub-portion
-  multiple times. Additionally, we require fragments to be in a canonical form,
-  where any sub-portions that could potentially be combined are. *)
-  op valid_fragment? (spls : List Splitting) : Bool =
+  (* A splitting set is a set of zero or more splittings, which we here
+  represent as a list. Splitting sets are also required to be canonical, meaning
+  that they cannot be simplified by combining two splittings. Note, however,
+  that we do *not* require the splittings in a splitting set to be compatible
+  with each other, meaning that, intuitively, a splitting set could represent
+  some duplication of the portions of a splittable entity; e.g., a splitting set
+  could contain two copies of the "left half" of an entity. Splitting sets that
+  do not contain such duplication are "consistent", as discussed below. *)
+  op canonical_splitting_set? (spls : List Splitting) : Bool =
     case spls of
       | [] -> true
       | spl :: spls' ->
-        splitting_compatible_with_list? (spl, spls') &&
         ~(splitting_combinable_with_list? (spl, spls')) &&
-        valid_fragment? spls'
-  type Fragment = { l : List Splitting | valid_fragment? l }
+        canonical_splitting_set? spls'
+  type SplittingSet = { l : List Splitting | canonical_splitting_set? l }
 
-  (* A splitting is "in" a fragment iff the portion of an entity represented by
-  the splitting is contained in the portion represented by the fragment. This is
-  essentially an extension of the splitting_leq partial order. *)
-  op splitting_in_fragment? (spl: Splitting, frag: Fragment) : Bool =
-    exists? (fn spl' -> splitting_leq (spl, spl')) frag
+  (* Canonicalize a splitting set; this is inductive in the size of the list *)
+  op canonicalize_splitting_list (spls : List Splitting) : SplittingSet =
+    case spls of
+      | [] -> []
+      | spl::spls' ->
+        let spls'' = canonicalize_splitting_list spls' in
+        if splitting_combinable_with_list? (spl, spls'') then
+          canonicalize_splitting_list (combine_splitting_with_list (spl, spls'))
+        else
+          spl::spls''
 
-  (* The fragment partial order intuitively is the notion of sub-portion *)
-  op fragment_leq : CPO.PartialOrder Fragment =
-  (fn (frag1, frag2) ->
-   forall? (fn spl1 -> splitting_in_fragment? (spl1, frag2)) frag1)
+  (* Add a splitting to a splitting set, maintaining canonicity *)
+  op splitting_set_add (spl: Splitting, splset: SplittingSet) : SplittingSet =
+    canonicalize_splitting_list (spl::splset)
 
-  (* Combine a splitting with a fragment *)
-  op combine_splitting_with_fragment (spl: Splitting, frag: Fragment |
-                                        splitting_compatible_with_list? (spl, frag)) : Fragment =
-  case frag of
-    | [] -> [spl]
-    | spl' :: frag' ->
-      if splittings_combinable? (spl, spl') then
-        combine_splittings (spl, spl') :: frag'
-      else
-        spl' :: combine_splitting_with_fragment (spl, frag')
+  (* Combine two splitting sets *)
+  op combine_splitting_sets (splset1: SplittingSet,
+                             splset2: SplittingSet) : SplittingSet =
+    case splset1 of
+      | [] -> splset2
+      | spl1 :: splset1' ->
+        splitting_set_add (spl1, combine_splitting_sets (splset1', splset2))
 
-  (* Two fragments are compatible iff they are pointwise compatible *)
-  op fragments_compatible? (frag1: Fragment, frag2: Fragment) : Bool =
-    forall? (fn spl1 -> splitting_compatible_with_list? (spl1, frag2)) frag1
+  (* The splitting set partial order intuitively is the notion of sub-portion *)
+  op splitting_set_leq : CPO.PartialOrder SplittingSet =
+  (fn (splset1, splset2) ->
+   forall? (fn spl1 -> splitting_in? (spl1, splset2)) splset1)
 
-  (* Combine two compatible fragments *)
-  op combine_fragments (frag1: Fragment, frag2: Fragment |
-                          fragments_compatible? (frag1, frag2)) : Fragment =
-    case frag1 of
-      | [] -> frag2
-      | spl1 :: frag1' ->
-        combine_splitting_with_fragment (spl1,
-                                         combine_fragments (frag1', frag2))
+  (* The splitting set representing all of an entity *)
+  op splitting_set_unity : SplittingSet = []
+
+  (* A splitting set is consistent iff it is no greater than unity *)
+  op splitting_set_consistent? (splset: SplittingSet) : Bool =
+    splitting_set_leq (splset, splitting_set_unity)
 
 
   (***
-   *** Fragment Trees
+   *** Splitting Expressions
    ***)
 
-  (* FIXME: explain fragment trees *)
-  type RawFragTree =
-      | FragTreeEmpty
-      | FragTreeSplitting Splitting
-      | FragTreeCombine FragTree * FragTree
+  (* A splitting expression is a splitting with an optional variable,
+  represented as a natural number, that quantifies over suffixes *)
+  type SplExpr = Splitting * Option Nat
 
-  (* Interpret a raw fragment tree as a fragment, if possible *)
-  op interp_raw_fragment_tree (ft: RawFragTree) : Option Fragment =
-    case ft of
-      | FragTreeEmpty -> Some []
-      | FragTreeSplitting spl -> Some [spl]
-      | FragTreeCombine (ft1, ft2) ->
-        (case (interp_raw_fragment_tree ft1, interp_fragment_tree ft2) of
-           | (Some frag1, Some frag2) ->
-             if fragments_compatible? (frag1, frag2) then
-               Some (combine_fragments (frag1, frag2))
-             else None
-           | _ -> None)
+  (* We can only compare splitting expressions with the same suffix, since
+  variables could be instantiated to anything. The only exception is unity,
+  which is always greater than anything else. *)
+  op splexpr_leq : CPO.PartialOrder SplExpr =
+    fn (sexpr1, sexpr2) ->
+      sexpr2 = (splitting_unity, None) ||
+      (splitting_leq (sexpr1.1, sexpr2.1) && sexpr1.2 = sexpr2.2)
 
-  (* A raw fragment tree is canonical iff it does not contain a combine applied
-  to splitting words SplitL::w and SplitR::w or two empty and empty *)
-  op raw_fragment_tree_canonical? (ft: RawFragTree) : Bool =
-    case ft of
-      | FragTreeEmpty -> true
-      | FragTreeSplitting spl -> true
-      | FragTreeCombine (FragTreeSplitting (SplitL::w1), FragTreeSplitting (SplitR::w2)) ->
-        ~(w1 = w2)
-      | FragTreeCombine (FragTreeEmpty, FragTreeEmpty) -> false
-      | FragTreeCombine (ft1, ft2) ->
-        raw_fragment_tree_canonical? ft1 && raw_fragment_tree_canonical? ft2
+  (* A variable assignment assigns a splitting to each variable *)
+  type SplAssign = Nat -> Splitting
 
-  (* A fragment tree is a raw fragment tree with a valid interpretation *)
-  type FragTree = { rft : RawFragTree |
-                     raw_fragment_tree_canonical? rft &&
-                     ex (frag) interp_raw_fragment_tree rft = Some frag }
+  (* Instantiate a splitting expression using a variable assignment *)
+  op instantiate_splexpr (asgn: SplAssign) (sexpr: SplExpr) : Splitting =
+    sexpr.1 ++ (case sexpr.2 of
+                  | None -> []
+                  | Some n -> asgn n)
 
-  (* Interpret a fragment tree that is known to be valid *)
-  op interp_fragment_tree (ft: FragTree) : Fragment =
-    case interp_raw_fragment_tree ft of Some frag -> frag
+  (* splexpr_leq holds iff all instantiations satisfy splitting_leq *)
+  theorem splexpr_leq_instantiate is
+    fa (sexpr1,sexpr2)
+      splexpr_leq (sexpr1,sexpr2) <=>
+        (fa (asgn) splitting_leq (instantiate_splexpr asgn sexpr1,
+                                  instantiate_splexpr asgn sexpr2))
 
-  (* Fragment trees are compatible iff their interpretations are *)
-  op fragment_trees_compatble? (ft1 : FragTree, ft2 : FragTree) : Bool =
-    fragments_compatible? (interp_fragment_tree ft1, interp_fragment_tree ft2)
+  (* Two splitting expressions are combinable iff their splittings are
+  combinable and their suffixes are equal *)
+  op splexprs_combinable? (sexpr1: SplExpr, sexpr2: SplExpr) : Bool =
+    (splittings_combinable? (sexpr1.1, sexpr2.1) && sexpr1.2 = sexpr2.2)
 
-  (* Combine compatible fragment trees *)
-  op combine_fragment_trees (ft1 : FragTree, ft2 : FragTree |
-                               fragment_trees_compatble? (ft1, ft2)) : FragTree =
-    case (ft1, ft2) of
-      | (FragTreeEmpty, FragTreeEmpty) -> FragTreeEmpty
-      | (FragTreeSplitting (SplitL::w1), FragTreeSplitting (SplitR::w2)) ->
-        if w1 = w2 then FragTreeSplitting w1 else
-          FragTreeCombine (FragTreeSplitting (SplitL::w1), FragTreeSplitting (SplitR::w2))
-      | _ -> FragTreeCombine (ft1, ft2)
+  (* Two splitting exprs are combinable iff all instantiations are *)
+  theorem splexpr_combinable_instantiate is
+    fa (sexpr1,sexpr2)
+      splexprs_combinable? (sexpr1,sexpr2) <=>
+        (fa (asgn) splittings_combinable?
+           (instantiate_splexpr asgn sexpr1,
+            instantiate_splexpr asgn sexpr2))
 
-  (*  *)
+  (* Combine two combinable splittings *)
+  op combine_splexprs (sexpr1: SplExpr, sexpr2: SplExpr |
+                         splexprs_combinable? (sexpr1,sexpr2)) : SplExpr =
+    (combine_splittings (sexpr1.1, sexpr2.1), sexpr1.2)
 
-  (* The ordering on fragment terms, which orders them by their associated
-  fragments. The optional variables are required to be the same, because,
-  intuitively, two different variables could be instantiated to arbitrary  *)
+  (* Combining splitting expressions commutes with instantiation *)
+  theorem splexpr_leq_instantiate is
+    fa (sexpr1,sexpr2)
+      splexprs_combinable? (sexpr1,sexpr2) =>
+      (fa (asgn)
+         instantiate_splexpr asgn (combine_splexprs (sexpr1, sexpr2))
+         =
+         combine_splittings (instantiate_splexpr asgn sexpr1,
+                             instantiate_splexpr asgn sexpr2))
 
-  (* Two fragment terms are compatible iff their fragments are compatible and
-  their optional variables are the same *)
-  op fragment_terms_compatible? (ft1 : FragTree, ft2 : FragTree) : Bool =
-    fragments_compatible? (fragment_term_fragment ft1,
-                           fragment_term_fragment ft2) &&
-    ft1.2 = ft2.2
 
-  (* Combine compatible fragment terms by combining their fragments *)
-  op combine_fragment_terms (ft1 : FragTree, ft2 : FragTree |
-                               fragment_terms_compatible? (ft1, ft2)) : FragTree =
-    (combine_fragments (ft1, ft2), ft1.2)
+  (***
+   *** Lists of Splitting Expressions
+   ***)
+
+  (* Whether a splitting expr can be combined with some element of a list *)
+  op splexpr_combinable_with_list? (spl: SplExpr, spls: List SplExpr) : Bool =
+  exists? (fn spl' -> splexprs_combinable? (spl, spl')) spls
+
+  (* Combine a splitting expr with a list of splitting exprs *)
+  op combine_splexpr_with_list (spl: SplExpr, spls: List SplExpr |
+                                  splexpr_combinable_with_list? (spl, spls)) : List SplExpr =
+    case spls of
+      | [] -> [] (* This case cannot actually happen *)
+      | spl'::spls' ->
+        if splexprs_combinable? (spl, spl') then
+          combine_splexprs (spl, spl') :: spls'
+        else
+          spl' :: combine_splexpr_with_list (spl, spls')
+
+  (* combine_splexpr_with_list yields a list of the same size as the input *)
+  theorem combine_splexpr_with_list_length is
+    fa (spl,spls)
+      splexpr_combinable_with_list? (spl, spls) =>
+      length (combine_splexpr_with_list (spl, spls)) = length spls
+
+  (* Whether a splitting expression is "in" a list of splitting expressions *)
+  op splexpr_in? (spl: SplExpr, spls: List SplExpr) : Bool =
+    exists? (fn spl' -> splexpr_leq (spl, spl')) spls
+
+  (* Combining a splitting with a list preserves splitting_in *)
+  theorem combine_splexpr_in? is
+    fa (spl,spl',spls)
+      splexpr_combinable_with_list? (spl',spls) =>
+      splexpr_in? (spl, spl'::spls) <=>
+        splexpr_in? (spl, combine_splexpr_with_list (spl', spls))
+
+
+  (***
+   *** Splitting Set Expressions
+   ***)
+
+  (* A splitting set expression is a canonical list of splitting expressions *)
+  op canonical_splexpr_set? (spls : List SplExpr) : Bool =
+    case spls of
+      | [] -> true
+      | spl :: spls' ->
+        ~(splexpr_combinable_with_list? (spl, spls')) &&
+        canonical_splexpr_set? spls'
+  type SplExprSet = { l : List SplExpr | canonical_splexpr_set? l }
+
+  (* Canonicalize a splitting expression set *)
+  op canonicalize_splexpr_list (spls : List SplExpr) : SplExprSet =
+    case spls of
+      | [] -> []
+      | spl::spls' ->
+        let spls'' = canonicalize_splexpr_list spls' in
+        if splexpr_combinable_with_list? (spl, spls'') then
+          canonicalize_splexpr_list (combine_splexpr_with_list (spl, spls'))
+        else
+          spl::spls''
+
+  (* Add a splitting expression to a set, maintaining canonicity *)
+  op splexpr_set_add (spl: SplExpr, splset: SplExprSet) : SplExprSet =
+    canonicalize_splexpr_list (spl::splset)
+
+  (* Combine two splitting expression sets *)
+  op combine_splexpr_sets (splset1: SplExprSet,
+                             splset2: SplExprSet) : SplExprSet =
+    case splset1 of
+      | [] -> splset2
+      | spl1 :: splset1' ->
+        splexpr_set_add (spl1, combine_splexpr_sets (splset1', splset2))
+
+  (* The splitting expression set partial order *)
+  op splexpr_set_leq : CPO.PartialOrder SplExprSet =
+  (fn (splset1, splset2) ->
+   forall? (fn spl1 -> splexpr_in? (spl1, splset2)) splset1)
+
+  (* The splitting expression set representing all of an entity *)
+  op splexpr_set_unity : SplExprSet = []
+
+  (* A splitting expression set is consistent iff it is no greater than unity *)
+  op splexpr_set_consistent? (splset: SplExprSet) : Bool =
+    splexpr_set_leq (splset, splexpr_set_unity)
+
 
 end-spec
