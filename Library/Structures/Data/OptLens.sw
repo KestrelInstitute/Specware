@@ -1,0 +1,49 @@
+OptLens qualifying spec
+  import /Library/General/OptionExt
+
+(* Option lenses are like lenses (see Lens.sw), but where the getter and setter
+   functions can fail, returning None. Stated differently, option lenses are
+   monadic lenses (see MLens.sw) where the monad is Option. The option lens laws
+   are:
+
+     {b <- get a; set a b}       = {get a; Some a}
+     {a' <- set a b; get a'}     = {set a b; Some b}
+     {a' <- set a b1; set a' b2} = set a b2
+
+   These are almost the same as the normal lens laws: rule 1 says that getting
+   the value of a and then setting this value to itself is a essentially no-op;
+   however, the read itself could fail, so it remains in the simpler right-hand
+   side. Similarly, rule 2 says that setting a value and then getting it again
+   just returns the value that was set; again, the setting remains on the
+   right-hand side, since it could fail. Finally, rule 3 says that setting
+   erases any previous setting. *)
+
+(* The "raw" type of monadic lenses, without the laws *)
+type RawOptLens (a,b) = {optlens_get : a -> Option b,
+                         optlens_set : a -> b -> Option a }
+
+(* The monadic lens laws *)
+op [a,b] satisfies_get_put_m (l:RawOptLens (a,b)) : Bool =
+  fa (a) {b <- l.optlens_get a; l.optlens_set a b} = {l.optlens_get a; Some a}
+op [a,b] satisfies_put_get_m (l:RawOptLens (a,b)) : Bool =
+  fa (a,b)
+    {a' <- l.optlens_set a b; l.optlens_get a'} =
+    {a' <- l.optlens_set a b; Some b}
+op [a,b] satisfies_put_put_m (l:RawOptLens (a,b)) : Bool =
+  fa (a,b1,b2)
+    {a' <- l.optlens_set a b1; l.optlens_set a' b2} = l.optlens_set a b2
+
+(* The complete type of monadic lenses *)
+type OptLens (a,b) =
+  { l : RawOptLens (a,b) |
+     satisfies_get_put_m l && satisfies_put_get_m l && satisfies_put_put_m l }
+
+(* Compose two monadic lenses *)
+op [a,b,c] optlens_compose (l1 : OptLens (a,b), l2 : OptLens (b,c)) : OptLens (a,c) =
+   {optlens_get = (fn a -> {b <- l1.optlens_get a; l2.optlens_get b}),
+    optlens_set = (fn a -> fn c ->
+                   {b <- l1.optlens_get a;
+                    b_new <- l2.optlens_set b c;
+                    l1.optlens_set a b_new})}
+
+end-spec
