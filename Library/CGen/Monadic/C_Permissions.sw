@@ -1,12 +1,13 @@
-(* This spec defines an approach to proving functional correctness properties of
-monadic C computations by relating these computations to  *)
+(* FIXME: top-level documentation *)
 
 C_Permissions qualifying spec
   import C_Predicates
+  import /Library/Structures/Data/OptLens
+  import SplittingAlg
 
 
   (***
-   *** Functional values
+   *** Functional Values and Heaps
    ***)
 
   (* To represent C values in logic, we define a universal type for "functional
@@ -17,144 +18,99 @@ C_Permissions qualifying spec
   (* FValue includes lists (FIXME: add other ops for FValue_list) *)
   op FValue_list : List FValue -> FValue
 
+  (* A "functional heap" gives values for portions of an object designator,
+  where "portions" are given by splittings (see SplittingAlg.sw). Functional
+  heaps must be closed under smaller portions as well as under combining
+  portions together. *)
+  type FHeap = { h : Map (ObjectDesignator * Splitting, FValue) |
+                  (fa (d,spl1,spl2)
+                     splitting_leq (spl1,spl2) => (d,spl2) in? (domain h) =>
+                     (d,spl1) in? (domain h)) &&
+                  (fa (d,spl1,spl2)
+                     splittings_combinable? (spl1,spl2) =>
+                     (d,spl1) in? (domain h) => (d,spl2) in? (domain h) =>
+                     (d,combine_splittings (spl1,spl2)) in? (domain h))
+                  }
+
 
   (***
-   *** Value Representations
+   *** Value Abstractions
    ***)
 
   (* FIXME: document all of this! *)
 
-  type StorageFValues = Map (ObjectDesignator, FValue)
+  (* FIXME: abs_rel needs to take in R, or some abstraction of it, in order to
+  abstract function pointers *)
 
-  type ValueReprH =
-    {repr_type_name : TypeName,
-     repr_rel : SplittingWord -> StorageFValues -> Value -> FValue -> Bool,
-     repr_combines_to : FValue * FValue -> FValue -> Bool}
+  (* An AbsDepDesig designates a set of possible dependencies on a value (FIXME:
+  explain this a little better) *)
+  type AbsDepDesig1 =
+     | AbsDep_Member Identifier
+     | AbsDep_Subscript
+     | AbsDep_Deref
+  type AbsDepDesig = List AbsDepDesig1
 
-  type ValueRepr =
-    ValueReprH * (Storage -> Value -> Map (ObjectDesignator, ValueReprH))
+  type ValueAbsH a =
+    {abs_type_name : TypeName,
+     abs_rel : Splitting -> FHeap -> a -> Value -> Bool,
+     abs_combines_to : a * a -> a -> Bool}
 
-  (* Well-formedness of a ValueReprH w.r.t. a predicate on the R type *)
-  op valueReprH_well_formed (r_pred : R -> Bool) (reprh : ValueReprH) : Bool =
-    (* The any Value related by the relation has the correct type *)
+  type ValueAbs a =
+    ValueAbsH a * List (AbsDepDesig * ValueAbsH FValue * OptLens (a, FValue))
+
+  (* Helper type for value abstractions using the FValue type *)
+  type FValueAbs = ValueAbs FValue
+
+  (* Well-formedness of a ValueAbsH w.r.t. a predicate on the R type *)
+  op [a] valueAbsH_well_formed (r_pred : R -> Bool) (absh : ValueAbsH a) : Bool =
+    (* Any Value related by the relation has the correct type *)
     (fa (w,s,v,fv,r)
-       r_pred r && reprh.repr_rel w s v fv =>
-       expandTypeName (r.r_xenv, reprh.repr_type_name) = Some (typeOfValue v))
+       r_pred r && absh.abs_rel w s fv v =>
+       expandTypeName (r.r_xenv, absh.abs_type_name) = Some (typeOfValue v))
     &&
-    (* The combine function commutes with the relation; note that the
-    implication only goes one way, because, e.g., fv1 and fv2 might combine to
-    fv at some other word that is not w *)
-    (fa (w,s,v,fv1,fv2,fv)
-       reprh.repr_rel (SplitL::w) s v fv1 &&
-       reprh.repr_rel (SplitR::w) s v fv2 &&
-       reprh.repr_combines_to (fv1,fv2) fv =>
-       reprh.repr_rel w s v fv
-       )
-    &&
-    (* There is always a way to split an FValue relative to the relation; this
-    is somewhat like a converse to the last condition *)
+
+    (* The combine relation commutes with the abstraction relation (read right
+    to left) and any abstraction can always be split into left and right
+    portions (read left to right) *)
     (fa (w,s,v,fv)
-       reprh.repr_rel w s v fv =>
+       absh.abs_rel w s fv v <=>
        (ex (fv1,fv2)
-          reprh.repr_rel (SplitL::w) s v fv1 &&
-          reprh.repr_rel (SplitR::w) s v fv2 &&
-          reprh.repr_combines_to (fv1,fv2) fv
+          absh.abs_rel (SplitL::w) s fv1 v &&
+          absh.abs_rel (SplitR::w) s fv2 v &&
+          absh.abs_combines_to (fv1,fv2) fv
           ))
 
-  (* Well-formedness of a ValueRepr; requires the top-level ValueReprH and all
-  the dependent ValueReprHs to be well-formed *)
-  op valueRepr_well_formed (r_pred : R -> Bool) (repr : ValueRepr) : Bool =
-    valueReprH_well_formed r_pred repr.1 &&
-    (fa (s,v,d,reprh)
-       repr.2 s v d = Some reprh => valueReprH_well_formed r_pred reprh)
+  (* Well-formedness of a ValueAbs; requires the top-level ValueAbsH and all
+  the dependent ValueAbsHs to be well-formed *)
+  op [a] valueAbs_well_formed (r_pred : R -> Bool) (abs : ValueAbs a) : Bool =
+    valueAbsH_well_formed r_pred abs.1 &&
+    (fa (s,v,d,absh,l)
+       (d,absh,l) in? abs.2 => valueAbsH_well_formed r_pred absh)
+
+  (* FIXME HERE: abs can only depend on values in its deps list *)
 
 
   (***
-   *** Storage representations
+   *** Scope Abstractions
    ***)
 
-  (* A representation of a Storage gives an FValue for each object permission,
-     as well as a flag indicating whether the Storage (if true) or the process /
-     current frame (if false) holds that permission *)
-  type StorageRepr = Map (ObjectPerm, FValue * Bool)
+  type ScopeAbs a = List (Identifier * FValueAbs * OptLens (a, FValue))
 
-  (* Convert a StorageRepr to a "slice", for a particular splitting word, of
-     FValues for each permission on each object in the Storage. *)
-  op storage_repr_values (w : SplittingWord) (r : StorageRepr) : StorageFValues =
-    fn d -> case r (ObjectPerm (d,w)) of
-              | Some (fv, _) -> Some fv
-              | None -> None
+  op [a] scope_abs_well_formed? (r_pred: R -> Bool) (scabs: ScopeAbs a) : Bool =
+    case scabs of
+      | [] -> true
+      | (x,abs,olens) :: scabs' ->
+        valueAbs_well_formed r_pred abs &&
+        forall? (fn (x',abs',olens') -> x ~= x' &&
+                   optlens_separate? (olens,olens')) scabs'
 
-  (* Convert a StorageRepr to a "slice", for a particular splitting word, of
-     FValues for each permission held by the Storage on each object. *)
-  op storage_repr_values_heap (w : SplittingWord) (srepr : StorageRepr) : StorageFValues =
-    fn d -> case srepr (ObjectPerm (d,w)) of
-              | Some (fv, true) -> Some fv
-              | _ -> None
-
-  (* FIXME: document this! *)
-  op storage_repr_as_h? (heap : PermSet, my_held : PermSet, other_held : PermSet)
-                        (s : Storage, srepr : StorageRepr) : Bool =
-    perm_sets_compatible? (my_held, other_held) &&
-    perm_sets_compatible? (heap, combine_perm_sets (my_held, other_held)) &&
-    (let held = combine_perm_sets (my_held, other_held) in
-     let perms = combine_perm_sets (heap, held) in
-     (fa (d,w)
-        let p = ObjectPerm (d,w) in
-        case (perm_set_lookup (p, perms), srepr p) of
-          | (None, None) -> true
-          | (None, Some _) -> false
-          | (Some _, None) -> false
-          | (Some repr, Some (fv, flag)) ->
-            (if flag then perm_set_lookup (p, heap) = Some repr
-             else perm_set_lookup (p, heap) = None) &&
-            (ex (v)
-               (* There is a value v at object designator d *)
-               objectHasValue s d v &&
-               (* v and fv satisfy the predicate *)
-               repr.1.repr_rel w (storage_repr_values_heap w srepr) v fv &&
-               (* The two values below fv combine to fv *)
-               (case (srepr (ObjectPerm (d,SplitL :: w)),
-                      srepr (ObjectPerm (d,SplitR :: w))) of
-                  | (Some (fv_l, _), Some (fv_r, _)) ->
-                    repr.1.repr_combines_to (fv_l, fv_r) fv
-                  | _ -> false) &&
-               (* The perm set uses the required relations repr depends on *)
-               (fa (d',reprh)
-                  repr.2 s v d' = Some reprh =>
-                  (ex (deps')
-                     perm_set_lookup (ObjectPerm (d', w), perms)
-                     = Some (reprh, deps')))
-               )
-            ))
-
-  (***
-   *** Permission Set Terms
-   ***)
-
-  (* FIXME HERE: write this stuff! *)
-
-  type SplittingTerm = | AllPerms | PermVar Nat
-  type ObjTerm = | VarObj Identifier | ValueObj Nat
-  type PermSetTerm = SplittingTerm * ObjTerm
-
-  op permSetTerm_well_formed (r_pred : R -> Bool) (t : PermSetTerm) : Bool
-
-  op evalPermSetTerm (r : R, ws : List SplittingWord) (t : PermSetTerm) : PermSet
-
-  op valsForPermSetTerm (r : R, ws : List SplittingWord)
-                        (srepr : StorageRepr, t : PermSetTerm) : List FValue
-
-  op storage_repr_as? (r : R, ws : List SplittingWord)
-                      (heap : PermSetTerm, my_held : PermSetTerm,
-                       other_held : PermSetTerm)
-                      (s : Storage, srepr : StorageRepr) : Bool
 
 
   (***
    *** Correctness w.r.t. Permissions
    ***)
 
+  (*
   op stmt_correct (r_pred : R -> Bool)
                   (perms_in : PermSetTerm, perms_out : PermSetTerm)
                   (f : List FValue -> List FValue) (m : Monad ()) () : Bool =
@@ -181,5 +137,6 @@ C_Permissions qualifying spec
            valsForPermSetTerm (r, ws) (srepr_in, other_held)
            = valsForPermSetTerm (r, ws) (srepr_out, other_held)
            )
+  *)
 
 end-spec
