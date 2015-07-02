@@ -813,14 +813,13 @@ op hexDigitValue (ch:Char | hexadecimalDigit? ch) : Nat =
   else if isUpperCase ch then ord ch - ord #A + 10
                          else ord ch - ord #a + 10
 
+
+(* Conversion functions for strings *)
+
 (* Combine a sequence of digit values into a number value. We do not use
 fromBigEndian, because that operation is not executable. *)
-
 op combineDigitValues (digits : List Nat, base : Nat) : Nat =
   foldl (fn (val, digit) -> digit + val * base) 0 digits
-
-
-(* Conversion functions for tur *)
 
 op decimalConstantValue (str:String | decimalConstant? str) : Nat =
   combineDigitValues (map digitValue (explode str), 10)
@@ -1962,27 +1961,20 @@ op intOfValue (val:Value) : Monad Int =
 op valueOfInt (i : TypedInt) : Value =
    V_int i
 
-op bitsForNat (n : Nat, len : Nat) : List Bit =
-  if len > 0 then
-    if n >= 2 ** len then
-      B1 :: (bitsForNat (n - 2 ** len, len - 1))
-    else
-      B0 :: (bitsForNat (n, len - 1))
-  else
-    []
-
 (* Create a list of bits from an integer, given a type *)
 op bitsOfInt (ty:Type, i:Int |
                 integerType? ty && i in? rangeOfIntegerType ty) : List Bit =
-  bitsForNat (i, typeBits ty)
+  tcNumber (i, typeBits ty)
 
 (* Create a value from a list of bits, given a type *)
 op valueOfBits (bits:List Bit, ty:Type |
                   integerType? ty && length bits <= typeBits ty) : Value =
-   V_int (ty, combineDigitValues (map (fn b ->
-                                         case b of
-                                           | B1 -> 1
-                                           | B0 -> 0) bits, 2))
+   let i =
+     if length bits = 0 then 0
+     else if signedIntegerType? ty then toNat bits
+     else toInt bits
+   in
+   V_int (ty, i)
 
 (* Each scalar type has a "zero" value. For integers, it is the representation
 of the mathematical 0. For pointers, it is the null pointer. *)
