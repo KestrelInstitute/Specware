@@ -18,10 +18,12 @@ C_Permissions qualifying spec
   (* FValue includes lists (FIXME: add other ops for FValue_list) *)
   op FValue_list : List FValue -> FValue
 
-  (* A "functional heap" gives values for portions of an object designator,
-  where "portions" are given by splittings (see SplittingAlg.sw). Functional
-  heaps must be closed under smaller portions as well as under combining
-  portions together. *)
+  (* A "functional heap" gives values for portions of a pointer, where
+  "portions" are given by splittings (see SplittingAlg.sw). Functional heaps
+  must be closed under smaller portions as well as under combining portions
+  together. *)
+  (* FIXME HERE: FHeap also needs a map from FunctionDesignators to functions on
+  FValues *)
   type FHeap = { h : Map (ObjectDesignator * Splitting, FValue) |
                   (fa (d,spl1,spl2)
                      splitting_leq (spl1,spl2) => (d,spl2) in? (domain h) =>
@@ -32,62 +34,97 @@ C_Permissions qualifying spec
                      (d,combine_splittings (spl1,spl2)) in? (domain h))
                   }
 
+  (* Whether two heaps are equal on all pointers in pred *)
+  op heaps_equal_on (pred: Pointer -> Bool) (heap1: FHeap, heap2: FHeap) : Bool =
+    fa (d, spl) pred (ObjPointer d) => heap1 (d,spl) = heap2 (d,spl)
+
+
+  (***
+   *** Pointer Projections
+   ***)
+
+  (* A pointer projection intuitively represents a set of possible ways to
+  extract a pointer from a value. These "ways" are zero or more steps of taking
+  a struct member and/or taking an array element. For array elements, the
+  designator explicitly does not give an index, but instead implicitly
+  quantifies over all possible indices. *)
+  type PtrProjStep =
+     | PPStep_Member Identifier
+     | PPStep_Subscript
+  type PtrProj = List PtrProjStep
+
+  (* projects_to (pproj, val, ptr) holds iff pproj describes a "way" to project
+  the pointer ptr out of the value val. *)
+  op projects_to (pproj: PtrProj) (val:Value) (ptr:Pointer) : Bool =
+    case (pproj, val) of
+      | ([], V_pointer (_, ptr')) ->
+        ptr = ptr'
+      | ((PPStep_Member memb) :: pproj', V_struct (_, members)) ->
+        (case assoc members memb of
+           | Some val' ->
+             projects_to pproj' val' ptr
+           | None -> false)
+      | (PPStep_Subscript :: pproj', V_array (_, elems)) ->
+        exists? (fn val' -> projects_to pproj' val' ptr) elems
+
 
   (***
    *** Value Abstractions
    ***)
 
-  (* FIXME: document all of this! *)
-
-  (* FIXME: abs_rel needs to take in R, or some abstraction of it, in order to
-  abstract function pointers *)
-
-  (* An AbsDepDesig designates a set of possible dependencies on a value (FIXME:
-  explain this a little better) *)
-  type AbsDepDesig1 =
-     | AbsDep_Member Identifier
-     | AbsDep_Subscript
-     | AbsDep_Deref
-  type AbsDepDesig = List AbsDepDesig1
-
-  type ValueAbsH a =
+  (* A value abstraction relates C values of a given type with some abstract
+  type a. This relation is modulo a functional heap, that abstracts the current
+  storage. An abstraction can be "split" (see SplittingAlg.sw) into a left and a
+  right half, where combines_to relates the possible left- and right-hand sides
+  of an abstraction and their combination. An abstraction can also be dependent
+  on other abstractions on projections of the abstracted value; a value
+  abstraction contains lenses for updating these dependent values in the full
+  value being abstracted. These dependencies are formalized in the following way
+  so that they do not also talk about the dependencies of the dependencies,
+  etc., as this would not be well-founded. *)
+  type ValueAbs_NoDeps a =
     {abs_type_name : TypeName,
      abs_rel : Splitting -> FHeap -> a -> Value -> Bool,
      abs_combines_to : a * a -> a -> Bool}
-
   type ValueAbs a =
-    ValueAbsH a * List (AbsDepDesig * ValueAbsH FValue * OptLens (a, FValue))
+    ValueAbs_NoDeps a * List (PtrProj * ValueAbs_NoDeps FValue * OptLens (a, FValue))
 
   (* Helper type for value abstractions using the FValue type *)
   type FValueAbs = ValueAbs FValue
 
-  (* Well-formedness of a ValueAbsH w.r.t. a predicate on the R type *)
-  op [a] valueAbsH_well_formed (r_pred : R -> Bool) (absh : ValueAbsH a) : Bool =
+  (* Well-formedness of a ValueAbs_NoDeps w.r.t. a predicate on the R type *)
+  op [a] valueAbsND_well_formed? (r_pred : R -> Bool) (absh : ValueAbs_NoDeps a) : Bool =
     (* Any Value related by the relation has the correct type *)
-    (fa (w,s,v,fv,r)
-       r_pred r && absh.abs_rel w s fv v =>
-       expandTypeName (r.r_xenv, absh.abs_type_name) = Some (typeOfValue v))
+    (fa (r,w,heap,val,fval)
+       r_pred r && absh.abs_rel w heap fval val =>
+       expandTypeName (r.r_xenv, absh.abs_type_name) = Some (typeOfValue val))
     &&
-
     (* The combine relation commutes with the abstraction relation (read right
-    to left) and any abstraction can always be split into left and right
+    to left), and any abstraction can always be split into left and right
     portions (read left to right) *)
-    (fa (w,s,v,fv)
-       absh.abs_rel w s fv v <=>
-       (ex (fv1,fv2)
-          absh.abs_rel (SplitL::w) s fv1 v &&
-          absh.abs_rel (SplitR::w) s fv2 v &&
-          absh.abs_combines_to (fv1,fv2) fv
+    (fa (w,heap,val,fval)
+       absh.abs_rel w heap fval val <=>
+       (ex (fval1,fval2)
+          absh.abs_rel (SplitL::w) heap fval1 val &&
+          absh.abs_rel (SplitR::w) heap fval2 val &&
+          absh.abs_combines_to (fval1,fval2) fval
           ))
 
-  (* Well-formedness of a ValueAbs; requires the top-level ValueAbsH and all
-  the dependent ValueAbsHs to be well-formed *)
-  op [a] valueAbs_well_formed (r_pred : R -> Bool) (abs : ValueAbs a) : Bool =
-    valueAbsH_well_formed r_pred abs.1 &&
-    (fa (s,v,d,absh,l)
-       (d,absh,l) in? abs.2 => valueAbsH_well_formed r_pred absh)
-
-  (* FIXME HERE: abs can only depend on values in its deps list *)
+  (* Well-formedness of a ValueAbs *)
+  op [a] valueAbs_well_formed? (r_pred : R -> Bool) (abs : ValueAbs a) : Bool =
+    (* The top-level ValueAbs_NoDeps in abs is well-formed *)
+    valueAbsND_well_formed? r_pred abs.1 &&
+    (* All ValueAbs_NoDeps's in the dependencies are well-formed *)
+    (fa (s,v,dep)
+       dep in? abs.2 => valueAbsND_well_formed? r_pred dep.2) &&
+    (* The ValueAbs_NoDeps can only depend on its dependencies *)
+    (fa (w,heap1,heap2,val,fval)
+       abs.1.abs_rel w heap1 fval val =>
+       heaps_equal_on (fn ptr -> exists? (fn (pproj,_,_) ->
+                                            projects_to pproj val ptr) abs.2)
+                      (heap1, heap2) =>
+       abs.1.abs_rel w heap2 fval val)
+    (* FIXME HERE: relate the lenses... *)
 
 
   (***
@@ -96,11 +133,12 @@ C_Permissions qualifying spec
 
   type ScopeAbs a = List (Identifier * FValueAbs * OptLens (a, FValue))
 
-  op [a] scope_abs_well_formed? (r_pred: R -> Bool) (scabs: ScopeAbs a) : Bool =
+  op [a] scopeAbs_well_formed? (r_pred: R -> Bool) (scabs: ScopeAbs a) : Bool =
     case scabs of
       | [] -> true
       | (x,abs,olens) :: scabs' ->
-        valueAbs_well_formed r_pred abs &&
+        valueAbs_well_formed? r_pred abs &&
+        scopeAbs_well_formed? r_pred scabs' &&
         forall? (fn (x',abs',olens') -> x ~= x' &&
                    optlens_separate? (olens,olens')) scabs'
 
