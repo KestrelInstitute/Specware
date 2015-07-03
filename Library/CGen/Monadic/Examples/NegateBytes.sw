@@ -2,6 +2,8 @@ S1 = spec
   import /Library/General/TwosComplementNumber
   import /Library/General/SizedNats
 
+  op negateByte (n: Nat8) : Nat8 = toNat (not (bits (n,8)))
+
   %% This spec contains a challenge problem for C generation.  The
   %% challenge is to generate C code that implements the Specware
   %% function negateBytes:
@@ -9,9 +11,7 @@ S1 = spec
   %% Take a list of Bytes and negate each of
   %% them, returning the list of negations.
   op negateBytes (input : List Nat8) : List Nat8 =
-    case input of
-    | [] -> []
-    | hd::tl -> toNat (not (bits (hd,8)))::negateBytes tl
+    map negateByte input
 
   %% The generated C code that we want looks like this
 
