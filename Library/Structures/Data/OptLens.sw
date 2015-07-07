@@ -46,11 +46,20 @@ op [a,b,c] optlens_compose (l1 : OptLens (a,b), l2 : OptLens (b,c)) : OptLens (a
                     b_new <- l2.optlens_set b c;
                     l1.optlens_set a b_new})}
 
-(* Separation of two option lenses: the writes commute *)
+(* Separation of lenses: each write commutes with the other lens's operations *)
 op [a,b,c] optlens_separate? (l1: OptLens (a,b), l2: OptLens (a,c)) : Bool =
-  fa (a,b,c)
-    {a' <- l1.optlens_set a b; l2.optlens_set a c} =
-    {a' <- l2.optlens_set a c; l1.optlens_set a b}
+  (* l1's get commutes with l2's set *)
+  (fa (a,c)
+     {b <- l1.optlens_get a; l2.optlens_set a c; Some b} =
+     {a' <- l2.optlens_set a c; l1.optlens_get a'}) &&
+  (* l2's get commutes with l1's set *)
+  (fa (a,b)
+     {c <- l2.optlens_get a; l1.optlens_set a b; Some c} =
+     {a' <- l1.optlens_set a b; l2.optlens_get a'}) &&
+  (* The two sets commute *)
+  (fa (a,b,c)
+     {a' <- l1.optlens_set a b; l2.optlens_set a c} =
+     {a' <- l2.optlens_set a c; l1.optlens_set a b})
   
 
 end-spec
