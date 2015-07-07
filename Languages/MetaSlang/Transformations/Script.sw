@@ -376,10 +376,13 @@ spec
                      | Some(pred, var_projs as _ :: _)->
                        let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
                        let rng = range_*(context.spc, ty, true) in
-                       let sbst = map (fn (v, proj?) ->
-                                         case proj? of
-                                           | None -> (v, result_tm)
-                                           | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
+                       let sbst = mapPartial
+                                    (fn (v, proj?) ->
+                                       if hasRefTo?(result_tm, [v]) then None
+                                       else
+                                       Some(case proj? of
+                                              | None -> (v, result_tm)
+                                              | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm))))
                                     var_projs                                                 
                        in
                        let new_rules = map (fn (v as (_, ty), fn_tm) ->
@@ -519,10 +522,13 @@ spec
                      | Some(pred, var_projs as _ :: _)->
                        let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
                        let rng = range_*(context.spc, ty, true) in
-                       let sbst = map (fn (v, proj?) ->
-                                         case proj? of
-                                           | None -> (v, result_tm)
-                                           | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
+                       let sbst = mapPartial
+                                    (fn (v, proj?) ->
+                                       if hasRefTo?(result_tm, [v]) then None
+                                       else
+                                       Some(case proj? of
+                                              | None -> (v, result_tm)
+                                              | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm))))
                                     var_projs                                                 
                        in
                        let fn_val_assert = mkConj(map (fn (v as (_, ty), fn_tm) -> mkEquality(ty, mkVar v, fn_tm)) sbst) in
@@ -818,15 +824,18 @@ spec
       | "if" -> (fn (t,_) -> embed? IfThenElse t)
       | "let" -> (fn (t,_) -> embed? Let t || embed? LetRec t)
       | "case" -> (fn (t,_) -> case t of
-                                     | Apply(Lambda _, _, _) -> true
-                                     | _ -> false)
+                                 | Apply(Lambda _, _, _) -> true
+                                 | _ -> false)
       | "fn" -> (fn (t,_) -> embed? Lambda t)
       | "the" -> (fn (t,_) -> embed? The t)
       | "fa" -> (fn (t,_) -> case t of
-                                   | Bind(Forall, _, _, _) -> true
-                                   | _ -> false)
+                               | Bind(Forall, _, _, _) -> true
+                               | _ -> false)
       | "ex" -> (fn (t,_) -> case t of
-                                   | Bind(Exists, _, _, _) -> true
+                               | Bind(Exists, _, _, _) -> true
+                               | _ -> false)
+      | "embed?" -> (fn (t,_) -> case t of
+                                   | Apply(Fun(Embedded _, _, _), _, _) -> true
                                    | _ -> false)
       | _ -> (fn (t,p_tm) ->
                 case t of

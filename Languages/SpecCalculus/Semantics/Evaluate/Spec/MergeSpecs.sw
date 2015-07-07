@@ -234,7 +234,7 @@ op removeDuplicateImports (spc : Spec) : Spec =
 
              else
 
-               %% If we're impotring something other than the base spec, process it and record it as seen.
+               %% If we're importing something other than the base spec, process it and record it as seen.
 
                %% Each seen entry contains the original spec and top-level non-import elements.
                %% (We deliberately ignore imports within entries.)

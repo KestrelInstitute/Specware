@@ -1439,7 +1439,11 @@ AnnSpecPrinter qualifying spec
 	       else 
 	       %% for now, showx is broken, but simply changing spc to im_sp is not the fix...
 	       %% use sp, not im_sp, to get correct context for show
-	       ppSpecElementsAux context spc import_directions im_elements result)
+               let (index, ppResult) = ppSpecElementsAux context spc import_directions im_elements result in
+               (index, [(0, blockFill (0,
+                               [(0, context.pp.Import), 
+                                (2, ppImportTerm context import_directions im_sp_tm)]))]
+                  ++ ppResult))
 	       
 	 | Op (qid,def?,_) ->
            % let _ = writeLine("printing op "^show qid^" "^show def?) in

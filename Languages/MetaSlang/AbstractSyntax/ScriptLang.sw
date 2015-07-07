@@ -325,12 +325,24 @@ op mkMetaRule (spc: Spec) (qid: QualifiedId): RuleSpec =
 op dummyTypedFun: TypedFun = TVal(BoolV false)
 op mkMetaRule0 (qid: QualifiedId): RuleSpec =
   MetaRule(qid, dummyTypedFun, simpleMetaRuleAnnTypeValue) % 2nd arg is a placeholder
-op mkTermTransform (id: Id): Script =
+
+op tyInfoToDefaultArg (ty_info: MTypeInfo): Option AnnTypeValue =
+  case ty_info
+    | Spec -> Some(SpecV dummySpec)
+    | TransOpName -> Some(TransOpNameV dummyQualifiedId)
+    | TransTerm -> Some(TransTermV dummyMSTerm)
+    | TraceFlag -> Some(TraceFlagV false)
+    | PathTerm -> Some(PathTermV(dummyMSTerm, []))
+    | _ -> None
+
+op mkTermTransform (id: Id) (args: List AnnTypeValue): Script =
   let Some(ty_info, ty_fn) = lookupMSTermTransformInfo id in
-  TermTransform(id, ty_fn, ArrowsV[SpecV dummySpec,
-                                   TransOpNameV dummyQualifiedId,
-                                   TransTermV dummyMSTerm,
-                                   TraceFlagV false])
+  let ty_infos = case ty_info
+                   | Arrows(mtis, _) -> mtis
+                   | _ -> []
+  in
+  TermTransform(id, ty_fn, ArrowsV(mapPartial tyInfoToDefaultArg ty_infos
+                                   ++ args))
 
 op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
 op mkStrengthen(qid: QualifiedId): RuleSpec = Strengthen qid

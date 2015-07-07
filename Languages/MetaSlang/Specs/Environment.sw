@@ -226,30 +226,6 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
  %-                           | Some(dom,rng) -> printType(Arrow(dom,rng)))) in
  %-   res
 
-
-% def SpecEnvironment.stringType : MSType = Base (Qualified ("String",  "String"), [], noPos)
-% def boolType                   : MSType = Boolean noPos
-% def SpecEnvironment.charType   : MSType = Base (Qualified ("Char",    "Char"),   [], noPos)
-% def intType                    : MSType = Base (Qualified ("Integer", "Int"),    [], noPos)
-
-%% This is no different than MetaSlang.patternType 
-% op SpecEnvironment.patternType : MSPattern -> MSType
-% def SpecEnvironment.patternType = fn
-%   | AliasPat   (pat1, _,       _) -> SpecEnvironment.patternType pat1
-%   | VarPat     ((_,srt),       _) -> srt
-%   | EmbedPat   (_,_,srt,       _) -> srt
-%   | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
-%                                                             (id, SpecEnvironment.patternType pat)) 
-%                                                            idpatternlist in
-%                                      Product (fields, noPos)
-%   | WildPat     (srt,          _) -> srt
-%   | StringPat   _                 -> SpecEnvironment.stringType
-%   | BoolPat     _                 -> boolType
-%   | CharPat     _                 -> SpecEnvironment.charType
-%   | NatPat      _                 -> intType
-%   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternType pat
-
-
  op mkRestrict    : Spec * {pred : MSTerm, term : MSTerm} -> MSTerm
  op mkProjectTerm : Spec * Id * MSTerm                    -> MSTerm
  def mkRestrict (sp, {pred, term}) = 

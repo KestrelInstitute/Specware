@@ -1133,6 +1133,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        -> getConjuncts p ++ getConjuncts q
      | _ -> [t]
 
+ op [a] conjunction?(t: ATerm a): Bool =
+   case t of
+     | Apply(Fun(And,_,_), _,_) -> true
+     | _ -> false
+
  op [a] disjunction?(t: ATerm a): Bool =
    case t of
      | Apply(Fun(Or,_,_), _,_) -> true
@@ -1589,6 +1594,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    case tryEvalOne spc t of
      | Some t1 -> t1
      | None    -> t
+
+ op makeEquality (spc: Spec) (t1 : MSTerm, t2 : MSTerm) : MSTerm =
+   mkEquality(inferType(spc, t1), t1, t2)
 
  op reduceEqual(t1: MSTerm, t2: MSTerm, eq?: Bool, spc: Spec): Option(MSTerm) =
    case (t1, t2) of
