@@ -25,13 +25,13 @@ Utilities qualifying spec
  def patternToTerm(pat) = 
      case pat
        of EmbedPat(con,None,ty,a) -> 
-          Some(Fun(Op(con,Nonfix),ty,a))
+          Some(Fun(Op(con,Constructor0),ty,a))
         | EmbedPat(con,Some p,ty,a) -> 
           (case patternToTerm(p)
              of None -> None
 	      | Some (trm) -> 
 		let ty1 = patternType p in
-		Some (Apply(Fun(Op(con, Nonfix),Arrow(ty1,ty,a),a),trm,a)))
+		Some (Apply(Fun(Op(con, Constructor1),Arrow(ty1,ty,a),a),trm,a)))
         | RecordPat(fields,a) -> 
 	  let
 	     def loop(new,old) = 
@@ -65,11 +65,11 @@ Utilities qualifying spec
    let def patToTPV pat =
          case pat
            of EmbedPat(con, None, ty, a) -> 
-              (Fun(Op(con, Nonfix), ty, a), [], [])
+              (Fun(Op(con, Constructor0), ty, a), [], [])
             | EmbedPat(con, Some p, ty, a) -> 
               let (trm, conds, vs) = patToTPV p in
               let ty1 = patternType p in
-              (Apply(Fun(Op(con, Nonfix), Arrow(ty1, ty, a), a), trm, a), conds, vs)
+              (Apply(Fun(Op(con, Constructor1), Arrow(ty1, ty, a), a), trm, a), conds, vs)
             | RecordPat(fields, a) -> 
               let
                  def loop(new, old, old_conds, old_vs) = 
@@ -118,7 +118,12 @@ Utilities qualifying spec
         of None -> None
          | Some p_fields -> Some(RecordPat(p_fields, a)))
      | Fun(Embed(con,false),ty,a) -> Some(EmbedPat(con,None,ty,a))
+     | Fun(Op(con,Constructor0),ty,a) -> Some(EmbedPat(con,None,ty,a))
      | Apply(Fun(Embed(con,true), Arrow(_,ty,_),_),trm,a) ->
+       (case termToPattern trm of
+        | None -> None
+        | Some p -> Some(EmbedPat(con,Some p,ty,a)))
+     | Apply(Fun(Op(con,Constructor1), Arrow(_,ty,_),_),trm,a) ->
        (case termToPattern trm of
         | None -> None
         | Some p -> Some(EmbedPat(con,Some p,ty,a)))
@@ -3020,7 +3025,9 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
  op constructorTerm (spc: Spec) (tm: MSTerm): Option(QualifiedId * QualifiedIds) =
    case tm of
      | Fun(Embed (qid, _), _, _) -> Some(qid, [])
-     | Apply(Fun(Embed(qid, _), _, _), _, _) -> Some(qid, [])
+     | Apply(Fun(Embed(qid, _), _, _), _, _)  -> Some(qid, [])
+     | Fun(f as Op(qid, Constructor0), ty, _) -> Some(qid, [])
+     | Fun(f as Op(qid, Constructor1), ty, _) -> Some(qid, [])
      | Fun(f as Op(qid, _), ty, _) ->
        (case findTheOp(spc, qid) of
           | None -> None

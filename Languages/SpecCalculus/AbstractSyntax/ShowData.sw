@@ -1357,7 +1357,7 @@ op ppFun (fun:MSFun) : WLPretty =
                                         ppBreak]
     | Restrict -> ppString "Restrict"
     | Relax -> ppString "Relax"
-    | Op (qid,fix) -> ppConcat[ppString "(Op ", ppQualifiedId qid, % ppString " ", ppFixity fix, 
+    | Op (qid,fix) -> ppConcat[ppString "(Op ", ppQualifiedId qid,  ppString " ", ppFixity fix, 
                                ppString ")"]
     | Project id ->
       ppConcat [ppString "(Project ", ppID id, ppString ")"]
@@ -1382,6 +1382,8 @@ op ppFixity (fix: Fixity) : WLPretty =
                                      ppString (show n),
                                      ppString ")"]
     | Nonfix           -> ppString "Nonfix"
+    | Constructor0     -> ppString "Constructor0"
+    | Constructor1     -> ppString "Constructor1"
     | Unspecified      -> ppString "Unspecified-fixity"
     | Error fixities   -> ppConcat [
                                     ppString "(ErrorFixity [",

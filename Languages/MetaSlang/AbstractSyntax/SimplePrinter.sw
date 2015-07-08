@@ -388,8 +388,10 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | PChoose   qid -> ppGrConcat [ppString "choose[",   ppQualifiedId qid, ppString "] "]
       | Restrict      -> ppString "restrict"
       | Relax         -> ppString "relax"
-      | Op (qid,Nonfix)      -> ppQualifiedId qid
-      | Op (qid,Unspecified) -> ppQualifiedId qid
+      | Op (qid,Nonfix)       -> ppQualifiedId qid
+      | Op (qid,Constructor0) -> ppQualifiedId qid
+      | Op (qid,Constructor1) -> ppQualifiedId qid
+      | Op (qid,Unspecified)  -> ppQualifiedId qid
       | Op (qid,fix) -> 
           ppGrConcat [
             ppString "(",
@@ -452,6 +454,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 				      ppString (Nat.show n)
 				     ]
       | Nonfix           -> ppNil % ppString "Nonfix"
+      | Constructor0     -> ppNil % ppString "Constructor0"
+      | Constructor1     -> ppNil % ppString "Constructor1"
       | Unspecified      -> ppNil % ppString "Unspecified"
       | Error fixities   -> ppConcat [
 				      ppString "conflicting fixities: [",

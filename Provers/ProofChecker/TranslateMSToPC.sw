@@ -787,5 +787,7 @@ Translate qualifying spec
     case fxty of
       | Nonfix -> prefix
       | Infix _ -> infix
+      | Constructor0 -> prefix
+      | Constructor1 -> prefix
       | Unspecified -> prefix
 endspec

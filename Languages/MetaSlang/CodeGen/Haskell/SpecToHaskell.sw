@@ -2872,8 +2872,10 @@ def termFixity c term =
                    | None ->   (Some(prString(makeIdentifier haskell_id)), Nonfix, curried, reversed))
               | None ->
                 case fixity of
-                  | Unspecified -> (None, Nonfix, false, false)
-                  | Nonfix -> (None, Nonfix, false, false)
+                  | Unspecified  -> (None, Nonfix, false, false)
+                  | Constructor0 -> (None, Nonfix, false, false)
+                  | Constructor1 -> (None, Nonfix, false, false)
+                  | Nonfix       -> (None, Nonfix, false, false)
                   | Infix(assoc, precnum) -> (Some(ppInfixId c id), Infix(assoc, convertPrecNum precnum), true, false))
          | And            -> (Some(prString "&&"), Infix (Right, 3), true, false)
          | Or             -> (Some(prString "||"), Infix (Right, 2), true, false)

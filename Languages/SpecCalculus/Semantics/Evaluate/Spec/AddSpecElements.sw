@@ -164,7 +164,8 @@ SpecCalc qualifying spec
                               | None -> coprod_ty_tm
                               | Some arg_ty -> Arrow(arg_ty, coprod_ty_tm, pos)
                 in
-                addOp [fld_qid] Nonfix false (maybePiTypedTerm(tvs, Some op_ty, Any pos)) spc pos)
+                let constr_type = if some? o_param_ty then Constructor1 else Constructor0 in
+                addOp [fld_qid] constr_type false (maybePiTypedTerm(tvs, Some op_ty, Any pos)) spc pos)
          spc fields
      | Pi(tvs, ty, _) -> addOpsForCoProduct spc ty_qid ty tvs
      | _ -> return spc

@@ -145,6 +145,8 @@ MetaSlang qualifying spec
   | TwoNames       Id * Id * Fixity    % Before elaborateSpec
 
  type Fixity        = | Nonfix 
+                      | Constructor0   % Nullary constructor
+                      | Constructor1   % Constructor that takes argument
                       | Infix Associativity * Precedence 
                       | Unspecified 
                       %% The following is used only when combining specs,

@@ -58,7 +58,7 @@ op newCoProductOpInfos (spc          : Spec,
 
          let op_dfn  = maybePiTerm (tvs, TypedTerm (op_body, op_type, atPos)) in
          let op_info = {names           = [op_name], 
-                        fixity          = Nonfix, 
+                        fixity          = if some? opt_alt_type then Constructor1 else Constructor0, 
                         dfn             = op_dfn,
                         fullyQualified? = false}
          in

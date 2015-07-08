@@ -291,13 +291,13 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
  def patternToTerm(context,pat,vars,S) = 
      case pat
        of EmbedPat(con,None,srt,a) -> 
-          Some(Fun(Op(con, Nonfix),srt,a),vars,S)
+          Some(Fun(Op(con, Constructor0),srt,a),vars,S)
         | EmbedPat(con,Some p,srt,a) -> 
           (case patternToTerm(context,p,vars,S)
              of None -> None
 	      | Some (trm,vars,S) -> 
 		let srt1 = patternType p in
-		Some (Apply(Fun(Op(con, Nonfix),Arrow(srt1,srt,a),a),trm,a),vars,S))
+		Some (Apply(Fun(Op(con, Constructor1),Arrow(srt1,srt,a),a),trm,a),vars,S))
         | RecordPat(fields,a) -> 
 	  let
 	     def loop(new,old,vars,S):PatternToTermOut = 

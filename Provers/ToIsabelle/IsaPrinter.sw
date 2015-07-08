@@ -4312,6 +4312,8 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
      | Infix (Right, n) -> prConcat [prString "infixr ",
                                      prString (show n)]
      | Nonfix           -> prEmpty % prString "Nonfix"
+     | Constructor0     -> prEmpty % prString "Constructor0"
+     | Constructor1     -> prEmpty % prString "Constructor1"
      | Unspecified      -> prEmpty % prString "Unspecified"
      | Error fixities   -> prConcat [prString "conflicting fixities: [",
                                      prPostSep 0 blockFill (prString ",")
@@ -4443,8 +4445,10 @@ op termFixity (c: Context) (term: MSTerm): Option Pretty * Fixity * Bool * Bool 
                    | None ->   (Some(prSymString isa_id), Nonfix, curried, reversed))
               | None ->
                 case fixity of
-                  | Unspecified -> (None, Nonfix, false, false)
-                  | Nonfix -> (None, Nonfix, false, false)
+                  | Unspecified  -> (None, Nonfix, false, false)
+                  | Constructor0 -> (None, Nonfix, false, false)
+                  | Constructor1 -> (None, Nonfix, false, false)
+                  | Nonfix       -> (None, Nonfix, false, false)
                   | Infix(assoc, precnum) -> (Some(ppInfixId id), Infix(assoc, convertPrecNum precnum),
                                               true, false))
          | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 35), true, false)

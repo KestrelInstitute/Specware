@@ -156,7 +156,9 @@ AnnSpecPrinter qualifying spec
        (case termOp of
           | Op(Qualified("List", "Cons"), _) -> Infix (Right, 24)
 	  | Op (_, fixity) -> (case fixity of
-				 | Unspecified -> Nonfix
+				 | Unspecified  -> Nonfix
+				 | Constructor0 -> Nonfix
+				 | Constructor1 -> Nonfix
 				 | _ -> fixity)
           | Embed(Qualified(_, "Cons"), true) -> Infix (Right, 24)
 	  | And            -> Infix (Right, 15) 
@@ -1154,6 +1156,8 @@ AnnSpecPrinter qualifying spec
          | _ ->
            (case info.fixity of
               | Nonfix           -> []
+              | Constructor0     -> []
+              | Constructor1     -> []
               | Unspecified      -> []
               | Infix (Left, i)  -> [(4, string (" infixl "^Nat.show i))]
               | Infix (Right, i) -> [(4, string (" infixr "^Nat.show i))])
@@ -1180,6 +1184,8 @@ AnnSpecPrinter qualifying spec
                      | _ ->
                        [(0, case info.fixity of
                               | Nonfix         -> string ""
+                              | Constructor0   -> string ""
+                              | Constructor1   -> string ""
                               | Unspecified    -> string ""
                               | Infix (Left, i)  -> string (" infixl "^Nat.show i)
                               | Infix (Right, i) -> string (" infixr "^Nat.show i))]
@@ -1188,6 +1194,8 @@ AnnSpecPrinter qualifying spec
                  else
                    [(0, case info.fixity of
                                     | Nonfix         -> string ""
+                                    | Constructor0   -> string ""
+                                    | Constructor1   -> string ""
                                     | Unspecified    -> string ""
                                     | Infix (Left, i)  -> string (" infixl "^Nat.show i)
                                     | Infix (Right, i) -> string (" infixr "^Nat.show i)),

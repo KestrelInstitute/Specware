@@ -1260,6 +1260,8 @@ ASWPrinter qualifying spec
                                          | Right -> ppString "right ",
                                        ppString (show n)]
       | Nonfix           -> ppString "nonfix"
+      | Constructor0     -> ppString "nonfix"
+      | Constructor1     -> ppString "nonfix"
       | Unspecified      -> ppString "unspecified"
       | Error fixities   -> ppConcat [
                                       ppString "error [",
