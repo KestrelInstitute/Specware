@@ -13,7 +13,7 @@ C_DSL qualifying spec
     lookupIdentifierValue id
 
   (* Integer constants *)
-  op ICONST (str : String) : Monad C.Value =
+  op ICONST (str : IntegerConstant) : Monad C.Value =
     evaluateIntegerConstant str
 
   (* Unary operators *)

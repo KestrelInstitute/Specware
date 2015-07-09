@@ -1,5 +1,5 @@
 Examples_spec = spec
-  import C_DSL
+  import ../C_DSL
 
   (* Below is the semantic object for the following function:
 
@@ -53,15 +53,24 @@ end-spec
 % README: need to load lisp for GenerateC.sw before running this!
 Examples_impl =
 transform Examples_spec by
-{at copyByte_C { unfold copyByte; generateC}
+{at copyByte_C  { unfold copyByte;  generateC}
    ;
  at copyBytes_C { unfold copyBytes; generateC}
    ;
  makeDefsFromPostConditions [copyByte_C, copyBytes_C]
  }
 
+Examples_impl1 =
+transform Examples_spec by
+{at copyByte_C  { unfold copyByte;  rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
+   ;
+ at copyBytes_C { unfold copyBytes; rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
+   ;
+ makeDefsFromPostConditions [copyByte_C, copyBytes_C]
+ }
+
 Examples_printed = spec
-  import Examples_impl, CPrettyPrinter
+  import Examples_impl, ../CPrettyPrinter
 
   op copyByte_String : String = printTranslationUnitToString [copyByte_C]
   op copyBytes_String : String = printTranslationUnitToString [copyBytes_C]
