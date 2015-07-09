@@ -1303,10 +1303,13 @@ op defVars(c:CClass):List (Id * MSType) =
 
 
 op classifyClause (args:BTArgs) (l:List MSTerm):List CClass =
-case l of
+  classifyClauseHelper args args.vars l
+
+op classifyClauseHelper (args:BTArgs)(undefVars:List (Id * MSType))(l:List MSTerm):List CClass = 
+ case l of
   | [] -> []
   | (t::ts) ->
-    case classify args t of
+    case classify args undefVars t of
       % When defining, we remove the set of defined vars from the set
       % of all variables -- this prevents some misclassification of
       % some terms as definitions, when the really should be CCase
@@ -1316,8 +1319,11 @@ case l of
       % where 'definitions' should come before usage.
       | c as CDef (dvars, defn, refs, b, t1, t2) ->
         let newVars = diffVars (args.vars) dvars in
-        c::classifyClause (args << { vars = newVars})  ts
-      | c -> c::classifyClause args ts
+        c::(classifyClauseHelper args newVars ts)
+      | c as CCase (pat, _, _,_, _) ->
+        let newVars = diffVars (args.vars) (patternVars pat) in
+        c::(classifyClauseHelper args newVars ts)
+      | c -> c::(classifyClauseHelper args undefVars ts)
 
 
 op debugClassify? : Bool = false
@@ -1325,13 +1331,13 @@ op traceClassify(s:String):() =
   if debugClassify? then writeLine s else ()
 
 % Given a term, classify it 
-op classify(args:BTArgs)(t:MSTerm):CClass =
+op classify(args:BTArgs)(undefVars:List (Id * MSType))(t:MSTerm):CClass =
   let _ = traceClassify ("Classifying " ^ printTerm t) in
-  let t' = classifyAux args t in
+  let t' = classifyAux args undefVars t in
   let _ = traceClassify (printClass t') in
   t'
 
-op classifyAux(args:BTArgs)(t:MSTerm):CClass =
+op classifyAux(args:BTArgs) (undefVars:List (Id * MSType)) (t:MSTerm):CClass =
 
   let def theVars tm = map (fn x -> x.1) (filter (fn (i,_) -> i in? (map (fn v -> v.1) args.vars)) (freeVars tm)) in
   let def getTy (tm:MSTerm):MSType = inferType (args.spc,tm) in
@@ -1341,12 +1347,13 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
   in
   case t of
     % ~(expr)
-    | Apply(Fun(Not,_,_), arg, appPos) -> negateClass (classifyAux args arg)
+    | Apply(Fun(Not,_,_), arg, appPos) -> negateClass (classifyAux args undefVars arg)
     
     % s' = expr
     | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v = args.stateVar -> CConstrain (l,r,theVars r,true,getEqTy eqTy)
+       | v = args.stateVar ->
+      CConstrain (l,r,theVars r,true,getEqTy eqTy)
 
     % expr = s' 
     | Apply (Fun (Equals,eqTy,eqPos), 
@@ -1384,23 +1391,23 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars l,r,theVars r,true, getEqTy eqTy,getTy r)
+      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) undefVars)) pvars -> CDef (patternVars l,r,theVars r,true, getEqTy eqTy,getTy r)
         
     % v = expr
     | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],r,theVars r,true,getEqTy eqTy,getTy r)
+      | v in? (map (fn v -> v.1) undefVars) -> CDef ([(v,ty)],r,theVars r,true,getEqTy eqTy,getTy r)
 
 
     % expr = (v1,...,vn) 
     | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars r,l,theVars l,true, getEqTy eqTy, getTy l)
+      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) undefVars)) pvars -> CDef (patternVars r,l,theVars l,true, getEqTy eqTy, getTy l)
         
     % expr = v
     | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],l,theVars l,true, getEqTy eqTy, getTy l)
+      | v in? (map (fn v -> v.1) undefVars) -> CDef ([(v,ty)],l,theVars l,true, getEqTy eqTy, getTy l)
 
         
     | Apply (Fun (Equals,eqTy,eqPos), 
