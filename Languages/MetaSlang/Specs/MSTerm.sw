@@ -67,7 +67,10 @@ op mkProduct (types : MSTypes) : MSType =
      Product (loop (1, types), noPos)
 
 op mkCanonRecordType (fields : MSProductFields) : MSType =
- mkRecordType (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) fields)
+  mkRecordType (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) fields)
+
+op sortFields(qids: QualifiedIds): QualifiedIds =
+  sortGT(fn (Qualified(_,id1), Qualified(_,id2)) -> id1 > id2) qids
 
 op mkCanonCoProduct (alts: MSCoProductFields) : MSType =
  mkCoProduct  (sortGT (fn ((Qualified(_,id1),_), (Qualified(_,id2),_)) -> id1 > id2) alts)

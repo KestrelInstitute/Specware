@@ -1274,8 +1274,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                              | _ -> false)
       term
 
+  op [a] containsRefToType?(term: ATerm a, qid: QualifiedId): Bool =
+    qid in? typesInTerm term
 
-  op opsInTerm(tm: MSTerm): QualifiedIds =
+  op [a] opsInTerm(tm: ATerm a): QualifiedIds =
     foldTerm (fn opids -> fn t ->
                 case t of
                   | Fun(Op(qid,_),_,_) | qid nin? opids ->
@@ -1285,7 +1287,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
               fn result -> fn _ -> result)
       [] tm
 
-  op opsInType(ty: MSType): QualifiedIds =
+  op [a] opsInType(ty: AType a): QualifiedIds =
     foldType (fn result -> fn t ->
                 case t of
                   | Fun(Op(qid,_),_,_) | qid nin? result -> qid::result
@@ -1295,7 +1297,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
       [] ty
 
-  op typesInTerm(tm: MSTerm): QualifiedIds =
+  op [a] typesInTerm(tm: ATerm a): QualifiedIds =
     foldTerm (fn result -> fn _ -> result,
               fn result -> fn t ->
                 case t of
@@ -1305,7 +1307,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
       [] tm
 
-  op typesInType(ty: MSType): QualifiedIds =
+  op [a] typesInType(ty: AType a): QualifiedIds =
     foldType (fn result -> fn _ -> result,
               fn result -> fn t ->
                 case t of

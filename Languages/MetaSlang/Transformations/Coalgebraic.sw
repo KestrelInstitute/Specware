@@ -390,7 +390,7 @@ op findTypeWithQId(qid: QualifiedId, ty: MSType): MSType =
     | Some ty -> ty
     | None -> mkBase(qid, [])
 
-op postConditionOpsReferencing(spc: Spec, qids: QualifiedIds): QualifiedIds =
+op postConditionOpsReferencingOps(spc: Spec, qids: QualifiedIds): QualifiedIds =
   foldOpInfos
     (fn (info, found_qids) ->
       let  (tvs, ty, tm) = unpackFirstTerm info.dfn in
@@ -401,6 +401,19 @@ op postConditionOpsReferencing(spc: Spec, qids: QualifiedIds): QualifiedIds =
           primaryOpName info :: found_qids
         | _ -> found_qids)
     [] spc.ops
+
+op postConditionOpsReferencingType(spc: Spec, qid: QualifiedId): QualifiedIds =
+  foldOpInfos
+    (fn (info, found_qids) ->
+      let  (tvs, ty, tm) = unpackFirstTerm info.dfn in
+      if ~(anyTerm? tm) then found_qids
+      else
+      case getPostCondn(ty, spc) of
+        | Some condn | containsRefToType?(condn, qid) ->
+          primaryOpName info :: found_qids
+        | _ -> found_qids)
+    [] spc.ops
+
 
 op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
   foldOpInfos
@@ -783,15 +796,20 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds, observer_qids: Q
     | None -> raise(Fail("type "^show state_qid^" not found!"))
     | Some type_info ->
   {new_spc <- return spc;
-   stored_qids <- return(if observer_qids ~= [] then observer_qids else reverse(findStoredOps(spc, state_qid)));
+   stored_qids <- return(if observer_qids ~= [] then observer_qids else sortFields(findStoredOps(spc, state_qid)));
+   (case findLeftmost (fn qid -> none?(findTheOp(spc, qid))) stored_qids
+      | Some qid -> raise(Fail("Op "^show qid^" not in spec!"))
+      | _ -> return());
    print("stored_qids: "^anyToString (map show stored_qids)^"\n");
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
-   record_ty <- return(mkCanonRecordType(field_pairs));
+   record_ty <- return(mkRecordType(field_pairs));
    new_spc <- return(if stored_qids = [] then new_spc
                      else addTypeDef(new_spc, state_qid,
                                      maybePiType(freeTyVars record_ty, record_ty)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
-   fn_qids_to_transform <- return(postConditionOpsReferencing(new_spc, stored_qids));
+   fn_qids_to_transform <- return(if stored_qids = []
+                                    then postConditionOpsReferencingType(new_spc, state_qid)
+                                  else postConditionOpsReferencingOps(new_spc, stored_qids));
    script <- return(At(map Def fn_qids_to_transform,
                        mkSteps[mkSimplify(map Unfold stored_qids)]));
    new_spc <- interpret(new_spc, script);
