@@ -105,7 +105,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(trace?:TraceFlag)
 
     % Look at each clause, and each atomic expression in that clause, and
     % classify its syntactic form.
-    let cclauses : List (List CClass) = map (List.map (classify args)) (flatten is) in
+    let cclauses : List (List CClass) = map (classifyClause args) (flatten is) in
     %% Remove any atomic expressions representing true.
     let noTauto : List (List CClass) = map (fn clause -> filter (fn a -> ~ (isTrueAtom? a)) clause) cclauses in
     let noContra = filter (fn clause -> ~ (exists? (fn a ->  (isFalseAtom? a)) clause)) noTauto in
@@ -1301,7 +1301,16 @@ op defVars(c:CClass):List (Id * MSType) =
     | CDef(vars,_,_,_,_,_) -> vars
     | _ -> []
 
-op debugClassify? : Bool = false % true      
+
+op classifyClause (args:BTArgs) (l:List MSTerm):List CClass =
+case l of
+  | [] -> []
+  | (t::ts) ->
+    case classify args t of
+      | c -> c::classifyClause args ts
+
+
+op debugClassify? : Bool = false
 op traceClassify(s:String):() =
   if debugClassify? then writeLine s else ()
 
@@ -1422,8 +1431,11 @@ op defineLocals(defs:List CClass)(clauses:List (List CClass)):(List (List CClass
            case atom of
              | CDef ([var as (v,ty)],t,deps,b,_,_) ->
                  if exists? (fn (v',ty') -> v' = v && equalType? (ty, ty')) vars
-                  then % let _ = writeLine ("Updated" ^ printClass atom) in
-                       CAtom (mkEquality (ty,mkVar (v,ty),t), v::deps, b,boolType)
+                   then % let _ = writeLine ("Updated" ^ printClass atom) in
+                     case termToPattern t of
+                       | Some pat -> % If the term is a construction, then we turn it into a CCase, not an Atom.
+                          CCase (pat, mkVar var, [v],true, ty)
+                       | None -> CAtom (mkEquality (ty,mkVar (v,ty),t), v::deps, b,boolType)
                  else % let _ = writeLine ("Skipping" ^ printClass atom) in
                       atom
              | _ -> atom
