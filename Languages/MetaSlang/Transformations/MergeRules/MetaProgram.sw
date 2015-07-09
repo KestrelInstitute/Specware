@@ -1307,6 +1307,16 @@ case l of
   | [] -> []
   | (t::ts) ->
     case classify args t of
+      % When defining, we remove the set of defined vars from the set
+      % of all variables -- this prevents some misclassification of
+      % some terms as definitions, when the really should be CCase
+      % (e.g. v1 = Some v2, where v1 and v2 are both ex. quant.
+      % variables, or 'h1 = 1', when h1 is a variable defined by an
+      % earlier clause. This does require an ordering on the clause,
+      % where 'definitions' should come before usage.
+      | c as CDef (dvars, defn, refs, b, t1, t2) ->
+        let newVars = diffVars (args.vars) dvars in
+        c::classifyClause (args << { vars = newVars})  ts
       | c -> c::classifyClause args ts
 
 
@@ -1397,12 +1407,12 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
              Record ([(_,l), (_,r)], argPos), appPos) ->
         (case termToPattern r of
               | Some (pat as EmbedPat (con,vars,pty,_)) ->
-     % expr = pat
-                  CCase (pat, l, theVars l,true, getEqTy eqTy)
+                % expr = pat
+                  CCase (pat, l, theVars l,true, getTy l)
               | _ ->  (case termToPattern l of
                            | Some (pat as EmbedPat (con,vars,pty,_)) ->
-     % pat = expr
-                             CCase (pat, r, theVars r,true, getEqTy eqTy)
+                             % pat = expr
+                             CCase (pat, r, theVars r,true, getTy r)
                            | _ -> CAtom (t,theVars t,true, boolType)))
 
    % otherwise
