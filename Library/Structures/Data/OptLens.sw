@@ -23,20 +23,20 @@ type RawOptLens (a,b) = {optlens_get : a -> Option b,
                          optlens_set : a -> b -> Option a }
 
 (* The monadic lens laws *)
-op [a,b] satisfies_get_put_m (l:RawOptLens (a,b)) : Bool =
+op [a,b] satisfies_get_put_opt (l:RawOptLens (a,b)) : Bool =
   fa (a) {b <- l.optlens_get a; l.optlens_set a b} = {l.optlens_get a; Some a}
-op [a,b] satisfies_put_get_m (l:RawOptLens (a,b)) : Bool =
+op [a,b] satisfies_put_get_opt (l:RawOptLens (a,b)) : Bool =
   fa (a,b)
     {a' <- l.optlens_set a b; l.optlens_get a'} =
     {a' <- l.optlens_set a b; Some b}
-op [a,b] satisfies_put_put_m (l:RawOptLens (a,b)) : Bool =
+op [a,b] satisfies_put_put_opt (l:RawOptLens (a,b)) : Bool =
   fa (a,b1,b2)
     {a' <- l.optlens_set a b1; l.optlens_set a' b2} = l.optlens_set a b2
 
 (* The complete type of monadic lenses *)
 type OptLens (a,b) =
   { l : RawOptLens (a,b) |
-     satisfies_get_put_m l && satisfies_put_get_m l && satisfies_put_put_m l }
+     satisfies_get_put_opt l && satisfies_put_get_opt l && satisfies_put_put_opt l }
 
 (* Compose two monadic lenses *)
 op [a,b,c] optlens_compose (l1 : OptLens (a,b), l2 : OptLens (b,c)) : OptLens (a,c) =
