@@ -11,6 +11,7 @@ spec
   import /Languages/MetaSlang/Transformations/MetaTransform
   import /Languages/MetaSlang/Transformations/Simple
   import /Languages/MetaSlang/Transformations/MergeRules
+%  import /Languages/MetaSlang/Transformations/CacheOps
 
   def posOf(tr: TransformExpr): Position =
     case tr of
@@ -508,7 +509,7 @@ spec
        : Env(List AnnTypeValue) =
     let len_tes = length tes in
     let len_ty_infos = length(filter explicitArg? ty_infos) in
-    % let _ = writeLine("tetatvs:\n"^anyToString tes^"\n"^show ty_infos) in
+    % let _ = (writeLine("tetatvs:\n"^anyToString tes); app (writeLine o show) ty_infos) in
     if len_tes > len_ty_infos
       then raise(TransformError(pos, "Too many arguments to transform"))
     else
@@ -553,6 +554,26 @@ spec
 
       | ([], (Opt _)::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                     return((OptV None)::r_atvs)}
+      %% Redundant with lower down, but was shadowed by next case
+      | ((te1 as Options(l_tes, pos))::te_rst, (Opt (List ty_i1))::ty_i_rst) ->
+        % let _ = writeLine("tetatvs Options matching Opt List\n"^anyToString l_tes^"\n"^show ty_i1) in
+        {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, ty_i1, spc)) l_tes;
+         let atvs = mapPartial id o_atvs in
+         if length atvs = length l_tes
+           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
+                 return(OptV(Some(ListV atvs))::r_atvs)}
+           else
+           {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
+            case o_atv of
+             | None -> if no_optionals?
+                         then raise(TransformError(pos, if status.ignored_formal?
+                                                          then "Unexpected argument type"
+                                                        else "Expected argument: "^show(List ty_i1)))
+                       else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {ignored_formal? = true});
+                             return((OptV(None))::r_atvs)}
+             | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
+                             return(OptV(Some(ListV [atv1]))::r_atvs)}}}
+        
       | ((Options([te1], pos))::te_rst, (Opt ty_i1)::ty_i_rst) ->
         {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
          case o_atv of

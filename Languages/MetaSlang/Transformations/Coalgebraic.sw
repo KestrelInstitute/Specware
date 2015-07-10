@@ -787,7 +787,9 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
 
 %% op SpecTransform.doNothing(spc: Spec): Spec = spc
 
-op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds, observer_qids: QualifiedIds) (dont_make_defs?: Bool): Env Spec =
+op SpecTransform.finalizeCoType(spc: Spec)
+     (qids: QualifiedIds, observer_qids: Option(QualifiedIds))
+     (dont_make_defs?: Bool): Env Spec =
   let _ = writeLine("finalizeCoType") in
   case qids of
     | [] -> raise(Fail("No type to realize!"))
@@ -796,7 +798,9 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds, observer_qids: Q
     | None -> raise(Fail("type "^show state_qid^" not found!"))
     | Some type_info ->
   {new_spc <- return spc;
-   stored_qids <- return(if observer_qids ~= [] then observer_qids else sortFields(findStoredOps(spc, state_qid)));
+   stored_qids <- return(case observer_qids 
+                           | Some ids -> ids
+                           | _ -> sortFields(findStoredOps(spc, state_qid)));
    (case findLeftmost (fn qid -> none?(findTheOp(spc, qid))) stored_qids
       | Some qid -> raise(Fail("Op "^show qid^" not in spec!"))
       | _ -> return());
@@ -807,9 +811,7 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds, observer_qids: Q
                      else addTypeDef(new_spc, state_qid,
                                      maybePiType(freeTyVars record_ty, record_ty)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
-   fn_qids_to_transform <- return(if stored_qids = []
-                                    then postConditionOpsReferencingType(new_spc, state_qid)
-                                  else postConditionOpsReferencingOps(new_spc, stored_qids));
+   fn_qids_to_transform <- return(postConditionOpsReferencingType(new_spc, state_qid));
    script <- return(At(map Def fn_qids_to_transform,
                        mkSteps[mkSimplify(map Unfold stored_qids)]));
    new_spc <- interpret(new_spc, script);
