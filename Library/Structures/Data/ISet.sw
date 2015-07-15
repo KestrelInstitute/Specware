@@ -16,12 +16,34 @@ ISet qualifying spec
   op [a] iSetInter (s1:ISet a, s2:ISet a) : ISet a =
     fn x:a -> s1 x && s2 x
 
-  % An EndoRelation is a relation from a type to itself
-  type EndoRelation a = ISet (a * a)
+  (***
+   *** Relations
+   ***)
 
-  % forming the cross product of two relations
-  op [a,b] relCross (R1: EndoRelation a, R2: EndoRelation b) : EndoRelation (a * b) =
+  % A Relation is a set of pairs
+  type Relation (a,b) = ISet (a * b)
+
+  % compose two relations
+  op [a,b,c] relCompose (R1: Relation (a,b), R2: Relation (b,c)) : Relation (a,c) =
+    fn (a,c) -> ex (b) R1 (a,b) && R2 (b,c)
+
+  % take the cross product of two relations
+  op [a1,a2,b1,b2] relCross (R1: Relation (a1,b1), R2: Relation (a2,b2))
+    : Relation (a1 * a2, b1 * b2) =
     fn ((a1,b1),(a2,b2)) -> R1 (a1,a2) && R2 (b1,b2)
+
+  % take the cross product of the co-domains of R1 and R2, merging their domains
+  op [a,b1,b2] relCross2 (R1: Relation (a,b1), R2: Relation (a,b2))
+    : Relation (a, b1 * b2) =
+    fn (a,(b1,b2)) -> R1 (a,b1) && R2 (a,b2)
+
+
+  (***
+   *** EndoRelations
+   ***)
+
+  % An EndoRelation is a relation from a type to itself
+  type EndoRelation a = Relation (a,a)
 
   % Reflexivity
   op [a] reflexive? (r: EndoRelation a) : Bool = (fa(x) r(x,x))
