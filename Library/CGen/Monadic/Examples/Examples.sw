@@ -50,17 +50,7 @@ Examples_spec = spec
 
 end-spec
 
-% README: need to load lisp for GenerateC.sw before running this!
 Examples_impl =
-transform Examples_spec by
-{at copyByte_C  { unfold copyByte;  generateC}
-   ;
- at copyBytes_C { unfold copyBytes; generateC}
-   ;
- makeDefsFromPostConditions [copyByte_C, copyBytes_C]
- }
-
-Examples_impl1 =
 transform Examples_spec by
 {at copyByte_C  { unfold copyByte;  rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
    ;
