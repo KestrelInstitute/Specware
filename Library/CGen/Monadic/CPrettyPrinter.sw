@@ -135,17 +135,79 @@ op printIdentifier (id:Identifier) : PP0 =
 op printConstant (c:IntegerConstant) : PP0 =
   print (intToString (integerConstantValue c))
 
+(* In order to simplify the printing of expressions, we unify lvalues and
+non-lvalue expressions into a single type, UnifiedExpression. We also unify the
+address and indirection operators into the single type UUnaryOp. *)
+type UUnaryOp =
+  | UUOp_ADDR
+  | UUOp_STAR
+  | UUOp_PLUS
+  | UUOp_MINUS
+  | UUOp_NOT
+  | UUOp_NEG
+
+type UnifiedExpression =
+  | UE_ident     Identifier
+  | UE_const     IntegerConstant
+  | UE_unary     UUnaryOp * UnifiedExpression
+  | UE_binary    UnifiedExpression * BinaryOp * UnifiedExpression
+  | UE_cond      UnifiedExpression * UnifiedExpression * UnifiedExpression
+  | UE_member    UnifiedExpression * Identifier
+  | UE_memberp   UnifiedExpression * Identifier
+  | UE_subscript UnifiedExpression * UnifiedExpression
+  | UE_cast      TypeName * UnifiedExpression
+
+(* Convert a UnaryOp to a UUnaryOp *)
+op toUUnaryOp (uop: UnaryOp) : UUnaryOp =
+  case uop of
+    | UOp_PLUS -> UUOp_PLUS
+    | UOp_MINUS -> UUOp_MINUS
+    | UOp_NOT -> UUOp_NOT
+    | UOp_NEG -> UUOp_NEG
+
+(* Convert an Expression to a unified expression *)
+op toUnified (expr:Expression) : UnifiedExpression =
+  case expr of
+    | E_Strict strict_expr -> toUnifiedStrict strict_expr
+    | E_LValue lv -> toUnifiedLValue lv
+
+op toUnifiedStrict (expr:StrictExpression) : UnifiedExpression =
+  case expr of
+    | E_const c ->
+      UE_const c
+    | E_unary (uop, expr') ->
+      UE_unary (toUUnaryOp uop, toUnified expr')
+    | E_addr lv ->
+      UE_unary (UUOp_ADDR, toUnifiedLValue lv)
+    | E_binary (expr1, bop, expr2) ->
+      UE_binary (toUnified expr1, bop, toUnified expr2)
+    | E_cond (expr1, expr2, expr3, _) ->
+      UE_cond (toUnified expr1, toUnified expr2, toUnified expr3)
+    | E_member (expr', id) -> UE_member (toUnifiedStrict expr', id)
+    | E_cast (tp_name, expr') ->
+      UE_cast (tp_name, toUnified expr')
+
+op toUnifiedLValue (lv:LValue) : UnifiedExpression =
+  case lv of
+    | LV_ident id -> UE_ident id
+    | LV_star expr -> UE_unary (UUOp_STAR, toUnified expr)
+    | LV_member (lv, id) -> UE_member (toUnifiedLValue lv, id)
+    | LV_memberp (expr, id) -> UE_memberp (toUnified expr, id)
+    | LV_subscript (expr1, expr2) ->
+      UE_subscript (toUnified expr1, toUnified expr2)
+
+
 (* Unary and binary operators are printed by printing their corresponding
 symbols. *)
 
-op printUnaryOp (uop:UnaryOp) : PP0 =
+op printUUnaryOp (uop:UUnaryOp) : PP0 =
   case uop of
-  | UOp_ADDR  -> print "&"
-  | UOp_STAR  -> print "*"
-  | UOp_PLUS  -> print "+"
-  | UOp_MINUS -> print "-"
-  | UOp_NOT   -> print "~"
-  | UOp_NEG   -> print "!"
+  | UUOp_ADDR  -> print "&"
+  | UUOp_STAR  -> print "*"
+  | UUOp_PLUS  -> print "+"
+  | UUOp_MINUS -> print "-"
+  | UUOp_NOT   -> print "~"
+  | UUOp_NEG   -> print "!"
 
 op printBinaryOp (bop:BinaryOp) : PP0 =
   case bop of
@@ -231,36 +293,36 @@ op kindPrec : ExpressionKind -> Nat = fn
 (* We map the expressions in our abstract syntax to their kinds and to their
 numeric precedences. *)
 
-op exprKind (expr:Expression) : ExpressionKind =
+op exprKind (expr:UnifiedExpression) : ExpressionKind =
   case expr of
-  | E_ident _             -> PRIM
-  | E_const _             -> PRIM
-  | E_unary _             -> UNARY
-  | E_binary (_, BinOp_MUL,  _) -> MUL
-  | E_binary (_, BinOp_DIV,  _) -> MUL
-  | E_binary (_, BinOp_REM,  _) -> MUL
-  | E_binary (_, BinOp_ADD,  _) -> ADD
-  | E_binary (_, BinOp_SUB,  _) -> ADD
-  | E_binary (_, BinOp_SHL,  _) -> SHIFT
-  | E_binary (_, BinOp_SHR,  _) -> SHIFT
-  | E_binary (_, BinOp_LT,   _) -> REL
-  | E_binary (_, BinOp_GT,   _) -> REL
-  | E_binary (_, BinOp_LE,   _) -> REL
-  | E_binary (_, BinOp_GE,   _) -> REL
-  | E_binary (_, BinOp_EQ,   _) -> EQ
-  | E_binary (_, BinOp_NE,   _) -> EQ
-  | E_binary (_, BinOp_AND,  _) -> AND
-  | E_binary (_, BinOp_XOR,  _) -> XOR
-  | E_binary (_, BinOp_IOR,  _) -> IOR
-  | E_binary (_, BinOp_LAND, _) -> LAND
-  | E_binary (_, BinOp_LOR,  _) -> LOR
-  | E_cond _              -> COND
-  | E_member _            -> POST
-  | E_memberp _           -> POST
-  | E_subscript _         -> POST
-  | E_nullconst           -> CAST
+  | UE_ident _             -> PRIM
+  | UE_const _             -> PRIM
+  | UE_unary _             -> UNARY
+  | UE_binary (_, BinOp_MUL,  _) -> MUL
+  | UE_binary (_, BinOp_DIV,  _) -> MUL
+  | UE_binary (_, BinOp_REM,  _) -> MUL
+  | UE_binary (_, BinOp_ADD,  _) -> ADD
+  | UE_binary (_, BinOp_SUB,  _) -> ADD
+  | UE_binary (_, BinOp_SHL,  _) -> SHIFT
+  | UE_binary (_, BinOp_SHR,  _) -> SHIFT
+  | UE_binary (_, BinOp_LT,   _) -> REL
+  | UE_binary (_, BinOp_GT,   _) -> REL
+  | UE_binary (_, BinOp_LE,   _) -> REL
+  | UE_binary (_, BinOp_GE,   _) -> REL
+  | UE_binary (_, BinOp_EQ,   _) -> EQ
+  | UE_binary (_, BinOp_NE,   _) -> EQ
+  | UE_binary (_, BinOp_AND,  _) -> AND
+  | UE_binary (_, BinOp_XOR,  _) -> XOR
+  | UE_binary (_, BinOp_IOR,  _) -> IOR
+  | UE_binary (_, BinOp_LAND, _) -> LAND
+  | UE_binary (_, BinOp_LOR,  _) -> LOR
+  | UE_cond _              -> COND
+  | UE_member _            -> POST
+  | UE_memberp _           -> POST
+  | UE_subscript _         -> POST
+  | UE_cast _              -> CAST
 
-op exprPrec (expr:Expression) : Nat =
+op exprPrec (expr:UnifiedExpression) : Nat =
   kindPrec (exprKind expr)
 
 (* The following op maps each binary operator in our C subset to the expression
@@ -305,58 +367,61 @@ is printed.
 
 We leave one space between a binary operator and both of its operands. We leave
 no space between a unary operator and its operand. We leave one space around the
-'?' and ':' of a conditional expression.
+'?' and ':' of a conditional expression. *)
 
-As explained in the comments in the C formalization, nullconst in the abstract
-syntax stands for 0 cast to 'void*'. *)
-
-op printExpression (expr:Expression, expect:ExpressionKind) : PP0 =
+op printUnifiedExpression (expr:UnifiedExpression, expect:ExpressionKind) : PP0 =
   if exprPrec expr < kindPrec expect then
     {print "(";
-     printExpression (expr, EXPR);
+     printUnifiedExpression (expr, EXPR);
      print ")"}
   else
     case expr of
-    | E_ident id ->
+    | UE_ident id ->
       printIdentifier id
-    | E_const c ->
+    | UE_const c ->
       printConstant c
-    | E_unary (uop, expr) ->
-      {printUnaryOp uop;
-       printExpression (expr, UNARY)}
-    | E_binary (expr1, bop, expr2) ->
+    | UE_unary (uop, expr) ->
+      {printUUnaryOp uop;
+       printUnifiedExpression (expr, UNARY)}
+    | UE_binary (expr1, bop, expr2) ->
       let (expect1, expect2) = binaryExpected bop in
-      {printExpression (expr1, expect1);
+      {printUnifiedExpression (expr1, expect1);
        printSpace;
        printBinaryOp bop;
        printSpace;
-       printExpression (expr2, expect2)}
-    | E_cond (expr1, expr2, expr3, _) ->
-      {printExpression (expr1, LOR);
+       printUnifiedExpression (expr2, expect2)}
+    | UE_cond (expr1, expr2, expr3) ->
+      {printUnifiedExpression (expr1, LOR);
        print " ? ";
-       printExpression (expr2, EXPR);
+       printUnifiedExpression (expr2, EXPR);
        print " : ";
-       printExpression (expr3, COND)}
-    | E_member (expr, mem) ->
-      {printExpression (expr, POST);
+       printUnifiedExpression (expr3, COND)}
+    | UE_member (expr, mem) ->
+      {printUnifiedExpression (expr, POST);
        print ".";
        printIdentifier mem}
-    | E_memberp (expr, mem) ->
-      {printExpression (expr, POST);
+    | UE_memberp (expr, mem) ->
+      {printUnifiedExpression (expr, POST);
        print "->";
        printIdentifier mem}
-    | E_subscript (expr, expr') ->
-      {printExpression (expr, POST);
+    | UE_subscript (expr, expr') ->
+      {printUnifiedExpression (expr, POST);
        print "[";
-       printExpression (expr', EXPR);
+       printUnifiedExpression (expr', EXPR);
        print "]"}
-    | E_cast (tp, e) ->
+    | UE_cast (tp, e) ->
       print "(void*) 0"
+
+op printExpression (expr:Expression, expect:ExpressionKind) : PP0 =
+  printUnifiedExpression (toUnified expr, expect)
 
 (* We introduce an abbreviation for printing a top-level expression. *)
 
 op printTopExpression (expr:Expression) : PP0 =
   printExpression (expr, EXPR)
+
+op printTopLValue (lv:LValue) : PP0 =
+  printUnifiedExpression (toUnifiedLValue lv, EXPR)
 
 (* As discussed in the comments for type 'TypeName' in our C formalization, the
 concrete syntax of C declarations is complicated by the fact that the declared
@@ -631,17 +696,17 @@ the structure of op 'printBlockItems' is a little simpler than ops
 straightforward. *)
 
 % print assignment as expression (i.e. inline, without ending ';'):
-op printAssignmentAsExpression (expr:Expression) (expr':Expression) : PP0 =
-  {printTopExpression expr;
+op printAssignmentAsExpression (lv:LValue) (expr':Expression) : PP0 =
+  {printTopLValue lv;
    print " = ";
    printTopExpression expr'}
 
 % print function call as expression (i.e. inline, without ending ';'):
 op printCallAsExpression
-   (expr?:Option Expression) (fun:Expression) (exprs:List Expression) : PP0 =
-  {case expr? of
-   | Some expr ->
-     {printTopExpression expr;
+   (lv?:Option LValue) (fun:Expression) (exprs:List Expression) : PP0 =
+  {case lv? of
+   | Some lv ->
+     {printTopLValue lv;
       print " = "}
    | None ->
      printNothing;
@@ -653,7 +718,7 @@ op printCallAsExpression
 % print statement used as (first or third) parenthesized expression of 'for':
 op printStatementAsForExpression (stmt:Statement) : PP0 =
   case stmt of
-  | S_assign (expr, expr') -> printAssignmentAsExpression expr expr'
+  | S_assign (lv, expr') -> printAssignmentAsExpression lv expr'
   | S_call (expr?, fun, exprs) -> printCallAsExpression expr? fun exprs
   | _ -> printNothing % FIXME: this should be some sort of error...
 
