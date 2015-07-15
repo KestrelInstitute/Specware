@@ -2,9 +2,8 @@
 (* FIXME HERE: document this! It is somewhat like Oleg's finally tagless
 interpreters *)
 
-C_DSL qualifying spec
+C_DSL = C_DSL qualifying spec
   import C
-
 
   (* Expression combinators, which have type Monad Value *)
 
@@ -56,37 +55,27 @@ C_DSL qualifying spec
   op SUBSCRIPT : Operator2 = fn (m1,m2) -> STAR (ADD (m1,m2))
 
 
-  (* LValue combinators, which have type Monad (Type * ObjectDesignator) *)
+  (* LValue combinators, which have type Monad LValueRes *)
 
-  type LValue = Type * ObjectDesignator
+  op LVAR (id:Identifier) : Monad LValueResult = lookupIdentifier id
 
-  op LVAR (id:Identifier) : Monad LValue =
-    {(tp,ptr) <- lookupIdentifier id;
-     case ptr of
-       | ObjPointer d -> return (tp,d)
-       | _ -> error}
+  op ADDR (e : Monad LValueResult) : Monad C.Value =
+    {res <- e; return (V_pointer res)}
 
-  op ADDR (e : Monad LValue) : Monad C.Value =
-    {(tp,d) <- e;
-     return (V_pointer (tp, ObjPointer d))}
-
-  op LSTAR (m : Monad C.Value) : Monad LValue =
-    {val <- m;
-     case val of
-       | V_pointer (tp, ObjPointer d) -> return (tp, d)
-       | _ -> error}
+  op LSTAR (m : Monad C.Value) : Monad LValueResult =
+    {val <- m; dereferencePointer val}
 
   (* Array subscripting *)
-  op LSUBSCRIPT (arr : Monad C.Value, ind : Monad C.Value) : Monad LValue =
+  op LSUBSCRIPT (arr : Monad C.Value, ind : Monad C.Value) : Monad LValueResult =
     LSTAR (ADD (arr, ind))
 
 
   (* Statement combinators, which have type Monad () *)
 
   (* Assignment, which takes expressions lhs and rhs and performs *lhs = rhs *)
-  op ASSIGN (lhs : Monad LValue, rhs : Monad C.Value) : Monad () =
-    {(tp, d) <- lhs; rhs_val <- rhs;
-     assignValue (Res_pointer (tp, ObjPointer d), rhs_val)}
+  op ASSIGN (lhs : Monad LValueResult, rhs : Monad C.Value) : Monad () =
+    {res <- lhs; rhs_val <- rhs;
+     assignValue (res, rhs_val)}
 
   (* If-then-else statements *)
   op IFTHENELSE (expr : Monad C.Value,
@@ -148,233 +137,225 @@ C_DSL qualifying spec
 
   (** Expressions **)
 
-  op evalRValue (e : Expression) : Monad C.Value = expressionValueM (evaluate e)
-
   theorem VAR_correct is
-    fa (id,e) e = E_ident id => evalRValue e = VAR id
+    fa (id,e) e = E_lvalue (LV_ident id) => evaluate e = VAR id
 
   theorem ICONST_correct is
     fa (str,e)
-      e = E_const str =>
-      evalRValue e = ICONST str
+      e = E_strict (E_const str) =>
+      evaluate e = ICONST str
 
   (* Unary operators *)
 
   theorem STAR_correct is
     fa (e1,rv1,e)
-      e = E_unary (UOp_STAR, e1) && evalRValue e1 = rv1
+      e = E_lvalue (LV_star e1) && evaluate e1 = rv1
       =>
-      evalRValue e = STAR rv1
+      evaluate e = STAR rv1
 
   theorem PLUS_correct is
     fa (e1,rv1,e)
-      e = E_unary (UOp_PLUS, e1) && evalRValue e1 = rv1
+      e = E_strict (E_unary (UOp_PLUS, e1)) && evaluate e1 = rv1
       =>
-      evalRValue e = PLUS rv1
+      evaluate e = PLUS rv1
 
   theorem MINUS_correct is
     fa (e1,rv1,e)
-      e = E_unary (UOp_MINUS, e1) && evalRValue e1 = rv1
+      e = E_strict (E_unary (UOp_MINUS, e1)) && evaluate e1 = rv1
       =>
-      evalRValue e = MINUS rv1
+      evaluate e = MINUS rv1
 
   theorem NOT_correct is
     fa (e1,rv1,e)
-      e = E_unary (UOp_NOT, e1) && evalRValue e1 = rv1
+      e = E_strict (E_unary (UOp_NOT, e1)) && evaluate e1 = rv1
       =>
-      evalRValue e = NOT rv1
+      evaluate e = NOT rv1
 
   theorem NEG_correct is
     fa (e1,rv1,e)
-      e = E_unary (UOp_NEG, e1) && evalRValue e1 = rv1
+      e = E_strict (E_unary (UOp_NEG, e1)) && evaluate e1 = rv1
       =>
-      evalRValue e = NEG rv1
+      evaluate e = NEG rv1
 
   (* Binary operators *)
 
   theorem MUL_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_MUL, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_MUL, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = MUL (rv1, rv2)
+      evaluate e = MUL (rv1, rv2)
 
   theorem DIV_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_DIV, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_DIV, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = DIV (rv1, rv2)
+      evaluate e = DIV (rv1, rv2)
 
   theorem REM_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_REM, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_REM, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = REM (rv1, rv2)
+      evaluate e = REM (rv1, rv2)
 
   theorem ADD_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_ADD, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_ADD, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = ADD (rv1, rv2)
+      evaluate e = ADD (rv1, rv2)
 
   theorem SUB_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_SUB, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_SUB, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = SUB (rv1, rv2)
+      evaluate e = SUB (rv1, rv2)
 
   theorem SHL_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_SHL, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_SHL, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = SHL (rv1, rv2)
+      evaluate e = SHL (rv1, rv2)
 
   theorem SHR_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_SHR, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_SHR, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = SHR (rv1, rv2)
+      evaluate e = SHR (rv1, rv2)
 
   theorem LT_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_LT, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_LT, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = LT (rv1, rv2)
+      evaluate e = LT (rv1, rv2)
 
   theorem GT_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_GT, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_GT, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = GT (rv1, rv2)
+      evaluate e = GT (rv1, rv2)
 
   theorem LE_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_LE, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_LE, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = LE (rv1, rv2)
+      evaluate e = LE (rv1, rv2)
 
   theorem GE_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_GE, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_GE, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = GE (rv1, rv2)
+      evaluate e = GE (rv1, rv2)
 
   theorem EQ_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_EQ, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_EQ, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = EQ (rv1, rv2)
+      evaluate e = EQ (rv1, rv2)
 
   theorem NE_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_NE, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_NE, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = NE (rv1, rv2)
+      evaluate e = NE (rv1, rv2)
 
   theorem AND_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_AND, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_AND, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = AND (rv1, rv2)
+      evaluate e = AND (rv1, rv2)
 
   theorem XOR_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_XOR, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_XOR, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = XOR (rv1, rv2)
+      evaluate e = XOR (rv1, rv2)
 
   theorem IOR_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_IOR, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_IOR, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = IOR (rv1, rv2)
+      evaluate e = IOR (rv1, rv2)
 
   theorem LAND_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_LAND, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_LAND, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = LAND (rv1, rv2)
+      evaluate e = LAND (rv1, rv2)
 
   theorem LOR_correct is
     fa (e1,e2,rv1,rv2,e)
-      e = E_binary (e1, BinOp_LOR, e2) &&
-      evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_strict (E_binary (e1, BinOp_LOR, e2)) &&
+      evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = LOR (rv1, rv2)
+      evaluate e = LOR (rv1, rv2)
 
   (* Array subscripts *)
   theorem SUBSCRIPT_correct is
     fa (e1,e2,e,rv1,rv2)
-      e = E_subscript (e1, e2) && evalRValue e1 = rv1 && evalRValue e2 = rv2
+      e = E_lvalue (LV_subscript (e1, e2)) && evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalRValue e = SUBSCRIPT (rv1, rv2)
+      evaluate e = SUBSCRIPT (rv1, rv2)
 
 
   (** LValues **)
 
-  op evalLValue (e : Expression) : Monad LValue =
-    {res <- evaluate e;
-     case res of
-       | Res_pointer (tp, ObjPointer d) -> return (tp, d)
-       | _ -> error}
-
   theorem LVAR_correct is
-    fa (id,e)
-      e = E_ident id => evalLValue e = LVAR id
+    fa (id,lv)
+      lv = LV_ident id => evaluateLValue lv = LVAR id
 
   theorem ADDR_correct is
-    fa (e1,lv1,e)
-      evalLValue e1 = lv1 && e = E_unary (UOp_ADDR, e1)
+    fa (lv1,res1,e)
+      e = E_strict (E_addr lv1) && evaluateLValue lv1 = res1
       =>
-      ADDR lv1 = evalRValue e
+      evaluate e = ADDR res1
 
   theorem LSTAR_correct is
     fa (e1,rv1,e)
-      e = E_unary (UOp_STAR, e1) && evalRValue e1 = rv1
+      e = LV_star e1 && evaluate e1 = rv1
       =>
-      evalLValue e = LSTAR rv1
+      evaluateLValue e = LSTAR rv1
 
   theorem LSUBSCRIPT_correct is
     fa (e1,e2,expr,rv1,rv2)
-      expr = E_subscript (e1, e2) && evalRValue e1 = rv1 && evalRValue e2 = rv2
+      expr = LV_subscript (e1, e2) && evaluate e1 = rv1 && evaluate e2 = rv2
       =>
-      evalLValue expr = LSUBSCRIPT (rv1, rv2)
+      evaluateLValue expr = LSUBSCRIPT (rv1, rv2)
 
 
   (** Statements **)
 
   theorem ASSIGN_correct is
     fa (e1,e2,stmt,lv,rv)
-      stmt = S_assign (e1, e2) && evalLValue e1 = lv && evalRValue e2 = rv
+      stmt = S_assign (e1, e2) && evaluateLValue e1 = lv && evaluate e2 = rv
       =>
       evalStatement stmt = ASSIGN (lv, rv)
 
   theorem IFTHENELSE_correct is
     fa (e,s1,s2,rv,m1,m2,stmt)
-      stmt = S_if (e, s1, Some s2) && evalRValue e = rv &&
+      stmt = S_if (e, s1, Some s2) && evaluate e = rv &&
       evalStatement s1 = m1 && evalStatement s2 = m2
       =>
       evalStatement stmt = IFTHENELSE (rv, m1, m2)
 
   theorem WHILE_correct is
     fa (e,body,rv,m,stmt)
-      stmt = S_while (e, body) && evalRValue e = rv && evalStatement body = m
+      stmt = S_while (e, body) && evaluate e = rv && evalStatement body = m
       =>
       evalStatement stmt = WHILE (rv, m)
 
