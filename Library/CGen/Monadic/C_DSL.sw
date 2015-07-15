@@ -2,7 +2,7 @@
 (* FIXME HERE: document this! It is somewhat like Oleg's finally tagless
 interpreters *)
 
-C_DSL = C_DSL qualifying spec
+C_DSL qualifying spec
   import C
 
   (* Expression combinators, which have type Monad Value *)
