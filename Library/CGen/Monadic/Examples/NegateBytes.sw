@@ -29,6 +29,22 @@ S1 = spec
   %%   }
   %% }
 
+  % ------------------------------------------------------------------------------
+
+  
+  proof Isa negateByte_Obligation_subtype
+  by (simp add: Nat__fitsInNBits_p_def)
+  end-proof
+  
+  proof Isa negateByte_Obligation_subtype0
+  by (simp add: Nat__fitsInNBits_p_def length_greater_0_iff)
+  end-proof
+  
+  proof Isa negateByte_Obligation_subtype1
+  apply (simp add: Nat__fitsInNBits_p_def length_greater_0_iff)
+  apply (cut_tac bs = "not_bs (toBits (n, 8))" in Bits__toNat_bound2)
+  apply (simp add: Nat__fitsInNBits_p_def length_greater_0_iff, simp)
+  end-proof
 end-spec
 
 S2 = spec
@@ -38,14 +54,19 @@ S2 = spec
   function says that the "output" of the function is the new value of dest; the
   value of src cannot change. The precondition only worries about the lengths,
   as the overlap conditions are handled by permissions, below. *)
-  op negateBytes_Cspec (src : List Nat8, dest : List Nat8, len : Nat16 |
-                          len <= length src && len <= length dest) :
-    { l:List Nat8 | l = negateBytes (prefix (src, len)) ++ suffix (dest, len) }
+  op negateBytes_Cspec (source : List Nat8, dest : List Nat8, size : Nat16 |
+                        size <= length source && size <= length dest):
+    { l:List Nat8 | l = negateBytes (prefix (source, size)) ++ suffix (dest, size) }
+  
 
 end-spec
 
-S3 = spec
-  import S2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Eddy's Program Structures for mimicking C
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+
+Program_Structures = spec
+  import /Library/General/SizedNats
 
   op [a] repeat_n (n: Nat) (body: a -> a) : a -> a =
     if n = 0 then (fn st -> st) else (fn st -> repeat_n (n-1) body (body st))
@@ -72,9 +93,82 @@ S3 = spec
   op plusNat16 (n1 : Nat16, n2 : Nat16 | fitsInNBits? 16 (n1 + n2)) : Nat16 =
     n1 + n2
 
+  % ------------- the proofs --------------------
+    
+  proof Isa repeat_n ()
+  apply (auto)
+  sorry
+  termination
+  by (relation "measure (\<lambda>(n,body,st). n)", auto)
+  end-proof
+
+  proof Isa WHILE ()
+  by auto
+  termination (* no generic termination of WHILE *)
+  sorry
+  end-proof
+
+    
+end-spec
+
+
+% ------------------------------------------------------------
+% Introduce abstract state, using observers
+% ------------------------------------------------------------
+
+S3 = spec
+  import Program_Structures
+  import S2
+
+  type State
+  op  src: State -> List Nat8
+  op  dst: State -> List Nat8
+  op  len: State -> Nat16
+  op  ret: State -> List Nat8 
+    
+  op init (source : List Nat8, dest : List Nat8, size : Nat16) :
+     {st:State | src st = source && dst st = dest && len st = size}
+
+  op negateBytes_1  (st:State | len st <= length (src st) && len st <= length (dst st))
+  :
+  { st' : State 
+  |     len st' = len st
+     && src st' = src st
+     && dst st' = negateBytes (prefix (src st, len st)) ++ suffix (dst st, len st)
+     && ret st' = dst st' 
+  }
+    
+  op negateBytes_Cspec (source : List Nat8, dest : List Nat8, size : Nat16 |
+                        size <= length source && size <= length dest): List Nat8
+  =  
+  FUNBODY (negateBytes_1, ret) (init (source,dest,size))
+
+  % ------------- the proofs --------------------
+    
+  proof Isa negateBytes_Cspec_Obligation_subtype
+  apply (frule_tac source=source in init_subtype_constr, simp_all)
+  apply (frule_tac source=source in init_subtype_constr1, simp_all)
+  apply (frule_tac source=source in init_subtype_constr2, simp_all)
+  apply (frule_tac source=source in init_subtype_constr3, simp_all)
+  apply (frule negateBytes_1_subtype_constr, simp_all) 
+  apply (frule negateBytes_1_subtype_constr1, simp_all) 
+  apply (frule negateBytes_1_subtype_constr2, simp_all) 
+  apply (frule negateBytes_1_subtype_constr3, simp_all) 
+  apply (simp add: FUNBODY_def )
+  end-proof
+end-spec
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Eddy's handwiritten solution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+
+S_Eddy = spec
+  import Program_Structures
+  import S2
+
   (* Now we define negateBytes_Cspec in a way that closely matches the C we want
   to generate; this is stil in progress... *)
-  op negateBytes_Cspec (src : List Nat8, dest : List Nat8, len : Nat16 |
+  op negateBytes_Cspec1 (src : List Nat8, dest : List Nat8, len : Nat16 |
                           len <= length src && len <= length dest) : List Nat8 =
     FUNBODY
     (withVarDecl
@@ -93,3 +187,115 @@ S3 = spec
   (* FIXME: still need the statement of correctness (in progress) *)
 
 end-spec
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Below is a semantic object for Eddy's C generator that shows what the final
+%% program should look like at the end of the derivation (before CGen)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+S_final = spec
+  import S3
+  import /Library/CGen/Monadic/C_DSL
+  import /Library/CGen/Monadic/GenerateC
+
+  op negateBytes_obj : ExtDecl =
+    FUNCTION (TN_void, "negateBytes",
+              [(TN_pointer TN_uchar, "src"),
+               (TN_pointer TN_uchar, "dest"),
+               (TN_uint, "len")],
+              BLOCK ([(TN_uint, "i")],
+                     [ASSIGN (LVAR "i", ICONST "0"),
+                      WHILE (LT (VAR "i", VAR "len"),
+                             BLOCK
+                               ([],
+                                [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
+                                         NOT (SUBSCRIPT (VAR "src", VAR "i"))),
+                                 ASSIGN (LVAR "i", ADD (VAR "i", ICONST "1"))]))
+                     ]))
+   
+
+  (* This is the specification for the syntax, in the form of a top-level
+  external declaration, whose semantics equals copyBytes *)
+  op negateBytes_C : { d:ExternalDeclaration | compile1XU d = negateBytes_obj }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Need to load lisp for GenerateC.sw before running this!
+% ----------------------------------------------------------------------
+% NegateBytes_impl =
+% transform NegateBytes_spec by
+%   { at negateBytes_C { unfold negateBytes; generateC}
+%   ; makeDefsFromPostConditions [negateBytes_C]
+%   }
+% 
+% Examples_printed = spec
+%   import Examples_impl, CPrettyPrinter
+% 
+%   op negateBytes_String : String = printTranslationUnitToString [negateBytes_C]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+          end-spec
+
+
+          
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO: Fill the gap between S2 and the semantic object in S_final.
+%
+% 
+% STEPS:
+% 
+% 1. a handish derivation in Specware
+% 2. formal proofs in Isabelle
+% 3. Transformations that construct both
+%
+% mimic the steps in acl2, see README-acl2 in TCPcrypt
+% ------------------------------------------------------------------------------
+% 
+% Refinement steps (one spec each)
+% 
+% - Add state: op -> stateful op where we use (L1 := map f L2) st
+% 
+% - refine the recursion into a while loop (tail recursion seems to be closer)
+%   stateful map -> stateful while (simulate if Eddy's version doesn't help)
+%
+% - DTRE: refine data type from list to array (weakening types)
+%    stateful list -> stateful array via
+%   Use conversions between array and list and go on from there.
+%   i.e. specify f list -> arr2list (f-arr (list2arr) list
+%        and then figure out f-arr
+%   then convert generatete stateful while to arrays accordingly
+% - Later represent arrays via pointers (another DTRE)
+% 
+% Automate these steps
+% - First proof thms about the whole
+% - create specware transformation for that (with proof emission)
+% 
+%   
+% We have no transforms for most of these steps so it has to be a refine def
+%   
+%   
+%   in ACL2 they have macros for algorithm theories and the like in MUSE
+%   look at MUSE Derivations / ACL2
+%   
+% - getting full proofs is what we eventually need
+%  
+% - need to prove that memory bounds are kept etc. loop invariants 
+%   Complain if anything makes no sense
+% 
+%
+
+% I need something like
+% 
+% L1 = listmap f L2
+% <=>
+% forall i L1[i] = f(L[i])
+% <=>
+% L1 is the result of
+% 
+% i:-=0; while i<len {L1[i] := l[i]}
+% 
+% where len  = length L
+%
+
+% ----------------------------------------------------------------------------
