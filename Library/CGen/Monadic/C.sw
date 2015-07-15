@@ -1056,8 +1056,8 @@ type LValue =
   | LV_memberp   Expression * Identifier
   | LV_subscript Expression * Expression
 type Expression =
-  | E_Strict StrictExpression
-  | E_LValue LValue
+  | E_strict StrictExpression
+  | E_lvalue LValue
 
 
 %subsection (* Statements *)
@@ -2973,8 +2973,8 @@ op evaluateLValue (lv: LValue) : Monad LValueResult =
 
 op evaluate (expr: Expression) : Monad ExpressionValue =
   case expr of
-    | E_Strict strict_expr -> evaluateStrictExpr strict_expr
-    | E_LValue lv -> {res <- evaluateLValue lv; lvalueConversion res}
+    | E_strict strict_expr -> evaluateStrictExpr strict_expr
+    | E_lvalue lv -> {res <- evaluateLValue lv; lvalueConversion res}
 
 
 (* FIXME: figure out how to state and prove this type safety theorem *)
