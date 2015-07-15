@@ -125,6 +125,8 @@ S3 = spec
   op  dst: State -> List Nat8
   op  len: State -> Nat16
   op  ret: State -> List Nat8 
+  
+  def ret (st:State)  = dst st 
     
   op init (source : List Nat8, dest : List Nat8, size : Nat16) :
      {st:State | src st = source && dst st = dest && len st = size}
@@ -135,7 +137,6 @@ S3 = spec
   |     len st' = len st
      && src st' = src st
      && dst st' = negateBytes (prefix (src st, len st)) ++ suffix (dst st, len st)
-     && ret st' = dst st' 
   }
     
   op negateBytes_Cspec (source : List Nat8, dest : List Nat8, size : Nat16 |
@@ -153,11 +154,62 @@ S3 = spec
   apply (frule negateBytes_1_subtype_constr, simp_all) 
   apply (frule negateBytes_1_subtype_constr1, simp_all) 
   apply (frule negateBytes_1_subtype_constr2, simp_all) 
-  apply (frule negateBytes_1_subtype_constr3, simp_all) 
-  apply (simp add: FUNBODY_def )
+  apply (simp add: FUNBODY_def ret_def)
   end-proof
 end-spec
 
+% ------------------------------------------------------------
+% Refine map to while
+% ------------------------------------------------------------
+
+ListThms = spec % Theorems that should be included in List.sw
+
+ theorem map_prefix is [a,b]
+  fa (f: a -> b, l: List a, n:Nat)  n <= length l =>
+    map f (prefix (l, n)) = prefix (map f l, n) 
+
+  % ------------- the proofs --------------------
+    
+   proof Isa map_prefix
+   by (simp add: take_map)
+   end-proof
+end-spec 
+
+% ------------------------------------------------------------
+S4 = spec
+   import S3
+   import ListThms
+
+end-spec
+
+% ------------------------------------------------------------
+S5 = S4
+   { at (negateBytes_1)     
+      { unfold negateBytes  
+      ; unfold ret
+      ; simplify
+      ; lr map_prefix    
+      }                     
+   }       
+   % --------------------------------------------------------------------
+   % transformation fails to emit the correct proof
+   %
+   % handish proof is
+   %
+   % by (simp add: map_prefix negateBytes_def)
+    % --------------------------------------------------------------------
+
+S6 = transform S5 by {finalizeCoType(State)}
+   % --------------------------------------------------------------------
+   % transformation fails to emit the correct proof
+   %
+   % handish proof is a lot of work
+   % --------------------------------------------------------------------
+   
+
+ 
+   
+   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Eddy's handwiritten solution
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
