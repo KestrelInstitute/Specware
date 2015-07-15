@@ -168,8 +168,8 @@ op toUUnaryOp (uop: UnaryOp) : UUnaryOp =
 (* Convert an Expression to a unified expression *)
 op toUnified (expr:Expression) : UnifiedExpression =
   case expr of
-    | E_Strict strict_expr -> toUnifiedStrict strict_expr
-    | E_LValue lv -> toUnifiedLValue lv
+    | E_strict strict_expr -> toUnifiedStrict strict_expr
+    | E_lvalue lv -> toUnifiedLValue lv
 
 op toUnifiedStrict (expr:StrictExpression) : UnifiedExpression =
   case expr of
