@@ -2930,6 +2930,9 @@ op evaluateStrictExpr (expr:StrictExpression) : Monad ExpressionValue =
     | E_addr (LV_subscript (expr1, expr2)) ->
       % Special treatment for exprs of the form '&(E1[E2]), which equal E1+E2
       evaluatorForBinaryOp BinOp_ADD (evaluate expr1, evaluate expr2)
+    | E_addr lv ->
+      {res <- evaluateLValue lv;
+       return (V_pointer res)}
     | E_unary (uop, expr1) ->
       evaluatorForUnaryOp uop (evaluate expr1)
     | E_binary (expr1, bop, expr2) ->
