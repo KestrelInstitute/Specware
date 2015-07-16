@@ -24,17 +24,34 @@ C_Predicates qualifying spec
 
   (* The computation m is totally correct, in the sense of Hoare logic, with
      respect to pre- and post-conditions pre and post, respectively. This is
-     stated by saying that, for some f, m is equivalent to a computation that
-     modifies the current Storage by applying f, assuming the precondition is
-     true, and that doing this always satisfies the post-condition. *)
-  op totally_correct (pre: R -> Storage -> Bool) (m : Monad ())
-                     (post : R -> Storage -> Storage -> Bool) : Bool =
+     stated by saying that, for some function f, m is equivalent to a
+     computation that modifies the current Storage to the first result of f and
+     returns the second result of f, assuming the precondition is true, and that
+     doing this always satisfies the post-condition. *)
+  op [a] totally_correct (pre: R -> Storage -> Bool) (m : Monad a)
+                         (post : R -> Storage -> Storage * a -> Bool) : Bool =
     m |= mexists (fn f ->
                     {r <- askR;
-                     st_pre <- getState;
-                     mimplies (liftProp (pre r st_pre),
-                               m_and (putState (f r st_pre),
-                                      liftProp (post r st_pre (f r st_pre))))})
+                     st_in <- getState;
+                     mimplies (liftProp (pre r st_in),
+                               m_and ({putState (f r st_in).1; return (f r st_in).2},
+                                      liftProp (post r st_in (f r st_in))))})
 
+
+  (* States that a computation depends only on the environment and the storage,
+  that it does not change the storage, and that its result is res *)
+  op [a] computation_has_value (r:R) (st:Storage) (m:Monad a) (res:a) : Bool =
+    totally_correct
+      (fn r_in -> fn st_in -> r_in = r && st_in = st)
+      m
+      (fn _ -> fn _ -> fn (st_out, res_out) -> st_out = st && res_out = res)
+
+  (* Holds iff expression expr has value v in environment r and storage st *)
+  op expression_has_value (r:R) (st:Storage) (expr:Expression) (v:Value) : Bool =
+    computation_has_value r st (evaluate expr) v
+
+  (* Holds iff lvalue lv has result res in environment r and storage st *)
+  op lvalue_has_result (r:R) (st:Storage) (lv:LValue) (res:LValueResult) : Bool =
+    computation_has_value r st (evaluateLValue lv) res
 
 end-spec
