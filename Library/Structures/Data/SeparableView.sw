@@ -28,4 +28,26 @@ SeparableView qualifying spec
     { view = fn (a,b) -> l.lens_get a = b,
       sep_eq = fn (a1,a2) -> l.lens_set a1 (l.lens_get a2) = a2 }
 
+
+  (*** Separable Bi-Views ****)
+
+  (* A separable bi-view is a view that is separable in both directions *)
+  type SeparableBiView (a,b) = {biview: Relation (a,b),
+                                sep_eq1: Equivalence a,
+                                sep_eq2: Equivalence b}
+
+  (* Make a separable bi-view between a and b from separable views of a and b at
+  some intermediate type c *)
+  op [a,b,c] bivew_of_views (sv1: SeparableView (a,c), sv2: SeparableView (b,c)) : SeparableBiView (a,b) =
+    {biview = relCompose (sv1.view, relInvert sv2.view),
+     sep_eq1 = sv1.sep_eq, sep_eq2 = sv2.sep_eq}
+
+  (* Extract a separable view from a separable bi-view *)
+  op [a,b] view_of_biview (sbv: SeparableBiView (a,b)) : SeparableView (a,b) =
+    {view = sbv.biview, sep_eq = sbv.sep_eq1}
+
+  (* Extract the inverse separable view from a separable bi-view *)
+  op [a,b] inv_view_of_biview (sbv: SeparableBiView (a,b)) : SeparableView (b,a) =
+    {view = relInvert sbv.biview, sep_eq = sbv.sep_eq2}
+
 end-spec

@@ -23,6 +23,10 @@ ISet qualifying spec
   % A Relation is a set of pairs
   type Relation (a,b) = ISet (a * b)
 
+  % invert a relation
+  op [a,b] relInvert (R: Relation (a,b)) : Relation (b,a) =
+    fn (b,a) -> R (a,b)
+
   % compose two relations
   op [a,b,c] relCompose (R1: Relation (a,b), R2: Relation (b,c)) : Relation (a,c) =
     fn (a,c) -> ex (b) R1 (a,b) && R2 (b,c)
