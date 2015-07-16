@@ -315,4 +315,9 @@ SplittingAlg qualifying spec
   (* A splitting set expression is a consistent splitting multiset expression *)
   type SplSetExpr = { spls: SplMultiSetExpr | splmultiset_expr_consistent? spls }
 
+  (* Instantiate a splitting set expression; just instantiates each splitting
+  expression, but is guaranteed to make a canonical, consistent splitting set *)
+  op instantiate_splset_expr (asgn: SplAssign) (sexprs: SplSetExpr) : SplittingSet =
+    instantiate_splexpr_list asgn sexprs
+
 end-spec
