@@ -62,7 +62,7 @@ op normalizeType (spc               : Spec,
          foldl (fn (result, (name, tvs, top_type)) ->
                   case result of
                     | None ->
-                      (case typeMatch (top_type, typ, spc, ignore_subtypes?, false) of
+                      (case typeMatch (top_type, typ, spc, ignore_subtypes?, true) of
                          | Some tyvar_sbst ->
                            if check_top? && typ = top_type then 
                              None 
