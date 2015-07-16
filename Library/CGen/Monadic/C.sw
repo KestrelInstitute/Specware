@@ -350,7 +350,9 @@ type Type =
   | T_slong                       %   signed long
   | T_ullong                      % unsigned long long
   | T_sllong                      %   signed long long
-  | T_struct (Option Identifier * {l:List (Identifier * Type) | noRepetitions? (unzip l).1})           % structure
+  | T_struct                      % structure
+      (Option Identifier *
+         {l:List (Identifier * Type) | noRepetitions? (unzip l).1})
   | T_structName Identifier       % recursive reference to a structure type
   | T_pointer Type                % pointer (to type)
   | T_array   Type * Nat          % array (of type of size)
