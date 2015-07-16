@@ -259,22 +259,26 @@ SplittingAlg qualifying spec
       splexpr_in? (spl, spl'::spls) <=>
         splexpr_in? (spl, combine_splexpr_with_list (spl', spls))
 
+  (* Instantiate a list of splitting expressions *)
+  op instantiate_splexpr_list (asgn: SplAssign) (sexprs: List SplExpr) : List Splitting =
+    map (instantiate_splexpr asgn) sexprs
+
 
   (***
    *** Splitting Set Expressions
    ***)
 
-  (* A splitting set expression is a canonical list of splitting expressions *)
-  op canonical_splexpr_set? (spls : List SplExpr) : Bool =
+  (* A splitting multiset expression is a canonical list of splitting expressions *)
+  op canonical_splexpr_list? (spls : List SplExpr) : Bool =
     case spls of
       | [] -> true
       | spl :: spls' ->
         ~(splexpr_combinable_with_list? (spl, spls')) &&
-        canonical_splexpr_set? spls'
-  type SplSetExpr = { l : List SplExpr | canonical_splexpr_set? l }
+        canonical_splexpr_list? spls'
+  type SplMultiSetExpr = { l : List SplExpr | canonical_splexpr_list? l }
 
-  (* Canonicalize a splitting expression set *)
-  op canonicalize_splexpr_list (spls : List SplExpr) : SplSetExpr =
+  (* Canonicalize a splitting multiset expression *)
+  op canonicalize_splexpr_list (spls : List SplExpr) : SplMultiSetExpr =
     case spls of
       | [] -> []
       | spl::spls' ->
@@ -284,29 +288,31 @@ SplittingAlg qualifying spec
         else
           spl::spls''
 
-  (* Add a splitting expression to a set, maintaining canonicity *)
-  op splexpr_set_add (spl: SplExpr, splset: SplSetExpr) : SplSetExpr =
+  (* Add a splitting expression to a multiset, maintaining canonicity *)
+  op splmultiset_expr_add (spl: SplExpr, splset: SplMultiSetExpr) : SplMultiSetExpr =
     canonicalize_splexpr_list (spl::splset)
 
-  (* Combine two splitting expression sets *)
-  op combine_splexpr_sets (splset1: SplSetExpr,
-                             splset2: SplSetExpr) : SplSetExpr =
+  (* Combine two splitting multiset expressions *)
+  op combine_splmultiset_exprs (splset1: SplMultiSetExpr,
+                                splset2: SplMultiSetExpr) : SplMultiSetExpr =
     case splset1 of
       | [] -> splset2
       | spl1 :: splset1' ->
-        splexpr_set_add (spl1, combine_splexpr_sets (splset1', splset2))
+        splmultiset_expr_add (spl1, combine_splmultiset_exprs (splset1', splset2))
 
-  (* The splitting expression set partial order *)
-  op splexpr_set_leq : PartialOrder SplSetExpr =
+  (* The splitting multiset expression partial order *)
+  op splmultiset_expr_leq : PartialOrder SplMultiSetExpr =
   (fn (splset1, splset2) ->
    forall? (fn spl1 -> splexpr_in? (spl1, splset2)) splset1)
 
-  (* The splitting expression set representing all of an entity *)
-  op splexpr_set_unity : SplSetExpr = []
+  (* The splitting multiset expression representing all of an entity *)
+  op splmultiset_expr_unity : SplMultiSetExpr = []
 
-  (* A splitting expression set is consistent iff it is no greater than unity *)
-  op splexpr_set_consistent? (splset: SplSetExpr) : Bool =
-    splexpr_set_leq (splset, splexpr_set_unity)
+  (* A splitting set expression is consistent iff it is no greater than unity *)
+  op splmultiset_expr_consistent? (splset: SplMultiSetExpr) : Bool =
+    splmultiset_expr_leq (splset, splmultiset_expr_unity)
 
+  (* A splitting set expression is a consistent splitting multiset expression *)
+  type SplSetExpr = { spls: SplMultiSetExpr | splmultiset_expr_consistent? spls }
 
 end-spec

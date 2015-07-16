@@ -3,11 +3,12 @@
 C_Permissions qualifying spec
   import C_Predicates
   import /Library/Structures/Data/OptLens
+  import /Library/Structures/Data/SeparableView
   import SplittingAlg
 
 
   (***
-   *** Functional Values and Heaps
+   *** Functional Values
    ***)
 
   (* To represent C values in logic, we define a universal type for "functional
@@ -18,163 +19,75 @@ C_Permissions qualifying spec
   (* FValue includes lists (FIXME: add other ops for FValue_list) *)
   op FValue_list : List FValue -> FValue
 
-  (* A "functional heap" gives values for portions of a pointer, where
-  "portions" are given by splittings (see SplittingAlg.sw). Functional heaps
-  must be closed under smaller portions as well as under combining portions
-  together. *)
-  (* FIXME HERE: FHeap also needs a map from FunctionDesignators to functions on
-  FValues *)
-  type FHeap = { h : Map (ObjectDesignator * Splitting, FValue) |
-                  (fa (d,spl1,spl2)
-                     splitting_leq (spl1,spl2) => (d,spl2) in? (domain h) =>
-                     (d,spl1) in? (domain h)) &&
-                  (fa (d,spl1,spl2)
-                     splittings_combinable? (spl1,spl2) =>
-                     (d,spl1) in? (domain h) => (d,spl2) in? (domain h) =>
-                     (d,combine_splittings (spl1,spl2)) in? (domain h))
-                  }
-
-  (* Whether two heaps are equal on all pointers in pred *)
-  op heaps_equal_on (pred: Pointer -> Bool) (heap1: FHeap, heap2: FHeap) : Bool =
-    fa (d, spl) pred (ObjPointer d) => heap1 (d,spl) = heap2 (d,spl)
-
-
-  (***
-   *** Pointer Projections
-   ***)
-
-  (* A pointer projection intuitively represents a set of possible ways to
-  extract a pointer from a value. These "ways" are zero or more steps of taking
-  a struct member and/or taking an array element. For array elements, the
-  designator explicitly does not give an index, but instead implicitly
-  quantifies over all possible indices. *)
-  type PtrProjStep =
-     | PPStep_Member Identifier
-     | PPStep_Subscript
-  type PtrProj = List PtrProjStep
-
-  (* projects_to (pproj, val, ptr) holds iff pproj describes a "way" to project
-  the pointer ptr out of the value val. *)
-  op projects_to (pproj: PtrProj) (val:Value) (ptr:Pointer) : Bool =
-    case (pproj, val) of
-      | ([], V_pointer (_, ptr')) ->
-        ptr = ptr'
-      | ((PPStep_Member memb) :: pproj', V_struct (_, members)) ->
-        (case assoc members memb of
-           | Some val' ->
-             projects_to pproj' val' ptr
-           | None -> false)
-      | (PPStep_Subscript :: pproj', V_array (_, elems)) ->
-        exists? (fn val' -> projects_to pproj' val' ptr) elems
-
 
   (***
    *** Value Abstractions
    ***)
 
-  (* A value abstraction relates C values of a given type with some abstract
-  type a. This relation is modulo a functional heap, that abstracts the current
-  storage. An abstraction can be "split" (see SplittingAlg.sw) into a left and a
-  right half, where combines_to relates the possible left- and right-hand sides
-  of an abstraction and their combination. An abstraction can also be dependent
-  on other abstractions on projections of the abstracted value; a value
-  abstraction contains lenses for updating these dependent values in the full
-  value being abstracted. These dependencies are formalized in the following way
-  so that they do not also talk about the dependencies of the dependencies,
-  etc., as this would not be well-founded. *)
-  type ValueAbs_NoDeps a =
-    {abs_type_name : TypeName,
-     abs_rel : Splitting -> FHeap -> a -> Value -> Bool,
-     abs_combines_to : a * a -> a -> Bool}
-  type ValueAbs a =
-    ValueAbs_NoDeps a * List (PtrProj * ValueAbs_NoDeps FValue * OptLens (a, FValue))
+  (* Trees of storages *)
+  type StorageTree = Splitting -> Storage
+
+  (* A storage view is a view of the current storage tree, dependent on the
+  current C environment. Defining the type this way, with the R type outside
+  SeparableView, means that the separate equality relation of the separable view
+  only defines whether two storage views are separate in terms of their views of
+  the heap (the storage tree), which is what we want because, intuitively, the C
+  environment of type R is read-only. *)
+  type StorageView a = R -> SeparableView (StorageTree, a)
+
+  (* An abstraction of a C "object" (e.g., value, pointer, etc.) of type c at
+  type a is essentially a relation from elements of type c and the current C
+  environment and storage (tree) to some abstract functional type a. Defining
+  the type this way means that it can only talk about separation of two
+  abstractions with respect to the portions of the heap that they view, not the
+  environment or the C objects they use. As with storage views, this is because
+  the C heap is the only thing that is modifiable; i.e., when viewing a C value
+  or pointer, we only want to talk about the separation w.r.t. how that view
+  looks at the heap. Abstractions are also defined to be "splittable", by
+  parameterizing them with a splitting set. *)
+  (* FIXME: do separate splitting sets have to yield separate storage views? *)
+  type CAbstraction (c, a) = SplittingSet -> c -> StorageView a
+
+  (* A value abstraction relates C values with some abstract type a *)
+  type ValueAbs a = CAbstraction (Value, a)
 
   (* Helper type for value abstractions using the FValue type *)
   type FValueAbs = ValueAbs FValue
 
-  (* Well-formedness of a ValueAbs_NoDeps w.r.t. a predicate on the R type *)
-  op [a] valueAbsND_well_formed? (r_pred : R -> Bool) (absh : ValueAbs_NoDeps a) : Bool =
-    (* Any Value related by the relation has the correct type *)
-    (fa (r,w,heap,val,fval)
-       r_pred r && absh.abs_rel w heap fval val =>
-       expandTypeName (r.r_xenv, absh.abs_type_name) = Some (typeOfValue val))
-    &&
-    (* The combine relation commutes with the abstraction relation (read right
-    to left), and any abstraction can always be split into left and right
-    portions (read left to right) *)
-    (fa (w,heap,val,fval)
-       absh.abs_rel w heap fval val <=>
-       (ex (fval1,fval2)
-          absh.abs_rel (SplitL::w) heap fval1 val &&
-          absh.abs_rel (SplitR::w) heap fval2 val &&
-          absh.abs_combines_to (fval1,fval2) fval
-          ))
-
-  (* Well-formedness of a ValueAbs *)
-  op [a] valueAbs_well_formed? (r_pred : R -> Bool) (abs : ValueAbs a) : Bool =
-    (* The top-level ValueAbs_NoDeps in abs is well-formed *)
-    valueAbsND_well_formed? r_pred abs.1 &&
-    (* All ValueAbs_NoDeps's in the dependencies are well-formed *)
-    (fa (s,v,dep)
-       dep in? abs.2 => valueAbsND_well_formed? r_pred dep.2) &&
-    (* The ValueAbs_NoDeps can only depend on its dependencies *)
-    (fa (w,heap1,heap2,val,fval)
-       abs.1.abs_rel w heap1 fval val =>
-       heaps_equal_on (fn ptr -> exists? (fn (pproj,_,_) ->
-                                            projects_to pproj val ptr) abs.2)
-                      (heap1, heap2) =>
-       abs.1.abs_rel w heap2 fval val)
-    (* FIXME HERE: relate the lenses... *)
+  (* A value abstraction is said to have a particular C type iff it only relates
+  C values of that type. This judgment requires a predicate on the C environment
+  type R, to, for example, ensure that the correct struct type tags are in
+  scope, or that the correct type definitions have been included. *)
+  op [a] value_abs_has_type (r_pred: R -> Bool) (abs: ValueAbs a) (tp_name: TypeName): Bool =
+    fa (splset, val, r, fv, stree)
+      r_pred r && (abs splset val r).view (stree, fv) =>
+      (ex (tp) expandTypeName (r.r_xenv, tp_name) = Some tp
+               && valueHasType (val, tp))
 
 
   (***
-   *** Scope Abstractions
+   *** Permission Sets
    ***)
 
-  type ScopeAbs a = List (Identifier * FValueAbs * OptLens (a, FValue))
+  (* FIXME HERE: documentation! *)
 
-  op [a] scopeAbs_well_formed? (r_pred: R -> Bool) (scabs: ScopeAbs a) : Bool =
-    case scabs of
-      | [] -> true
-      | (x,abs,olens) :: scabs' ->
-        valueAbs_well_formed? r_pred abs &&
-        scopeAbs_well_formed? r_pred scabs' &&
-        forall? (fn (x',abs',olens') -> x ~= x' &&
-                   optlens_separate? (olens,olens')) scabs'
+  type PermSet (c, a) =
+    {l:List (SplSetExpr * CAbstraction (c, FValue) * Lens (a, FValue)) |
+       forall? (fn (_,_,l1) -> forall? (fn (_,_,l2) -> separate_lenses? (l1,l2)) l) l}
 
+  op [a,c] perm_set_relates (perms: PermSet (c, a)) (asgn: SplAssign) (r:R) (stree:StorageTree) (c:c) (a:a) : Bool =
+    forall? (fn (spls,abs,l) ->
+               (abs (instantiate_splexpr_list asgn spls) c r).view (stree, l.lens_get a)) perms
 
-
-  (***
-   *** Correctness w.r.t. Permissions
-   ***)
-
-  (*
-  op stmt_correct (r_pred : R -> Bool)
-                  (perms_in : PermSetTerm, perms_out : PermSetTerm)
-                  (f : List FValue -> List FValue) (m : Monad ()) () : Bool =
-    fa (other_held,heap_in,srepr_in,ws)
-      ex (heap_out,srepr_out)
-        totally_correct
-        (fn r -> fn s_in ->
-           (* The r_predicate holds *)
-           r_pred r &&
-           (* srepr_in is a valid representation of s_in *)
-           storage_repr_as? (r,ws) (heap_in, perms_in, other_held) (s_in, srepr_in)
-           )
-        m
-        (fn r -> fn s_in -> fn s_out ->
-           (* The pre-conditions still hold on the input state *)
-           r_pred r &&
-           storage_repr_as? (r,ws) (heap_in, perms_in, other_held) (s_in, srepr_in) &&
-           (* srepr_out is a valid representation of s_out *)
-           storage_repr_as? (r,ws) (heap_out, perms_out, other_held) (s_out, srepr_out) &&
-           (* The function f relates my input and output representations *)
-           valsForPermSetTerm (r, ws) (srepr_out, perms_out)
-           = valsForPermSetTerm (r, ws) (srepr_in, perms_in) &&
-           (* The other representations do not change on output *)
-           valsForPermSetTerm (r, ws) (srepr_in, other_held)
-           = valsForPermSetTerm (r, ws) (srepr_out, other_held)
-           )
-  *)
+(*
+  op [c1,c2,a,b] abstracts_computation (r_pred: R -> Bool)
+                                       (perms_in: PermSet (c1, a))
+                                       (perms_out: PermSet (c1*c2, b))
+                                       (f: a -> b) (m: c1 -> Monad c2) : Bool =
+    fa (a,c1)
+      totally_correct
+        (fn r -> fn st_in ->
+         ex (stree) stree [] = st_in && )
+*)
 
 end-spec
