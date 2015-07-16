@@ -107,6 +107,42 @@ ISet qualifying spec
 
   type PartialEquivalence a = (EndoRelation a | partialEquivalence?)
 
+  % The symmetric closure of a relation
+  op [a] sym_closure (R: EndoRelation a) : EndoRelation a =
+    fn (x,y) -> R (x,y) || R (y,x)
+
+  % An R-chain is a list whose successive elements are related by R
+  op [a] is_r_chain? (R: EndoRelation a) (l: List a) : Bool =
+    case l of
+      | [] -> true
+      | [_] -> true
+      | x::y::l' -> R (x,y) && is_r_chain? R (y::l)
+
+  theorem r_chain_append is [a]
+    fa (R,l1,l2:List a)
+      is_r_chain? R l1 && is_r_chain? R l2 =>
+      is_r_chain? R (l1++l2)
+
+  % Take the reflexive-symmetric-transitive closure of a relation
+  op [a] rst_closure (R: EndoRelation a) : Equivalence a =
+    fn (x,y) ->
+      ex (l) head l = x && last l = y && is_r_chain? (sym_closure R) l
+
+  % The reflexive-symmetric-transitive closure of an equivalence is itself
+  theorem equivalence_rst_closure is [a]
+    fa (R: Equivalence a) rst_closure R = R
+
+  % Whether two relations commute, i.e., any R1-R2 path can be turned into an
+  % R2-R1 path and vice-versa
+  op [a] relations_commute? (R1: EndoRelation a, R2: EndoRelation a) : Bool =
+    fa (x,z)
+      (ex (y) R1 (x,y) && R2 (y,z)) <=> (ex (y) R2 (x,y) && R1 (y,z))
+
+  % Composing two commuting equivalences yields an equivalence
+  theorem compose_commuting_equivalences is [a]
+    fa (R1,R2: Equivalence a)
+      relations_commute? (R1,R2) => equivalence? (relCompose (R1,R2))
+
 
   % Isabelle morphism to map ISet and its associated operators to the
   % Isabelle set type
