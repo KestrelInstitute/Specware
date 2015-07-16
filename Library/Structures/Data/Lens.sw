@@ -27,6 +27,16 @@ Lens qualifying spec
      lens_set = (fn a -> fn c ->
                    l1.lens_set a (l2.lens_set (l1.lens_get a) c))}
 
+  (* Whether two lenses on the same type are separate *)
+  op [a,b1,b2] separate_lenses? (l1:Lens(a,b1), l2:Lens(a,b2)) : Bool =
+    (* l1's sets do not affect l2's gets *)
+    (fa (a,b1) l2.lens_get a = l2.lens_get (l1.lens_set a b1)) &&
+    (* l2's sets do not affect l1's gets *)
+    (fa (a,b2) l1.lens_get a = l1.lens_get (l2.lens_set a b2)) &&
+    (* the two sets commute *)
+    (fa (a,b1,b2)
+     l2.lens_set (l1.lens_set a b1) b2 = l1.lens_set (l2.lens_set a b2) b1)
+
   (* FIXME: prove the subtyping constraints! *)
 
 end-spec
