@@ -107,13 +107,13 @@ ISet qualifying spec
   % Isabelle morphism to map ISet and its associated operators to the
   % Isabelle set type
   proof Isa Thy_Morphism 
-    type CPO.ISet           -> set (setToPred, Collect)
-    CPO.iSetInter           -> \<inter> Left 70
-    CPO.reflexive?          -> refl
-    CPO.symmetric?          -> sym
-    CPO.antisymmetric?      -> antisym
-    CPO.transitive?         -> trans
-    CPO.equivalence?        -> equivalence
+    type ISet.ISet           -> set (setToPred, Collect)
+    ISet.iSetInter           -> \<inter> Left 70
+    ISet.reflexive?          -> refl
+    ISet.symmetric?          -> sym
+    ISet.antisymmetric?      -> antisym
+    ISet.transitive?         -> trans
+    ISet.equivalence?        -> equivalence
   end-proof
 
 end-spec
