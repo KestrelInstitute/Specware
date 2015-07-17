@@ -32,15 +32,8 @@ C_Permissions qualifying spec
   op [a,b] spltree_pair (tree1: SplTree a, tree2: SplTree b) : SplTree (a * b) =
     fn spl -> (tree1 spl, tree2 spl)
 
-  (* A storage view is a view of the current storage tree, dependent on the
-  current C environment. Defining the type this way, with the R type outside
-  SeparableView, means that the separate equality relation of the separable view
-  only defines whether two storage views are separate in terms of their views of
-  the heap (the storage tree), which is what we want because, intuitively, the C
-  environment of type R is read-only. *)
-  (*
-  type StorageView a = R -> SeparableBiView (StorageTree, a)
-  *)
+  op [a,b] spltree_map (f: a -> b) (tree: SplTree a) : SplTree b =
+    fn spl -> f (tree spl)
 
   (* An abstraction of a C "object" (e.g., value, pointer, etc.) of type c at
   type a is essentially a relation from elements of type c and the current C
@@ -84,6 +77,11 @@ C_Permissions qualifying spec
   op [c,a] combine_abstractions (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
     foldr combine_abstractions2 trivial_abstraction abses
 
+  (* Pre-compose an abstraction with a projection function *)
+  op [c1,c2,a] abstraction_pre_compose (f: c1 -> c2) (abs: CAbstraction (c2,a)) : CAbstraction (c1,a) =
+    fn r -> biview_pre_compose (fn (stree,c1tree) ->
+                                  (stree,spltree_map f c1tree)) (abs r)
+
   (* FIXME: documentation! *)
   op [c1,c2,a,b] abstracts_computation (r_pred: R -> Bool)
                                        (abs_in: CAbstraction (c1, a))
@@ -117,6 +115,10 @@ C_Permissions qualifying spec
                 ))))
 
 
+  (***
+   *** Value Abstractions
+   ***)
+
   (* A value abstraction relates C values with some abstract type a. Value
   abstractions are also splittable (see SplittingAlg), which is modeled by
   having them take in a SplittingSet and requiring that different "portions" of
@@ -146,9 +148,10 @@ C_Permissions qualifying spec
 
   (* FIXME HERE: documentation! *)
 
-  type ObjPerm a = LValue * SplSetExpr * ValueAbs a
+  type ObjPerm a = SplSetExpr * ValueAbs a
 
-  op [a] obj_perm_to_abstraction (asgn: SplAssign) (perm: ObjPerm a) : CAbstraction ((), a) =
+  op [a] lvalue_obj_perm_abstraction (asgn: SplAssign)
+                                     (lv:LValue, perm: ObjPerm a) : CAbstraction ((), a) =
     fn r ->
       {biview =
          (fn ((stree, _), a) ->
@@ -156,35 +159,58 @@ C_Permissions qualifying spec
               (* Each storage in the tree gives the lvalue the same pointer
               value, and vtree gives the values at that pointer for each spl *)
               (fa (spl)
-                 lvalue_has_result r (stree spl) perm.1 (tp, ObjPointer d) &&
+                 lvalue_has_result r (stree spl) lv (tp, ObjPointer d) &&
                  objectHasValue (stree spl) d (vtree spl))
               &&
               (* The value abstraction relates the storages+values to a *)
-              (perm.3 (instantiate_splset_expr asgn perm.2) r).biview ((stree, vtree), a)),
+              (perm.2 (instantiate_splset_expr asgn perm.1) r).biview ((stree, vtree), a)),
        sep_eq1 =
          (fn ((stree1, _), (stree2, _)) ->
             (* The pointer values of the lvalue must be equal in both trees *)
             (fa (tp,d,spl)
-               lvalue_has_result r (stree1 spl) perm.1 (tp, ObjPointer d) <=>
-               lvalue_has_result r (stree2 spl) perm.1 (tp, ObjPointer d))
+               lvalue_has_result r (stree1 spl) lv (tp, ObjPointer d) <=>
+               lvalue_has_result r (stree2 spl) lv (tp, ObjPointer d))
             &&
             (* The value abstraction must see the values+storages as sep_eq *)
             (fa (vtree1,vtree2)
                (fa (spl)
-                  expression_has_value r (stree1 spl) (E_lvalue perm.1) (vtree1 spl)
+                  expression_has_value r (stree1 spl) (E_lvalue lv) (vtree1 spl)
                   &&
-                  expression_has_value r (stree2 spl) (E_lvalue perm.1) (vtree2 spl)) =>
-               (perm.3 (instantiate_splset_expr asgn perm.2) r).sep_eq1
+                  expression_has_value r (stree2 spl) (E_lvalue lv) (vtree2 spl)) =>
+               (perm.2 (instantiate_splset_expr asgn perm.1) r).sep_eq1
                  ((stree1, vtree1), (stree2, vtree2)))),
        sep_eq2 =
          (fn (a1, a2) ->
-            (perm.3 (instantiate_splset_expr asgn perm.2) r).sep_eq2 (a1, a2))
+            (perm.2 (instantiate_splset_expr asgn perm.1) r).sep_eq2 (a1, a2))
          }
 
 
-  type PermSet a = List (ObjPerm a)
+  type PermSet a = List (LValue * ObjPerm a)
 
-  op [a] perm_set_to_abstraction (asgn: SplAssign) (perms: PermSet a) : CAbstraction ((), a) =
-    combine_abstractions (map (obj_perm_to_abstraction asgn) perms)
+  op [a] perm_set_abstraction (asgn: SplAssign) (perms: PermSet a) : CAbstraction ((), a) =
+    combine_abstractions (map (lvalue_obj_perm_abstraction asgn) perms)
+
+
+  type ValuePermSet a = PermSet a * ObjPerm a
+
+  op [a] value_perm_set_abstraction (asgn: SplAssign) (vperms: ValuePermSet a) : CAbstraction (Value, a) =
+    combine_abstractions2
+      (abstraction_pre_compose (fn _ -> ()) (perm_set_abstraction asgn vperms.1),
+       vperms.2.2 (instantiate_splset_expr asgn vperms.2.1))
+
+  type OptValuePermSet a = PermSet a * Option (ObjPerm a)
+
+  op [a] opt_value_perm_set_abstraction (asgn: SplAssign) (vperms: ValueListPermSet a) : CAbstraction (Option Value, a)
+  (* FIXME HERE *)
+
+
+  type ValueListPermSet a = PermSet a * List (ObjPerm a)
+
+  op [a] value_list_perm_set_abstraction (asgn: SplAssign) (vperms: ValueListPermSet a) : CAbstraction (List Value, a)
+(* =
+    combine_abstractions2
+      (abstraction_pre_compose (fn _ -> ()) (perm_set_abstraction asgn vperms.1),
+       FIXME HERE)
+*)
 
 end-spec

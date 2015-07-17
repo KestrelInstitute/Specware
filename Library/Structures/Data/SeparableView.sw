@@ -53,4 +53,16 @@ SeparableView qualifying spec
     separate_views? (view_of_biview sbv1, view_of_biview sbv2) &&
     separate_views? (inv_view_of_biview sbv1, inv_view_of_biview sbv2)
 
+  (* Pre-compose a bi-view with a function *)
+  op [a,b,c] biview_pre_compose (f: a -> b) (sbv: SeparableBiView (b,c)) : SeparableBiView (a,c) =
+    {biview = fn (a,c) -> sbv.biview (f a, c),
+     sep_eq1 = fn (a1,a2) -> sbv.sep_eq1 (f a1, f a2),
+     sep_eq2 = sbv.sep_eq2}
+
+  (* Post-compose a bi-view with a function *)
+  op [a,b,c] biview_post_compose (sbv: SeparableBiView (a,b)) (f: c -> b) : SeparableBiView (a,c) =
+    {biview = fn (a,c) -> sbv.biview (a, f c),
+     sep_eq1 = sbv.sep_eq1,
+     sep_eq2 = fn (c1,c2) -> sbv.sep_eq2 (f c1, f c2)}
+
 end-spec
