@@ -54,13 +54,18 @@ C_Permissions qualifying spec
   (* FIXME: update this documentation! *)
   type CAbstraction (c, a) = R -> SeparableBiView (SplTree Storage * SplTree c, a)
 
+  (* Two abstractions are separate iff their views are separate for all r's *)
+  op [c,a] separate_abstractions? (abs1: CAbstraction (c, a),
+                                   abs2: CAbstraction (c, a)) : Bool =
+    fa (r) (separate_biviews? (abs1 r, abs2 r))
+
   (* The trivial abstraction that relates, and is separate, from everything *)
   op [c,a] trivial_abstraction : CAbstraction (c, a) =
     fn r -> {biview = fn _ -> true, sep_eq1 = (=), sep_eq2 = (=)}
 
   (* The trivial abstraction is separate from all other abstractions *)
   theorem trivial_abstraction_separate is [c,a]
-    fa (r,abs:CAbstraction (c, a)) separate_biviews? (trivial_abstraction r, abs r)
+    fa (abs:CAbstraction (c, a)) separate_abstractions? (trivial_abstraction, abs)
 
   (* Combine two abstractions, only allowing the view to work if the two
   abstractions are separate. We use the rst_closure for the sep_eq relations to
@@ -113,9 +118,13 @@ C_Permissions qualifying spec
 
 
   (* A value abstraction relates C values with some abstract type a. Value
-  abstractions are also splittable, as they take in a SplittingSet. *)
-  (* FIXME HERE: separate splitting sets should give separate abstractions *)
-  type ValueAbs a = SplittingSet -> CAbstraction (Value, a)
+  abstractions are also splittable (see SplittingAlg), which is modeled by
+  having them take in a SplittingSet and requiring that different "portions" of
+  a value abstraction be separate. *)
+  type ValueAbs a = {f: SplittingSet -> CAbstraction (Value, a) |
+                     fa (splset1,splset2)
+                       splitting_sets_compatible? (splset1,splset2) =>
+                       separate_abstractions? (f splset1, f splset2)}
 
   (* Helper type for value abstractions using the FValue type *)
   type FValueAbs = ValueAbs FValue

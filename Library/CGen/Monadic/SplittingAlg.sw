@@ -139,12 +139,12 @@ SplittingAlg qualifying spec
     canonicalize_splitting_list (spl::splset)
 
   (* Combine two splitting sets *)
-  op combine_splitting_sets (splset1: SplittingMultiSet,
-                             splset2: SplittingMultiSet) : SplittingMultiSet =
+  op combine_splitting_multisets (splset1: SplittingMultiSet,
+                                  splset2: SplittingMultiSet) : SplittingMultiSet =
     case splset1 of
       | [] -> splset2
       | spl1 :: splset1' ->
-        splitting_set_add (spl1, combine_splitting_sets (splset1', splset2))
+        splitting_set_add (spl1, combine_splitting_multisets (splset1', splset2))
 
   (* The splitting set partial order intuitively is the notion of sub-portion *)
   op splitting_set_leq : PartialOrder SplittingMultiSet =
@@ -160,6 +160,11 @@ SplittingAlg qualifying spec
 
   (* The type of consistent splitting sets *)
   type SplittingSet = { s: SplittingMultiSet | splitting_set_consistent? s }
+
+  (* Two splitting sets are compatible iff their union is consistent *)
+  op splitting_sets_compatible? (splset1: SplittingSet,
+                                 splset2: SplittingSet) : Bool =
+    splitting_set_consistent? (combine_splitting_multisets (splset1, splset2))
 
 
   (***
