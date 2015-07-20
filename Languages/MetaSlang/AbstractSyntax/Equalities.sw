@@ -98,6 +98,16 @@ MetaSlang qualifying spec
  %%
  %% equalTerm? and friends
  %%
+ op [a,b] equalMatch_alpha? (var_map: List (String * String))
+                            (m1: AMatch a, m2: AMatch b)
+                            (alpha?: Bool): Bool =
+   equalList? (m1, m2,
+               fn ((p1, c1, b1), (p2, c2, b2)) ->
+                 case equalPattern?_alpha (p1, p2) alpha? var_map of
+                   | Some var_map' ->
+                     equalTerm?_alpha var_map' (c1, c2) alpha? &&
+                     equalTerm?_alpha var_map' (b1, b2) alpha?
+                   | None -> false)
 
  def equalTerm? (t1, t2) = equalTerm?_alpha [] (t1, t2) false
  op [a] equalTermAlpha? (t1: ATerm a, t2: ATerm a): Bool = equalTerm?_alpha [] (t1, t2) true
@@ -168,13 +178,7 @@ MetaSlang qualifying spec
 
          | (Lambda     (xs1,         _),
             Lambda     (xs2,         _)) ->
-           equalList? (xs1, xs2,
-                       fn ((p1, c1, b1), (p2, c2, b2)) ->
-                         case equalPattern?_alpha (p1, p2) alpha? var_map of
-                           | Some var_map' ->
-                             equalTerm?_alpha var_map' (c1, c2) alpha? &&
-                             equalTerm?_alpha var_map' (b1, b2) alpha?
-                           | None -> false)
+           equalMatch_alpha? var_map (xs1, xs2) alpha?
 
          | (IfThenElse (c1, x1, y1,  _),
             IfThenElse (c2, x2, y2,  _)) -> eqTerm? (c1, c2) &&
