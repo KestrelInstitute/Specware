@@ -54,40 +54,43 @@ C_Permissions qualifying spec
 
   (* The trivial abstraction that relates, and is separate, from everything *)
   op [c,a] trivial_abstraction : CAbstraction (c, a) =
-    fn r -> {biview = fn _ -> true, sep_eq1 = (=), sep_eq2 = (=)}
+    fn r -> trivial_biview
 
-  (* The trivial abstraction is separate from all other abstractions *)
-  theorem trivial_abstraction_separate is [c,a]
-    fa (abs:CAbstraction (c, a)) separate_abstractions? (trivial_abstraction, abs)
+  (* Build an abstraction from a relation *)
+  op [c,a] abstraction_of_relation (R: ISet.Relation (SplTree c,a)) : CAbstraction (c,a) =
+    fn r -> biview_of_relation (fn ((_,ctree),a) -> R (ctree, a))
 
-  (* Combine two abstractions, only allowing the view to work if the two
-  abstractions are separate. We use the rst_closure for the sep_eq relations to
-  make sure they are equivalences even if abs1 and abs2 are not separate, but
-  this is equivalent to relCompose (abs1.sep_eq,abs2.sep_eq) if they are. *)
-  op [c,a] combine_abstractions2 (abs1: CAbstraction (c,a),
+  (* Conjoin two abstractions *)
+  op [c,a] conjoin_abstractions2 (abs1: CAbstraction (c,a),
                                   abs2: CAbstraction (c,a)) : CAbstraction (c,a) =
-    fn r ->
-      {biview = fn (c,a) ->
-         separate_biviews? (abs1 r, abs2 r) &&
-         iSetInter ((abs1 r).biview, (abs2 r).biview) (c,a),
-       sep_eq1 = rst_closure (relCompose ((abs1 r).sep_eq1, (abs2 r).sep_eq1)),
-       sep_eq2 = rst_closure (relCompose ((abs1 r).sep_eq2, (abs2 r).sep_eq2))}
+    fn r -> conjoin_biviews2 (abs1 r, abs2 r)
 
-  (* Combine a list of abstractions *)
-  op [c,a] combine_abstractions (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
-    foldr combine_abstractions2 trivial_abstraction abses
+  (* Conjoin a list of abstractions *)
+  op [c,a] conjoin_abstractions (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
+    fn r -> conjoin_biviews (map (fn abs -> abs r) abses)
+
+  (* Compose two abstractions *)
+  op [c1,c2,a] compose_abstractions (abs1: CAbstraction (c1, SplTree c2),
+                                     abs2: CAbstraction (c2, a)) : CAbstraction (c1, a) =
+    fn r -> compose_biviews (biview_post_compose (abs1 r) (fn p -> p.2), abs2 r)
 
   (* Pre-compose an abstraction with a projection function *)
-  op [c1,c2,a] abstraction_pre_compose (f: c1 -> c2) (abs: CAbstraction (c2,a)) : CAbstraction (c1,a) =
+  op [c1,c2,a] pre_compose_abstraction (f: c1 -> c2)
+                                       (abs: CAbstraction (c2,a)) : CAbstraction (c1,a) =
     fn r -> biview_pre_compose (fn (stree,c1tree) ->
                                   (stree,spltree_map f c1tree)) (abs r)
 
-  (* FIXME: documentation! *)
-  op [c1,c2,a,b] abstracts_computation (r_pred: R -> Bool)
-                                       (abs_in: CAbstraction (c1, a))
-                                       (abs_out: CAbstraction (c1*c2, b))
-                                       (f: a -> b) (m: c1 -> Monad c2) : Bool =
 
+  (***
+   *** Proving Abstraction Properties of Computations
+   ***)
+
+  (* This property states that monadic function m can be modeled using function
+  f using the given input and output abstractions *)
+  op [c1,c2,a,b] abstracts_computation_fun (r_pred: R -> Bool)
+                                           (abs_in: CAbstraction (c1, a))
+                                           (abs_out: CAbstraction (c1*c2, b))
+                                           (f: a -> b) (m: c1 -> Monad c2) : Bool =
     (* The sep_eq1 of abs_in must be at least as strong as that of abs_out;
     i.e., more things can be separate from us at the end of the computation *)
     (fa (r, stree1, stree2, c1tree1, c1tree2, c2tree1, c2tree2)
@@ -113,6 +116,17 @@ C_Permissions qualifying spec
                 (abs_out r).sep_eq1 ((stree_in, spltree_pair (c1tree_in, c2tree_out)),
                                      (stree_out, spltree_pair (c1tree_in, c2tree_out)))
                 ))))
+
+  (* Same as above, but for computations not computation functions *)
+  op [c2,a,b] abstracts_computation (r_pred: R -> Bool)
+                                    (abs_in: CAbstraction ((), a))
+                                    (abs_out: CAbstraction (c2, b))
+                                    (f: a -> b) (m: Monad c2) : Bool =
+    abstracts_computation_fun
+      r_pred abs_in
+      (pre_compose_abstraction (fn ((),c2) -> c2) abs_out)
+      f
+      (fn _ -> m)
 
 
   (***
@@ -150,67 +164,86 @@ C_Permissions qualifying spec
 
   type ObjPerm a = SplSetExpr * ValueAbs a
 
-  op [a] lvalue_obj_perm_abstraction (asgn: SplAssign)
-                                     (lv:LValue, perm: ObjPerm a) : CAbstraction ((), a) =
+  (* Build the CAbstraction that relates an lvalue to its value(s) *)
+  op lvalue_abstraction (lv:LValue) : CAbstraction ((), SplTree Value) =
     fn r ->
-      {biview =
-         (fn ((stree, _), a) ->
-            ex (tp,d,vtree)
-              (* Each storage in the tree gives the lvalue the same pointer
-              value, and vtree gives the values at that pointer for each spl *)
-              (fa (spl)
-                 lvalue_has_result r (stree spl) lv (tp, ObjPointer d) &&
-                 objectHasValue (stree spl) d (vtree spl))
-              &&
-              (* The value abstraction relates the storages+values to a *)
-              (perm.2 (instantiate_splset_expr asgn perm.1) r).biview ((stree, vtree), a)),
-       sep_eq1 =
-         (fn ((stree1, _), (stree2, _)) ->
-            (* The pointer values of the lvalue must be equal in both trees *)
-            (fa (tp,d,spl)
-               lvalue_has_result r (stree1 spl) lv (tp, ObjPointer d) <=>
-               lvalue_has_result r (stree2 spl) lv (tp, ObjPointer d))
-            &&
-            (* The value abstraction must see the values+storages as sep_eq *)
-            (fa (vtree1,vtree2)
-               (fa (spl)
-                  expression_has_value r (stree1 spl) (E_lvalue lv) (vtree1 spl)
-                  &&
-                  expression_has_value r (stree2 spl) (E_lvalue lv) (vtree2 spl)) =>
-               (perm.2 (instantiate_splset_expr asgn perm.1) r).sep_eq1
-                 ((stree1, vtree1), (stree2, vtree2)))),
-       sep_eq2 =
-         (fn (a1, a2) ->
-            (perm.2 (instantiate_splset_expr asgn perm.1) r).sep_eq2 (a1, a2))
-         }
+      {biview = fn ((stree,_),vtree) ->
+         (* Each storage in the tree gives the lvalue the same pointer value, and
+            vtree gives the values at that pointer for each spl *)
+         (fa (spl,tp,d)
+            lvalue_has_result r (stree spl) lv (tp, ObjPointer d) &&
+            objectHasValue (stree spl) d (vtree spl)),
+       sep_eq1 = fn ((stree1,_),(stree2,_)) ->
+         (* Intuitively, this view "looks at" the whole storage tree, so nothing
+         about the storage tree is separate; but we also promise not to change the
+         pointer value of lv, so we put that in sep_eq as well... *)
+         (fa (tp,d,spl)
+            lvalue_has_result r (stree1 spl) lv (tp, ObjPointer d) <=>
+            lvalue_has_result r (stree2 spl) lv (tp, ObjPointer d)),
+       sep_eq2 = fn (vtree1,vtree2) ->
+         (* The backwards view "looks at" everything, so sep_eq2 doesn't care *)
+         true}
+
+  (* Convert an ObjPerm to an abstraction on values *)
+  op [a] obj_perm_abstraction (asgn: SplAssign) (perm: ObjPerm a) : CAbstraction (Value, a) =
+    perm.2 (instantiate_splset_expr asgn perm.1)
 
 
-  type PermSet a = List (LValue * ObjPerm a)
+  type Perm a = LValue * ObjPerm a
+
+  op [a] perm_abstraction (asgn: SplAssign) ((lv,perm): Perm a) : CAbstraction ((), a) =
+    compose_abstractions (lvalue_abstraction lv,
+                          obj_perm_abstraction asgn perm)
+
+
+  type PermSet a = List (Perm a)
 
   op [a] perm_set_abstraction (asgn: SplAssign) (perms: PermSet a) : CAbstraction ((), a) =
-    combine_abstractions (map (lvalue_obj_perm_abstraction asgn) perms)
+    conjoin_abstractions (map (perm_abstraction asgn) perms)
 
 
   type ValuePermSet a = PermSet a * ObjPerm a
 
-  op [a] value_perm_set_abstraction (asgn: SplAssign) (vperms: ValuePermSet a) : CAbstraction (Value, a) =
-    combine_abstractions2
-      (abstraction_pre_compose (fn _ -> ()) (perm_set_abstraction asgn vperms.1),
-       vperms.2.2 (instantiate_splset_expr asgn vperms.2.1))
+  op [a] value_perm_set_abstraction (asgn: SplAssign)
+                                    ((perms,operm): ValuePermSet a) : CAbstraction (Value, a) =
+    conjoin_abstractions2
+      (pre_compose_abstraction (fn _ -> ()) (perm_set_abstraction asgn perms),
+       operm.2 (instantiate_splset_expr asgn operm.1))
 
   type OptValuePermSet a = PermSet a * Option (ObjPerm a)
 
-  op [a] opt_value_perm_set_abstraction (asgn: SplAssign) (vperms: ValueListPermSet a) : CAbstraction (Option Value, a)
-  (* FIXME HERE *)
+  op [a] opt_value_perm_set_abstraction
+      (asgn: SplAssign) ((perms,opt_operm): OptValuePermSet a) : CAbstraction (Option Value, a) =
+    case opt_operm of
+      | Some operm ->
+        compose_abstractions (abstraction_of_relation
+                                (fn (optv_tree,vtree) ->
+                                   fa (spl) optv_tree spl = Some (vtree spl)),
+                              value_perm_set_abstraction asgn (perms,operm))
+      | None ->
+        compose_abstractions (abstraction_of_relation
+                                (fn (optv_tree,_) -> fa (spl) optv_tree spl = None),
+                              perm_set_abstraction asgn perms)
 
 
   type ValueListPermSet a = PermSet a * List (ObjPerm a)
 
-  op [a] value_list_perm_set_abstraction (asgn: SplAssign) (vperms: ValueListPermSet a) : CAbstraction (List Value, a)
-(* =
-    combine_abstractions2
-      (abstraction_pre_compose (fn _ -> ()) (perm_set_abstraction asgn vperms.1),
-       FIXME HERE)
-*)
+  op [a] value_list_perm_set_abstraction
+      (asgn: SplAssign) ((perms,operms): ValueListPermSet a) : CAbstraction (List Value, a) =
+    foldr
+      (fn (operm, abs) ->
+         conjoin_abstractions2
+           (compose_abstractions
+              (abstraction_of_relation (fn (vs_tree, vtree) ->
+                                          fa (spl) ex (l) vs_tree spl = (vtree spl)::l),
+               obj_perm_abstraction asgn operm),
+            compose_abstractions
+              (abstraction_of_relation (fn (vs_tree1, vs_tree2) ->
+                                          fa (spl) ex (x) vs_tree1 spl = x::(vs_tree2 spl)),
+               abs)))
+      (compose_abstractions
+         (abstraction_of_relation (fn (vs_tree,_) -> fa (spl) vs_tree spl = []),
+          perm_set_abstraction asgn perms))
+      operms
 
 end-spec
