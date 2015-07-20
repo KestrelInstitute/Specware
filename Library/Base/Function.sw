@@ -25,6 +25,9 @@ theorem associativity is [a,b,c,d]
 
 op [a,b,c] :> (f: a -> b, g: b -> c) infixl 24 : a -> c = g o f
 
+op [a,b] fnUpdate(f: a -> b) (x: a) (y: b): a -> b =
+  fn z -> if x = z then y else f z
+
 % injectivity, surjectivity, bijectivity:
 
 op [a,b] injective? (f: a -> b) : Bool =
@@ -360,7 +363,8 @@ proof Isa ThyMorphism
   Function.surjective? -> surj
   Function.bijective?  -> bij
   Function.inverse     -> inv
-end-proof
+  Function.fnUpdate     -> fun_upd
+  end-proof
 
 % mapping to Haskell:
 

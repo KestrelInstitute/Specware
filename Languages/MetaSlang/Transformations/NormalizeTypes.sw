@@ -76,15 +76,18 @@ op normalizeType (spc               : Spec,
                typename_info 
       in
       case new_name_info of
-       | Some (name, tvs, tyvar_sbst) | length tvs = length tyvar_sbst ->
-         let type_args = 
-             map (fn tv -> 
-                    case findLeftmost (fn (tv1, _) -> tv = tv1) tyvar_sbst of
-                      | Some (_, ty_i) -> ty_i)
+       | Some (name, tvs, tyvar_sbst) ->
+         %let _ = writeLine("normalizeType: "^show name^"\n"^anyToString tvs^"\n"^anyToString tyvar_sbst) in
+         %if length tvs = length tyvar_sbst then
+           let type_args = 
+               map (fn tv -> 
+                      case findLeftmost (fn (tv1, _) -> tv = tv1) tyvar_sbst of
+                        | Some (_, ty_i) -> ty_i
+                        | None -> mkTyVar tv)
                  tvs
-         in
-         Base (name, type_args, typeAnn typ)
-
+           in
+           Base (name, type_args, typeAnn typ)
+         %else typ
        | _ -> typ
  else 
    typ
