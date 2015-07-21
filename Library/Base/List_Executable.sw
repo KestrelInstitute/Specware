@@ -1190,8 +1190,12 @@ proof isa List__permute__1_Obligation_subtype1
   by (simp add:  List__permutation_mem)
 end-proof
 
-proof isa List__permute__1_Obligation_subtype0 
-  by (simp add: List__permutation_p_def )
+proof isa List__permute__1_Obligation_subtype0
+  by (simp add: List__permutation_p_def)
+end-proof
+
+proof isa List__permute__1_Obligation_subtype2
+  by (simp add: List__permutation_p_def)
 
 (*** and an explicit version of  List__permute__1_Obligation_subtype ***)
 lemma List__permute__1_Obligation_subtype_explicit: 
@@ -1200,10 +1204,8 @@ lemma List__permute__1_Obligation_subtype_explicit:
     (\<lambda> (i::nat). if i < length l then l @@ List__positionOf(prm, i) else None) 
        definedOnInitialSegmentOfLength (length l)"
   apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  apply (frule List__permute__1_Obligation_subtype1, simp_all,
-         drule List__permutation_distinct, 
-         frule List__positionOf_exists2, auto)
-  apply(simp add: List__e_at_at_def list_1_Isa_nth List__positionOf_length2)
+  by (metis (mono_tags, hide_lams) List__e_at_at_def List__equiLong_def List__permutation_mem
+            List__permutation_p_def List__positionOf_length2 list_1_Isa_nth)
 end-proof
 
 proof isa List__permute__1_Obligation_subtype 
