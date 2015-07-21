@@ -1657,23 +1657,21 @@ proof Isa segmentation_p_Obligation_subtype
 end-proof
 
 proof Isa segmentationOf_Obligation_subtype
+  by (auto simp add: Seq__segmentation_p_def)
+end-proof
+proof Isa segmentationOf_Obligation_subtype0
   by (auto simp add: Seq__forall_p_def Seq__empty_def Seq__nonEmpty_p_alt_def
                      Seq__e_lt_length_def Seq__length_def)
 end-proof
 
-proof Isa segmentationOf_Obligation_subtype0
- by (auto simp add: Seq__e_lt_length_Obligation_subtype)
+proof Isa segmentationOf_Obligation_subtype1
+  by (auto simp add: Seq__e_lt_length_Obligation_subtype)
 end-proof
 
 proof Isa segmentationOf_Obligation_subtype2
- apply (auto, drule Seq__e_lt_length_Obligation_subtype)
- apply (case_tac ss, 
-        simp_all add: Seq__SegSeq__subtype_pred_def 
-                      List__e_at_at_def list_1_Isa_nth 
-        split: split_if_asm) 
- apply (auto simp add: Seq__segmentation_p_def List__length_subFromLong)
- apply (rule_tac B="{i. i < length list - 1}" in finite_subset, 
-        auto simp add: )
+  apply(simp add: Seq__segmentation_p_def)
+  by (metis Seq__butLast_def Seq__equiExtendLeft_Obligation_exhaustive Seq__finite_fin_simp Seq__finite_inf_simp
+      Seq__map.simps(1) Seq__removeSuffix_fin)
 end-proof
 
 proof Isa unflatten_Obligation_the
@@ -1785,6 +1783,10 @@ end-proof
 %% end-proof
 
 proof Isa unflattenU_Obligation_subtype
+  by (auto simp add: Seq__segmentation_p_def)
+end-proof
+
+proof Isa unflattenU_Obligation_subtype0
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__inf  
@@ -1794,13 +1796,15 @@ proof Isa unflattenU_Obligation_subtype
                         Stream__map_def Stream__repeat_def)
 end-proof
 
-
-%% proof Isa unflattenU_Obligation_subtype2
-%%   by (simp add: list_all_iff)
-%% end-proof
-
-
 proof Isa unflattenU_Obligation_subtype1
+  by (auto simp add: Seq__segmentation_p_def)
+end-proof
+
+proof Isa unflattenU_Obligation_subtype3
+  by (metis Seq__segmentation_p_def select_convs(2))
+end-proof
+
+proof Isa unflattenU_Obligation_subtype4
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__fin  
@@ -1813,7 +1817,11 @@ proof Isa unflattenU_Obligation_subtype1
                    list_all_iff)
   apply (rule_tac t = "Seq__list \<circ> Seq__fin" and s=id in subst,
          simp add: fun_eq_iff,
-         rule sym, simp add: zdvd_int List__unflatten_concat )
+         rule sym, simp add: zdvd_int List__unflatten_concat)
+end-proof
+
+proof Isa unflattenU_Obligation_subtype5
+  by (auto simp add: Seq__segmentation_p_def)
 end-proof
 
 proof Isa increasingNats_p_Obligation_subtype

@@ -381,17 +381,6 @@ proof Isa fromAssocList_Obligation_subtype1
   apply (cut_tac d__x=alist in List__unzip_subtype_constr)  
   apply (auto simp add:  dom_if member_def 
          List__positionOf_def List__theElement_def)
-  apply (rule the1I2,
-         rule List__theElement_Obligation_the, 
-         rule List__positionOf_Obligation_subtype,
-         simp_all add: member_def List__positionsOf_subtype_constr)
-  apply (simp add: List__positionsOf_def List__positionsSuchThat_def)
-  apply (rotate_tac -1, erule rev_mp)
-  apply (rule the1I2,
-         cut_tac l=xs_1 and p="\<lambda>z. z=x" 
-            in List__positionsSuchThat_Obligation_the, 
-         simp, clarify)
-  apply (drule spec, auto)
 
 (******************************************************************************
 *** Note the correct type of Map__fromAssocList__stp is
@@ -401,6 +390,9 @@ consts Map__fromAssocList__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
 
 end-proof
   
+proof Isa fromAssocList_Obligation_subtype2
+  by (metis List__equiLong_def List__positionOf_length2 List__unzip_subtype_constr prod.case prod.inject)
+end-proof
 
 % ------------------------------------------------------------------------------
 % ---------- Part 6: verbatim Isabelle lemmas             ----------------------

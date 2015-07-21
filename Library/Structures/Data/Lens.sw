@@ -37,6 +37,9 @@ Lens qualifying spec
     (fa (a,b1,b2)
      l2.lens_set (l1.lens_set a b1) b2 = l1.lens_set (l2.lens_set a b2) b1)
 
-  (* FIXME: prove the subtyping constraints! *)
+proof Isa lens_compose_Obligation_subtype
+  by (auto simp add: Lens__Lens__subtype_pred_def Lens__satisfies_get_put_def
+                     Lens__satisfies_put_get_def Lens__satisfies_put_put_def)
+end-proof
 
 end-spec

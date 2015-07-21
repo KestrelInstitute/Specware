@@ -855,11 +855,12 @@ spec
      else (ty1, ty2)
 
  def <= (tcc, gamma, M, tau, sigma, raise?) = 
-   (% writeLine(printTerm M^ ": "^ printType tau^"\n <= "^ printType sigma);
+   (% if raise? then () else writeLine(printTerm M^ ": "^ printType tau^"\n <= "^ printType sigma);
     if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
-    let (tau0, sigma0) = if raise? then maybeRaiseSubtypes(tau, sigma, gamma) else (tau, sigma) in
-    % let _ =  writeLine(printTerm M^ ": \n"^ printType tau0^"\n <= \n"^ printType sigma0) in
+    let (tau0, sigma0) = maybeRaiseSubtypes(tau, sigma, gamma) in
+    let tau0 = if raise? then tau0 else tau in
+    % let _ = if raise? then () else writeLine(printTerm M^ ": \n"^ printType tau0^"\n <= \n"^ printType sigma0) in
     if lifting? gamma then
       let gamma =
           case tau0 of

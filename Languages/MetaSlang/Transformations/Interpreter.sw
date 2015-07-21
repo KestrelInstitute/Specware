@@ -23,20 +23,23 @@ spec
     | RecClosure  MSMatch * Subst * List Id
     | Unevaluated MSTerm
 
-  op equalValue?(v1: MSIValue, v2: MSIValue): Bool =
+  op equalValue?(v1: MSIValue, v2: MSIValue): Option Bool =
     case (v1,v2) of
-      | (Int n1, Int n2) -> n1 = n2
-      | (Char ch1, Char ch2) -> ch1 = ch2
-      | (String str1, String str2) -> str1 = str2
-      | (Bool b1, Bool b2) -> b1 = b2
+      | (Int n1, Int n2) -> Some(n1 = n2)
+      | (Char ch1, Char ch2) -> Some(ch1 = ch2)
+      | (String str1, String str2) -> Some(str1 = str2)
+      | (Bool b1, Bool b2) -> Some(b1 = b2)
       | (RecordVal sb1, RecordVal sb2) ->
-        length sb1 = length sb2
-          && forall? (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2)) (zip(sb1,sb2))
-      | (Constructor(id1,v1,_), Constructor(id2,v2,_)) -> id1 = id2 && equalValue?(v1,v2)
-      | (Constant(id1,_), Constant(id2,_)) -> id1 = id2
-      | (Unevaluated(t1),Unevaluated(t2)) -> equalTermAlpha?(t1,t2)
+        Some(length sb1 = length sb2
+               && forall? (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2) = Some true) (zip(sb1,sb2)))
+      | (Constructor(id1,v1,_), Constructor(id2,v2,_)) -> Some(id1 = id2 && equalValue?(v1,v2) = Some true)
+      | (Constant(id1,_), Constant(id2,_)) -> Some(id1 = id2)
+      | (Unevaluated(t1),Unevaluated(t2)) -> Some(equalTermAlpha?(t1,t2))
+      | (Closure(match1, sb1),  Closure(match2, sb2)) ->
+        if equalMatch_alpha? [] (match1, match2) true && sb1 = sb2
+          then Some true else None
       %% Should have special cases for QuotientVal ChooseClosure Closure RecClosure
-      | _ -> v1 = v2
+      | _ -> if v1 = v2 then Some true else None
 
   op  unevaluated?: MSIValue -> Bool
   def unevaluated? x = embed? Unevaluated x
@@ -423,7 +426,7 @@ spec
              else None
            | (Unevaluated _, _) -> None
            | (_, Unevaluated _) -> None
-           | _ -> Some(equalValue?(a1, a2)))
+           | _ -> equalValue?(a1, a2))
       | _ -> None
         
   def mergeFields(row1,row2) =
