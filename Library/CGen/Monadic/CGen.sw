@@ -1,4 +1,4 @@
-CGen_Base qualifying spec
+CGen qualifying spec
   import C_Permissions, C_DSL
 
 
