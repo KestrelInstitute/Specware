@@ -319,10 +319,25 @@ C_Permissions qualifying spec
         f
         m
 
+  (* Abstraction for statements that optionally do a return at the end *)
+  op [a,b] abstracts_ret_statement (perms_in: PermSet a)
+                                   (perms_out: PermSet b * Option (ValuePerm b))
+                                   (f: a -> b) (m: Monad ()) : Bool =
+    fa (asgn)
+      abstracts_computation
+        (perm_set_abstraction asgn perms_in)
+        (conjoin_abstractions2
+           (opt_value_perm_abstraction asgn perms_out.2,
+            compose_abstractions
+              (ctoc_abstraction_of_projection ((fn _ -> true), (fn _ -> true)),
+               perm_set_abstraction asgn perms_out.1)))
+        f
+        (catchReturns m)
+
   (* Abstraction for C functions, which are computation functions mapping lists
   of values, for the arguments, to an optional return value *)
   op [a,b] abstracts_c_function (perms_in: List (ValuePerm a))
-                                (perms_out: List (ValuePerm b) * Option (ValuePerm b))
+                                (perms_out: List (ValuePerm b) * OptValuePerm b)
                                 (f: a -> b)
                                 (m: List Value -> Monad (Option Value)) : Bool =
     fa (asgn)
