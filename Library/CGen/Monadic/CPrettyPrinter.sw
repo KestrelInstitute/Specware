@@ -963,12 +963,21 @@ op printFunctionDeclaration (fdef:FunctionDeclaration) : PP0 =
       printNewline}
    | None -> print ";"}
 
+op printInclude (filename: String, brackets_p: Bool) : PP0 =
+  {startLine;
+   print "#include";
+   if brackets_p then print "<" else print "\"";
+   print filename;
+   if brackets_p then print ">" else print "\"";
+   printNewline}
+
 (* Printing an external declaration is straightforward, by cases. *)
 
-op printExternalDeclaration (xdecl:ExternalDeclaration) : PP0 =
+op printExternalDeclaration (xdecl:TranslationUnitElem) : PP0 =
   case xdecl of
-  | EDecl_function fdef -> printFunctionDeclaration fdef
-  | EDecl_declaration decl -> printDeclaration decl
+  | XU_function fdef -> printFunctionDeclaration fdef
+  | XU_declaration decl -> printDeclaration decl
+  | XU_include nm_and_brackets -> printInclude nm_and_brackets
 
 (* We print a translation unit by printing all its external declarations in
 order, separated by a blank line for improved readability. The structure of the
