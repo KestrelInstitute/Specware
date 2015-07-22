@@ -4062,7 +4062,7 @@ proof isa C__ullongOfChar_bits
   apply(simp add: toBits_toNat_extend Divides.mod_pos_pos_trivial)
 end-proof
 
-proof isa C__scharOfMathInt__1_Obligation_subtype0
+proof isa C__scharOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__short_bits_def C__sizeof_short_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
   apply(simp only:)
@@ -4081,7 +4081,7 @@ proof isa C__scharOfMathInt__1__obligation_refine_def
 end-proof
 
 (* was quite slow without the uses of only: *)
-proof isa C__sshortOfMathInt__1_Obligation_subtype0
+proof isa C__sshortOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__short_bits_def C__sizeof_short_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
   apply(simp only:)
@@ -4099,7 +4099,7 @@ proof isa C__sshortOfMathInt__1__obligation_refine_def
   apply(simp del:C__mathIntOfSshort_injective add:C__mathIntOfSshort_sshortOfMathInt C__sshortOfMathInt__1_def rangeOfSshort_alt_def)
 end-proof
 
-proof isa C__sintOfMathInt__1_Obligation_subtype0
+proof isa C__sintOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__int_bits_def C__sizeof_int_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
   apply(simp only:)
@@ -4117,7 +4117,7 @@ proof isa C__sintOfMathInt__1__obligation_refine_def
   apply(simp del:C__mathIntOfSint_injective add:C__mathIntOfSint_sintOfMathInt C__sintOfMathInt__1_def rangeOfSint_alt_def)
 end-proof
 
-proof isa C__slongOfMathInt__1_Obligation_subtype0
+proof isa C__slongOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__long_bits_def C__sizeof_long_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
   apply(simp only:)
@@ -4135,7 +4135,7 @@ proof isa C__slongOfMathInt__1__obligation_refine_def
   apply(simp del:C__mathIntOfSlong_injective add:C__mathIntOfSlong_slongOfMathInt C__slongOfMathInt__1_def rangeOfSlong_alt_def)
 end-proof
 
-proof isa C__sllongOfMathInt__1_Obligation_subtype0
+proof isa C__sllongOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__llong_bits_def C__sizeof_llong_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
   apply(simp only:)
