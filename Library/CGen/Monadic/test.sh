@@ -13,7 +13,10 @@ run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/C_DSL.sw
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/C_Predicates.sw
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/CPrettyPrinter.sw
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/C.sw
-run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/GenerateC.sw
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/TraceMonad_Simple.sw
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/TraceMonad.sw
+
+run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/Examples/NegateBytes.sw
+run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/Examples/NegateBytesOrig.sw
+run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/Examples/Examples.sw
 

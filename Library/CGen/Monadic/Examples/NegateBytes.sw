@@ -249,7 +249,7 @@ end-spec
 S_final = spec
   import S3
   import /Library/CGen/Monadic/C_DSL
-  import /Library/CGen/Monadic/GenerateC
+  %%import /Library/CGen/Monadic/GenerateC
 
   op negateBytes_obj : ExtDecl =
     FUNCTION (TN_void, "negateBytes",
