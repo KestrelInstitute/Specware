@@ -77,6 +77,11 @@ C_DSL qualifying spec
     {res <- lhs; rhs_val <- rhs;
      assignValue (res, rhs_val)}
 
+  (* Return statements *)
+  op RETURN (expr : Monad C.Value) : Monad () =
+    {v <- expr; returnFromFun (Some v)}
+  op RETURN_VOID : Monad () = returnFromFun None
+
   (* If-then-else statements *)
   op IFTHENELSE (expr : Monad C.Value,
                  then_branch : Monad (), else_branch : Monad ()) : Monad () =
@@ -345,6 +350,18 @@ C_DSL qualifying spec
       stmt = S_assign (e1, e2) && evaluateLValue e1 = lv && evaluate e2 = rv
       =>
       evalStatement stmt = ASSIGN (lv, rv)
+
+  theorem RETURN_correct is
+    fa (e,stmt,rv)
+      stmt = S_return (Some e) && evaluate e = rv
+      =>
+      evalStatement stmt = RETURN rv
+
+  theorem RETURN_VOID_correct is
+    fa (stmt)
+      stmt = S_return None
+      =>
+      evalStatement stmt = RETURN_VOID
 
   theorem IFTHENELSE_correct is
     fa (e,s1,s2,rv,m1,m2,stmt)
