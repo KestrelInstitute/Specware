@@ -120,22 +120,22 @@ C_DSL qualifying spec
 
   (* External declarations, which have type XUMonad (Option ObjectFileBinding) *)
 
-  type ExtDecl = XUMonad (Option ObjectFileBinding)
+  type ExtDecl = XUMonad (ObjectFileBindings)
 
   (* Function combinator *)
   op FUNCTION_m (retTypeName : C.TypeName, name : Identifier,
-                 paramDecls : List (C.TypeName * Identifier),
+                 paramDecls : ParameterList,
                  body : Monad ()) : ExtDecl =
     {retType <- expandTypeNameXU retTypeName;
      params <- mapM_XU evalParameterDeclaration paramDecls;
      xenv <- xu_get;
      return
-       (Some (name,
-              ObjFile_Function
-                (makeCFunction
-                   (retType, params,
-                    localR (fn r -> makeGlobalR (xenv, r.r_functions)) body),
-                 (retType, (unzip params).2))))}
+       [(name,
+         ObjFile_Function
+           (makeCFunction
+              (retType, params,
+               localR (fn r -> makeGlobalR (xenv, r.r_functions)) body),
+            (retType, (unzip params).2)))]}
 
 
   (*** Theorems ***)
@@ -408,11 +408,11 @@ C_DSL qualifying spec
   (* External Declarations *)
   theorem FUNCTION_m_correct is
     fa (retTypeName, name, params, body, d, m)
-      d = EDecl_function {FDef_retType  = retTypeName,
-                          FDef_name     = name,
-                          FDef_params   = params,
-                          FDef_body     = Some body,
-                          FDef_isExtern = false}
+      d = XU_function {FDef_retType  = retTypeName,
+                       FDef_name     = name,
+                       FDef_params   = params,
+                       FDef_body     = Some body,
+                       FDef_isExtern = false}
       && evalStatement body = m
       =>
       compile1XU d = FUNCTION_m (retTypeName, name, params, m)

@@ -13,7 +13,7 @@ Examples_spec = spec
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyByte *)
-  op copyByte_C : { d:ExternalDeclaration | compile1XU d = copyByte }
+  op copyByte_C : { d:TranslationUnitElem | compile1XU d = copyByte }
 
   (* This is the semantic object for the following function:
 
@@ -47,7 +47,7 @@ Examples_spec = spec
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyBytes *)
-  op copyBytes_C : { d:ExternalDeclaration | compile1XU d = copyBytes }
+  op copyBytes_C : { d:TranslationUnitElem | compile1XU d = copyBytes }
 
 end-spec
 

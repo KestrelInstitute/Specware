@@ -1193,21 +1193,24 @@ type Declaration =
   | Decl_object   ObjectDeclaration
   | Decl_typedef  TypeDefinition
 
+
 %subsection (* Translation units *)
 
-(* Our C subset has no preprocessing directives [ISO 6.10], so a preprocessing
-translation unit [ISO 5.1.1.1/1] is the same as a translation unit [ISO 6.9] --
-essentially, a file.
+(* In the C standard, source files are called "preprocessing translation units"
+[ISO 5.1.1.1/1], which are then preprocessed into "translation units". We
+combine these two steps, so we just call input files "translation units". The
+only preprocessing we support, however, is include directives [ISO 6.10.2], so
+our translation units are lists of include directives and external declarations,
+where the latter include function definitions and declarations [ISO 6.9/1].
+Include directives can either use the "<" and ">" delimeters or double quotes as
+delimiters, so the XU_include constructor includes a boolean flag which is true
+iff the "<" and ">" delimiters are intended. *)
+type TranslationUnitElem =
+  | XU_declaration Declaration
+  | XU_function FunctionDeclaration
+  | XU_include String * Bool
 
-A translation unit consists of zero or more external declarations, where an
-external declaration is either a function definition or a declaration as defined
-earlier [ISO 6.9/1]. *)
-
-type ExternalDeclaration =
-  | EDecl_function    FunctionDeclaration
-  | EDecl_declaration Declaration
-
-type TranslationUnit = List ExternalDeclaration
+type TranslationUnit = List TranslationUnitElem
 
 
 %section (* Semantics *)
@@ -3240,11 +3243,20 @@ type ObjectFileElem =
   | ObjFile_Object Value
   | ObjFile_Function (CFunction * FunType)
 type ObjectFileBinding = Identifier * ObjectFileElem
+type ObjectFileBindings = List ObjectFileBinding
 
-type ObjectFile = {l:List ObjectFileBinding | noRepetitions? (unzip l).1 }
+type ObjectFile = {l:ObjectFileBindings | noRepetitions? (unzip l).1 }
 
 (* FIXME HERE: make a type of association lists with no repetitions; or at least
 make such a type for Identifier keys *)
+
+op [a,b] filterMap (f : a -> Option b) (l : List a) : List b =
+  case l of
+    | [] -> []
+    | x::l' ->
+      (case f x of
+         | Some y -> y :: filterMap f l'
+         | None -> filterMap f l')
 
 (* Get the object bindings in an object file *)
 op objFileObjectBindings (ofile : ObjectFile) : {l:List (Identifier * Value) | noRepetitions? (unzip l).1 } =
@@ -3260,22 +3272,35 @@ op objFileFunBindings (ofile : ObjectFile) : {l:List (Identifier * CFunction) | 
                  | ObjFile_Function (f, _) -> Some (id, f)
                  | _ -> None) ofile
 
-(* The monad for evaluating translation units. This is a state transformer for
-TranslationEnv, applied to the option monad; the intuition for the former is
-that TranslationEnv is the "state" of the translation environment, while the
-latter is to represent errors. *)
-type XUMonad a = TranslationEnv -> Option (TranslationEnv * a)
+(* The monad for evaluating translation units. This is a reader monad
+transformer, applied to the state transformer for TranslationEnv, applied to the
+option monad. The latter is for representing errors, and the state transformer
+is to represent modifications of the translation environment. The reader monad
+adds an input that is a map from include files (where the Boolean flag is true
+for files included with the "<" and ">" delimiters and false for files included
+using double quotes) to the effects they have on the current translation
+environment if they are included. These latter effects are in the XUSubMonad
+monad, which is just the state transformer applied to the option monad, since
+having them be in XUMonad itself would lead to a circular definition of
+XUMonad. *)
+type XUSubMonad a = TranslationEnv -> Option (TranslationEnv * a)
+type IncludeFileMap = Map (String * Bool, XUSubMonad ObjectFileBindings)
+type XUMonad a = IncludeFileMap -> XUSubMonad a
 
 (* XUMonad's return and bind *)
-op [a] return (x:a) : XUMonad a = fn xenv -> Some (xenv, x)
+op [a] return (x:a) : XUMonad a = fn _ -> fn xenv -> Some (xenv, x)
 op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
-  fn xenv1 -> case m xenv1 of
-             | Some (xenv2, b) -> f b xenv2
-             | None -> None
+  fn incls -> fn xenv1 -> case m incls xenv1 of
+                            | Some (xenv2, b) -> f b incls xenv2
+                            | None -> None
 
-(* Run an XUMonad *)
-op [a] runXU (m : XUMonad a) : Option (TranslationEnv * a) =
-  m emptyTranslationEnv
+(* Run an XUMonad computation, given an IncludeFileMap *)
+op [a] runXUMonad (incls: IncludeFileMap) (m: XUMonad a) : Option a =
+  {res <- m incls emptyTranslationEnv; Some res.2}
+
+(* Lift an XUMonad computation to a Monad computation, given an IncludeFileMap *)
+op [a] liftXU (incls: IncludeFileMap) (m: XUMonad a) : Monad a =
+  liftOption (runXUMonad incls m)
 
 (* The map function for XUMonad *)
 op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
@@ -3288,14 +3313,18 @@ op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
 
 (* Get the current TranslationEnv *)
 op xu_get : XUMonad TranslationEnv =
-  fn xenv -> Some (xenv, xenv)
+  fn incls -> fn xenv -> Some (xenv, xenv)
 
 (* Modify the current TranslationEnv *)
 op xu_update (f: TranslationEnv -> TranslationEnv) : XUMonad () =
-  fn xenv -> Some (f xenv, ())
+   fn incls -> fn xenv -> Some (f xenv, ())
+
+(* Get the current list of include files *)
+op xu_ask : XUMonad IncludeFileMap =
+   fn incls -> fn xenv -> Some (xenv, incls)
 
 (* An error in XUMonad *)
-op [a] xu_error : XUMonad a = fn _ -> None
+op [a] xu_error : XUMonad a = fn _ -> fn _ -> None
 
 (* Test that a FiniteMap in the current top-level does not have a binding for id *)
 op [a] xu_errorIfBound (id : Identifier, f : TranslationEnv -> FiniteMap (Identifier, a)) : XUMonad () =
@@ -3308,6 +3337,17 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
     | Some x -> return x
     | None -> xu_error
 
+(* Lift an XUSubMonad computation to an XUMonad computation *)
+op [a] liftXUSubMonad (m: XUSubMonad a) : XUMonad a =
+  fn _ -> m
+
+(* Look up an include file and apply its corresponding computation *)
+op includeFile (name: String, has_brackets: Bool) : XUMonad ObjectFileBindings =
+  {incls <- xu_ask;
+   case incls (name,has_brackets) of
+     | Some m -> liftXUSubMonad m
+     | None -> xu_error}
+
 (* Expand a TypeName in XUMonad *)
 op expandTypeNameXU (tp:TypeName) : XUMonad Type =
   {xenv <- xu_get;
@@ -3315,6 +3355,7 @@ op expandTypeNameXU (tp:TypeName) : XUMonad Type =
 
 (* For typedefs, add it to the typedef table, checking first that the typedef
 name is not already in the typedef table *)
+(* FIXME HERE: typedefs are allowed to shadow each other, I think... *)
 op evalTypedef (typedef:TypeDefinition) : XUMonad () =
   let id = typedef.Typedef_name in
   {xu_errorIfBound (id, fn xenv -> xenv.xenv_typedefs);
@@ -3342,6 +3383,7 @@ op evalMemberDeclaration (decl:MemberDeclaration) : XUMonad (Identifier * Type) 
 
 (* For struct declarations, evaluate each struct member, check there are no
    duplicate field names, and check that the struct tag is not already in use *)
+(* FIXME HERE: struct specifiers are allowed to shadow each other, I think... *)
 op evalStructSpecifier (sspec:StructSpecifier) : XUMonad () =
   let id = sspec.StructSpec_tag in
   {members <- mapM_XU evalMemberDeclaration sspec.StructSpec_members;
@@ -3352,7 +3394,7 @@ op evalStructSpecifier (sspec:StructSpecifier) : XUMonad () =
                 xenv << {xenv_structures =
                             update xenv.xenv_structures id members})}
 
-(* Expand all the type name in a ParameterDeclaration *)
+(* Expand all the type names in a ParameterDeclaration *)
 op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier * Type) =
    {ty <- expandTypeNameXU (param.1);
     return (param.2, ty)}
@@ -3380,7 +3422,7 @@ op evalCFunction (retTypeName : TypeName,
    xenv <- xu_get;
    return (makeCFunction
              (retType, params,
-              localR (fn r -> r << {r_xenv=xenv}) (evalStatement body)),
+              localR (fn r -> makeGlobalR (xenv, r.r_functions)) (evalStatement body)),
            (retType, (unzip params).2))}
 
 (* Eval a function definition, by checking that the name is not already defined
@@ -3391,64 +3433,54 @@ op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad (Option ObjectFi
       (* Ignore function prototypes in the semantics *)
       return None
     | Some body ->
-      {if fdef.FDef_isExtern then xu_error else return ();
-       f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
-       return (Some (fdef.FDef_name, ObjFile_Function f_res))}
+      if fdef.FDef_isExtern then xu_error else
+        {f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
+         return (Some (fdef.FDef_name, ObjFile_Function f_res))}
+
+op [a] optToList (opt:Option a) : List a =
+  case opt of
+    | None -> []
+    | Some x -> [x]
 
 (* Translate a single external declaration, possibly creating a binding in the
 resulting object file *)
-op compile1XU (decl:ExternalDeclaration) : XUMonad (Option ObjectFileBinding) =
+op compile1XU (decl:TranslationUnitElem) : XUMonad (ObjectFileBindings) =
   case decl of
-    | EDecl_function fdef -> evalFunctionDeclaration fdef
-    | EDecl_declaration (Decl_struct sspec) -> {evalStructSpecifier sspec; return None}
-    | EDecl_declaration (Decl_object odecl) -> evalObjectDeclaration odecl
-    | EDecl_declaration (Decl_typedef typedef) -> {evalTypedef typedef; return None}
+    | XU_function fdef -> {b <- evalFunctionDeclaration fdef; return (optToList b)}
+    | XU_declaration (Decl_struct sspec) -> {evalStructSpecifier sspec; return []}
+    | XU_declaration (Decl_object odecl) -> {b <- evalObjectDeclaration odecl; return (optToList b)}
+    | XU_declaration (Decl_typedef typedef) -> {evalTypedef typedef; return []}
+    | XU_include nm_and_brackets -> includeFile nm_and_brackets
 
-op [a,b] filterMap (f : a -> Option b) (l : List a) : List b =
-  case l of
-    | [] -> []
-    | x::l' ->
-      (case f x of
-         | Some y -> y :: filterMap f l'
-         | None -> filterMap f l')
+(* FIXME HERE: multiple definitions of the same thing are allowed, I think, but
+with certain rules... *)
+op checkObjFileBindings (bindings: List ObjectFileBinding) : XUMonad ObjectFile =
+  if noRepetitions? (unzip bindings).1 then
+    return bindings
+  else xu_error
 
-op compile (tunit : TranslationUnit) : Option ObjectFile =
-   case runXU (mapM_XU compile1XU tunit) of
-     | Some (_, elems) ->
-       let bindings = filterMap id elems in
-       if noRepetitions? (unzip bindings).1 then
-         Some bindings
-       else None
-     | None -> None
+op compileXU (tunit : TranslationUnit) : XUMonad ObjectFile =
+   {elems <- mapM_XU compile1XU tunit;
+    checkObjFileBindings (flatten elems)}
 
 
 %subsection (* Programs *)
 
-(* A C program consists of a set of source files [ISO 5.1.1.1/1]. Since our C
-subset has no '#include' directives [ISO 6.10], a source file coincides with a
-preprocessing translation unit, which, as explained above, coincides with a
-translation unit. Thus, in our C subset a program consists of translation units.
-
-FIXME HERE: fix up the above documentation to include object files / libraries
-*)
+(* FIXME HERE: documentation! *)
 
 type Program = {pgm_sources : List TranslationUnit,
                 pgm_libs : List ObjectFile }
 
-(* FIXME HERE: document the "tying the knot" stuff here *)
+(* FIXME HERE: document the "tying the knot" stuff *)
 
-(* FIXME HERE: write this! *)
-op linkObjectFiles2 (ofile1 : ObjectFile, ofile2 : ObjectFile) : Option ObjectFile
-
-(* FIXME HERE: use fold to write this *)
-op linkObjectFiles (ofiles : List ObjectFile) : Option ObjectFile
+op linkObjectFiles (ofiles : List ObjectFile) : XUMonad ObjectFile =
+  checkObjFileBindings (flatten ofiles)
 
 (* Get the initial storage for an object file *)
 op initialStorage (ofile : ObjectFile) : Storage =
   {static = fromAssocList (objFileObjectBindings ofile),
    automatic = [], allocated = []}
 
-(* FIXME HERE: document this! *)
 op iterateFunctionTable (funs : FunctionTable, ofile : ObjectFile) : FunctionTable =
   fn (id, args) ->
     case assoc (objFileFunBindings ofile) id of
@@ -3458,10 +3490,10 @@ op iterateFunctionTable (funs : FunctionTable, ofile : ObjectFile) : FunctionTab
 op makeFunctionTable (ofile : ObjectFile) : FunctionTable =
   mfix (fn table -> iterateFunctionTable (table, ofile))
 
-(* Build the ObjectFile for all the translation units,  *)
-op evalProgram (pgm : Program) : Monad () =
-   {ofile <- liftOption {ofiles <- mapM_opt compile pgm.pgm_sources;
-                         linkObjectFiles (pgm.pgm_libs ++ ofiles)};
+(* Run a program, given a set of include files, with argc=0 and argv=NULL *)
+op evalProgram (incls: IncludeFileMap) (pgm : Program) : Monad () =
+   {ofile <- liftXU incls {ofiles <- mapM_XU compileXU pgm.pgm_sources;
+                           linkObjectFiles (pgm.pgm_libs ++ ofiles)};
     initHeap <- return (initialStorage ofile);
     putState initHeap;
     funTable <- return (makeFunctionTable ofile);
