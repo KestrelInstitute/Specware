@@ -7,9 +7,9 @@ Examples_spec = spec
 
    *)
   op copyByte : ExtDecl =
-    FUNCTION (TN_void, "copyByte",
-              [(TN_uint,"src"), (TN_pointer TN_uint, "dest")],
-              ASSIGN (LSTAR (VAR "dest"), VAR "src"))
+    FUNCTION_m (TN_void, "copyByte",
+                [(TN_uint,"src"), (TN_pointer TN_uint, "dest")],
+                ASSIGN_m (LSTAR_m (VAR_m "dest"), VAR_m "src"))
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyByte *)
@@ -29,20 +29,21 @@ Examples_spec = spec
      }
    *)
   op copyBytes : ExtDecl =
-    FUNCTION (TN_void, "copyBytes",
-              [(TN_pointer TN_uchar, "src"), (TN_uint, "src_len"),
-               (TN_pointer TN_uchar, "dest"),
-               (TN_pointer TN_uint, "dest_len")],
-              BLOCK ([(TN_uint, "i")],
-                     [ASSIGN (LVAR "i", ICONST "0"),
-                      WHILE (LAND (LT (VAR "i", VAR "src_len"),
-                                   LT (VAR "i", STAR (VAR "dest_len"))),
-                             BLOCK
+    FUNCTION_m (TN_void, "copyBytes",
+                [(TN_pointer TN_uchar, "src"), (TN_uint, "src_len"),
+                 (TN_pointer TN_uchar, "dest"),
+                 (TN_pointer TN_uint, "dest_len")],
+                BLOCK_m ([(TN_uint, "i")],
+                         [ASSIGN_m (LVAR_m "i", ICONST_m "0"),
+                          WHILE_m
+                            (LAND_m (LT_m (VAR_m "i", VAR_m "src_len"),
+                                     LT_m (VAR_m "i", STAR_m (VAR_m "dest_len"))),
+                             BLOCK_m
                                ([],
-                                [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
-                                         SUBSCRIPT (VAR "src", VAR "i")),
-                                 ASSIGN (LVAR "i", ADD (VAR "i", ICONST "1"))])),
-                      ASSIGN (LSTAR (VAR "dest_len"), STAR (VAR "i"))]))
+                                [ASSIGN_m (LSUBSCRIPT_m (VAR_m "dest", VAR_m "i"),
+                                           SUBSCRIPT_m (VAR_m "src", VAR_m "i")),
+                                 ASSIGN_m (LVAR_m "i", ADD_m (VAR_m "i", ICONST_m "1"))])),
+                      ASSIGN_m (LSTAR_m (VAR_m "dest_len"), STAR_m (VAR_m "i"))]))
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyBytes *)
