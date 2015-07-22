@@ -59,9 +59,9 @@ C_Permissions qualifying spec
   op [c,a] trivial_abstraction : CAbstraction (c, a) =
     fn r -> trivial_biview
 
-  (* Build an abstraction from a relation R that is meant as a projection (i.e.,
-  c2 is "smaller" than c1) *)
-  op [c1,c2] ctoc_abstraction_of_projection (sep_eq:ISet.Equivalence c1,
+  (* Build an abstraction from a relation R an equivalence on c1 that is used to
+  build sep_eeq1 for the SplTree c1 type *)
+  op [c1,c2] ctoc_abstraction_of_relation (sep_eq:ISet.Equivalence c1,
                                              R: ISet.Relation (c1,c2)) : CToCAbstraction (c1,c2) =
     fn r ->
       {biview = fn ((stree,c1tree),(stree',c2tree)) ->
@@ -130,11 +130,19 @@ C_Permissions qualifying spec
   (* A value abstraction relates C values with some abstract type a. Value
   abstractions are also splittable (see SplittingAlg), which is modeled by
   having them take in a SplittingSet and requiring that different "portions" of
-  a value abstraction be separate. *)
+  a value abstraction be separate, though they only need to be separate in their
+  views of the storage. *)
+  (* FIXME: make this post-condition a little less ugly *)
   type ValueAbs a = {f: SplittingSet -> CAbstraction (Value, a) |
                      fa (splset1,splset2)
                        splitting_sets_compatible? (splset1,splset2) =>
-                       separate_abstractions? (f splset1, f splset2)}
+                       separate_abstractions?
+                         (compose_abstractions
+                            (ctoc_abstraction_of_relation ((=), fn ((),v) -> true),
+                             f splset1),
+                          compose_abstractions
+                            (ctoc_abstraction_of_relation ((=), fn ((),v) -> true),
+                             f splset2))}
 
   (* Helper type for value abstractions using the FValue type *)
   type FValueAbs = ValueAbs FValue
@@ -227,11 +235,11 @@ C_Permissions qualifying spec
       (asgn: SplAssign) (opt_vperm: OptValuePerm a) : CAbstraction (Option Value, a) =
     case opt_vperm of
       | Some vperm ->
-        compose_abstractions (ctoc_abstraction_of_projection
+        compose_abstractions (ctoc_abstraction_of_relation
                                 ((=), fn (optv,v) -> optv = Some v),
                               value_perm_abstraction asgn vperm)
       | None ->
-        compose_abstractions (ctoc_abstraction_of_projection
+        compose_abstractions (ctoc_abstraction_of_relation
                                 ((=), fn (optv,_) -> optv = None),
                               trivial_abstraction)
 
@@ -258,12 +266,12 @@ C_Permissions qualifying spec
       (fn (vperm, abs) ->
          conjoin_abstractions2
            (compose_abstractions
-              (ctoc_abstraction_of_projection
+              (ctoc_abstraction_of_relation
                  (list_tail_eq,
                   fn (vs, v) -> ex (l) vs = v::l),
                value_perm_abstraction asgn vperm),
             compose_abstractions
-              (ctoc_abstraction_of_projection
+              (ctoc_abstraction_of_relation
                  (list_head_eq,
                   fn (vs1,vs2) -> ex (x) vs1 = x::vs2),
                abs)))
@@ -368,7 +376,7 @@ C_Permissions qualifying spec
         (conjoin_abstractions2
            (opt_value_perm_abstraction asgn perms_out.2,
             compose_abstractions
-              (ctoc_abstraction_of_projection ((fn _ -> true), (fn _ -> true)),
+              (ctoc_abstraction_of_relation ((fn _ -> true), (fn _ -> true)),
                perm_set_abstraction asgn perms_out.1)))
         f
         (catchReturns m)
