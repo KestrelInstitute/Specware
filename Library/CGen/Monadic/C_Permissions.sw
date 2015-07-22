@@ -109,6 +109,19 @@ C_Permissions qualifying spec
     conjoin_abstractions2 (compose_abstractions (proj1_abstraction, abs1),
                            compose_abstractions (proj2_abstraction, abs2))
 
+  (* Compose an abstraction with a bi-view on a *)
+  op [c,a,b] compose_abstraction_with_biview
+      (abs: CAbstraction (c,a), sbv: SeparableBiView (a,b)) : CAbstraction (c,b) =
+    fn r -> compose_biviews (abs r, sbv)
+
+  (* Tensor two abstractions on the right *)
+  op [c,a,b] tensor_abstractions_r (abs1: CAbstraction (c,a),
+                                    abs2: CAbstraction (c,b)) : CAbstraction (c,a*b) =
+    conjoin_abstractions2 (compose_abstraction_with_biview
+                             (abs1, invert_biview proj1_biview),
+                           compose_abstraction_with_biview
+                             (abs2, invert_biview proj2_biview))
+
 
   (***
    *** Value Abstractions
@@ -135,6 +148,11 @@ C_Permissions qualifying spec
       r_pred r && (abs splset r).biview ((stree, vtree), fv) =>
       (ex (tp) expandTypeName (r.r_xenv, tp_name) = Some tp
                && (fa (spl) valueHasType (vtree spl, tp)))
+
+  (* Compose a value abstraction with a bi-view *)
+  op [a,b] value_abs_compose_biview (vabs: ValueAbs a,
+                                     sbv: SeparableBiView (a,b)) : ValueAbs b =
+    fn splset -> compose_abstraction_with_biview (vabs splset, sbv)
 
 
   (***
@@ -254,6 +272,23 @@ C_Permissions qualifying spec
 
 
   (***
+   *** Operations on Perms and Perm Sets
+   ***)
+
+  (* Map a value perm to another type using a bi-view *)
+  op [a,b] val_perm_map (sbv: SeparableBiView (a,b)) ((splexpr,vabs): ValuePerm a) : ValuePerm b =
+    (splexpr, value_abs_compose_biview (vabs, sbv))
+
+  (* Map a perm to another type using a bi-view *)
+  op [a,b] perm_map (sbv: SeparableBiView (a,b)) ((lv,vperm): Perm a) : Perm b =
+    (lv, val_perm_map sbv vperm)
+
+  (* Map a perm set to another type using a bi-view *)
+  op [a,b] perm_set_map (sbv: SeparableBiView (a,b)) (perms: PermSet a) : PermSet b =
+    map (perm_map sbv) perms
+
+
+  (***
    *** Proving Abstraction Properties of Computations
    ***)
 
@@ -300,13 +335,17 @@ C_Permissions qualifying spec
   (* Abstraction for expressions, which are Value computations; this states
   that, for all splitting assignments, the given function abstracts the given
   Value computation using the abstractions obtained from the given perms *)
-  op [a,b] abstracts_expression (perms_in: PermSet a) (perms_out: ValuePermSet b)
+  op [a,b] abstracts_expression (perms_in: PermSet a)
+                                (perms_out: PermSet a, vperms_out: ValuePerm b)
                                 (f: a -> b) (m: Monad Value) : Bool =
     fa (asgn)
       abstracts_computation
         (perm_set_abstraction asgn perms_in)
-        (value_perm_set_abstraction asgn perms_out)
-        f
+        (tensor_abstractions_r
+           (compose_abstractions (trivial_abstraction,
+                                  perm_set_abstraction asgn perms_out),
+            value_perm_abstraction asgn vperms_out))
+        (fn x -> (x, f x))
         m
 
   (* Abstraction for statements, which are unit computations *)
