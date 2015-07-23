@@ -1824,8 +1824,9 @@ type FunctionTypeTable = FiniteMap (Identifier, FunType)
 
 type CFunction = List Value -> Monad (Option Value)
 (* type TopFunction = { m:CFunction | fa (l,f) localR f (m l) = m l } *)
-type FunctionTable = { mf : (Identifier * List Value) -> Monad (Option Value) |
-                        fa (tup,f) localR f (mf tup) = mf tup }
+type RawFunctionTable = (Identifier * List Value) -> Monad (Option Value)
+type FunctionTable = { tab : RawFunctionTable |
+                        fa (tup,f) localR f (tab tup) = tab tup }
 
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
 top-level function definitions.
@@ -3481,7 +3482,13 @@ op initialStorage (ofile : ObjectFile) : Storage =
   {static = fromAssocList (objFileObjectBindings ofile),
    automatic = [], allocated = []}
 
-op iterateFunctionTable (funs : FunctionTable, ofile : ObjectFile) : FunctionTable =
+(* FIXME HERE: this subtype should also reflect monotonicity *)
+type IterFunctionTable = {tab: RawFunctionTable |
+                            fa (tup,f)
+                              (fa (r) (f r).r_functions = r.r_functions) =>
+                              localR f (tab tup) = tab tup}
+
+op iterateFunctionTable (funs : IterFunctionTable, ofile : ObjectFile) : FunctionTable =
   fn (id, args) ->
     case assoc (objFileFunBindings ofile) id of
       | Some f -> localR (fn r -> r << {r_functions = funs}) (f args)
