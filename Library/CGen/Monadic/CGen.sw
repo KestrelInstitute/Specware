@@ -45,7 +45,7 @@ CGen qualifying spec
   theorem RETURN_VOID_correct is [a]
     fa (perms_in:PermSet a,perms_out,stmt)
       stmt = RETURN_VOID_m &&
-      perms_out = (perm_set_map (invert_biview proj1_biview) perms_in, None) &&
+      perms_out = (perm_set_map (invert_biview proj1_biview) perms_in, None) =>
       abstracts_ret_statement
         perms_in perms_out
         RETURN_VOID
