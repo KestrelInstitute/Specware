@@ -10,14 +10,14 @@ CGen qualifying spec
     scalar_value_abstraction (fn (v,b) -> zeroScalarValue? v = return b)
 
   theorem true_correct is [a]
-    fa (perms:PermSet a,m)
-      m = ICONST_m "1" =>
-      abstracts_expression perms (perms, ([], bool_valueabs)) (fn _ -> true) m
+    fa (perms_in:PermSet a,perms_out,m)
+      m = ICONST_m "1" && perms_out = (perms_in, ([], bool_valueabs)) =>
+      abstracts_expression perms_in perms_out (fn _ -> true) m
 
   theorem false_correct is [a]
-    fa (perms:PermSet a,m)
-      m = ICONST_m "0" =>
-      abstracts_expression perms (perms, ([], bool_valueabs)) (fn _ -> false) m
+    fa (perms_in:PermSet a,perms_out,m)
+      m = ICONST_m "0" && perms_out = (perms_in, ([], bool_valueabs)) =>
+      abstracts_expression perms_in perms_out (fn _ -> false) m
 
 
   (***
