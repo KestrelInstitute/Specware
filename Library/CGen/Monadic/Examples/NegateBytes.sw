@@ -252,24 +252,24 @@ S_final = spec
   %%import /Library/CGen/Monadic/GenerateC
 
   op negateBytes_obj : ExtDecl =
-    FUNCTION (TN_void, "negateBytes",
-              [(TN_pointer TN_uchar, "src"),
-               (TN_pointer TN_uchar, "dest"),
-               (TN_uint, "len")],
-              BLOCK ([(TN_uint, "i")],
-                     [ASSIGN (LVAR "i", ICONST "0"),
-                      WHILE (LT (VAR "i", VAR "len"),
-                             BLOCK
-                               ([],
-                                [ASSIGN (LSUBSCRIPT (VAR "dest", VAR "i"),
-                                         NOT (SUBSCRIPT (VAR "src", VAR "i"))),
-                                 ASSIGN (LVAR "i", ADD (VAR "i", ICONST "1"))]))
+    FUNCTION_m (TN_void, "negateBytes",
+                [(TN_pointer TN_uchar, "src"),
+                 (TN_pointer TN_uchar, "dest"),
+                 (TN_uint, "len")],
+              BLOCK_m ([(TN_uint, "i")],
+                       [ASSIGN_m (LVAR_m "i", ICONST_m "0"),
+                        WHILE_m (LT_m (VAR_m "i", VAR_m "len"),
+                                 BLOCK_m
+                                   ([],
+                                [ASSIGN_m (LSUBSCRIPT_m (VAR_m "dest", VAR_m "i"),
+                                           NOT_m (SUBSCRIPT_m (VAR_m "src", VAR_m "i"))),
+                                 ASSIGN_m (LVAR_m "i", ADD_m (VAR_m "i", ICONST_m "1"))]))
                      ]))
    
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyBytes *)
-  op negateBytes_C : { d:ExternalDeclaration | compile1XU d = negateBytes_obj }
+  op negateBytes_C : { d:TranslationUnitElem | compile1XU d = negateBytes_obj }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Need to load lisp for GenerateC.sw before running this!
