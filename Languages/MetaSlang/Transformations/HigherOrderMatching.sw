@@ -304,6 +304,9 @@ beta contraction.
  op dereferenceAllAsSubst (subst: SubstC) (term: MSTerm) (boundVars:MSVars): MSTerm =
    dereferenceAll subst (renameBoundVars (term, boundVars))
 
+ op dereferenceAllType (subst: SubstC) (ty: MSType): MSType =
+   mapType(id,fn s -> dereferenceType(subst,s),id) ty
+
  % Use the beta-normalizer above with ordinary substitutions
  op HigherOrderMatching.substituteWithBeta (subst: MSVarSubst) (term: MSTerm) (boundVars:MSVars): MSTerm =
    % We first build up two substitutions, one that maps all the vars
@@ -1405,9 +1408,9 @@ closedTermV detects existence of free variables not included in the argument
 			then unify(subst,s1,s2,s1,equals,o_tm)
 		      else [NotUnify(ty1,ty2)])
 	def unify(subst,ty1:MSType,ty2:MSType,ty1_orig:MSType,equals,optTerm: Option MSTerm): List Unification =
-             % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
-             %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
-             % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
+            % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
+            %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
+            % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
             if equivType? spc (ty1, ty2)
               then [Unify subst]
             else
@@ -1448,7 +1451,11 @@ closedTermV detects existence of free variables not included in the argument
                       % let (n_ty1, n_ty2) = (raiseSubtype(bty1, spc), raiseSubtype(bty2, spc)) in
                       % let _ = writeLine("Lifted types:\n"^printType(n_ty1)^"\n"^printType n_ty2) in
                       (case unifyL(subst,bty1,bty2,ts1,ts2,equals, map (fn _ -> None) ts1, unify)
-                         | result1 as [NotUnify _] | some? optTerm && equivTypeSubType? spc (bty1, bty2) true ->
+                         | result1 as [NotUnify _] | some? optTerm &&
+                                                     (let exp_ty1 = dereferenceAllType subst bty1 in
+                                                      let exp_ty2 = dereferenceAllType subst bty2 in
+                                                      % let _ = writeLine(printType exp_ty1^" =??= "^printType exp_ty2) in
+                                                      equivTypeSubType? spc (exp_ty1, exp_ty2) true) ->
                            let s1 = unfoldBaseOne(spc, bty1) in
                            let s2 = unfoldBaseOne(spc, bty2) in
                            if s1 = s2 then result1

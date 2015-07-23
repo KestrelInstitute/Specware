@@ -30,11 +30,20 @@ spec
       | (String str1, String str2) -> Some(str1 = str2)
       | (Bool b1, Bool b2) -> Some(b1 = b2)
       | (RecordVal sb1, RecordVal sb2) ->
-        Some(length sb1 = length sb2
-               && forall? (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2) = Some true) (zip(sb1,sb2)))
-      | (Constructor(id1,v1,_), Constructor(id2,v2,_)) -> Some(id1 = id2 && equalValue?(v1,v2) = Some true)
+        if length sb1 = length sb2
+          then
+            foldl (fn (val, ((id1,v1),(id2,v2))) ->
+                    case val of
+                      | None -> None
+                      | Some false -> val
+                      | _ ->
+                   if id1 = id2 then equalValue?(v1, v2) else Some false)
+              (Some true)  (zip(sb1,sb2))
+        else Some false
+      | (Constructor(id1,v1,_), Constructor(id2,v2,_)) ->
+        if id1 = id2 then equalValue?(v1,v2) else None
       | (Constant(id1,_), Constant(id2,_)) -> Some(id1 = id2)
-      | (Unevaluated(t1),Unevaluated(t2)) -> Some(equalTermAlpha?(t1,t2))
+      | (Unevaluated(t1),Unevaluated(t2)) -> if equalTermAlpha?(t1,t2) then Some true else None
       | (Closure(match1, sb1),  Closure(match2, sb2)) ->
         if equalMatch_alpha? [] (match1, match2) true && sb1 = sb2
           then Some true else None
@@ -1044,7 +1053,9 @@ spec
        % let _ = writeLine("reduceTerm: "^printTerm term) in
        let v = eval(term,spc) in
        if fullyReduced? v
-         then valueToTerm v
+         then let new_tm = valueToTerm v in
+              % let _ = writeLine("--> "^printTerm new_tm) in
+              new_tm
          else term
      else term
 
