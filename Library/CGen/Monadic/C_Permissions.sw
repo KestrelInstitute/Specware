@@ -158,9 +158,15 @@ C_Permissions qualifying spec
                && (fa (spl) valueHasType (vtree spl, tp)))
 
   (* Compose a value abstraction with a bi-view *)
-  op [a,b] value_abs_compose_biview (vabs: ValueAbs a,
-                                     sbv: SeparableBiView (a,b)) : ValueAbs b =
+  op [a,b] value_abs_map (sbv: SeparableBiView (a,b)) (vabs: ValueAbs a) : ValueAbs b =
     fn splset -> compose_abstraction_with_biview (vabs splset, sbv)
+
+  (* Build a value abstraction that does not look at the heap *)
+  op [a] scalar_value_abstraction (R: ISet.Relation (Value,a)) : ValueAbs a =
+    fn splset -> fn r ->
+      {biview = fn ((stree,vtree),a) -> fa (spl) R (vtree spl, a),
+       sep_eq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
+       sep_eq2 = fn _ -> true}
 
 
   (***
@@ -285,7 +291,7 @@ C_Permissions qualifying spec
 
   (* Map a value perm to another type using a bi-view *)
   op [a,b] val_perm_map (sbv: SeparableBiView (a,b)) ((splexpr,vabs): ValuePerm a) : ValuePerm b =
-    (splexpr, value_abs_compose_biview (vabs, sbv))
+    (splexpr, value_abs_map sbv vabs)
 
   (* Map a perm to another type using a bi-view *)
   op [a,b] perm_map (sbv: SeparableBiView (a,b)) ((lv,vperm): Perm a) : Perm b =
@@ -386,7 +392,7 @@ C_Permissions qualifying spec
   op [a,b] abstracts_c_function (perms_in: List (ValuePerm a))
                                 (perms_out: List (ValuePerm b) * OptValuePerm b)
                                 (f: a -> b)
-                                (m: List Value -> Monad (Option Value)) : Bool =
+                                (m: CFunction) : Bool =
     fa (asgn)
       abstracts_computation_fun
         (value_list_perm_abstraction asgn perms_in)
