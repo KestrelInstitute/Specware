@@ -41,6 +41,7 @@ spec
   %% Inefficient but best we can do with abstract sets
   op [a,b] domain(m: Map(a,b)): Set a =
     foldi (fn (x,y,r) -> set_insert_new(x,r)) empty_set m
+
   op [a,b] range (m: Map(a,b)): Set b =
     foldi (fn (x,y,r) -> set_insert(y,r)) empty_set m
   op [a,b] domainToList(m: Map(a,b)): List a = STH_domainToList m
@@ -48,6 +49,7 @@ spec
   op [a,b] total? (s: Set(a), m: Map(a,b)):Bool =
     set_fold true (fn (val,x) -> val && some?(MapSTHashtable.STH_apply(m,x))) s
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapSTHashtable.STH_eval(m,x)
+  op [a,b] TMApplyC(m:Map(a,b)) (x:a | x in? domain m): b = TMApply(m, x)
 
    op foldi : [Dom,Cod,a] ((Dom * Cod * a -> a) | foldable?) -> a -> Map (Dom,Cod) -> a =
      fn f -> fn e -> fn m -> MapSTHashtable.STH_foldi(f,e,m)

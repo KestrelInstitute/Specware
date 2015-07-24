@@ -59,6 +59,7 @@ spec
     set_fold true (fn (val,x) -> val && some?(MapVec.V_apply(m,x))) s
 
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapVec.V_eval(m,x)
+  op [a,b] TMApplyC(m:Map(a,b)) (x:a | x in? domain m): b = TMApply(m, x)
 
   op [a,b] map_apply (m: Map(a,b))(null_elt:b)(x: a): b = MapVec.V_map_eval(m,x,null_elt)
 

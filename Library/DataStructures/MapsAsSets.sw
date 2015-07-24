@@ -128,6 +128,7 @@ spec
   op [a,b] TMApply(m:Map(a,b), x:a | x in? domain(m)): b =
     (case apply m x of
       | Some z -> z)
+  op [a,b] TMApplyC(m:Map(a,b)) (x:a | x in? domain m): b = TMApply(m, x)
 
   op [a,b] mapFrom(s: Set a, f: a -> b): Map(a,b) =
     set_fold empty_map (fn (m, x) -> update m x (f x)) s

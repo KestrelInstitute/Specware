@@ -57,6 +57,7 @@ spec
   op [a,b] total? (s: Set(a), m: Map(a,b)):Bool =
     set_fold true (fn (val,x) -> val && some?(MapBTV.BTV_apply(m,x))) s
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapBTV.BTV_eval(m,x)
+  op [a,b] TMApplyC(m:Map(a,b)) (x:a | x in? domain m): b = TMApply(m, x)
 
 % how to handle apply outside the domain in MapBTV?
   op [a,b] map_apply (m: Map(a,b))(null_elt:b)(x: a): b = MapBTV.BTV_eval(m,x)

@@ -205,6 +205,14 @@ Maps = Map qualifying spec
     fa(m: Map(a,b), x: a, y: b, z: a)
       TMApply(update m x y, x) = y
 
+  %% Curried version of TMApply
+  op [a,b] TMApplyC(m:Map(a,b)) (x:a | x in? domain m): b = TMApply(m, x)
+
+  theorem TMApply_over_update is [a,b]
+    fa(m: Map(a,b), x: a, y: b, z: a)
+    z in? domain m => 
+    TMApplyC (update m x y) z = (if x = z then y else TMApplyC m z)
+
 % This is useful when refining to the single-threaded MapsAsVectors
 % TODO: could this just be the identity function (later, in the refinements, it might have this definition in terms of set_fold)?
   op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
