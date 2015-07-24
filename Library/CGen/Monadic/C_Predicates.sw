@@ -54,4 +54,15 @@ C_Predicates qualifying spec
   op lvalue_has_result (r:R) (st:Storage) (lv:LValue) (res:LValueResult) : Bool =
     computation_has_value r st (evaluateLValue lv) res
 
+  (* Correctness predicate for XUMonad computations *)
+  op [a] xu_correct (pre: IncludeFileMap -> TranslationEnv -> Bool)
+                    (m: XUMonad a)
+                    (post: IncludeFileMap -> TranslationEnv ->
+                       TranslationEnv * a -> Bool) : Bool =
+    fa (incl_map,xenv)
+      pre incl_map xenv =>
+      (case m incl_map xenv of
+         | None -> false
+         | Some res -> post incl_map xenv res)
+
 end-spec

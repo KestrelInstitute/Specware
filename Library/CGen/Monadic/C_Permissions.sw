@@ -306,9 +306,12 @@ C_Permissions qualifying spec
    *** Proving Abstraction Properties of Computations
    ***)
 
+  type EnvPred = TranslationEnv * FunctionTable -> Bool
+
   (* This property states that monadic function m can be modeled using function
   f using the given input and output abstractions *)
-  op [c1,c2,a,b] abstracts_computation_fun (abs_in: CAbstraction (c1, a))
+  op [c1,c2,a,b] abstracts_computation_fun (env_pred : EnvPred)
+                                           (abs_in: CAbstraction (c1, a))
                                            (abs_out: CAbstraction (c1*c2, b))
                                            (f: a -> b) (m: c1 -> Monad c2) : Bool =
     (* The sep_eq1 of abs_in must be at least as strong as that of abs_out;
@@ -321,6 +324,7 @@ C_Permissions qualifying spec
     (fa (a,c1)
        totally_correct
        (fn r -> fn st_in ->
+          (env_pred (r.r_xenv, r.r_functions)) &&
           (ex (stree_in, c1tree_in)
              stree_in [] = st_in && c1tree_in [] = c1 &&
              (abs_in r).biview ((stree_in, c1tree_in), a)))
@@ -337,11 +341,12 @@ C_Permissions qualifying spec
                 ))))
 
   (* Same as above, but for computations not computation functions *)
-  op [c2,a,b] abstracts_computation (abs_in: CAbstraction ((), a))
+  op [c2,a,b] abstracts_computation (env_pred : EnvPred)
+                                    (abs_in: CAbstraction ((), a))
                                     (abs_out: CAbstraction (c2, b))
                                     (f: a -> b) (m: Monad c2) : Bool =
     abstracts_computation_fun
-      abs_in
+      env_pred abs_in
       (compose_abstractions (proj2_abstraction, abs_out))
       f
       (fn _ -> m)
@@ -349,11 +354,13 @@ C_Permissions qualifying spec
   (* Abstraction for expressions, which are Value computations; this states
   that, for all splitting assignments, the given function abstracts the given
   Value computation using the abstractions obtained from the given perms *)
-  op [a,b] abstracts_expression (perms_in: PermSet a)
+  op [a,b] abstracts_expression (env_pred : EnvPred)
+                                (perms_in: PermSet a)
                                 (perms_out: PermSet a, vperms_out: ValuePerm b)
                                 (f: a -> b) (m: Monad Value) : Bool =
     fa (asgn)
       abstracts_computation
+        env_pred
         (perm_set_abstraction asgn perms_in)
         (tensor_abstractions_r
            (compose_abstractions (trivial_abstraction,
@@ -363,21 +370,24 @@ C_Permissions qualifying spec
         m
 
   (* Abstraction for statements, which are unit computations *)
-  op [a,b] abstracts_statement (perms_in: PermSet a) (perms_out: PermSet b)
+  op [a,b] abstracts_statement (env_pred : EnvPred)
+                               (perms_in: PermSet a) (perms_out: PermSet b)
                                (f: a -> b) (m: Monad ()) : Bool =
     fa (asgn)
       abstracts_computation
+        env_pred
         (perm_set_abstraction asgn perms_in)
         (perm_set_abstraction asgn perms_out)
         f
         m
 
   (* Abstraction for statements that optionally do a return at the end *)
-  op [a,b] abstracts_ret_statement (perms_in: PermSet a)
+  op [a,b] abstracts_ret_statement (env_pred : EnvPred) (perms_in: PermSet a)
                                    (perms_out: PermSet b * Option (ValuePerm b))
                                    (f: a -> b) (m: Monad ()) : Bool =
     fa (asgn)
       abstracts_computation
+        env_pred
         (perm_set_abstraction asgn perms_in)
         (conjoin_abstractions2
            (opt_value_perm_abstraction asgn perms_out.2,
@@ -389,17 +399,26 @@ C_Permissions qualifying spec
 
   (* Abstraction for C functions, which are computation functions mapping lists
   of values, for the arguments, to an optional return value *)
-  op [a,b] abstracts_c_function (perms_in: List (ValuePerm a))
+  op [a,b] abstracts_c_function (env_pred : EnvPred) (perms_in: List (ValuePerm a))
                                 (perms_out: List (ValuePerm b) * OptValuePerm b)
                                 (f: a -> b)
                                 (m: CFunction) : Bool =
     fa (asgn)
       abstracts_computation_fun
+        env_pred
         (value_list_perm_abstraction asgn perms_in)
         (tensor_abstractions_l
            (value_list_perm_abstraction asgn perms_out.1,
             opt_value_perm_abstraction asgn perms_out.2))
         f
         m
+
+  (* FIXME HERE NOW: write this! *)
+  op [a,b] abstracts_c_function_decl
+      (env_pred : EnvPred) (perms_in: List (ValuePerm a))
+      (perms_out: List (ValuePerm b) * OptValuePerm b)
+      (f: a -> b)
+      (m: XUMonad ObjectFileBinding) : Bool
+
 
 end-spec
