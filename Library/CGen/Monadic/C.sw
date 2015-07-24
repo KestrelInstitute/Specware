@@ -1850,8 +1850,8 @@ op emptyTranslationEnv : TranslationEnv =
     xenv_funtypes   = empty}
 
 
-(* The reader type of the monad is the TranslationEnv type, along with a
-   designator for the current lexical scope *)
+(* The reader type of the monad is the TranslationEnv type, along with the
+   function table and a designator for the current lexical scope *)
 type Monad.R =
    {r_xenv      : TranslationEnv,
     r_curScope  : ScopeDesignator,
@@ -3401,7 +3401,9 @@ op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier *
     return (param.2, ty)}
 
 (* Build a C function that quantifies over a list of argument values and then
-   binds those argument values to params in a fresh, top-level scope *)
+   binds those argument values to params in a fresh, top-level scope. The
+   resulting function ignores its current scope, since withFreshTopBindings
+   creates a fresh scope. *)
 (* FIXME HERE: move this to a short section above about C functions *)
 op makeCFunction (retType : Type, params : List (Identifier * Type), body : Monad ()) : CFunction =
   fn args ->
@@ -3415,7 +3417,10 @@ op makeCFunction (retType : Type, params : List (Identifier * Type), body : Mona
 
 (* Build a function by evaluating its return and parameter type names and then
 calling makeCFunction. Note that the body of the function uses the translation
-environment from where the function is evaluated, not where it is called. *)
+environment from where the function is evaluated, not where it is called.
+
+Note that this creates a function that ignores both the r_xenv and the
+r_curScope fields of the R input, only depending on the function table. *)
 op evalCFunction (retTypeName : TypeName,
                   paramDecls : ParameterList, body : Statement) : XUMonad (CFunction * FunType) =
   {retType <- expandTypeNameXU retTypeName;
@@ -3423,7 +3428,7 @@ op evalCFunction (retTypeName : TypeName,
    xenv <- xu_get;
    return (makeCFunction
              (retType, params,
-              localR (fn r -> makeGlobalR (xenv, r.r_functions)) (evalStatement body)),
+              localR (fn r -> r << {r_xenv=xenv}) (evalStatement body)),
            (retType, (unzip params).2))}
 
 (* Eval a function definition, by checking that the name is not already defined
