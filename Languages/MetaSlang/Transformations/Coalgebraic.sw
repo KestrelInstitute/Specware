@@ -754,9 +754,11 @@ op collectValues(results_info: ItemValList, params: MSVars, setf_entries: SetfEn
                            | Some src_tm ->
                          let val = if useLenses?
                                      then mkParallelLensSets spc (map (makeRecordLensPair spc lval_ty) id_prs) src_tm
-                                     else mkRecordMerge(src_tm, mkCanonRecord id_prs)
+                                     else makeRecordMerge spc
+                                            (translateRecordMerge1 spc false
+                                               (mkRecordMerge(src_tm, mkCanonRecord id_prs)))
                          in                                            
-                         (lval_tm, makeRecordMerge spc val))
+                         (lval_tm, val))
                     incr_info
   in
   incr_sbst ++ non_incr_sbst

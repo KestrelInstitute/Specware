@@ -1693,6 +1693,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 %%     | _ -> tm
 
  op translateRecordMerge (spc : Spec) (term : MSTerm) : MSTerm =
+   translateRecordMerge1 spc true term
+
+ op translateRecordMerge1 (spc : Spec) (intro_vars?: Bool) (term : MSTerm) : MSTerm =
   %% used by tryEvalOne, otherwise would move to RecordMerge.sw
   case term of
     | Apply (Fun (RecordMerge, typ, _), 
@@ -1712,7 +1715,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                             resultFields,
                                         noPos)
                 in
-                maybeIntroduceVarsForTerms (rawResult, [t1, t2], spc)
+                if intro_vars?
+                  then maybeIntroduceVarsForTerms (rawResult, [t1, t2], spc)
+                else rawResult
               | _ -> term)
          | _ -> term)
     | _ -> term
