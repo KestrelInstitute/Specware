@@ -269,7 +269,7 @@ S_final = spec
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyBytes *)
-  op negateBytes_C : { d:TranslationUnitElem | compile1XU d = negateBytes_obj }
+  op negateBytes_C : { d:TranslationUnitElem | eval1XU d = negateBytes_obj }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Need to load lisp for GenerateC.sw before running this!
