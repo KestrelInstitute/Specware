@@ -61,29 +61,6 @@ op SpecTransform.copySpec (spc : Spec) : Spec =
 %% TODO Check well-formedness of body (this same check can be used in the "lint" checker).
 %% TODO Think about the use of StandardAnnotation here:
 
-op addNewOp(new_op_base_name : Id,
-            new_op_qualifier : Qualifier,
-            new_op_fixity : Fixity,
-            new_op_body : ATerm StandardAnnotation,
-            spc : Spec) : Spec =
-
-  %% Deconstruct the existing spec.  The ops and elements will be updated (but not the types or qualifier):
-  let elements = spc.elements in
-  let op_map = spc.ops in
-
-  %% Build the new op:
-  let new_op_qid = Qualified(new_op_qualifier, new_op_base_name) in
-  let new_op_names = [new_op_qid] in %% Only a single name is allowed.
-  let fullyQualified? = false in %% TODO I don't understand this field.  Most ops seem to have false.
-  let new_op_info = {names=new_op_names, fixity=new_op_fixity, dfn=new_op_body, fullyQualified?=fullyQualified?} in
-
-  %% Assemble the new spec:
-  let new_op_map = insertAQualifierMap(op_map, new_op_qualifier, new_op_base_name, new_op_info) in
-  %% TODO This causes the element list to be reconsed, but I don't want to put the new stuff on the front (do I?)...
-  let position = Internal "Created by Transformation" in %% TODO Do something better?  addNewOp could take the name of the transformation as an argument or even a descriptive strings (e.g., "From partially evaluating XXX.").
-  let new_elements = elements++[Op(new_op_qid, true, position)] in
-    spc << {ops = new_op_map, elements = new_elements}
-
 
 %% Make a nonsense spec containing a single op that returns an error message.
 op errorSpec (message : String) : Spec =
@@ -129,8 +106,7 @@ op SpecTransform.copyOp (%op_to_copy_base_name : Id,
   case (findAQualifierMap(spc.ops, q, id)) of
     | None -> errorSpec ("Can't find op " ^ show qid)
     | Some (op_info : OpInfo) ->
-      addNewOp(id ^ "NEW",  %TODO Generate a unique name!
-               q,
+      addNewOp(Qualified(id ^ "NEW", q),  %TODO Generate a unique name!
                op_info.fixity,
                op_info.dfn,
                spc)

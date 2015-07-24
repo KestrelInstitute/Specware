@@ -3,6 +3,7 @@
 Coalgebraic qualifying
 spec
 import Script, /Languages/MetaSlang/CodeGen/Generic/RecordMerge
+import /Languages/MetaSlang/CodeGen/Stateful/Setf
 
 op finalizeExcludesDefinedOps?: Bool = false
 
@@ -482,7 +483,8 @@ op mkCanonRecordOrSingle (fields : MSRecordFields) : MSTerm =
     | [("0", tm)] -> tm
     | _ -> mkCanonRecord fields
 
-op findSourceTerm(prs: List(Id * MSTerm), ty: MSType, params: MSVars, spc: Spec): Option MSTerm =
+op findSourceTerm(prs: List(Id * MSTerm), lval_tm: MSTerm, params: MSVars, spc: Spec): Option MSTerm =
+  let ty = inferType(spc, lval_tm) in
   case foldl (fn (opt_src_tm, (id, tm)) ->
                 case tm of
                   | Apply(Fun(f,_,_), arg, _) | projectionFun(f, spc) = Some id -> Some arg
@@ -503,12 +505,20 @@ op findSourceTerm(prs: List(Id * MSTerm), ty: MSType, params: MSVars, spc: Spec)
                     opt_src_tm tm)
               None prs of
     | Some tm -> Some tm
-    | None -> 
-  case findLeftmost (fn (_, tyi) -> equalType?(tyi, ty)) params of
-    | Some v -> Some(mkVar v)
-    | None -> None
+    | None ->
+  let src_tm = mapTerm (fn | Var(v as (_, ty), _) | ~(inVars?(v, params)) ->
+                             (case findLeftmost (fn (_, tyi) -> equalType?(tyi, ty)) params of
+                                | Some vp -> mkVar vp
+                                | None -> mkVar v)
+                           | stm -> stm,
+                        id, id)
+                 lval_tm
+  in
+  if equalTerm?(src_tm, lval_tm)
+    then None
+  else Some src_tm
 
-type ItemValList = List(MSTerm * List MSFun * MSTerm)
+type ItemValList = List(MSTerm * List MSTerm * List MSTerm * MSTerm)
 
 op getExpandedConjuncts(tm: MSTerm, spc: Spec): MSTerms =
   case tm of
@@ -521,54 +531,75 @@ op getExpandedConjuncts(tm: MSTerm, spc: Spec): MSTerms =
 
 op compatibleItmLists?(p_results_info: ItemValList, q_results_info: ItemValList): Bool =
    length p_results_info = length q_results_info
-     && forall? (fn ((vp, fldsp, _), (vq, fldsq, _)) ->
+     && forall? (fn ((vp, fldsp, argsp, _), (vq, fldsq, argsq, _)) ->
                    equalTerm?(vp, vq)
-                     && length fldsp = length fldsq && forall? equalFun? (zip(fldsp, fldsq)))
+                     && equalList?(fldsp, fldsq, equalTerm?)
+                     && equalList?(argsp, argsq, equalTerm?))
           (zip(p_results_info, q_results_info))
 
-op recordItemVal (spc: Spec, result_vars: MSVars, op_qid: QualifiedId, complain?: Bool)
+op setfInfoForAccesser (setf_entries: SetfEntries) (accesser_nm: QualifiedId): Option SetfEntry =
+  findLeftmost (fn setf_entry -> accesser_nm = setf_entry.accesser_name) setf_entries
+
+op recordItemVal (spc: Spec, result_vars: MSVars, op_qid: QualifiedId, setf_entries: SetfEntries, complain?: Bool)
                  (results_info: ItemValList, cj: MSTerm) : ItemValList =
-   % let _ = writeLine("recordItemVal:\n"^printTerm cj) in
+  % let _ = writeLine("recordItemVal:\n"^printTerm cj) in
   case cj of
     | Apply(Fun(Equals,_,_),
-            Record([(_, Apply(Fun(f,_,_), lval_tm, _)), (_, rhs)], _), _)
-        | projectionFun?(f, spc) ->
-      (lval_tm, [f], rhs) :: results_info
-    | Apply(Fun(Equals,_,_),     % Reversed orientation of equality v = o s'
-            Record([(_, rhs), (_, Apply(Fun(f,_,_), lval_tm, _))], _), _)
-        | projectionFun?(f, spc) ->
-      (lval_tm, [f], rhs) :: results_info
+            Record([(_, Apply(f as Fun(proj,_,_), lval_tm, _)), (_, rhs)], _), _)
+        | projectionFun?(proj, spc) ->
+      (lval_tm, [f], [], rhs) :: results_info
     | Apply(Fun(Equals,_,_), Record([(_, lval_tm as Var(v,_)), (_, rhs)], _), _) | inVars?(v, result_vars) ->
-      (lval_tm, [], rhs) :: results_info
+      (lval_tm, [], [], rhs) :: results_info
+    | Apply(Fun(Equals,_,_),     % Reversed orientation of equality v = o s'
+            Record([(_, rhs), (_, Apply(f as Fun(proj,_,_), lval_tm, _))], _), _)
+        | projectionFun?(proj, spc) ->
+      (lval_tm, [f], [], rhs) :: results_info
     %% Reversed orientation of equality
     | Apply(Fun(Equals,_,_), Record([(_, lhs), (_, lval_tm as Var(v,_))], _), _) | inVars?(v, result_vars) ->
-      (lval_tm, [], lhs) :: results_info
+      (lval_tm, [], [], lhs) :: results_info
     | Apply(Fun(Equals,_,_), Record([(_, lhs as Record(flds as ("1", _) :: _, _)), (_, rhs)], _), _) ->
       let projection_cjs = map (fn (id, fld_val) ->
                                   mkEquality(inferType(spc, fld_val),
                                              fld_val, mkProjection(id, rhs, spc)))
                              flds
       in
-      foldl (recordItemVal (spc, result_vars, op_qid, complain?)) results_info projection_cjs
-    | Apply(Fun(f,_,_), lval_tm, _) | projectionFun?(f, spc) ->   % Bool true
-      (lval_tm, [f], trueTerm) :: results_info
-    | Apply(Fun(Not, _, _), Apply(Fun(f,_,_), lval_tm, _), _)                             % Bool false
-        | projectionFun?(f, spc) ->
-      (lval_tm, [f], falseTerm) :: results_info
+      foldl (recordItemVal (spc, result_vars, op_qid, setf_entries, complain?)) results_info projection_cjs
+    | Apply(Fun(Equals,_,_), Record([(_, lhs), (_, rhs)], _), _) ->
+      (case getCurryArgs lhs 
+         | Some(f as Fun(proj,_,_), lval_tm :: r_args) | projectionFun?(proj, spc) ->
+           (lval_tm, [f], r_args, rhs) :: results_info
+         | _ ->
+       case getCurryArgs rhs 
+         | Some(f as Fun(proj,_,_), lval_tm :: r_args) | projectionFun?(proj, spc) ->
+           (lval_tm, [f], r_args, lhs) :: results_info
+         | _ ->
+       case opAndArgs lhs of                                 % uncurry and split apart
+         | Some (name_of_accesser, accesser, (Apply(f as Fun(proj,_,_), lval_tm, _)) :: r_args)
+             | projectionFun?(proj, spc) && some?(setfInfoForAccesser setf_entries name_of_accesser) ->
+           (lval_tm, [f, accesser], flattenArgs r_args, rhs) :: results_info
+         | _ ->
+       (if complain? then writeLine("For "^show op_qid^"\nIgnoring conjunct\n"^printTerm cj) else ();
+        results_info))
+    | Apply(f as Fun(proj,_,_), lval_tm, _) | projectionFun?(proj, spc) ->   % Bool true
+      (lval_tm, [f], [], trueTerm) :: results_info
+    | Apply(Fun(Not, _, _), Apply(f as Fun(proj,_,_), lval_tm, _), _)                             % Bool false
+        | projectionFun?(proj, spc) ->
+      (lval_tm, [f], [], falseTerm) :: results_info
     | Let(binds, bod, _) ->
-      let bod_results_info = recordItemVal (spc, result_vars, op_qid, complain?) ([], bod) in
-      let n_results_info  = map (fn (lval_tm, ids, b) -> (lval_tm, ids, mkLet(binds, b))) bod_results_info in
+      let bod_results_info = recordItemVal (spc, result_vars, op_qid, setf_entries, complain?) ([], bod) in
+      let n_results_info  = map (fn (lval_tm, ids, args, b) -> (lval_tm, ids, args, mkLet(binds, b))) bod_results_info in
       n_results_info ++ results_info
     | IfThenElse(c, p, q, a) ->
-      let p_results_info = recordItemVal (spc, result_vars, op_qid, complain?) ([], p) in
-      let q_results_info = recordItemVal (spc, result_vars, op_qid, complain?) ([], q) in
+      let p_results_info = recordItemVal (spc, result_vars, op_qid, setf_entries, complain?) ([], p) in
+      let q_results_info = recordItemVal (spc, result_vars, op_qid, setf_entries, complain?) ([], q) in
       % let _ = (writeLine(printTerm cj);
       %          writeLine("p: "^anyToPrettyString p_results_info);
       %          writeLine("q: "^anyToPrettyString q_results_info);
       %          writeLine("sofar: "^anyToPrettyString results_info)) in
       if compatibleItmLists?(p_results_info, q_results_info)
         then
-          let merged_state_items = map (fn ((lval_tm, fi, pi), (_, _, qi)) -> (lval_tm, fi, IfThenElse(c, pi, qi, a)))
+          let merged_state_items = map (fn ((lval_tm, fi, args, pi), (_, _, _, qi)) ->
+                                          (lval_tm, fi, args, IfThenElse(c, pi, qi, a)))
                                      (zip(p_results_info, q_results_info))
           in
           merged_state_items ++ results_info
@@ -576,51 +607,154 @@ op recordItemVal (spc: Spec, result_vars: MSVars, op_qid: QualifiedId, complain?
       (if complain? then writeLine("For "^show op_qid^"\nIgnoring conditional conjunct\n"^printTerm cj) else ();
        results_info)
     | Apply(Fun(And,_,_), Record([("1",_), ("2",_)],_), _) ->
-      foldl (recordItemVal (spc, result_vars, op_qid, complain?)) results_info (getExpandedConjuncts(cj, spc))
+      foldl (recordItemVal (spc, result_vars, op_qid, setf_entries, complain?)) results_info (getExpandedConjuncts(cj, spc))
     | _ ->
       (if complain? then writeLine("For "^show op_qid^"\nIgnoring conjunct\n"^printTerm cj) else ();
        results_info)
 
-op collectValues(results_info: ItemValList, params: MSVars, spc: Spec): TermSubst =
-  % let _ = (writeLine("collectStateValues:"); app (fn (lval_tm, fs, tm) -> writeLine(printTerm lval_tm^"  "^printTerm tm)) results_info) in
+op mkFnUpdate (spc: Spec) (f: MSTerm) (x: MSTerm) (v: MSTerm): MSTerm =
+  let f_type = inferType(spc, f) in
+  let x_type = inferType(spc, x) in
+  let v_type = inferType(spc, v) in
+  let lens_ty = mkBase(Qualified("Lens", "Lens"), [f_type, x_type]) in
+  let lens_tm = mkApply(mkOp(Qualified("Lens", "fnLens"), mkArrow(x_type, lens_ty)), x) in
+  let useLenses? = some?(findTheType(spc, lens_qid)) in
+  if useLenses?
+    then mkCurriedApply(mkProject("lens_set", lens_ty, mkArrow(f_type, mkArrow(v_type, f_type))), 
+                        [lens_tm, f, v])
+  else
+    mkCurriedApply(mkOp(Qualified("Function", "fnUpdate"),
+                        mkArrows([f_type, x_type, v_type], f_type)),
+                   [f, x, v])
+
+%% f x y z = v --> fnUpd f x (fnUpd (f x) y (fnUpd (f x y) z v))
+op argsToUpdates(f: MSTerm, args: MSTerms, v: MSTerm, spc: Spec): MSTerm =
+  case args
+    | [] -> v
+    | x :: r_args ->
+      mkFnUpdate spc f x (argsToUpdates(mkApply(f, x), r_args, v, spc))
+
+op argsValPairsToUpdate(upd_tm: MSTerm, arg_val_pairs: List1(MSTerms * MSTerm), spc: Spec): MSTerm =
+  case arg_val_pairs
+    | [(args, val_tm)] -> argsToUpdates(upd_tm, args, val_tm, spc)
+    | (args, val_tm) :: r_arg_val_pairs ->
+      let rec_upd_tm = argsValPairsToUpdate(upd_tm, r_arg_val_pairs, spc) in
+      argsToUpdates(rec_upd_tm, args, val_tm, spc)
+
+op lens_compose_qid: QualifiedId = Qualified("Lens", "lens_compose")
+op lens_qid: QualifiedId = Qualified("Lens", "Lens")
+
+op applyLensSet (spc: Spec) (lens: MSTerm) (val: MSTerm) (fld_val: MSTerm): MSTerm =
+  let lens_ty as Base(Qualified("Lens", "Lens"), [a, b], _) = inferType(spc, lens) in
+  let val_ty = inferType(spc, val) in
+  let fld_val_ty = inferType(spc, fld_val) in
+  case getCurryArgs fld_val
+    | Some(Fun(Project "lens_set", Arrow(inner_lens_ty as Base(Qualified("Lens", "Lens"), [_, c], _), _, _), _),
+           [inner_lens, inner_val, inner_fld_val]) -> % Need to restrict inner_val
+      let inner_fld_val_ty = inferType(spc, inner_fld_val) in
+      let composed_lens_ty = mkBase(lens_qid, [a, c]) in
+      let composed_lens = mkAppl(mkOp(lens_compose_qid, mkArrow(mkProduct[lens_ty, inner_lens_ty], composed_lens_ty)),
+                                 [lens, inner_lens])
+      in
+      mkCurriedApply(mkProject("lens_set", composed_lens_ty, mkArrows([val_ty, inner_fld_val_ty], val_ty)),
+                     [composed_lens, val, inner_fld_val])
+    | _ -> mkCurriedApply(mkProject("lens_set", lens_ty, mkArrows([val_ty, fld_val_ty], val_ty)),
+                          [lens, val, fld_val])
+
+op mkParallelLensSets (spc: Spec) (lens_exprs: List(MSTerm * MSTerm) | lens_exprs ~= []) (init_tm: MSTerm): MSTerm =
+  let (lens_0, arg_0) = last lens_exprs in
+  foldr (fn ((lens_i, arg_i), val) ->
+           (applyLensSet spc lens_i val arg_i))
+    (applyLensSet spc lens_0 init_tm arg_0)
+    (butLast lens_exprs)
+
+op makeRecordLens (spc: Spec) (rec_ty: MSType) (id: Id) (fld_ty: MSType): MSTerm =
+  let rec_var = ("r", rec_ty) in
+  let new_val_var = ("x", fld_ty) in
+  mkRecord[("lens_get",
+            mkLambda(mkVarPat rec_var, mkProjection(id, mkVar rec_var, spc))),
+           ("lens_set",
+            mkLambda(mkVarPat rec_var, mkLambda(mkVarPat new_val_var,
+                                                mkRecordMerge(mkVar rec_var,
+                                                              mkRecord[(id, mkVar new_val_var)]))))]
+
+op makeRecordLensPair (spc: Spec) (rec_ty as Base(rec_qid, _, _): MSType) (id: Id, new_val: MSTerm): MSTerm * MSTerm =
+  let rec_var = ("r", rec_ty) in
+  let fld_ty = inferType(spc, new_val) in
+  let new_val_var = ("x", fld_ty) in
+  let (lens_qid, lens_ty) = lensInfoForField(id, rec_qid, rec_ty, fld_ty) in
+  (mkOp(lens_qid, lens_ty),
+   new_val)
+
+op collectValues(results_info: ItemValList, params: MSVars, setf_entries: SetfEntries, useLenses?: Bool, spc: Spec): TermSubst =
+  % let _ = (writeLine("collectStateValues:"); app (fn (lval_tm, fs, args, tm) -> writeLine(printTerm lval_tm^"  "^printTerm tm)) results_info) in
+  %% Group results by first and second arguments
   let lval_tms = removeDuplicatesEquiv(map (project 1) results_info, equalTerm?) in
-  let grouped_info = map (fn l_tm -> (l_tm,
-                                      removeDuplicatesEquiv
-                                        (mapPartial (fn (l_tm_i, constrs, tm) ->
-                                                       if equalTerm?(l_tm_i, l_tm) then Some(constrs, tm) else None)
-                                           results_info,
-                                         fn ((constrs1, tm1), (constrs2, tm2)) ->
-                                           length constrs1 = length constrs2
-                                             && forall? equalFun? (zip(constrs1, constrs2))
-                                             && equalTerm?(tm1, tm2))))
+  let grouped_info = map (fn l_tm ->
+                            let triples_for_lval =
+                                removeDuplicatesEquiv
+                                  (mapPartial (fn (l_tm_i, constrs, args, tm) ->
+                                                 if equalTerm?(l_tm_i, l_tm) then Some(constrs, args, tm) else None)
+                                     results_info,
+                                   fn ((constrs1, args1, tm1), (constrs2, args2, tm2)) ->
+                                     equalList?(constrs1, constrs2, equalTerm?)
+                                       && equalList?(args1, args2, equalTerm?)
+                                       && equalTerm?(tm1, tm2))
+                            in
+                            let constrs_lsts = removeDuplicatesEquiv(map (project 1) triples_for_lval,
+                                                                     fn (xs, ys) -> equalList?(xs, ys, equalTerm?)) in
+                            let constr_groups =
+                                map (fn constrs ->
+                                       let pairs_for_constrs =
+                                           removeDuplicatesEquiv
+                                             (mapPartial (fn (constrs_i, args, tm) ->
+                                                            if equalList?(constrs, constrs_i, equalTerm?)
+                                                              then Some(args, tm) else None)
+                                                triples_for_lval,
+                                              fn ((args1, tm1), (args2, tm2)) ->
+                                                 equalList?(args1, args2, equalTerm?)
+                                                   && equalTerm?(tm1, tm2))
+                                       in
+                                       (constrs, pairs_for_constrs))
+                                  constrs_lsts
+                            in
+                            (l_tm, constr_groups))
                         lval_tms
   in
-  let (non_incr_info, incr_info) = split (fn (_, ([], _)::_) -> true | _ -> false, grouped_info) in
-  let non_incr_sbst = map (fn | (lval_tm, (_, val)::rst) ->
+  let (non_incr_info, incr_info) = split (fn (_, ([], (args, _)::_)::_) -> true | _ -> false, grouped_info) in
+  let non_incr_sbst = map (fn | (lval_tm, (_, arg_val_pairs)::rst) ->
                              let _ = if rst = [] then ()
                                       else let _ = warn("Ignoring extra assignment to "^printTerm lval_tm) in
-                                           let _ = app (fn (_, tm) -> writeLine(printTerm tm)) rst in
+                                           let _ = app (fn (_, (_, tm)::_) -> writeLine(printTerm tm)) rst in
                                            ()
                              in
+                             let val = argsValPairsToUpdate(lval_tm, arg_val_pairs, spc) in
                              (lval_tm, val))
                         non_incr_info
   in
-  let incr_sbst = map (fn (lval_tm, prs) ->
-                         let id_prs = mapPartial (fn | ([f], val) -> mapOption (fn id -> (id, val)) (projectionFun(f, spc))
+  let incr_sbst = map (fn (lval_tm, constr_groups) ->
+                         let id_prs = mapPartial (fn | ([f as Fun(proj, _, _)], arg_val_pairs) ->
+                                                       let src_tm =
+                                                           case findSourceTerm([], lval_tm, params, spc) of
+                                                             | None -> lval_tm
+                                                             | Some src_tm -> src_tm
+                                                       in
+                                                       mapOption (fn id -> (id, argsValPairsToUpdate
+                                                                                  (mkApply(f, src_tm), arg_val_pairs, spc)))
+                                                         (projectionFun(proj, spc))
                                                      | _ -> None)
-                                        prs
+                                        constr_groups
                          in
-                         let _ = if length id_prs ~= length prs
+                         let _ = if length id_prs ~= length constr_groups
                                    then warn("Ignoring one or more updates to "^printTerm lval_tm) else ()
                          in
-                         let val = mkCanonRecord id_prs in
-                         let val = if equivTypeSubType? spc (inferType(spc, lval_tm), inferType(spc, val)) true
-                                      then val
-                                   else
-                                     case findSourceTerm(id_prs, inferType(spc, lval_tm), params, spc) of
-                                       | None -> val
-                                       | Some src_tm ->
-                                         translateRecordMerge spc (mkRecordMerge(src_tm, val))
+                         let lval_ty = inferType(spc, lval_tm) in
+                         case findSourceTerm(id_prs, lval_tm, params, spc)
+                           | None -> (lval_tm, mkCanonRecord id_prs)
+                           | Some src_tm ->
+                         let val = if useLenses?
+                                     then mkParallelLensSets spc (map (makeRecordLensPair spc lval_ty) id_prs) src_tm
+                                     else mkRecordMerge(src_tm, mkCanonRecord id_prs)
                          in                                            
                          (lval_tm, makeRecordMerge spc val))
                     incr_info
@@ -632,11 +766,9 @@ op makeDefTermFromPostCondition(top_dfn: MSTerm, post_condn: MSTerm, result_tm: 
                                 op_qid: QualifiedId, spc: Spec, result_ty: MSType)
      : Option MSTerm =
    % let _ = writeLine("\nmdfuct: "^show op_qid^" "^"\n"^printTerm post_condn) in
-   let params = case top_dfn of
-                  | Lambda([(binds, p, o_bod)], a) ->
-                    patVars binds
-                  | _ -> []
-   in
+   let params = parameterBindings top_dfn in
+   let setf_entries = findSetfEntries spc in
+   let useLenses? = some?(findTheType(spc, lens_qid)) in
    let def makeDef(tm: MSTerm, inh_cjs: MSTerms, seenQIds: QualifiedIds): Option MSTerm =
          % let _ = writeLine("makeDef:\n"^printTerm tm) in
          case tm of
@@ -664,8 +796,8 @@ op makeDefTermFromPostCondition(top_dfn: MSTerm, post_condn: MSTerm, result_tm: 
                      cjs of
                 | Some complex_cj -> makeDef(complex_cj, delete(complex_cj, cjs), seenQIds)
                 | None -> 
-              let results_info = foldl (recordItemVal (spc, result_vars, op_qid, true)) [] cjs in
-              let results_sbst = collectValues(results_info, params, spc) in
+              let results_info = foldl (recordItemVal (spc, result_vars, op_qid, setf_entries, true)) [] cjs in
+              let results_sbst = collectValues(results_info, params, setf_entries, useLenses?, spc) in
               checkResult(termSubst(result_tm, results_sbst)))
            | _ ->
          if inh_cjs ~= []
@@ -673,16 +805,16 @@ op makeDefTermFromPostCondition(top_dfn: MSTerm, post_condn: MSTerm, result_tm: 
          else
          case tm of
            | Apply(Fun(Equals,_,_), _, _) ->
-             let results_info = recordItemVal (spc, result_vars, op_qid, true) ([], tm) in
-             let results_sbst = collectValues(results_info, params, spc) in
+             let results_info = recordItemVal (spc, result_vars, op_qid, setf_entries, true) ([], tm) in
+             let results_sbst = collectValues(results_info, params, setf_entries, useLenses?, spc) in
              checkResult(termSubst(result_tm, results_sbst))
            | _ -> (warn("makeDefTermFromPostCondition: Unexpected kind of term in "^show op_qid^"\n"
                           ^printTerm tm);
                    None)
        def checkResult(result: MSTerm): Option MSTerm =
          if exists? (fn v -> inVars?(v, result_vars)) (freeVars result)
-                   then let _ = warn("Unbound variables in body constructed for "^show op_qid^"\n"^printTerm result) in
-                        None
+           then let _ = warn("Unbound variables in body constructed for "^show op_qid^"\n"^printTerm result) in
+                Some result
            else Some result
         def replaceBody(dfn, bod) =
          case dfn of
@@ -704,6 +836,12 @@ op derefPostCondition (ty: MSType, spc: Spec): Option(MSTerm * MSTerm) =
          | _ -> None)
     | _ -> None
 
+op realTerm(tm: MSTerm): MSTerm =
+  case tm
+    | Pi(_, ptm, _) -> realTerm ptm
+    | TypedTerm(ptm, _, _) -> realTerm ptm
+    | _ -> tm
+
 op MSTermTransform.finalizeUpdates (spc: Spec) (op_qid: TransOpName) (tm: TransTerm) (ptm: PathTerm)
      (stored_qids: QualifiedIds): Option MSTerm =
   if case grandParentTerm ptm of
@@ -711,17 +849,16 @@ op MSTermTransform.finalizeUpdates (spc: Spec) (op_qid: TransOpName) (tm: TransT
        | Some gptm -> conjunction?(fromPathTerm gptm)
     then None
   else
-    let params = case topTerm ptm of
-                   | Lambda([(binds, p, o_bod)], a) ->
-                     patVars binds
-                   | _ -> []
-    in
+    % let _ = writeLine("fupds: "^printTerm(topTerm ptm)) in
+    let params = parameterBindings(realTerm(topTerm ptm)) in
+    let setf_entries = findSetfEntries spc in
+    let useLenses? = some?(findTheType(spc, lens_qid)) in
     let def stored_qids_updates(cj: MSTerm): ItemValList =
-          let raw_updates = recordItemVal (spc, [], op_qid, false) ([], cj) in
-          List.filter (fn (_, updates, _) ->
+          let raw_updates = recordItemVal (spc, [], op_qid, setf_entries, false) ([], cj) in
+          filter (fn (_, updates, args, _) ->
                   case updates
-                    | [f] ->
-                      (case projectionFun(f, spc)
+                    | [f as Fun(proj, _, _)] ->
+                      (case projectionFun(proj, spc)
                          | None -> false
                          | Some fld_name -> exists? (fn Qualified(_, id) -> id = fld_name) stored_qids)
                     | _ -> false)
@@ -738,12 +875,13 @@ op MSTermTransform.finalizeUpdates (spc: Spec) (op_qid: TransOpName) (tm: TransT
       in
       if results_info = [] then None
       else
-        Some(mkConj(reverse unchanged_cjs ++ map (makeEquality spc) (collectValues(results_info, params, spc))))
+        Some(mkConj(reverse unchanged_cjs
+                      ++ map (makeEquality spc) (collectValues(results_info, params, setf_entries, useLenses?, spc))))
     else
       let results_info = stored_qids_updates tm in
       if results_info = [] then None
       else
-        Some(mkConj(map (makeEquality spc) (collectValues(results_info, params, spc))))
+        Some(mkConj(map (makeEquality spc) (collectValues(results_info, params, setf_entries, useLenses?, spc))))
 
 op finalizeCoTypeUpdatesInPostCondition
      (spc: Spec) (stored_qids: QualifiedIds) (fn_qids: QualifiedIds): Env Spec =
@@ -785,12 +923,25 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
           addDef(spc, info, new_def)
         | _ -> spc
 
+op lensInfoForField(field_id: Id, Qualified(q, ty_id): QualifiedId, rec_ty: MSType, fld_ty: MSType): QualifiedId * MSType =
+  let lens_qid = Qualified(q, ty_id^"_"^field_id^"_lens") in
+  (lens_qid, mkBase(Qualified("Lens", "Lens"), [rec_ty, fld_ty]))
+
+op makeLensForRecordField(spc: Spec, field_id: Id, rec_qid: QualifiedId, rec_ty: MSType, fld_ty: MSType): Spec =
+  let (lens_qid, lens_ty) = lensInfoForField(field_id, rec_qid, rec_ty, fld_ty) in
+  let tvs = freeTyVars lens_ty in
+  let lens_def = makeRecordLens spc rec_ty field_id fld_ty in
+  addNewOp(lens_qid, Nonfix,
+           maybePiTerm(tvs, mkTypedTerm(lens_def, lens_ty)),
+           spc)
+
 %% op SpecTransform.doNothing(spc: Spec): Spec = spc
 
 op SpecTransform.finalizeCoType(spc: Spec)
      (qids: QualifiedIds, observer_qids: Option(QualifiedIds))
      (dont_make_defs?: Bool): Env Spec =
   let _ = writeLine("finalizeCoType") in
+  let useLenses? = some?(findTheType(spc, lens_qid)) in
   case qids of
     | [] -> raise(Fail("No type to realize!"))
     | state_qid :: rest_qids ->
@@ -811,6 +962,11 @@ op SpecTransform.finalizeCoType(spc: Spec)
                      else addTypeDef(new_spc, state_qid,
                                      maybePiType(freeTyVars record_ty, record_ty)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
+   new_spc <- return(if useLenses?
+                      then foldl (fn (new_spc, (fld_id, fld_ty)) ->
+                                    makeLensForRecordField(new_spc, fld_id, state_qid, mkBase(state_qid, []), fld_ty))
+                             new_spc field_pairs
+                     else new_spc);
    fn_qids_to_transform <- return(postConditionOpsReferencingType(new_spc, state_qid));
    script <- return(At(map Def fn_qids_to_transform,
                        mkSteps[mkSimplify(map Unfold stored_qids)]));

@@ -236,7 +236,7 @@ spec
       case needsCoercion?(ty, rm_ty, coercions, n_tm, spc) of
         | Some(toSuper?, tb, lifters) ->
           (case n_tm of
-             | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, ty, a)
+             | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, intType, a)
              | _ -> if toSuper? then coerceToSuper(n_tm, tb, lifters, ty)
                     else coerceToSub(n_tm, tb, lifters, ty))
         | None ->

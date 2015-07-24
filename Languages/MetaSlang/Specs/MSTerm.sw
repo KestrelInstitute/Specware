@@ -31,6 +31,7 @@ type TyVarSubst = List(TyVar * MSType)
 
 type MSMatch      = AMatch          Position
 type MSFun        = AFun            Position
+type MSFuns       = List(AFun       Position)
 
 type MetaTyVar    = AMetaTyVar      Position
 type MetaTyVars   = AMetaTyVars     Position
@@ -49,6 +50,7 @@ type MSCoProductField  = QualifiedId * Option MSType
 op mkTyVar        (name : String)                       : MSType = TyVar     (name,       noPos)
 op mkBase         (qid  : QualifiedId, types : MSTypes) : MSType = Base      (qid, types, noPos)
 op mkArrow        (dom  : MSType,      rng   : MSType)  : MSType = Arrow     (dom, rng,   noPos)
+op mkArrows       (doms : MSTypes,     rng   : MSType)  : MSType = foldr mkArrow rng doms
 op mkSubtype      (typ  : MSType,      pred  : MSTerm)  : MSType = Subtype   (typ, pred,  noPos)
 op mkQuotientType (typ  : MSType,      rel   : MSTerm)  : MSType = Quotient  (typ, rel,   noPos)
 

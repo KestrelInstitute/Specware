@@ -226,7 +226,7 @@
       (progn
         (when (and MetaSlangRewriter::debugApplyRewrites?
                    (eq (State::|!!| HigherOrderMatching::debugHOM) 0)
-                   (member (car command) '(:|Simplify1| :|Simplify|)))
+                   (member (car command) '(:|Simplify1| :|Simplify| :|TermTransform|)))
           (HigherOrderMatching::showNextHOMatchFailure-0))
         (let* ((result-fn (Script::interpretPathTerm-7 *transform-spec* command
                                                        *transform-term*
