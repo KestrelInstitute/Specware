@@ -3439,6 +3439,8 @@ op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad (Option ObjectFi
       (* Ignore function prototypes in the semantics *)
       return None
     | Some body ->
+      (* FIXME HERE NOW: update xenv_funtypes... or put that info in the
+      function table *)
       if fdef.FDef_isExtern then xu_error else
         {f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
          return (Some (fdef.FDef_name, ObjFile_Function f_res))}
