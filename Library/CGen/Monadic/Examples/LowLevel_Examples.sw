@@ -13,7 +13,7 @@ Examples_spec = spec
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyByte *)
-  op copyByte_C : { d:TranslationUnitElem | compile1XU d = copyByte }
+  op copyByte_C : { d:TranslationUnitElem | eval1XU d = copyByte }
 
   (* This is the semantic object for the following function:
 
@@ -47,7 +47,7 @@ Examples_spec = spec
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyBytes *)
-  op copyBytes_C : { d:TranslationUnitElem | compile1XU d = copyBytes }
+  op copyBytes_C : { d:TranslationUnitElem | eval1XU d = copyBytes }
 
 end-spec
 
@@ -60,9 +60,14 @@ transform Examples_spec by
  makeDefsFromPostConditions [copyByte_C, copyBytes_C]
  }
 
-Examples_printed = spec
+Examples_string = spec
   import Examples_impl, ../CPrettyPrinter
 
   op copyByte_String : String = printTranslationUnitToString [copyByte_C]
   op copyBytes_String : String = printTranslationUnitToString [copyBytes_C]
 end-spec
+
+Examples_printed =
+transform Examples_string by
+{at copyByte_String {simplify};
+ at copyBytes_String {simplify}}

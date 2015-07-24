@@ -1823,10 +1823,14 @@ FunctionTypes types! *)
 type FunctionTypeTable = FiniteMap (Identifier, FunType)
 
 type CFunction = List Value -> Monad (Option Value)
-(* type TopFunction = { m:CFunction | fa (l,f) localR f (m l) = m l } *)
+
+op top_function? (cfun: CFunction) : Bool =
+   fa (l,f) localR f (cfun l) = cfun l
+type TopFunction = { f:CFunction | top_function? f }
+
 type RawFunctionTable = (Identifier * List Value) -> Monad (Option Value)
 type FunctionTable = { tab : RawFunctionTable |
-                        fa (tup,f) localR f (tab tup) = tab tup }
+                        fa (id) top_function? (fn vals -> tab (id,vals)) }
 
 (* We now define TranslationEnv as containing tables for typedefs, structs, and
 top-level function definitions.
@@ -3242,7 +3246,7 @@ below.  *)
 
 type ObjectFileElem =
   | ObjFile_Object Value
-  | ObjFile_Function (CFunction * FunType)
+  | ObjFile_Function (TopFunction * FunType)
 type ObjectFileBinding = Identifier * ObjectFileElem
 type ObjectFileBindings = List ObjectFileBinding
 
@@ -3267,11 +3271,44 @@ op objFileObjectBindings (ofile : ObjectFile) : {l:List (Identifier * Value) | n
                  | _ -> None) ofile
 
 (* Get the function bindings in an object file *)
-op objFileFunBindings (ofile : ObjectFile) : {l:List (Identifier * CFunction) | noRepetitions? (unzip l).1 } =
+op objFileFunBindings (ofile : ObjectFile) : {l:List (Identifier * (TopFunction * FunType)) |
+                                                noRepetitions? (unzip l).1 } =
   filterMap (fn (id, elem) ->
                case elem of
-                 | ObjFile_Function (f, _) -> Some (id, f)
+                 | ObjFile_Function (f, ftp) -> Some (id, (f, ftp))
                  | _ -> None) ofile
+
+op objFileFunTable (ofile : ObjectFile) : FunctionTable =
+  fn (id,args) ->
+    case assoc (objFileFunBindings ofile) id of
+      | Some (f, _) -> f args
+      | None -> error
+
+op objFileFunTypes (ofile : ObjectFile) : FunctionTypeTable =
+  foldr (fn ((id,(_,ftp)),tab) -> update tab id ftp)
+    empty (objFileFunBindings ofile)
+
+(* Combine two optional lists of object file bindings; this function will form
+the monoid operation for the writer transformer of XUMonad, below *)
+op objFileOptCombine (opt_obj1: Option ObjectFile,
+                      opt_obj2: Option ObjectFile) : Option ObjectFile =
+  {obj1 <- opt_obj1; obj2 <- opt_obj2;
+   let obj_out = obj1 ++ obj2 in
+   if noRepetitions? (unzip obj_out).1 then Some obj_out else None}
+
+(* objFileOptCombine forms a commutative monoid, with Some [] as unit *)
+theorem objFileOptCombine_id_l is
+  fa (opt_obj) objFileOptCombine (opt_obj, Some []) = opt_obj
+theorem objFileOptCombine_id_r is
+  fa (opt_obj) objFileOptCombine (Some [], opt_obj) = opt_obj
+theorem objFileOptCombine_assoc is
+  fa (opt_obj1, opt_obj2, opt_obj3)
+    objFileOptCombine (objFileOptCombine (opt_obj1, opt_obj2), opt_obj3) =
+    objFileOptCombine (opt_obj1, objFileOptCombine (opt_obj2, opt_obj3))
+theorem objFileOptCombine_comm is
+  fa (opt_obj1, opt_obj2)
+    objFileOptCombine (opt_obj1, opt_obj2) =
+    objFileOptCombine (opt_obj2, opt_obj1)
 
 (* The monad for evaluating translation units. This is a reader monad
 transformer, applied to the state transformer for TranslationEnv, applied to the
@@ -3284,48 +3321,59 @@ environment if they are included. These latter effects are in the XUSubMonad
 monad, which is just the state transformer applied to the option monad, since
 having them be in XUMonad itself would lead to a circular definition of
 XUMonad. *)
-type XUSubMonad a = TranslationEnv -> Option (TranslationEnv * a)
-type IncludeFileMap = Map (String * Bool, XUSubMonad ObjectFileBindings)
+(* FIXME HERE: document the new XUSubMonad, which has an additional reader
+transformer for FunctionTable and writer transformer for ObjectFileBindings *)
+type XUSubMonad a =
+   FunctionTable -> TranslationEnv ->
+   Option (TranslationEnv * (Option ObjectFile * a))
+type IncludeFileMap = Map (String * Bool, XUSubMonad ())
 type XUMonad a = IncludeFileMap -> XUSubMonad a
 
-(* XUMonad's return and bind *)
-op [a] return (x:a) : XUMonad a = fn _ -> fn xenv -> Some (xenv, x)
-op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
-  fn incls -> fn xenv1 -> case m incls xenv1 of
-                            | Some (xenv2, b) -> f b incls xenv2
-                            | None -> None
+(* XUMonad's return *)
+op [a] return (x:a) : XUMonad a =
+   fn incls -> fn tab -> fn xenv -> Some (xenv, (Some [], x))
 
-(* Run an XUMonad computation, given an IncludeFileMap *)
-op [a] runXUMonad (incls: IncludeFileMap) (m: XUMonad a) : Option a =
-  {res <- m incls emptyTranslationEnv; Some res.2}
+(* XUMonad's bind *)
+op [a,b] monadBind (m : XUMonad a, f : a -> XUMonad b) : XUMonad b =
+  fn incls -> fn tab -> fn xenv1 ->
+   case m incls tab xenv1 of
+     | Some (xenv2, (opt_obj1, a)) ->
+       (case f a incls tab xenv2 of
+          | Some (xenv3, (opt_obj2, b)) ->
+            Some (xenv3, (objFileOptCombine (opt_obj1, opt_obj2), b))
+          | None -> None)
+     | None -> None
+
+(* Run an XUMonad computation, given an IncludeFileMap and a FunctionTable *)
+op [a] runXUMonad (m: XUMonad a) (incls: IncludeFileMap) (tab: FunctionTable)
+    : Option (ObjectFileBindings * a) =
+  {(_, (opt_obj, a)) <- m incls tab emptyTranslationEnv; obj <- opt_obj;
+   Some (obj, a)}
 
 (* Lift an XUMonad computation to a Monad computation, given an IncludeFileMap *)
+(*
 op [a] liftXU (incls: IncludeFileMap) (m: XUMonad a) : Monad a =
   liftOption (runXUMonad incls m)
-
-(* The map function for XUMonad *)
-op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
-   case xs of
-     | [] -> return []
-     | x :: xs' ->
-       {new_x <- f x;
-        new_xs <- mapM_XU f xs';
-        return (new_x :: new_xs)}
+*)
 
 (* Get the current TranslationEnv *)
 op xu_get : XUMonad TranslationEnv =
-  fn incls -> fn xenv -> Some (xenv, xenv)
+  fn incls -> fn tab -> fn xenv -> Some (xenv, (Some [], xenv))
 
 (* Modify the current TranslationEnv *)
 op xu_update (f: TranslationEnv -> TranslationEnv) : XUMonad () =
-   fn incls -> fn xenv -> Some (f xenv, ())
+  fn incls -> fn tab -> fn xenv -> Some (f xenv, (Some [], ()))
 
-(* Get the current list of include files *)
-op xu_ask : XUMonad IncludeFileMap =
-   fn incls -> fn xenv -> Some (xenv, incls)
+(* Get the current list of include files and function table *)
+op xu_ask : XUMonad (IncludeFileMap * FunctionTable) =
+   fn incls -> fn tab -> fn xenv -> Some (xenv, (Some [], (incls,tab)))
+
+(* Emit an object file binding *)
+op xu_emit (obj: ObjectFileBinding) : XUMonad () =
+   fn incls -> fn tab -> fn xenv -> Some (xenv, (Some [obj], ()))
 
 (* An error in XUMonad *)
-op [a] xu_error : XUMonad a = fn _ -> fn _ -> None
+op [a] xu_error : XUMonad a = fn _ -> fn _ -> fn _ -> None
 
 (* Test that a FiniteMap in the current top-level does not have a binding for id *)
 op [a] xu_errorIfBound (id : Identifier, f : TranslationEnv -> FiniteMap (Identifier, a)) : XUMonad () =
@@ -3342,9 +3390,18 @@ op [a] liftOption_XU (opt_x : Option a) : XUMonad a =
 op [a] liftXUSubMonad (m: XUSubMonad a) : XUMonad a =
   fn _ -> m
 
+(* The map function for XUMonad *)
+op [a,b] mapM_XU (f : a -> XUMonad b) (xs : List a) : XUMonad (List b) =
+   case xs of
+     | [] -> return []
+     | x :: xs' ->
+       {new_x <- f x;
+        new_xs <- mapM_XU f xs';
+        return (new_x :: new_xs)}
+
 (* Look up an include file and apply its corresponding computation *)
-op includeFile (name: String, has_brackets: Bool) : XUMonad ObjectFileBindings =
-  {incls <- xu_ask;
+op includeFile (name: String, has_brackets: Bool) : XUMonad () =
+  {(incls,_) <- xu_ask;
    case incls (name,has_brackets) of
      | Some m -> liftXUSubMonad m
      | None -> xu_error}
@@ -3368,13 +3425,15 @@ op evalTypedef (typedef:TypeDefinition) : XUMonad () =
 table or the function table, get the zero value for the given type, and add the
 result to the table. Extern declarations do not go in the current translation
 unit; they are just there for type-checking. *)
-op evalObjectDeclaration (odecl:ObjectDeclaration) : XUMonad (Option ObjectFileBinding) =
+op evalObjectDeclaration (odecl:ObjectDeclaration) : XUMonad () =
   if odecl.ObjDecl_isExtern then
-    return None
+    return ()
   else
     {tp <- expandTypeNameXU odecl.ObjDecl_type;
-     if objectType? tp then return () else xu_error;
-     return (Some (odecl.ObjDecl_name, ObjFile_Object (zeroOfType tp)))}
+     if objectType? tp then
+       xu_emit (odecl.ObjDecl_name, ObjFile_Object (zeroOfType tp))
+     else
+       xu_error}
 
 (* For struct members, expand the type name and make sure it is not void *)
 op evalMemberDeclaration (decl:MemberDeclaration) : XUMonad (Identifier * Type) =
@@ -3405,7 +3464,8 @@ op evalParameterDeclaration (param:ParameterDeclaration) : XUMonad (Identifier *
    resulting function ignores its current scope, since withFreshTopBindings
    creates a fresh scope. *)
 (* FIXME HERE: move this to a short section above about C functions *)
-op makeCFunction (retType : Type, params : List (Identifier * Type), body : Monad ()) : CFunction =
+op makeCFunction (retType : Type, params : List (Identifier * Type),
+                  body : Monad ()) : CFunction =
   fn args ->
     if valuesHaveTypes (args, (unzip params).2) then
       {ret <- catchReturns (withFreshTopBindings
@@ -3416,105 +3476,121 @@ op makeCFunction (retType : Type, params : List (Identifier * Type), body : Mona
     else error
 
 (* Build a function by evaluating its return and parameter type names and then
-calling makeCFunction. Note that the body of the function uses the translation
-environment from where the function is evaluated, not where it is called.
-
-Note that this creates a function that ignores both the r_xenv and the
-r_curScope fields of the R input, only depending on the function table. *)
+calling makeCFunction. Note that this closes over the function table and
+translation environment passed into the XUMonad when it is called, and this is
+why its return type is TopFunction. *)
 op evalCFunction (retTypeName : TypeName,
-                  paramDecls : ParameterList, body : Statement) : XUMonad (CFunction * FunType) =
+                  paramDecls : ParameterList,
+                  body : Statement) : XUMonad TopFunction =
   {retType <- expandTypeNameXU retTypeName;
    params <- mapM_XU evalParameterDeclaration paramDecls;
    xenv <- xu_get;
+   (_,tab) <- xu_ask;
    return (makeCFunction
              (retType, params,
-              localR (fn r -> r << {r_xenv=xenv}) (evalStatement body)),
-           (retType, (unzip params).2))}
+              localR (fn r -> r << {r_functions=tab,r_xenv=xenv})
+                (evalStatement body)))}
+
+(* Get the type of a function *)
+op getCFunctionType (retTypeName : TypeName,
+                      paramDecls : ParameterList) : XUMonad FunType =
+  {retType <- expandTypeNameXU retTypeName;
+   params <- mapM_XU evalParameterDeclaration paramDecls;
+   return (retType, (unzip params).2)}
+
+op setFunType (id:Identifier, funtype: FunType) : XUMonad () =
+  {xenv <- xu_get;
+   if id in? (domain xenv.xenv_funtypes) then
+     xu_error
+   else
+     let funtypes = update xenv.xenv_funtypes id funtype in
+     xu_update (fn xenv -> xenv << {xenv_funtypes = funtypes})}
 
 (* Eval a function definition, by checking that the name is not already defined
 in the object or function table and then calling evalCFunction *)
-op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad (Option ObjectFileBinding) =
-  case fdef.FDef_body of
-    | None ->
-      (* Ignore function prototypes in the semantics *)
-      return None
-    | Some body ->
-      (* FIXME HERE NOW: update xenv_funtypes... or put that info in the
-      function table *)
-      if fdef.FDef_isExtern then xu_error else
-        {f_res <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
-         return (Some (fdef.FDef_name, ObjFile_Function f_res))}
+op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad () =
+  {funtype <- getCFunctionType (fdef.FDef_retType, fdef.FDef_params);
+   setFunType (fdef.FDef_name, funtype);
+   (case fdef.FDef_body of
+      | None ->
+       (* Ignore function prototypes in the semantics *)
+       return ()
+     | Some body ->
+       if fdef.FDef_isExtern then xu_error else
+         {f <- evalCFunction (fdef.FDef_retType, fdef.FDef_params, body);
+          xu_emit (fdef.FDef_name, ObjFile_Function (f, funtype))})}
 
-op [a] optToList (opt:Option a) : List a =
-  case opt of
-    | None -> []
-    | Some x -> [x]
-
-(* Translate a single external declaration, possibly creating a binding in the
-resulting object file *)
-op compile1XU (decl:TranslationUnitElem) : XUMonad (ObjectFileBindings) =
+(* Translate a single external declaration *)
+op eval1XU (decl:TranslationUnitElem) : XUMonad () =
   case decl of
-    | XU_function fdef -> {b <- evalFunctionDeclaration fdef; return (optToList b)}
-    | XU_declaration (Decl_struct sspec) -> {evalStructSpecifier sspec; return []}
-    | XU_declaration (Decl_object odecl) -> {b <- evalObjectDeclaration odecl; return (optToList b)}
-    | XU_declaration (Decl_typedef typedef) -> {evalTypedef typedef; return []}
+    | XU_function fdef -> evalFunctionDeclaration fdef
+    | XU_declaration (Decl_struct sspec) -> evalStructSpecifier sspec
+    | XU_declaration (Decl_object odecl) -> evalObjectDeclaration odecl
+    | XU_declaration (Decl_typedef typedef) -> evalTypedef typedef
     | XU_include nm_and_brackets -> includeFile nm_and_brackets
 
-(* FIXME HERE: multiple definitions of the same thing are allowed, I think, but
-with certain rules... *)
-op checkObjFileBindings (bindings: List ObjectFileBinding) : XUMonad ObjectFile =
-  if noRepetitions? (unzip bindings).1 then
-    return bindings
-  else xu_error
-
-op compileXU (tunit : TranslationUnit) : XUMonad ObjectFile =
-   {elems <- mapM_XU compile1XU tunit;
-    checkObjFileBindings (flatten elems)}
+op evalXU (tunit : TranslationUnit) : XUMonad () =
+  {_ <- mapM_XU eval1XU tunit; return ()}
 
 
 %subsection (* Programs *)
 
 (* FIXME HERE: documentation! *)
 
+type ObjFileFun = {f: FunctionTable -> Option ObjectFile |
+                     fa (tab1,tab2)
+                       monad_PCPO (=) (tab1,tab2) =>
+                       (case (f tab1, f tab2) of
+                          | (Some ofile1, Some ofile2) ->
+                            monad_PCPO (=) (objFileFunTable ofile1,
+                                            objFileFunTable ofile2)
+                          | _ -> true)
+                     }
+
 type Program = {pgm_sources : List TranslationUnit,
-                pgm_libs : List ObjectFile }
+                pgm_libs : List ObjFileFun }
 
 (* FIXME HERE: document the "tying the knot" stuff *)
 
-op linkObjectFiles (ofiles : List ObjectFile) : XUMonad ObjectFile =
-  checkObjFileBindings (flatten ofiles)
+op linkObjFileFuns2 (ofile1 : ObjFileFun,
+                     ofile2 : ObjFileFun) : ObjFileFun =
+  fn tab -> objFileOptCombine (ofile1 tab, ofile2 tab)
+
+op linkObjFileFuns (ofiles : List ObjFileFun) : ObjFileFun =
+  foldr linkObjFileFuns2 (fn _ -> Some []) ofiles
+
+op evalXUToObjFileFun (incls: IncludeFileMap) (tunit: TranslationUnit) : ObjFileFun =
+  fn tab -> {(bindings,_) <- runXUMonad (evalXU tunit) incls tab; Some bindings}
+
+op linkProgram (incls: IncludeFileMap) (pgm: Program) : ObjFileFun =
+  linkObjFileFuns (pgm.pgm_libs ++ map (evalXUToObjFileFun incls) pgm.pgm_sources)
+
+op errorFunctionTable : FunctionTable =
+  fn _ -> error
+
+(* Tie the knot *)
+op makeFunctionTable (ofile: ObjFileFun) : FunctionTable =
+  mfix (fn table ->
+          case ofile table of
+            | Some obj -> objFileFunTable obj
+            | None -> errorFunctionTable)
+
+op evalObjFileFun (ofile: ObjFileFun) : Option ObjectFile =
+  ofile (makeFunctionTable ofile)
 
 (* Get the initial storage for an object file *)
 op initialStorage (ofile : ObjectFile) : Storage =
   {static = fromAssocList (objFileObjectBindings ofile),
    automatic = [], allocated = []}
 
-(* FIXME HERE: this subtype should also reflect monotonicity *)
-type IterFunctionTable = {tab: RawFunctionTable |
-                            fa (tup,f)
-                              (fa (r) (f r).r_functions = r.r_functions) =>
-                              localR f (tab tup) = tab tup}
-
-op iterateFunctionTable (funs : IterFunctionTable, ofile : ObjectFile) : FunctionTable =
-  fn (id, args) ->
-    case assoc (objFileFunBindings ofile) id of
-      | Some f -> localR (fn r -> r << {r_functions = funs}) (f args)
-      | None -> error
-
-op makeFunctionTable (ofile : ObjectFile) : FunctionTable =
-  mfix (fn table -> iterateFunctionTable (table, ofile))
-
 (* Run a program, given a set of include files, with argc=0 and argv=NULL *)
-op evalProgram (incls: IncludeFileMap) (pgm : Program) : Monad () =
-   {ofile <- liftXU incls {ofiles <- mapM_XU compileXU pgm.pgm_sources;
-                           linkObjectFiles (pgm.pgm_libs ++ ofiles)};
-    initHeap <- return (initialStorage ofile);
-    putState initHeap;
-    funTable <- return (makeFunctionTable ofile);
-    _ <-
-      localR (fn _ -> makeGlobalR (emptyTranslationEnv, funTable))
-      (funTable ("main", [int0, V_nullpointer (T_pointer (T_pointer T_char))]));
-    return ()
-    }
+op evalProgram (incls: IncludeFileMap) (pgm : Program) : Monad (Option Value) =
+   {ofile <- liftOption (evalObjFileFun (linkProgram incls pgm));
+    putState (initialStorage ofile);
+    let funTable = objFileFunTable ofile in
+    let funtypes = objFileFunTypes ofile in
+    let xenv = emptyTranslationEnv << {xenv_funtypes = funtypes} in
+    localR (fn _ -> makeGlobalR (xenv, funTable))
+      (funTable ("main", [int0,V_nullpointer (T_pointer (T_pointer T_char))]))}
 
 end-spec

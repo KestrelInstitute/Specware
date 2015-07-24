@@ -55,14 +55,15 @@ C_Predicates qualifying spec
     computation_has_value r st (evaluateLValue lv) res
 
   (* Correctness predicate for XUMonad computations *)
-  op [a] xu_correct (pre: IncludeFileMap -> TranslationEnv -> Bool)
-                    (m: XUMonad a)
-                    (post: IncludeFileMap -> TranslationEnv ->
-                       TranslationEnv * a -> Bool) : Bool =
-    fa (incl_map,xenv)
-      pre incl_map xenv =>
-      (case m incl_map xenv of
+  op [a] xu_correct
+    (pre: IncludeFileMap -> FunctionTable -> TranslationEnv -> Bool)
+    (m: XUMonad a)
+    (post: IncludeFileMap -> FunctionTable -> TranslationEnv ->
+       TranslationEnv * (Option ObjectFile * a) -> Bool) : Bool =
+    fa (incls,tab,xenv)
+      pre incls tab xenv =>
+      (case m incls tab xenv of
          | None -> false
-         | Some res -> post incl_map xenv res)
+         | Some res -> post incls tab xenv res)
 
 end-spec
