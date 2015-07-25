@@ -425,6 +425,15 @@ proof isa Map__TMApply_over_update
   apply(auto simp add: Map__TMApply_becomes_apply Map__domain_update2 Set__set_insertion Map__update)
 end-proof
 
+proof isa Map__TMApplyC_over_update_Obligation_subtype
+  by (rule Map__TMApply_over_update_Obligation_subtype)
+end-proof
+
+proof isa Map__TMApplyC_over_update
+  by (simp add: Map__TMApplyC_def Map__TMApply_over_update)
+end-proof
+
+
 proof isa Map__map_map_inv
   apply(simp add: map_map)
   by (metis Function__id__def Function__inverse_comp List.map.id)
