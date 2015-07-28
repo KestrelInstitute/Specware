@@ -419,7 +419,7 @@ C_Permissions qualifying spec
       (env_pred : EnvPred) (perms_in: List (ValuePerm a))
       (perms_out: List (ValuePerm b) * OptValuePerm b)
       (f: a -> b)
-      (name: Identifier, retTypeName: TypeName, paramDecls : ParameterList)
+      (retTypeName: TypeName, name: Identifier, paramDecls : ParameterList)
       (m: XUMonad ()) : Bool =
     let pre =
       (fn incls -> fn funtab -> fn xenv_in -> env_pred (xenv_in, funtab))

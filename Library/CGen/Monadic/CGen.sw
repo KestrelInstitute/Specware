@@ -56,5 +56,17 @@ CGen qualifying spec
    *** Functions
    ***)
 
+  theorem FUNCTION_correct is [a,b]
+    fa (envp,perms_in,perms_out,f:a->b,m,prototype,body)
+      m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
+      equiLong (perms_in, prototype.3) &&
+      abstracts_ret_statement
+        envp
+        (zip (map (fn (ptp,pname) -> LV_ident pname) prototype.3, perms_in))
+        (zip (map (fn (ptp,pname) -> LV_ident pname) prototype.3, perms_out.1), perms_out.2)
+        f
+        body =>
+      abstracts_c_function_decl envp perms_in perms_out f prototype m
+
 
 end-spec
