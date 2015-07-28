@@ -9,7 +9,8 @@ Examples_spec = spec
          (fn _ -> true)
          []
          ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
-         just_return_true m}
+         just_return_true
+         m}
   op just_return_true_C :
     { stmt: Statement |
        evalStatement stmt = just_return_true_m }
@@ -23,7 +24,8 @@ Examples_spec = spec
          (fn _ -> true)
          []
          ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
-         just_return_false m}
+         just_return_false
+         m}
   op just_return_false_C :
     { stmt: Statement |
        evalStatement stmt = just_return_false_m }
