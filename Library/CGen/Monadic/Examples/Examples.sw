@@ -4,32 +4,34 @@ Examples_spec = spec
   (* Function that just returns true, as the statement "return 1" *)
   op just_return_true : () -> () * Bool = RETURN (fn _ -> true)
   op just_return_true_m :
-    {m:Monad () |
-       abstracts_ret_statement
+    {m:ExtDecl |
+       abstracts_c_function_decl
          (fn _ -> true)
          []
          ([], Some ([], value_abs_add_lens (bool_valueabs, proj2_lens)))
          just_return_true
+         (TN_sint, "just_return_true", [])
          m}
   op just_return_true_C :
-    { stmt: Statement |
-       evalStatement stmt = just_return_true_m }
-  op just_return_true_String : String = runPP0 (printStatement just_return_true_C)
+    { elem: TranslationUnitElem |
+       evalTranslationUnitElem elem = just_return_true_m }
+  op just_return_true_String : String = runPP0 (printTranslationUnitElem just_return_true_C)
 
   (* Function that just returns false, as the statement "return 0" *)
   op just_return_false : () -> () * Bool = RETURN (fn _ -> false)
   op just_return_false_m :
-    {m:Monad () |
-       abstracts_ret_statement
+    {m:ExtDecl |
+       abstracts_c_function_decl
          (fn _ -> true)
          []
          ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
          just_return_false
+         (TN_sint, "just_return_false", [])
          m}
   op just_return_false_C :
-    { stmt: Statement |
-       evalStatement stmt = just_return_false_m }
-  op just_return_false_String : String = runPP0 (printStatement just_return_false_C)
+    { elem: TranslationUnitElem |
+       evalTranslationUnitElem elem = just_return_false_m }
+  op just_return_false_String : String = runPP0 (printTranslationUnitElem just_return_false_C)
 
 end-spec
 

@@ -973,7 +973,7 @@ op printInclude (filename: String, brackets_p: Bool) : PP0 =
 
 (* Printing an external declaration is straightforward, by cases. *)
 
-op printExternalDeclaration (xdecl:TranslationUnitElem) : PP0 =
+op printTranslationUnitElem (xdecl:TranslationUnitElem) : PP0 =
   case xdecl of
   | XU_function fdef -> printFunctionDeclaration fdef
   | XU_declaration decl -> printDeclaration decl
@@ -988,7 +988,7 @@ op printTranslationUnit (tunit:TranslationUnit) : PP0 =
   case tunit of
   | [] -> printNothing
   | xdecl::xdecls ->
-    {printExternalDeclaration xdecl;
+    {printTranslationUnitElem xdecl;
      if empty? xdecls then
        printNothing
      else
