@@ -13,7 +13,7 @@ Examples_spec = spec
          (TN_sint, "just_return_true", [])
          m}
   op just_return_true_C :
-    { elem: TranslationUnitElem |
+    {elem:TranslationUnitElem |
        evalTranslationUnitElem elem = just_return_true_m }
   op just_return_true_String : String = runPP0 (printTranslationUnitElem just_return_true_C)
 
@@ -29,7 +29,7 @@ Examples_spec = spec
          (TN_sint, "just_return_false", [])
          m}
   op just_return_false_C :
-    { elem: TranslationUnitElem |
+    {elem:TranslationUnitElem |
        evalTranslationUnitElem elem = just_return_false_m }
   op just_return_false_String : String = runPP0 (printTranslationUnitElem just_return_false_C)
 
