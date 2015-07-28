@@ -413,6 +413,6 @@ C_DSL qualifying spec
                        FDef_isExtern = false}
       && evalStatement body = m
       =>
-      eval1XU d = FUNCTION_m (retTypeName, name, params, m)
+      evalTranslationUnitElem d = FUNCTION_m (retTypeName, name, params, m)
 
 end-spec

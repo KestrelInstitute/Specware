@@ -3527,7 +3527,7 @@ op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad () =
           xu_emit (fdef.FDef_name, ObjFile_Function (f, funtype))})}
 
 (* Translate a single external declaration *)
-op eval1XU (decl:TranslationUnitElem) : XUMonad () =
+op evalTranslationUnitElem (decl:TranslationUnitElem) : XUMonad () =
   case decl of
     | XU_function fdef -> evalFunctionDeclaration fdef
     | XU_declaration (Decl_struct sspec) -> evalStructSpecifier sspec
@@ -3535,8 +3535,8 @@ op eval1XU (decl:TranslationUnitElem) : XUMonad () =
     | XU_declaration (Decl_typedef typedef) -> evalTypedef typedef
     | XU_include nm_and_brackets -> includeFile nm_and_brackets
 
-op evalXU (tunit : TranslationUnit) : XUMonad () =
-  {_ <- mapM_XU eval1XU tunit; return ()}
+op evalTranslationUnit (tunit : TranslationUnit) : XUMonad () =
+  {_ <- mapM_XU evalTranslationUnitElem tunit; return ()}
 
 
 %subsection (* Programs *)
@@ -3566,7 +3566,7 @@ op linkObjFileFuns (ofiles : List ObjFileFun) : ObjFileFun =
   foldr linkObjFileFuns2 (fn _ -> Some []) ofiles
 
 op evalXUToObjFileFun (incls: IncludeFileMap) (tunit: TranslationUnit) : ObjFileFun =
-  fn tab -> {(bindings,_) <- runXUMonad (evalXU tunit) incls tab; Some bindings}
+  fn tab -> {(bindings,_) <- runXUMonad (evalTranslationUnit tunit) incls tab; Some bindings}
 
 op linkProgram (incls: IncludeFileMap) (pgm: Program) : ObjFileFun =
   linkObjFileFuns (pgm.pgm_libs ++ map (evalXUToObjFileFun incls) pgm.pgm_sources)
