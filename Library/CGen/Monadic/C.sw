@@ -3498,13 +3498,19 @@ op evalCFunctionType (retTypeName : TypeName,
    params <- mapM_XU evalParameterDeclaration paramDecls;
    return (retType, (unzip params).2)}
 
+(* Set the function type for id to funtype; if id already has a function type,
+make sure that type is compatible with funtype *)
 op setFunType (id:Identifier, funtype: FunType) : XUMonad () =
   {xenv <- xu_get;
-   if id in? (domain xenv.xenv_funtypes) then
-     xu_error
-   else
-     let funtypes = update xenv.xenv_funtypes id funtype in
-     xu_update (fn xenv -> xenv << {xenv_funtypes = funtypes})}
+   case xenv.xenv_funtypes id of
+     | None ->
+       let funtypes = update xenv.xenv_funtypes id funtype in
+       xu_update (fn xenv -> xenv << {xenv_funtypes = funtypes})
+     | Some funtype' ->
+       if compatibleTypes? (T_function funtype, T_function funtype') then
+         return ()
+       else
+         xu_error}
 
 (* Eval a function definition, by checking that the name is not already defined
 in the object or function table and then calling evalCFunction *)

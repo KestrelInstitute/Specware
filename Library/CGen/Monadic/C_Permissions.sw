@@ -431,8 +431,10 @@ C_Permissions qualifying spec
          case opt_obj of
            | Some ([(name', ObjFile_Function (cfun, funtp))]) ->
              name' = name &&
-             xu_computation_has_value pre
+             xu_computation_has_value
+               (incls, funtab, xenv_out)
                (evalCFunctionType (retTypeName, paramDecls)) funtp &&
+             xenv_out.xenv_funtypes name = Some funtp &&
              abstracts_c_function (fn _ -> true) perms_in perms_out f cfun
            | _ -> false)
 

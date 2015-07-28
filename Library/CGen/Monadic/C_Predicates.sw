@@ -66,12 +66,15 @@ C_Predicates qualifying spec
          | None -> false
          | Some res -> post incls tab xenv res)
 
-  (* States that a translation unit computation has a given value, given inputs
-  that satisfy pred *)
+  (* States that an XUMond computation has value res given certain inputs *)
   op [a] xu_computation_has_value
-    (pred: IncludeFileMap -> FunctionTable -> TranslationEnv -> Bool)
-    (m: XUMonad a) (res:a) : Bool =
-    xu_computation_correct pred m (fn _ -> fn _ -> fn _ ->
-                                     fn (xenv_out,(opt_obj,a)) -> a = res)
+      (incls:IncludeFileMap, tab:FunctionTable,xenv_in:TranslationEnv)
+      (m: XUMonad a) (res:a) : Bool =
+    xu_computation_correct
+      (fn incls' -> fn tab' -> fn xenv_in' ->
+       incls = incls' && tab = tab' && xenv_in = xenv_in')
+      m
+      (fn _ -> fn _ -> fn _ ->
+         fn (xenv_out,(opt_obj,a)) -> a = res)
 
 end-spec
