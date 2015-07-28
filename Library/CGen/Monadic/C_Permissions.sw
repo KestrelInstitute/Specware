@@ -167,6 +167,12 @@ C_Permissions qualifying spec
   op [a,b] value_abs_add_lens (vabs: ValueAbs a, lens: Lens (b,a)) : ValueAbs b =
     value_abs_map (invert_biview (separable_biview_of_lens lens)) vabs
 
+  (* Whether vperm maintains equality of the value it looks it *)
+  op [a] constant_value_perm? (vperm: ValuePerm a) : Bool =
+    fa (asgn,r,stree1,vtree1,stree2,vtree2)
+      (value_perm_abstraction asgn vperm r).sep_eq1 ((stree1,vtree1),(stree2,vtree2)) =>
+      vtree1 = vtree2
+
   (* Build a value abstraction that does not look at the heap *)
   op [a] scalar_value_abstraction (R: ISet.Relation (Value,a)) : ValueAbs a =
     fn splset -> fn r ->
