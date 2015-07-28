@@ -398,7 +398,9 @@ C_Permissions qualifying spec
         (catchReturns m)
 
   (* Abstraction for C functions, which are computation functions mapping lists
-  of values, for the arguments, to an optional return value *)
+  of values, for the arguments, to an optional return value. Note that perms_out
+  gives abstractions for viewing the same values that were passed in as
+  arguments, *not* the values of those variables at the end of the function *)
   op [a,b] abstracts_c_function (env_pred : EnvPred) (perms_in: List (ValuePerm a))
                                 (perms_out: List (ValuePerm b) * OptValuePerm b)
                                 (f: a -> b)

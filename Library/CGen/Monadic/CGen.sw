@@ -56,10 +56,20 @@ CGen qualifying spec
    *** Functions
    ***)
 
+  (* The only output permissions allowed for functions are ones that do not
+  allow the corresponding input argument itself to be changed, because the
+  caller of a function cannot see the value of a variable that has been modified
+  inside the body of a function. *)
+  op [a] valid_fun_out_perm (vperm: ValuePerm a) : Bool =
+    fa (asgn,r,stree1,vtree1,stree2,vtree2)
+      (value_perm_abstraction asgn vperm r).sep_eq1 ((stree1,vtree1),(stree2,vtree2)) =>
+      vtree1 = vtree2
+
   theorem FUNCTION_correct is [a,b]
     fa (envp,perms_in,perms_out,f:a->b,m,prototype,body)
       m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
       equiLong (perms_in, prototype.3) &&
+      forall? valid_fun_out_perm perms_out.1 &&
       abstracts_ret_statement
         envp
         (zip (map (fn (ptp,pname) -> LV_ident pname) prototype.3, perms_in))
