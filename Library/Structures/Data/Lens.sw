@@ -42,4 +42,11 @@ proof Isa lens_compose_Obligation_subtype
                      Lens__satisfies_put_get_def Lens__satisfies_put_put_def)
 end-proof
 
+  (* The lens for the first projection of a pair *)
+  op [a,b] proj1_lens : Lens (a*b,a) =
+    {lens_get = fn (a,b) -> a, lens_set = fn (a,b) -> fn a' -> (a',b)}
+  (* The lens for the second projection of a pair *)
+  op [a,b] proj2_lens : Lens (a*b,b) =
+    {lens_get = fn (a,b) -> b, lens_set = fn (a,b) -> fn b' -> (a,b')}
+
 end-spec

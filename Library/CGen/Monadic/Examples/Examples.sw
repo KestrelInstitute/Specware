@@ -8,7 +8,7 @@ Examples_spec = spec
        abstracts_ret_statement
          (fn _ -> true)
          []
-         ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
+         ([], Some ([], value_abs_add_lens (bool_valueabs, proj2_lens)))
          just_return_true
          m}
   op just_return_true_C :

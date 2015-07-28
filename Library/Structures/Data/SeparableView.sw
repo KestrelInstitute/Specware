@@ -147,17 +147,19 @@ SeparableView qualifying spec
       separate_biviews? (compose_biviews (sbv1,sbv2),
                          compose_biviews (sbv1',sbv2'))
 
+  (* Create a separable bi-view from a lens *)
+  op [a,b] separable_biview_of_lens (l: Lens(a,b)) : SeparableBiView(a,b) =
+    {biview = fn (a,b) -> l.lens_get a = b,
+     sep_eq1 = fn (a1,a2) -> l.lens_set a1 (l.lens_get a2) = a2,
+     sep_eq2 = fn (b1,b2) -> true}
+
   (* The biview for viewing the first element of a pair *)
   op [a,b] proj1_biview : SeparableBiView (a*b, a) =
-    {biview = fn ((a,b),a') -> a = a',
-     sep_eq1 = fn ((a1,b1),(a2,b2)) -> b1 = b2,
-     sep_eq2 = fn (a1,a2) -> true}
+    separable_biview_of_lens proj1_lens
 
   (* The biview for viewing the second element of a pair *)
   op [a,b] proj2_biview : SeparableBiView (a*b, b) =
-    {biview = fn ((a,b),b') -> b = b',
-     sep_eq1 = fn ((a1,b1),(a2,b2)) -> a1 = a2,
-     sep_eq2 = fn (b1,b2) -> true}
+    separable_biview_of_lens proj2_lens
 
   (* Combine a view of a and a view of b to a view of a*b *)
   op [a,b,c] tensor_biviews_l (sbv1: SeparableBiView (a,c),
