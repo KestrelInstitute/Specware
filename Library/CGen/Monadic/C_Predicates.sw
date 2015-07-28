@@ -55,7 +55,7 @@ C_Predicates qualifying spec
     computation_has_value r st (evaluateLValue lv) res
 
   (* Correctness predicate for XUMonad computations *)
-  op [a] xu_correct
+  op [a] xu_computation_correct
     (pre: IncludeFileMap -> FunctionTable -> TranslationEnv -> Bool)
     (m: XUMonad a)
     (post: IncludeFileMap -> FunctionTable -> TranslationEnv ->
@@ -65,5 +65,13 @@ C_Predicates qualifying spec
       (case m incls tab xenv of
          | None -> false
          | Some res -> post incls tab xenv res)
+
+  (* States that a translation unit computation has a given value, given inputs
+  that satisfy pred *)
+  op [a] xu_computation_has_value
+    (pred: IncludeFileMap -> FunctionTable -> TranslationEnv -> Bool)
+    (m: XUMonad a) (res:a) : Bool =
+    xu_computation_correct pred m (fn _ -> fn _ -> fn _ ->
+                                     fn (xenv_out,(opt_obj,a)) -> a = res)
 
 end-spec

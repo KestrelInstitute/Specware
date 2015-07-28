@@ -3492,7 +3492,7 @@ op evalCFunction (retTypeName : TypeName,
                 (evalStatement body)))}
 
 (* Get the type of a function *)
-op getCFunctionType (retTypeName : TypeName,
+op evalCFunctionType (retTypeName : TypeName,
                       paramDecls : ParameterList) : XUMonad FunType =
   {retType <- expandTypeNameXU retTypeName;
    params <- mapM_XU evalParameterDeclaration paramDecls;
@@ -3509,7 +3509,7 @@ op setFunType (id:Identifier, funtype: FunType) : XUMonad () =
 (* Eval a function definition, by checking that the name is not already defined
 in the object or function table and then calling evalCFunction *)
 op evalFunctionDeclaration (fdef:FunctionDeclaration) : XUMonad () =
-  {funtype <- getCFunctionType (fdef.FDef_retType, fdef.FDef_params);
+  {funtype <- evalCFunctionType (fdef.FDef_retType, fdef.FDef_params);
    setFunType (fdef.FDef_name, funtype);
    (case fdef.FDef_body of
       | None ->

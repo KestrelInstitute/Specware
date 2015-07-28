@@ -383,7 +383,7 @@ C_Permissions qualifying spec
 
   (* Abstraction for statements that optionally do a return at the end *)
   op [a,b] abstracts_ret_statement (env_pred : EnvPred) (perms_in: PermSet a)
-                                   (perms_out: PermSet b * Option (ValuePerm b))
+                                   (perms_out: PermSet b * OptValuePerm b)
                                    (f: a -> b) (m: Monad ()) : Bool =
     fa (asgn)
       abstracts_computation
@@ -413,12 +413,28 @@ C_Permissions qualifying spec
         f
         m
 
-  (* FIXME HERE NOW: write this! *)
+  (* Abstraction for top-level function declarations: states that m generates a
+  single function binding of name to a function that is abstracted by f *)
   op [a,b] abstracts_c_function_decl
       (env_pred : EnvPred) (perms_in: List (ValuePerm a))
       (perms_out: List (ValuePerm b) * OptValuePerm b)
       (f: a -> b)
-      (m: XUMonad ObjectFileBinding) : Bool
+      (name: Identifier, retTypeName: TypeName, paramDecls : ParameterList)
+      (m: XUMonad ()) : Bool =
+    let pre =
+      (fn incls -> fn funtab -> fn xenv_in -> env_pred (xenv_in, funtab))
+    in
+    xu_computation_correct
+      pre
+      m
+      (fn incls -> fn funtab -> fn xenv_in -> fn (xenv_out, (opt_obj, ())) ->
+         case opt_obj of
+           | Some ([(name', ObjFile_Function (cfun, funtp))]) ->
+             name' = name &&
+             xu_computation_has_value pre
+               (evalCFunctionType (retTypeName, paramDecls)) funtp &&
+             abstracts_c_function (fn _ -> true) perms_in perms_out f cfun
+           | _ -> false)
 
 
 end-spec
