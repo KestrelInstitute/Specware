@@ -1,8 +1,5 @@
-S1 = spec
-  import /Library/General/TwosComplementNumber
-  import /Library/General/SizedNats
-
-  op negateByte (n: Nat8) : Nat8 = toNat (not (bits (n,8)))
+spec
+  import /Library/General/BitList
 
   %% This spec contains a challenge problem for C generation.  The
   %% challenge is to generate C code that implements the Specware
@@ -10,10 +7,12 @@ S1 = spec
 
   %% Take a list of Bytes and negate each of
   %% them, returning the list of negations.
-  op negateBytes (input : List Nat8) : List Nat8 =
-    map negateByte input
+  op negateBytes (input : Bytes) : Bytes =
+    case input of
+    | [] -> []
+    | hd::tl -> (not hd)::negateBytes tl
 
-  %% The generated C code that we want looks like this
+  %% The generated C code might look like this:
 
   %% // Assumes src and dest point to arrays of length (at least) len.  
   %% // Assumes no overlap between src and dest.
@@ -29,325 +28,31 @@ S1 = spec
   %%   }
   %% }
 
-  % ------------------------------------------------------------------------------
+  %% The final theorem proved might look something like this.  The
+  %% stubs below need to be filled in!  Eddy can help us better match
+  %% this up with his notions:
 
-  
-  proof Isa negateByte_Obligation_subtype
-  by (simp add: Nat__fitsInNBits_p_def)
-  end-proof
-  
-  proof Isa negateByte_Obligation_subtype0
-  by (simp add: Nat__fitsInNBits_p_def length_greater_0_iff)
-  end-proof
-  
-  proof Isa negateByte_Obligation_subtype1
-  apply (simp add: Nat__fitsInNBits_p_def length_greater_0_iff)
-  apply (cut_tac bs = "not_bs (toBits (n, 8))" in Bits__toNat_bound2)
-  apply (simp add: Nat__fitsInNBits_p_def length_greater_0_iff, simp)
-  end-proof
-end-spec
+  type CState
+  type CFunction
+  %% TODO: What about errors, etc.:
+  op runCFunction (f: CFunction, s: CState) : CState
+  type Pointer
+  op extractBytes (s:CState, ptr:Pointer, len:Nat) : Bytes
 
-S2 = spec
-  import S1
+  %% Should say that the arrays are allocated and dont overlap, etc. (what else?):
+  %%TODO: How to indicate that the arguments on which the function will be invoked
+  %% are src, dest, and len (they should be on the stack, I guess)?
+  op precond (s:CState, src:Pointer, dest:Pointer, len:Nat) : Bool
 
-  (* Type signature that more closely matches the C we want to generate. This
-  function says that the "output" of the function is the new value of dest; the
-  value of src cannot change. The precondition only worries about the lengths,
-  as the overlap conditions are handled by permissions, below. *)
-  op negateBytes_Cspec (source : List Nat8, dest : List Nat8, size : Nat16 |
-                        size <= length source && size <= length dest):
-    { l:List Nat8 | l = negateBytes (prefix (source, size)) ++ suffix (dest, size) }
-  
+  op NegateBytes_C : CFunction  %% This is the op to generate!
+
+  theorem negateC_correct is
+    fa(s:CState, src:Pointer, dest:Pointer, len:Nat) 
+      %% Or use Nat32 instead of Nat?
+      precond (s, src, dest, len) =>
+        %% Running the function and then extracting the answer:
+        extractBytes(runCFunction(NegateBytes_C, s), dest, len) = 
+        %% Is the same as extracting the input and then running the spec:
+        negateBytes(extractBytes(s,src,len))
 
 end-spec
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Eddy's Program Structures for mimicking C
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
-
-Program_Structures = spec
-  import /Library/General/SizedNats
-
-  op [a] repeat_n (n: Nat) (body: a -> a) : a -> a =
-    if n = 0 then (fn st -> st) else (fn st -> repeat_n (n-1) body (body st))
-
-  op [a] WHILE (cnd: a -> Bool) (body: a -> a |
-                                   fa (st) ex (n) ~(cnd (repeat_n n body st))) : a -> a =
-    fn st -> if cnd st then WHILE cnd body (body st) else st
-
-  op [a,b] withVarDecl (init: b, body : (a*b) -> (a*b)) : a -> a =
-    fn st -> (body (st, init)).1
-
-  op [a] BLOCK (fs: List (a -> a)) : a -> a =
-    case fs of
-      | [] -> (fn st -> st)
-      | f::fs' ->
-        (fn st -> BLOCK fs' (f st))
-
-  op [a,b] ASSIGN (set: a -> b -> a, val: a -> b) : a -> a =
-    fn st -> set st (val st)
-
-  op [a,b] FUNBODY (body: a -> a, ret: a -> b) : a -> b =
-    fn st -> ret (body st)
-
-  op plusNat16 (n1 : Nat16, n2 : Nat16 | fitsInNBits? 16 (n1 + n2)) : Nat16 =
-    n1 + n2
-
-  % ------------- the proofs --------------------
-    
-  proof Isa repeat_n ()
-  apply (auto)
-  sorry
-  termination
-  by (relation "measure (\<lambda>(n,body,st). n)", auto)
-  end-proof
-
-  proof Isa WHILE ()
-  by auto
-  termination (* no generic termination of WHILE *)
-  sorry
-  end-proof
-
-    
-end-spec
-
-
-% ------------------------------------------------------------
-% Introduce abstract state, using observers
-% ------------------------------------------------------------
-
-S3 = spec
-  import Program_Structures
-  import S2
-
-  type State
-  op  src: State -> List Nat8
-  op  dst: State -> List Nat8
-  op  len: State -> Nat16
-  op  ret: State -> List Nat8 
-  
-  def ret (st:State)  = dst st 
-    
-  op init (source : List Nat8, dest : List Nat8, size : Nat16) :
-     {st:State | src st = source && dst st = dest && len st = size}
-
-  op negateBytes_1  (st:State | len st <= length (src st) && len st <= length (dst st))
-  :
-  { st' : State 
-  |     len st' = len st
-     && src st' = src st
-     && dst st' = negateBytes (prefix (src st, len st)) ++ suffix (dst st, len st)
-  }
-    
-  op negateBytes_Cspec (source : List Nat8, dest : List Nat8, size : Nat16 |
-                        size <= length source && size <= length dest): List Nat8
-  =  
-  FUNBODY (negateBytes_1, ret) (init (source,dest,size))
-
-  % ------------- the proofs --------------------
-    
-  proof Isa negateBytes_Cspec_Obligation_subtype
-  apply (frule_tac source=source in init_subtype_constr, simp_all)
-  apply (frule_tac source=source in init_subtype_constr1, simp_all)
-  apply (frule_tac source=source in init_subtype_constr2, simp_all)
-  apply (frule_tac source=source in init_subtype_constr3, simp_all)
-  apply (frule negateBytes_1_subtype_constr, simp_all) 
-  apply (frule negateBytes_1_subtype_constr1, simp_all) 
-  apply (frule negateBytes_1_subtype_constr2, simp_all) 
-  apply (simp add: FUNBODY_def ret_def)
-  end-proof
-end-spec
-
-% ------------------------------------------------------------
-% Refine map to while
-% ------------------------------------------------------------
-
-ListThms = spec % Theorems that should be included in List.sw
-
- theorem map_prefix is [a,b]
-  fa (f: a -> b, l: List a, n:Nat)  n <= length l =>
-    map f (prefix (l, n)) = prefix (map f l, n) 
-
-  % ------------- the proofs --------------------
-    
-   proof Isa map_prefix
-   by (simp add: take_map)
-   end-proof
-end-spec 
-
-% ------------------------------------------------------------
-S4 = spec
-   import S3
-   import ListThms
-
-end-spec
-
-% ------------------------------------------------------------
-S5 = S4
-   { at (negateBytes_1)     
-      { unfold negateBytes  
-      ; unfold ret
-      ; simplify
-      ; lr map_prefix    
-      }                     
-   }       
-   % --------------------------------------------------------------------
-   % transformation fails to emit the correct proof
-   %
-   % handish proof is
-   %
-   % by (simp add: map_prefix negateBytes_def)
-    % --------------------------------------------------------------------
-
-S6 = transform S5 by {finalizeCoType(State)}
-   % --------------------------------------------------------------------
-   % transformation fails to emit the correct proof
-   %
-   % handish proof is a lot of work
-   % --------------------------------------------------------------------
-   
-
- 
-   
-   
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Eddy's handwiritten solution
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
-
-S_Eddy = spec
-  import Program_Structures
-  import S2
-
-  (* Now we define negateBytes_Cspec in a way that closely matches the C we want
-  to generate; this is stil in progress... *)
-  op negateBytes_Cspec1 (src : List Nat8, dest : List Nat8, len : Nat16 |
-                          len <= length src && len <= length dest) : List Nat8 =
-    FUNBODY
-    (withVarDecl
-       (0 : Nat16,
-        WHILE
-          (fn st -> st.2 < len)
-          (BLOCK
-             [ASSIGN ((fn st -> fn v ->
-                         ((st.1.1, update (st.1.2, st.2, v), st.1.3), st.2)),
-                      (fn st -> st.1.1 @ st.2)),
-              ASSIGN ((fn st -> fn v -> ((st.1.1, st.1.2, st.1.3), v)),
-                      (fn st -> plusNat16 (st.2, 1)))]
-             )),
-       (fn st -> st.1)) (src,dest,len)
-
-  (* FIXME: still need the statement of correctness (in progress) *)
-
-end-spec
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Below is a semantic object for Eddy's C generator that shows what the final
-%% program should look like at the end of the derivation (before CGen)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-S_final = spec
-  import S3
-  import /Library/CGen/Monadic/C_DSL
-  %%import /Library/CGen/Monadic/GenerateC
-
-  op negateBytes_obj : ExtDecl =
-    FUNCTION_m (TN_void, "negateBytes",
-                [(TN_pointer TN_uchar, "src"),
-                 (TN_pointer TN_uchar, "dest"),
-                 (TN_uint, "len")],
-              BLOCK_m ([(TN_uint, "i")],
-                       [ASSIGN_m (LVAR_m "i", ICONST_m "0"),
-                        WHILE_m (LT_m (VAR_m "i", VAR_m "len"),
-                                 BLOCK_m
-                                   ([],
-                                [ASSIGN_m (LSUBSCRIPT_m (VAR_m "dest", VAR_m "i"),
-                                           NOT_m (SUBSCRIPT_m (VAR_m "src", VAR_m "i"))),
-                                 ASSIGN_m (LVAR_m "i", ADD_m (VAR_m "i", ICONST_m "1"))]))
-                     ]))
-   
-
-  (* This is the specification for the syntax, in the form of a top-level
-  external declaration, whose semantics equals copyBytes *)
-  op negateBytes_C : { d:TranslationUnitElem | evalTranslationUnitElem d = negateBytes_obj }
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Need to load lisp for GenerateC.sw before running this!
-% ----------------------------------------------------------------------
-% NegateBytes_impl =
-% transform NegateBytes_spec by
-%   { at negateBytes_C { unfold negateBytes; generateC}
-%   ; makeDefsFromPostConditions [negateBytes_C]
-%   }
-% 
-% Examples_printed = spec
-%   import Examples_impl, CPrettyPrinter
-% 
-%   op negateBytes_String : String = printTranslationUnitToString [negateBytes_C]
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-          end-spec
-
-
-          
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: Fill the gap between S2 and the semantic object in S_final.
-%
-% 
-% STEPS:
-% 
-% 1. a handish derivation in Specware
-% 2. formal proofs in Isabelle
-% 3. Transformations that construct both
-%
-% mimic the steps in acl2, see README-acl2 in TCPcrypt
-% ------------------------------------------------------------------------------
-% 
-% Refinement steps (one spec each)
-% 
-% - Add state: op -> stateful op where we use (L1 := map f L2) st
-% 
-% - refine the recursion into a while loop (tail recursion seems to be closer)
-%   stateful map -> stateful while (simulate if Eddy's version doesn't help)
-%
-% - DTRE: refine data type from list to array (weakening types)
-%    stateful list -> stateful array via
-%   Use conversions between array and list and go on from there.
-%   i.e. specify f list -> arr2list (f-arr (list2arr) list
-%        and then figure out f-arr
-%   then convert generatete stateful while to arrays accordingly
-% - Later represent arrays via pointers (another DTRE)
-% 
-% Automate these steps
-% - First proof thms about the whole
-% - create specware transformation for that (with proof emission)
-% 
-%   
-% We have no transforms for most of these steps so it has to be a refine def
-%   
-%   
-%   in ACL2 they have macros for algorithm theories and the like in MUSE
-%   look at MUSE Derivations / ACL2
-%   
-% - getting full proofs is what we eventually need
-%  
-% - need to prove that memory bounds are kept etc. loop invariants 
-%   Complain if anything makes no sense
-% 
-%
-
-% I need something like
-% 
-% L1 = listmap f L2
-% <=>
-% forall i L1[i] = f(L[i])
-% <=>
-% L1 is the result of
-% 
-% i:-=0; while i<len {L1[i] := l[i]}
-% 
-% where len  = length L
-%
-
-% ----------------------------------------------------------------------------
