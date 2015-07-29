@@ -141,21 +141,34 @@ BisimView qualifying spec
     (commutes_with_eqs (sbv1.bv_eq1, sbv1.bv_eq1, sbv2.bv_eq1)) &&
     (commutes_with_eqs (sbv1.bv_eq2, sbv1.bv_eq2, sbv2.bv_eq2))
 
+  (* Separation is commutative *)
+  theorem separation_commutative is [a,b]
+    fa (sbv1,sbv2: BisimView (a,b))
+      separate_biviews? (sbv1,sbv2) => separate_biviews? (sbv2,sbv1)
+
   (* Conjoining separate biviews yields the intersection for biview and the
   composition for the two equalities *)
   theorem conjoin_separate_biviews is [a,b]
     fa (sbv1,sbv2: BisimView (a,b))
-      separate_biviews? (sbv1, sbv2) =>
+      separate_biviews? (sbv1,sbv2) =>
       conjoin_biviews2 (sbv1,sbv2) =
       {biview = iSetInter (sbv1.biview, sbv2.biview),
        bv_eq1 = relCompose (sbv1.bv_eq1, sbv2.bv_eq1),
        bv_eq2 = relCompose (sbv1.bv_eq2, sbv2.bv_eq2)}
 
   (* Separation from two bi-views implies separation from their conjunction *)
-  theorem conjoin_biviews_separate is [a,b]
+  theorem biview_separate_from_conjunction is [a,b]
     fa (sbv1,sbv2,sbv: BisimView (a,b))
       separate_biviews? (sbv1, sbv) && separate_biviews? (sbv2, sbv) =>
       separate_biviews? (conjoin_biviews2 (sbv1, sbv2), sbv)
+
+  (* Separation from the conjunction of separate biviews implies separation from
+  the individual biviews themselves *)
+  theorem biview_separation_un_conjoin is [a,b]
+    fa (sbv1,sbv2,sbv:BisimView (a,b))
+      separate_biviews? (sbv1, sbv2) &&
+      separate_biviews? (conjoin_biviews2 (sbv1, sbv2), sbv) =>
+       separate_biviews?(sbv1, sbv) =>
 
   (* Separation commutes with composition (FIXME: should this be an iff?) *)
   theorem compose_biviews_separate is [a,b,c]
@@ -163,11 +176,6 @@ BisimView qualifying spec
       separate_biviews? (sbv1,sbv1') && separate_biviews? (sbv2,sbv2') =>
       separate_biviews? (compose_biviews (sbv1,sbv2),
                          compose_biviews (sbv1',sbv2'))
-
-
-  (***
-   *** The Constant Bisimilarity View
-   ***)
 
   (* The constant bi-view is separate from all other bi-views *)
   theorem constant_biview_separate is [a,b]
