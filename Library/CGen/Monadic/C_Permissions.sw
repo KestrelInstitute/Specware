@@ -55,9 +55,9 @@ C_Permissions qualifying spec
                                    abs2: CAbstraction (c, a)) : Bool =
     fa (r) (separate_biviews? (abs1 r, abs2 r))
 
-  (* The trivial abstraction that relates, and is separate, from everything *)
-  op [c,a] trivial_abstraction : CAbstraction (c, a) =
-    fn r -> trivial_biview
+  (* The constant abstraction that relates, and is separate, from everything *)
+  op [c,a] constant_abstraction : CAbstraction (c, a) =
+    fn r -> constant_biview
 
   (* Build an abstraction from a relation R an equivalence on c1 that is used to
   build sep_eeq1 for the SplTree c1 type *)
@@ -270,7 +270,7 @@ C_Permissions qualifying spec
   op [a] value_perm_set_abstraction (asgn: SplAssign)
                                     ((perms,vperm): ValuePermSet a) : CAbstraction (Value, a) =
     conjoin_abstractions2
-      (compose_abstractions (trivial_abstraction, perm_set_abstraction asgn perms),
+      (compose_abstractions (constant_abstraction, perm_set_abstraction asgn perms),
        vperm.2 (instantiate_splset_expr asgn vperm.1))
 
   (* An optional value perm is like a value perm set but for optional values;
@@ -289,7 +289,7 @@ C_Permissions qualifying spec
       | None ->
         compose_abstractions (ctoc_abstraction_of_relation
                                 ((=), fn (optv,_) -> optv = None),
-                              trivial_abstraction)
+                              constant_abstraction)
 
   (* A value list perm set is like a value perm but for a list of values, where
   each value in the list is viewed by its corresponding value perm *)
@@ -323,7 +323,7 @@ C_Permissions qualifying spec
                  (list_head_eq,
                   fn (vs1,vs2) -> ex (x) vs1 = x::vs2),
                abs)))
-      trivial_abstraction
+      constant_abstraction
       vperms
 
 
@@ -405,7 +405,7 @@ C_Permissions qualifying spec
         env_pred
         (perm_set_abstraction asgn perms_in)
         (tensor_abstractions_r
-           (compose_abstractions (trivial_abstraction,
+           (compose_abstractions (constant_abstraction,
                                   perm_set_abstraction asgn perms_out),
             value_perm_abstraction asgn vperms_out))
         (fn x -> (x, f x))
