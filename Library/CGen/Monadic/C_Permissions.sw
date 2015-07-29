@@ -165,7 +165,7 @@ C_Permissions qualifying spec
   values to elements of type b by first applying the lens get function and then
   calling the former to relate C values to type a *)
   op [a,b] value_abs_add_lens (vabs: ValueAbs a, lens: Lens (b,a)) : ValueAbs b =
-    value_abs_map (invert_biview (separable_biview_of_lens lens)) vabs
+    value_abs_map (invert_biview (biview_of_lens lens)) vabs
 
   (* Build a value abstraction that does not look at the heap *)
   op [a] scalar_value_abstraction (R: ISet.Relation (Value,a)) : ValueAbs a =
