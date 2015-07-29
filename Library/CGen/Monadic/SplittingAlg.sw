@@ -325,4 +325,7 @@ SplittingAlg qualifying spec
   op instantiate_splset_expr (asgn: SplAssign) (sexprs: SplSetExpr) : SplittingSet =
     instantiate_splexpr_list asgn sexprs
 
+  (* The splitting multiset expression partial order *)
+  op splset_expr_leq : PartialOrder SplSetExpr = splmultiset_expr_leq
+
 end-spec

@@ -174,9 +174,19 @@ C_Permissions qualifying spec
        bv_eq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
        bv_eq2 = fn _ -> true}
 
+  (* Turn a value abstraction into a constant value abstraction, by adding a
+  side condition that prevents the value itself from being modified *)
+  op [a] mk_const_value_abs (vabs: ValueAbs a) : ValueAbs a =
+    fn splset -> fn r ->
+      {biview = (vabs splset r).biview,
+       bv_eq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
+         (vabs splset r).bv_eq1 ((stree1,vtree1),(stree2,vtree2)) &&
+         vtree1 = vtree2,
+       bv_eq2 = (vabs splset r).bv_eq2}
+
 
   (***
-   *** Permission Sets
+   *** Value Permissions
    ***)
 
   (* Value permissions allow viewing a value using a given value abstraction *)
@@ -186,11 +196,23 @@ C_Permissions qualifying spec
   op [a] value_perm_abstraction (asgn: SplAssign) (perm: ValuePerm a) : CAbstraction (Value, a) =
     perm.2 (instantiate_splset_expr asgn perm.1)
 
-  (* Whether vperm maintains equality of the value it looks it *)
+  (* Whether vperm maintains equality of the value it looks at (but maybe not
+  the parts of the storage the value points to) *)
   op [a] constant_value_perm? (vperm: ValuePerm a) : Bool =
     fa (asgn,r,stree1,vtree1,stree2,vtree2)
       (value_perm_abstraction asgn vperm r).bv_eq1 ((stree1,vtree1),(stree2,vtree2)) =>
       vtree1 = vtree2
+
+  (* mk_const_value_perm does indeed yield a constant value permission. This
+  theorem is qualified with CGen so it can be seen by the C generator. *)
+  theorem CGen.mk_const_value_perm_constant is [a]
+    fa (splexpr,vabs:ValueAbs a)
+      true => constant_value_perm? (splexpr, mk_const_value_abs vabs)
+
+
+  (***
+   *** Permission Sets
+   ***)
 
   (* Build the CAbstraction that relates an lvalue to its value(s) *)
   op lvalue_abstraction (lv:LValue) : CAbstraction ((), SplTree Storage * SplTree Value) =
@@ -230,6 +252,14 @@ C_Permissions qualifying spec
   the list *)
   op [a] perm_set_abstraction (asgn: SplAssign) (perms: PermSet a) : CAbstraction ((), a) =
     conjoin_abstractions (map (perm_abstraction asgn) perms)
+
+  (* FIXME HERE NOW: define this!! *)
+  op [a] perms_weaker? (perms1: PermSet a, perms2: PermSet a) : Bool
+
+
+  (***
+   *** Perm Sets for Values, Lists of Values, and Optional Values
+   ***)
 
   (* A value permission set is a permission to view the currrent values of some
   lvalues as well as some designated additional value *)

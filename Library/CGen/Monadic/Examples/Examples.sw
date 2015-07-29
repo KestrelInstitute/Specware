@@ -2,7 +2,7 @@ Examples_spec = spec
   import ../CGen, ../CPrettyPrinter
 
   (* Function that just returns true, as the statement "return 1" *)
-  op just_return_true : () -> () * Bool = RETURN (fn _ -> true)
+  op just_return_true () : () * Bool = ((), true)
   op just_return_true_m :
     {m:ExtDecl |
        abstracts_c_function_decl
@@ -18,7 +18,7 @@ Examples_spec = spec
   op just_return_true_String : String = runPP0 (printTranslationUnitElem just_return_true_C)
 
   (* Function that just returns false, as the statement "return 0" *)
-  op just_return_false : () -> () * Bool = RETURN (fn _ -> false)
+  op just_return_false () : () * Bool = ((), false)
   op just_return_false_m :
     {m:ExtDecl |
        abstracts_c_function_decl
@@ -33,6 +33,35 @@ Examples_spec = spec
        evalTranslationUnitElem elem = just_return_false_m }
   op just_return_false_String : String = runPP0 (printTranslationUnitElem just_return_false_C)
 
+  (* The identity function on Booleans *)
+  op boolean_identity (b:Bool) : Bool * Bool = (b, b)
+  op boolean_identity_m :
+    {m:ExtDecl |
+       abstracts_c_function_decl
+         (fn _ -> true)
+         [([], bool_valueabs)]
+         ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
+         boolean_identity
+         (TN_sint, "boolean_identity", [(TN_sint, "b")])
+         m}
+  op boolean_identity_C :
+    {elem:TranslationUnitElem |
+       evalTranslationUnitElem elem = boolean_identity_m }
+  op boolean_identity_String : String = runPP0 (printTranslationUnitElem boolean_identity_C)
+
+
+  (* Function that negates its Boolean-valued input using an if statement *)
+  op negate_bool (b:Bool) : () * Bool =
+    if b then ((), false) else ((), true)
+  op negate_bool_m :
+    {m:ExtDecl |
+       abstracts_c_function_decl
+         (fn _ -> true)
+         [([], mk_const_value_abs bool_valueabs)]
+         ([], Some ([], value_abs_add_lens (bool_valueabs, proj2_lens)))
+         negate_bool
+         (TN_sint, "just_return_true", [(TN_sint, "b")])
+         m}
 end-spec
 
 
@@ -50,6 +79,12 @@ transform Examples_spec by
     rewrite [strengthen CGen._] {allowUnboundVars? = true, depth = 10000}}
    ;
  makeDefsFromPostConditions [just_return_false_m]
+   ;
+ at boolean_identity_m
+   {unfold boolean_identity;
+    rewrite [strengthen CGen._] {allowUnboundVars? = true, depth = 10000}}
+   ;
+ makeDefsFromPostConditions [boolean_identity_m]
  }
 
 
