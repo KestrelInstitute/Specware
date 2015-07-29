@@ -62,11 +62,9 @@ BisimView qualifying spec
   theorem compose_identity_biview_l is [a,b]
     fa (sbv:BisimView(a,b))
       compose_biviews (identity_biview, sbv) = sbv
-
   theorem compose_identity_biview_r is [a,b]
     fa (sbv:BisimView(a,b))
       compose_biviews (sbv, identity_biview) = sbv
-
   theorem compose_biviews_assoc is [a,b,c,d]
     fa (sbv1:BisimView(a,b),sbv2:BisimView(b,c),sbv3:BisimView(c,d))
       compose_biviews (compose_biviews (sbv1, sbv2), sbv3) =
@@ -87,11 +85,47 @@ BisimView qualifying spec
 
 
   (***
-   *** Separation and Conjunction of Bisimilarity Views
+   *** Conjunction of Bisimilarity Views
    ***)
 
-  (* FIXME: there should be some way to define conjunction of bisimilarity views
-  without first defining separation... *)
+  (* Conjoin two bisimilarity views, intuitively building the bisimilarity view
+  that allows updates using sbv1 and/or sbv2. *)
+  (* FIXME: explain the biview relation better... *)
+  op [a,b] conjoin_biviews2 (sbv1: BisimView (a,b),
+                             sbv2: BisimView (a,b)) : BisimView (a,b) =
+    {biview = fn (a,b) ->
+       (fa (a',b') sbv2.bv_eq1 (a,a') && sbv2.bv_eq2 (b,b') =>
+          sbv1.biview (a',b')) &&
+       (fa (a',b') sbv1.bv_eq1 (a,a') && sbv1.bv_eq2 (b,b') =>
+          sbv2.biview (a',b')),
+     bv_eq1 = rst_closure (relCompose (sbv1.bv_eq1, sbv2.bv_eq1)),
+     bv_eq2 = rst_closure (relCompose (sbv1.bv_eq2, sbv2.bv_eq2))}
+
+  (* Conjoin a list of bi-views *)
+  op [a,b] conjoin_biviews (sbvs: List (BisimView (a,b))) : BisimView (a,b) =
+    foldr conjoin_biviews2 constant_biview sbvs
+
+  (* The constant bi-view that allows no changes to anything *)
+  op [a,b] constant_biview : BisimView (a,b) =
+    {biview = fn _ -> true, bv_eq1 = (=), bv_eq2 = (=)}
+
+  (* Conjunction with the constant view forms a commutative monoid *)
+  theorem conjoin_biviews_assoc is [a,b]
+    fa (sbv1,sbv2,sbv3:BisimView(a,b))
+      conjoin_biviews2 (sbv1, conjoin_biviews2 (sbv2, sbv3)) =
+      conjoin_biviews2 (conjoin_biviews2 (sbv1, sbv2), sbv3)
+  theorem conjoin_biviews_comm is [a,b]
+    fa (sbv1,sbv2:BisimView(a,b))
+      conjoin_biviews2 (sbv1, sbv2) =
+      conjoin_biviews2 (sbv2, sbv1)
+  theorem conjoin_biviews_constant is [a,b]
+    fa (sbv:BisimView (a,b))
+      conjoin_biviews2 (sbv,constant_biview) = sbv
+
+
+  (***
+   *** Separation of Bisimilarity Views
+   ***)
 
   (* Two bisimilarity views are separate iff each biview is preserved by the
   other's equivalences and the respectively equivalences commute. Intutively,
@@ -107,25 +141,15 @@ BisimView qualifying spec
     (commutes_with_eqs (sbv1.bv_eq1, sbv1.bv_eq1, sbv2.bv_eq1)) &&
     (commutes_with_eqs (sbv1.bv_eq2, sbv1.bv_eq2, sbv2.bv_eq2))
 
-  (* Conjoin two separate bisimilarity views, building the relation that is the
-  intersection of the two input relations. The requirement that the two input
-  bisimilarity views be separate is encoded as part of the relation, which
-  becomes the empty relation if the two are not separate. The output view
-  "allows" any combination of updates from the two input views; note that this
-  is equivalent to relCompose (sbv1.bv_eq, sbv1.bv_eq) if the two views are
-  separate, since the composition of commuting equivalence relations is already
-  an equivalence relation. *)
-  op [a,b] conjoin_biviews2 (sbv1: BisimView (a,b),
-                             sbv2: BisimView (a,b)) : BisimView (a,b) =
-    {biview = fn (a,b) ->
-       separate_biviews? (sbv1, sbv2) &&
-       iSetInter (sbv1.biview, sbv2.biview) (a,b),
-     bv_eq1 = rst_closure (relCompose (sbv1.bv_eq1, sbv2.bv_eq1)),
-     bv_eq2 = rst_closure (relCompose (sbv1.bv_eq2, sbv2.bv_eq2))}
-
-  (* Conjoin a list of bi-views *)
-  op [a,b] conjoin_biviews (sbvs: List (BisimView (a,b))) : BisimView (a,b) =
-    foldr conjoin_biviews2 trivial_biview sbvs
+  (* Conjoining separate biviews yields the intersection for biview and the
+  composition for the two equalities *)
+  theorem conjoin_separate_biviews is [a,b]
+    fa (sbv1,sbv2: BisimView (a,b))
+      separate_biviews? (sbv1, sbv2) =>
+      conjoin_biviews2 (sbv1,sbv2) =
+      {biview = iSetInter (sbv1.biview, sbv2.biview),
+       bv_eq1 = relCompose (sbv1.bv_eq1, sbv2.bv_eq1),
+       bv_eq2 = relCompose (sbv1.bv_eq2, sbv2.bv_eq2)}
 
   (* Separation from two bi-views implies separation from their conjunction *)
   theorem conjoin_biviews_separate is [a,b]
@@ -142,31 +166,12 @@ BisimView qualifying spec
 
 
   (***
-   *** Various Trivial Bisimilarity Views
+   *** The Constant Bisimilarity View
    ***)
 
-  (* The trivial bi-view that is separate from everything *)
-  op [a,b] trivial_biview : BisimView (a,b) =
-    {biview = fn _ -> true, bv_eq1 = (=), bv_eq2 = (=)}
-
-  (* The trivial bi-view is separate from all other bi-views *)
-  theorem trivial_biview_separate is [a,b]
-    fa (sbv:BisimView (a, b)) separate_biviews? (trivial_biview, sbv)
-
-  (* Conjoining with the trivial bi-view is a no-op *)
-  theorem conjoin_trivial_biview is [a,b]
-    fa (sbv:BisimView (a,b))
-      conjoin_biviews2 (sbv,trivial_biview) = sbv
-
-  (* Make a bi-view of a relation where (almost) nothing is separate from it *)
-  op [a,b] biview_of_relation (R: Relation (a,b)) : BisimView(a,b) =
-    {biview = R,
-     bv_eq1 = fn _ -> true,
-     bv_eq2 = fn _ -> true}
-
-  (* Make a bi-view of a function *)
-  op [a,b] biview_of_function (f: a -> b) : BisimView(a,b) =
-    biview_of_relation (fn (a,b) -> f a = b)
+  (* The constant bi-view is separate from all other bi-views *)
+  theorem constant_biview_separate is [a,b]
+    fa (sbv:BisimView (a, b)) separate_biviews? (constant_biview, sbv)
 
 
   (***
