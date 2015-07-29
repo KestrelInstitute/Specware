@@ -1383,8 +1383,16 @@ closedTermV detects existence of free variables not included in the argument
         def addCondition(condn: MSTerm, subst as (typeSubst,termSubst,condns): SubstC): SubstC =
           if trueTerm? condn || termIn?(condn,condns) then subst
             else (typeSubst,termSubst,Cons(condn,condns))
-	def unifyCP(subst,ty1,ty2,r1,r2,equals,optTerm): List Unification = 
-	    unifyL(subst,ty1,ty2,r1,r2,equals, map (fn _ -> optTerm) r1,
+	def unifyCP(subst,ty1,ty2,r1,r2,equals,optTerm): List Unification =
+          let (r1', r2') =
+              case optTerm
+                | Some(Fun(Op(qid,_),_,_))
+                    | exists? (fn (id1,_) -> qid = id1) r1 ->
+                  (filter (fn (idi,_) -> qid = idi) r1,
+                   filter (fn (idi,_) -> qid = idi) r2)
+                | _ -> (r1, r2)
+          in
+	    unifyL(subst,ty1,ty2,r1',r2',equals, map (fn _ -> optTerm) r1',
 		   fn(subst,(id1,s1),(id2,s2),_,equals,o_tm) -> 
 		      if id1 = id2 
 			then 

@@ -356,22 +356,33 @@ C_Permissions qualifying spec
                                            (abs_in: CAbstraction (c1, a))
                                            (abs_out: CAbstraction (c1*c2, b))
                                            (f: a -> b) (m: c1 -> Monad c2) : Bool =
-    (* The bv_eq1 of abs_in must be at least as strong as that of abs_out;
-    i.e., more things can be separate from us at the end of the computation *)
+    (* The bv_eq1 of abs_in must be at least as permissive as that of abs_out;
+    i.e., any changes allowed at the end of the computation were already allowed
+    at the beginning *)
     (fa (r, stree1, stree2, c1tree1, c1tree2, c2tree1, c2tree2)
-       (abs_in r).bv_eq1 ((stree1, c1tree1), (stree2, c1tree2)) =>
        (abs_out r).bv_eq1 ((stree1, spltree_pair (c1tree1, c2tree1)),
-                            (stree2, spltree_pair (c1tree2, c2tree2))))
+                            (stree2, spltree_pair (c1tree2, c2tree2)))) =>
+       (abs_in r).bv_eq1 ((stree1, c1tree1), (stree2, c1tree2))
     &&
     (fa (a,c1)
        totally_correct
        (fn r -> fn st_in ->
+          (* Pre-condition: env_pred holds, and there are some splitting trees
+          for the input storage and the C input (c1) that are related to the
+          functional input (a) via abs_in *)
           (env_pred (r.r_xenv, r.r_functions)) &&
           (ex (stree_in, c1tree_in)
              stree_in [] = st_in && c1tree_in [] = c1 &&
              (abs_in r).biview ((stree_in, c1tree_in), a)))
        (m c1)
        (fn r -> fn st_in -> fn (st_out, c2) ->
+
+          (* Post-condition: for all splitting trees for the input storage and
+          c1 that are related to a via abs_in, there are splitting trees for the
+          output storage and the output value (c2) that are related to the
+          functional output (f a) via abs_out; further, the changes to the C
+          side of things are allowed by abs_out. *)
+
           (fa (stree_in, c1tree_in)
              (stree_in [] = st_in && c1tree_in [] = c1 &&
                 (abs_in r).biview ((stree_in, c1tree_in), a)) =>
