@@ -7,8 +7,6 @@ spec
 
 type Set a
 
-axiom Set_non_empty? is [a] ex(s: Set a) true
-
 % an element of type a either belongs to a set or it does not;
 % if two sets have the same elements, they are the same set
 
