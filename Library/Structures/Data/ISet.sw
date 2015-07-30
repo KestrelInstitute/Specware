@@ -123,6 +123,11 @@ ISet qualifying spec
       is_r_chain? R l1 && is_r_chain? R l2 =>
       is_r_chain? R (l1++l2)
 
+  % Take the reflexive-transitive closure of a relation
+  op [a] rt_closure (R: EndoRelation a) : PreOrder a =
+    fn (x,y) ->
+      ex (l) head l = x && last l = y && is_r_chain? R l
+
   % Take the reflexive-symmetric-transitive closure of a relation
   op [a] rst_closure (R: EndoRelation a) : Equivalence a =
     fn (x,y) ->

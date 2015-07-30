@@ -61,14 +61,14 @@ C_Permissions qualifying spec
 
   (* Build an abstraction from a relation R an equivalence on c1 that is used to
   build sep_eeq1 for the SplTree c1 type *)
-  op [c1,c2] ctoc_abstraction_of_relation (bv_eq:ISet.Equivalence c1,
+  op [c1,c2] ctoc_abstraction_of_relation (bv_leq:ISet.Equivalence c1,
                                              R: ISet.Relation (c1,c2)) : CToCAbstraction (c1,c2) =
     fn r ->
       {biview = fn ((stree,c1tree),(stree',c2tree)) ->
          stree = stree' && (fa (spl) R (c1tree spl, c2tree spl)),
-       bv_eq1 = fn ((stree,c1tree),(stree',c1tree')) ->
-         fa (spl) bv_eq (c1tree spl, c1tree' spl),
-       bv_eq2 = fn _ -> true}
+       bv_leq1 = fn ((stree,c1tree),(stree',c1tree')) ->
+         fa (spl) bv_leq (c1tree spl, c1tree' spl),
+       bv_leq2 = fn _ -> true}
 
   (* Conjoin two abstractions *)
   op [c,a] conjoin_abstractions2 (abs1: CAbstraction (c,a),
@@ -90,18 +90,18 @@ C_Permissions qualifying spec
     fn r ->
       {biview = fn ((stree,c12tree),(stree',c1tree)) ->
          fa (spl) stree spl = stree' spl && (c12tree spl).1 = c1tree spl,
-       bv_eq1 = fn ((stree1,c12tree1),(stree2,c12tree2)) ->
+       bv_leq1 = fn ((stree1,c12tree1),(stree2,c12tree2)) ->
          fa (spl) (c12tree1 spl).2 = (c12tree2 spl).2,
-       bv_eq2 = fn (_,_) -> true}
+       bv_leq2 = fn (_,_) -> true}
 
   (* The abstraction for viewing the second elements of a tree of pairs *)
   op [c1,c2] proj2_abstraction : CToCAbstraction (c1*c2, c2) =
     fn r ->
       {biview = fn ((stree,c12tree),(stree',c2tree)) ->
          fa (spl) stree spl = stree' spl && (c12tree spl).2 = c2tree spl,
-       bv_eq1 = fn ((stree1,c12tree1),(stree2,c12tree2)) ->
+       bv_leq1 = fn ((stree1,c12tree1),(stree2,c12tree2)) ->
          fa (spl) (c12tree1 spl).1 = (c12tree2 spl).1,
-       bv_eq2 = fn (_,_) -> true}
+       bv_leq2 = fn (_,_) -> true}
 
   (* Tensor two abstractions on the left *)
   op [c1,c2,a] tensor_abstractions_l (abs1: CAbstraction (c1,a),
@@ -171,18 +171,18 @@ C_Permissions qualifying spec
   op [a] scalar_value_abstraction (R: ISet.Relation (Value,a)) : ValueAbs a =
     fn splset -> fn r ->
       {biview = fn ((stree,vtree),a) -> fa (spl) R (vtree spl, a),
-       bv_eq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
-       bv_eq2 = fn _ -> true}
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
+       bv_leq2 = fn _ -> true}
 
   (* Turn a value abstraction into a constant value abstraction, by adding a
   side condition that prevents the value itself from being modified *)
   op [a] mk_const_value_abs (vabs: ValueAbs a) : ValueAbs a =
     fn splset -> fn r ->
       {biview = (vabs splset r).biview,
-       bv_eq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
-         (vabs splset r).bv_eq1 ((stree1,vtree1),(stree2,vtree2)) &&
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
+         (vabs splset r).bv_leq1 ((stree1,vtree1),(stree2,vtree2)) &&
          vtree1 = vtree2,
-       bv_eq2 = (vabs splset r).bv_eq2}
+       bv_leq2 = (vabs splset r).bv_leq2}
 
 
   (***
@@ -200,7 +200,7 @@ C_Permissions qualifying spec
   the parts of the storage the value points to) *)
   op [a] constant_value_perm? (vperm: ValuePerm a) : Bool =
     fa (asgn,r,stree1,vtree1,stree2,vtree2)
-      (value_perm_abstraction asgn vperm r).bv_eq1 ((stree1,vtree1),(stree2,vtree2)) =>
+      (value_perm_abstraction asgn vperm r).bv_leq1 ((stree1,vtree1),(stree2,vtree2)) =>
       vtree1 = vtree2
 
   (* mk_const_value_perm does indeed yield a constant value permission. This
@@ -225,15 +225,15 @@ C_Permissions qualifying spec
          (fa (spl,tp,d)
             lvalue_has_result r (stree spl) lv (tp, ObjPointer d) &&
             objectHasValue (stree spl) d (vtree spl)),
-       bv_eq1 = fn ((stree1,_),(stree2,_)) ->
+       bv_leq1 = fn ((stree1,_),(stree2,_)) ->
          (* Intuitively, this view "looks at" the whole storage tree, so nothing
          about the storage tree is separate; but we also promise not to change the
-         pointer value of lv, so we put that in bv_eq as well... *)
+         pointer value of lv, so we put that in bv_leq as well... *)
          (fa (tp,d,spl)
             lvalue_has_result r (stree1 spl) lv (tp, ObjPointer d) <=>
             lvalue_has_result r (stree2 spl) lv (tp, ObjPointer d)),
-       bv_eq2 = fn (vtree1,vtree2) ->
-         (* The backwards view "looks at" everything, so bv_eq2 is always true *)
+       bv_leq2 = fn (vtree1,vtree2) ->
+         (* The backwards view "looks at" everything, so bv_leq2 is always true *)
          true}
 
   (* A permission allows viewing an lvalue with a given value permission *)
@@ -356,13 +356,13 @@ C_Permissions qualifying spec
                                            (abs_in: CAbstraction (c1, a))
                                            (abs_out: CAbstraction (c1*c2, b))
                                            (f: a -> b) (m: c1 -> Monad c2) : Bool =
-    (* The bv_eq1 of abs_in must be at least as permissive as that of abs_out;
+    (* The bv_leq1 of abs_in must be at least as permissive as that of abs_out;
     i.e., any changes allowed at the end of the computation were already allowed
     at the beginning *)
     (fa (r, stree1, stree2, c1tree1, c1tree2, c2tree1, c2tree2)
-       (abs_out r).bv_eq1 ((stree1, spltree_pair (c1tree1, c2tree1)),
+       (abs_out r).bv_leq1 ((stree1, spltree_pair (c1tree1, c2tree1)),
                             (stree2, spltree_pair (c1tree2, c2tree2))) =>
-       (abs_in r).bv_eq1 ((stree1, c1tree1), (stree2, c1tree2)))
+       (abs_in r).bv_leq1 ((stree1, c1tree1), (stree2, c1tree2)))
     &&
     (fa (a,c1)
        totally_correct
@@ -387,7 +387,7 @@ C_Permissions qualifying spec
              (ex (stree_out, c2tree_out)
                 stree_out [] = st_out && c2tree_out [] = c2 &&
                 (abs_out r).biview ((stree_out, spltree_pair (c1tree_in, c2tree_out)), (f a)) &&
-                (abs_in r).bv_eq1 ((stree_in, c1tree_in), (stree_out, c1tree_in))
+                (abs_in r).bv_leq1 ((stree_in, c1tree_in), (stree_out, c1tree_in))
                 ))))
 
   (* Same as above, but for computations not computation functions *)
