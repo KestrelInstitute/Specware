@@ -59,10 +59,12 @@ C_Permissions qualifying spec
   op [c,a] constant_abstraction : CAbstraction (c, a) =
     fn r -> constant_biview
 
-  (* Build an abstraction from a relation R an equivalence on c1 that is used to
-  build sep_eeq1 for the SplTree c1 type *)
-  op [c1,c2] ctoc_abstraction_of_relation (bv_leq:ISet.Equivalence c1,
-                                             R: ISet.Relation (c1,c2)) : CToCAbstraction (c1,c2) =
+  (* Build an abstraction from a relation R and a preorder on c1 that is used to
+  build sep_leq1 for the SplTree c1 type. Note that bv_leq1 does not constrain
+  the Storage tree at all: this is because the C abstraction that is composed
+  with the returned CToCAbstraction will take care of that. *)
+  op [c1,c2] ctoc_abstraction_of_relation (bv_leq:ISet.PreOrder c1,
+                                           R: ISet.Relation (c1,c2)) : CToCAbstraction (c1,c2) =
     fn r ->
       {biview = fn ((stree,c1tree),(stree',c2tree)) ->
          stree = stree' && (fa (spl) R (c1tree spl, c2tree spl)),
@@ -121,6 +123,57 @@ C_Permissions qualifying spec
                              (abs1, invert_biview proj1_biview),
                            compose_abstraction_with_biview
                              (abs2, invert_biview proj2_biview))
+
+
+  (***
+   *** The Allocation Abstraction
+   ***)
+
+  (* True iff map1 has at least all the bindings of map2 *)
+  (* FIXME: should this be in the Map spec? *)
+  op [a,b] submap? (map1: Map (a,b), map2: Map (a,b)) : Bool =
+    fa (x) x in? (domain map1) => map1 x = map2 x
+
+  (* The abstraction that allows storage to be allocated *)
+  op [c,a] allocation_abstraction : CAbstraction (c,a) =
+    fn _ ->
+      {biview = fn _ -> true,
+       bv_leq1 = fn ((stree1,ctree1),(stree2,ctree2)) ->
+         (* Allocation will not change the non-storage C object *)
+         ctree1 = ctree2 &&
+         (fa (spl)
+            (* stree2 has all the static bindings of stree1 *)
+            submap? ((stree1 spl).static, (stree2 spl).static) &&
+            (* stree2 has at least as many automatic scopes as stree1 *)
+            length (stree1 spl).automatic <= length (stree1 spl).automatic &&
+            (* stree2 has all the automatic bindings of stree1 *)
+            forall? (fn opt_scopes ->
+                       case opt_scopes of
+                         | (None, None) -> true
+                         | (Some scope1, Some scope2) ->
+                           scope1.scope_parent = scope2.scope_parent &&
+                           submap? (scope1.scope_bindings, scope2.scope_bindings)
+                         | _ -> false)
+              (zip ((stree1 spl).automatic,
+                    prefix ((stree2 spl).automatic,
+                            length (stree1 spl).automatic))) &&
+            (* stree2 has at least as many allocated bindings as stree1 *)
+            length (stree1 spl).allocated <= length (stree1 spl).allocated &&
+            (* All the allocated objects in stree1 are present and equal in stree2 *)
+            forall? (fn opt_bindings ->
+                       case opt_bindings of
+                         | (None,None) -> true
+                         | (Some b1, Some b2) -> b1 = b2
+                         | _ -> false)
+              (zip ((stree1 spl).allocated,
+                    prefix ((stree2 spl).allocated,
+                            length (stree1 spl).allocated)))),
+       bv_leq2 = fn (a1,a2) ->
+         (* Allocation will not change the functional object a being viewed *)
+         a1 = a2}
+
+  op [c,a] conjoin_alloc_abs (abs: CAbstraction (c,a)) : CAbstraction (c,a) =
+    conjoin_abstractions2 (abs, allocation_abstraction)
 
 
   (***
@@ -351,18 +404,23 @@ C_Permissions qualifying spec
   type EnvPred = TranslationEnv * FunctionTable -> Bool
 
   (* This property states that monadic function m can be modeled using function
-  f using the given input and output abstractions *)
+  f using the given input and output abstractions. Note that it has the
+  allocation abstraction built in, meaning that intuitively that all
+  computations are allowed to allocate and also that all abstractions being used
+  must be compatible with allocation. *)
   op [c1,c2,a,b] abstracts_computation_fun (env_pred : EnvPred)
                                            (abs_in: CAbstraction (c1, a))
                                            (abs_out: CAbstraction (c1*c2, b))
                                            (f: a -> b) (m: c1 -> Monad c2) : Bool =
+    let abs_in' = conjoin_alloc_abs abs_in in
+    let abs_out' = conjoin_alloc_abs abs_out in
     (* The bv_leq1 of abs_in must be at least as permissive as that of abs_out;
     i.e., any changes allowed at the end of the computation were already allowed
     at the beginning *)
     (fa (r, stree1, stree2, c1tree1, c1tree2, c2tree1, c2tree2)
-       (abs_out r).bv_leq1 ((stree1, spltree_pair (c1tree1, c2tree1)),
+       (abs_out' r).bv_leq1 ((stree1, spltree_pair (c1tree1, c2tree1)),
                             (stree2, spltree_pair (c1tree2, c2tree2))) =>
-       (abs_in r).bv_leq1 ((stree1, c1tree1), (stree2, c1tree2)))
+       (abs_in' r).bv_leq1 ((stree1, c1tree1), (stree2, c1tree2)))
     &&
     (fa (a,c1)
        totally_correct
@@ -373,7 +431,7 @@ C_Permissions qualifying spec
           (env_pred (r.r_xenv, r.r_functions)) &&
           (ex (stree_in, c1tree_in)
              stree_in [] = st_in && c1tree_in [] = c1 &&
-             (abs_in r).biview ((stree_in, c1tree_in), a)))
+             (abs_in' r).biview ((stree_in, c1tree_in), a)))
        (m c1)
        (fn r -> fn st_in -> fn (st_out, c2) ->
           (* Post-condition: for all splitting trees for the input storage and
@@ -383,11 +441,11 @@ C_Permissions qualifying spec
           side of things were allowed by abs_in. *)
           (fa (stree_in, c1tree_in)
              (stree_in [] = st_in && c1tree_in [] = c1 &&
-                (abs_in r).biview ((stree_in, c1tree_in), a)) =>
+                (abs_in' r).biview ((stree_in, c1tree_in), a)) =>
              (ex (stree_out, c2tree_out)
                 stree_out [] = st_out && c2tree_out [] = c2 &&
-                (abs_out r).biview ((stree_out, spltree_pair (c1tree_in, c2tree_out)), (f a)) &&
-                (abs_in r).bv_leq1 ((stree_in, c1tree_in), (stree_out, c1tree_in))
+                (abs_out' r).biview ((stree_out, spltree_pair (c1tree_in, c2tree_out)), (f a)) &&
+                (abs_in' r).bv_leq1 ((stree_in, c1tree_in), (stree_out, c1tree_in))
                 ))))
 
   (* Same as above, but for computations not computation functions *)
