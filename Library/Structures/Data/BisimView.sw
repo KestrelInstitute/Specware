@@ -168,7 +168,7 @@ BisimView qualifying spec
     fa (sbv1,sbv2,sbv:BisimView (a,b))
       separate_biviews? (sbv1, sbv2) &&
       separate_biviews? (conjoin_biviews2 (sbv1, sbv2), sbv) =>
-       separate_biviews?(sbv1, sbv) =>
+       separate_biviews?(sbv1, sbv)
 
   (* Separation commutes with composition (FIXME: should this be an iff?) *)
   theorem compose_biviews_separate is [a,b,c]
