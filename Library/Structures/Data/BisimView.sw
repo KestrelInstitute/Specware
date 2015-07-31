@@ -2,31 +2,46 @@ BisimView qualifying spec
   import ISet
   import Lens
 
-  (* Whether a relation from type a to type b commutes with preorders on a and
-  b, forming the following commutative square:
+  (* We say relation R is a good-only bisimulation between preorders leq1 and
+  leq2 iff the following forall-exists diagrams hold (where "solid" lines are
+  universals and dotted lines are existentials):
 
-    * ---- leq1 ---> *
-    |                |
-    R                R
-    |                |
-    * ---- leq2 ---> *
+    *------leq1----->*          * . . .leq1. . .>*
+    |                .\         |                .
+    |                . R        |                .   *
+    R                R  \       R                R  /
+    |                .   *      |                . R 
+    |                .          |                ./
+    * . . .leq2 . . >*          *------leq2----->*
 
-  Such squares are used to describe, at a high level, permitted ways that state
-  can be updated: a particular triple (R,leq1,leq2) "allows" state of type a to
-  be updated in any way that satisfies leq1, and the commutativity states that
-  this is equivalent to an update of the state type b that leq2 allows. *)
-  op [a,b] commutes_with_pres (leq1:PreOrder a, leq2:PreOrder b,
-                               R:Relation (a,b)) : Bool =
-    fa (a,b)
-      (ex (a') leq1 (a,a') && R (a',b)) <=> (ex (b') leq2 (b,b') && R (a,b'))
+  Intuitively, this means that R is a bisimulation between the restrictions of
+  leq1 and leq2 to the "good" transitions, that is, the transitions that
+  preserve R-ness to something. The R relation is used to "view" type a at type
+  b, while the leq1 and leq2 relations are used to describe the updates to
+  element of these types that the view "allows". The diagrams above mean that,
+  although the updates allowed by a view might mess the view itself up, by going
+  to a state that is not "good", when an update via leq1 does go to a good
+  state, then it is equivalent to a leq2 update, and vice-versa. *)
+  op [a,b] good_only_bisim_at_point? (leq1:PreOrder a, leq2:PreOrder b,
+                                      R:Relation (a,b)) (a:a,b:b) : Bool =
+    (fa (a')
+       R (a,b) && leq1 (a,a') && (ex (b') R (a',b')) =>
+       (ex (b') R (a',b') && leq2 (b,b'))) &&
+    (fa (b')
+       R (a,b) && leq2 (b,b') && (ex (a') R (a',b')) =>
+       (ex (a') R (a',b') && leq1 (a,a')))
+  op [a,b] good_only_bisim? (leq1:PreOrder a, leq2:PreOrder b,
+                             R:Relation (a,b)) : Bool =
+    fa (a,b) good_only_bisim_at_point? (leq1,leq2,R) (a,b)
 
-  (* A bisimilarity view of type a at type b is a relation R that forms a
-  bisimulation between two given preorders, one on a and one on b *)
+  (* In the below, we use the shortened term "bisimilarity view" or just
+  "biview" for tuples (R,leq1,leq2) where R is a good-only bisimulation between
+  preorders leq1 and leq2 *)
   type RawBisimView (a,b) = {biview: Relation (a,b),
                              bv_leq1: PreOrder a,
                              bv_leq2: PreOrder b}
   type BisimView (a,b) = {bv: RawBisimView (a,b) |
-                            commutes_with_pres (bv.bv_leq1, bv.bv_leq2, bv.biview)}
+                            good_only_bisim? (bv.bv_leq1, bv.bv_leq2, bv.biview)}
 
 
   (***
@@ -88,16 +103,38 @@ BisimView qualifying spec
    *** Conjunction of Bisimilarity Views
    ***)
 
+  (* States that any leq1 update on a and any leq2 update on b preserves R *)
+  op [a,b] preorders_preserve_R_at_point? (leq1:PreOrder a, leq2:PreOrder b,
+                                           R:Relation (a,b)) (a:a,b:b) : Bool =
+    (fa (a',b')
+       leq1 (a,a') && leq2 (b,b') && R (a,b) => R (a',b'))
+
+  (* States that all leq1 and leq2 updates preserve R *)
+  op [a,b] preorders_preserve_R? (leq1:PreOrder a, leq2:PreOrder b,
+                                  R:Relation (a,b)) : Bool =
+    (fa (a,b) preorders_preserve_R_at_point? (leq1,leq2,R) (a,b))
+
+  (* States that any number of leq1 and leq2 steps starting at x can be
+  decomposed into leq1 steps followed by leq2 steps or vice-versa *)
+  op [a] preorders_decompose_at_point? (leq1: PreOrder a, leq2: PreOrder a)
+                                       (x: a) : Bool =
+    (fa (y)
+       rt_closure (relCompose (leq1,leq2)) (x,y) =>
+       relCompose (leq1,leq2) (x,y) && relCompose (leq2,leq1) (x,y))
+
   (* Conjoin two bisimilarity views, intuitively building the bisimilarity view
   that allows updates using sbv1 and/or sbv2. *)
   (* FIXME: explain the biview relation better... *)
   op [a,b] conjoin_biviews2 (sbv1: BisimView (a,b),
                              sbv2: BisimView (a,b)) : BisimView (a,b) =
     {biview = fn (a,b) ->
-       (fa (a',b') sbv2.bv_leq1 (a,a') && sbv2.bv_leq2 (b,b') =>
-          sbv1.biview (a',b')) &&
-       (fa (a',b') sbv1.bv_leq1 (a,a') && sbv1.bv_leq2 (b,b') =>
-          sbv2.biview (a',b')),
+       sbv1.biview (a,b) && sbv2.biview (a,b) &&
+       preorders_preserve_R_at_point? (sbv1.bv_leq1,sbv1.bv_leq2,
+                                       sbv2.biview) (a,b) &&
+       preorders_preserve_R_at_point? (sbv2.bv_leq1,sbv2.bv_leq2,
+                                       sbv1.biview) (a,b) &&
+       preorders_decompose_at_point? (sbv1.bv_leq1,sbv2.bv_leq1) a &&
+       preorders_decompose_at_point? (sbv1.bv_leq2,sbv2.bv_leq2) b,
      bv_leq1 = rt_closure (relCompose (sbv1.bv_leq1, sbv2.bv_leq1)),
      bv_leq2 = rt_closure (relCompose (sbv1.bv_leq2, sbv2.bv_leq2))}
 
@@ -131,19 +168,27 @@ BisimView qualifying spec
   other's preorder and the respective preorders commute. Intutively, this means
   that the updates allowed by one biview do not interfere with the other. *)
   op [a,b] separate_biviews? (sbv1: BisimView (a,b), sbv2: BisimView (a,b)) : Bool =
-    (fa (a1,a2,b1,b2)
-       sbv1.bv_leq1 (a1,a2) && sbv1.bv_leq2 (b1,b2) && sbv2.biview (a1,b1) =>
-       sbv2.biview (a2,b2)) &&
-    (fa (a1,a2,b1,b2)
-       sbv2.bv_leq1 (a1,a2) && sbv2.bv_leq2 (b1,b2) && sbv1.biview (a1,b1) =>
-       sbv1.biview (a2,b2)) &&
-    (commutes_with_pres (sbv1.bv_leq1, sbv1.bv_leq1, sbv2.bv_leq1)) &&
-    (commutes_with_pres (sbv1.bv_leq2, sbv1.bv_leq2, sbv2.bv_leq2))
+    preorders_preserve_R? (sbv1.bv_leq1, sbv1.bv_leq2, sbv2.biview) &&
+    preorders_preserve_R? (sbv2.bv_leq1, sbv2.bv_leq2, sbv1.biview) &&
+    relations_commute? (sbv1.bv_leq1, sbv2.bv_leq1) &&
+    relations_commute? (sbv1.bv_leq2, sbv2.bv_leq2)
 
   (* Separation is commutative *)
   theorem separation_commutative is [a,b]
     fa (sbv1,sbv2: BisimView (a,b))
       separate_biviews? (sbv1,sbv2) => separate_biviews? (sbv2,sbv1)
+
+  (* Good-only bisimulation is closed under composition with preorders that
+  preserve R and that commute with the original preorders *)
+  theorem good_only_bisim_compose is [a,b]
+    fa (leq1,leq1',leq2,leq2',R:Relation (a,b))
+      good_only_bisim? (leq1,leq2,R) &&
+      preorders_preserve_R? (leq1',leq2',R) &&
+      relations_commute? (leq1,leq1') &&
+      relations_commute? (leq2,leq2') =>
+      good_only_bisim? (rt_closure (relCompose (leq1,leq1')),
+                        rt_closure (relCompose (leq2,leq2')),
+                        R)
 
   (* Conjoining separate biviews yields the intersection for biview and the
   composition for the two equalities *)
@@ -210,6 +255,88 @@ BisimView qualifying spec
                                sbv2: BisimView (a,c)) : BisimView (a,b*c) =
     conjoin_biviews2 (compose_biviews (sbv1, invert_biview proj1_biview),
                       compose_biviews (sbv2, invert_biview proj2_biview))
+
+
+  (***
+   *** Implicational Bisimilarity Views
+   ***)
+
+  (* An implicational bisimilarity view intuitively allows some updates, called
+  the succedent updates, iff some other set of updates, called the antecedent
+  updates, are already allowed. In general, there could be multiple pairs of
+  antecedent and succedent updates, which is represented as a list. For
+  simplicity, the updates are always on the a / left-hand type, and
+  implicational bisimilarity views are like the constant view for the b /
+  right-hand type and the biview relation. *)
+  type ImplBisimView1 a =
+    {implview_ant: PreOrder a,
+     implview_succ: PreOrder a}
+  type ImplBisimView a = List (ImplBisimView1 a)
+
+  (* Build a bisimilarity view that allows a-updates as per leq1 *)
+  op [a,b] biview_of_leq1 (leq1: PreOrder a) : BisimView (a,b) =
+    {biview = fn _ -> true,
+     bv_leq1 = leq1,
+     bv_leq2 = (=)}
+
+  (* Compose all succ preorders in an implview *)
+  op [a] compose_impl_succ_preorders (implview: ImplBisimView a) : PreOrder a =
+    foldr relCompose (=) (map (fn impl -> impl.implview_succ) implview)
+
+  (* The succedent biview of implview *)
+  op [a,b] impl_succ_biview (implview: ImplBisimView a) : BisimView (a,b) =
+    biview_of_leq1 (compose_impl_succ_preorders implview)
+
+  (* Compose a single implicational view with a relation, allowing the succedent
+  preorder to be use only if the existing relation satisfies the antecedent *)
+  op [a] rel_compose_impl1 (implview1: ImplBisimView1 a,
+                            leq: PreOrder a) : PreOrder a =
+    rt_closure (fn (a1,a2) ->
+                  leq (a1,a2) ||
+                  (subset? (implview1.implview_ant, leq) &&
+                     implview1.implview_succ (a1,a2)))
+
+  (* Compose a list of implicational views with a relation; this allows the
+  individual implicational views to be composed with leq in any order, because,
+  e.g., one might add to leq in a way that satisfies another's antecedent *)
+  op [a] rel_compose_impl (implview: ImplBisimView a,
+                           leq: PreOrder a) : PreOrder a =
+    fn (a1,a2) ->
+      (ex (l)
+         (forall? (fn impl1 -> impl1 in? implview) l) &&
+         foldr rel_compose_impl1 leq l (a1,a2))
+
+  (* Conjoin a biview with an implicational biview *)
+  op [a,b] conjoin_biview_impl (bv: BisimView (a,b),
+                                implview: ImplBisimView a) : BisimView (a,b) =
+    {biview = fn (a,b) ->
+       bv.biview (a,b) &&
+       good_only_bisim_at_point? (rel_compose_impl (implview, bv.bv_leq1),
+                                  bv.bv_leq2,bv.biview) (a,b),
+     bv_leq1 = rel_compose_impl (implview, bv.bv_leq1),
+     bv_leq2 = bv.bv_leq2}
+
+  (* This separation requires that adding all the succ preorders of an implview
+  to bv does not mess with the good-only bisimulation property of bv *)
+  op [a,b] biview_impl_separate? (bv: BisimView (a,b),
+                                  implview: ImplBisimView a) : Bool =
+    good_only_bisim? (rt_closure
+                        (relCompose (bv.bv_leq1,
+                                     compose_impl_succ_preorders implview)),
+                      bv.bv_leq2, bv.biview)
+
+  (* Conjunction does not change biview when bv is separate from implview *)
+  theorem conjoin_biview_impl_separate is [a,b]
+    fa (bv:BisimView (a,b),implview)
+      biview_impl_separate? (bv, implview) =>
+      (conjoin_biview_impl (bv,implview)).biview = bv.biview
+
+  (* If bv is separate from the succedent biview of implview, then it is
+  separate from implview *)
+  theorem separate_succ_biview_separate_impl is [a,b]
+    fa (bv:BisimView (a,b),implview)
+      separate_biviews? (bv,impl_succ_biview implview) =>
+      biview_impl_separate? (bv, implview)
 
 
 end-spec

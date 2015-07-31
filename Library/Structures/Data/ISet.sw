@@ -12,6 +12,11 @@ ISet qualifying spec
     where "setToPred s x \<equiv> x \<in> s"
   end-proof
 
+  % subset
+  (* FIXME: map this to Isabelle's subset in the theory morphism below *)
+  op [a] subset? (s1:ISet a, s2:ISet a) : Bool =
+    fa (x) s1 x => s2 x
+
   % set intersection
   op [a] iSetInter (s1:ISet a, s2:ISet a) : ISet a =
     fn x:a -> s1 x && s2 x
@@ -23,14 +28,6 @@ ISet qualifying spec
   % A Relation is a set of pairs
   type Relation (a,b) = ISet (a * b)
 
-  % invert a relation
-  op [a,b] relInvert (R: Relation (a,b)) : Relation (b,a) =
-    fn (b,a) -> R (a,b)
-
-  % compose two relations
-  op [a,b,c] relCompose (R1: Relation (a,b), R2: Relation (b,c)) : Relation (a,c) =
-    fn (a,c) -> ex (b) R1 (a,b) && R2 (b,c)
-
   % take the cross product of two relations
   op [a1,a2,b1,b2] relCross (R1: Relation (a1,b1), R2: Relation (a2,b2))
     : Relation (a1 * a2, b1 * b2) =
@@ -40,6 +37,37 @@ ISet qualifying spec
   op [a,b1,b2] relCross2 (R1: Relation (a,b1), R2: Relation (a,b2))
     : Relation (a, b1 * b2) =
     fn (a,(b1,b2)) -> R1 (a,b1) && R2 (a,b2)
+
+
+  (***
+   *** The Category of Relational Composition
+   ***)
+
+  % compose two relations
+  op [a,b,c] relCompose (R1: Relation (a,b), R2: Relation (b,c)) : Relation (a,c) =
+    fn (a,c) -> ex (b) R1 (a,b) && R2 (b,c)
+
+  % composing a relation with = on the left is the identity
+  theorem compose_relation_id_left is [a,b]
+    fa (R:Relation (a,b))
+      relCompose ((=),R) = R
+
+  % composing a relation with = on the left is the identity
+  theorem compose_relation_id_right is [a,b]
+    fa (R:Relation (a,b))
+      relCompose (R,(=)) = R
+
+  % relational composition is associative
+  theorem compose_assoc is [a,b,c,d]
+    fa (R1:Relation (a,b),R2:Relation (b,c),R3:Relation (c,d))
+      relCompose (relCompose (R1,R2),R3) =
+      relCompose (R1,relCompose (R2,R3))
+
+  % invert a relation
+  op [a,b] relInvert (R: Relation (a,b)) : Relation (b,a) =
+    fn (b,a) -> R (a,b)
+
+  (* FIXME: relInvert is an involution in this category *)
 
 
   (***
@@ -140,8 +168,17 @@ ISet qualifying spec
   % Whether two relations commute, i.e., any R1-R2 path can be turned into an
   % R2-R1 path and vice-versa
   op [a] relations_commute? (R1: EndoRelation a, R2: EndoRelation a) : Bool =
-    fa (x,z)
-      (ex (y) R1 (x,y) && R2 (y,z)) <=> (ex (y) R2 (x,y) && R1 (y,z))
+    relCompose (R1,R2) = relCompose (R2,R1)
+
+  (* Any relation commutes with itself *)
+  theorem relations_commute_self is [a]
+    fa (R:EndoRelation a)
+      relations_commute? (R,R)
+
+  % Composing two commuting preorders yields a preorder (the Diamond Lemma)
+  theorem compose_commuting_preorders is [a]
+    fa (R1,R2: PreOrder a)
+      relations_commute? (R1,R2) => preOrder? (relCompose (R1,R2))
 
   % Composing two commuting equivalences yields an equivalence
   theorem compose_commuting_equivalences is [a]
