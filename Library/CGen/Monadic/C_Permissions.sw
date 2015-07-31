@@ -81,7 +81,6 @@ C_Permissions qualifying spec
   op [c,a] conjoin_abstractions (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
     fn r -> conjoin_biviews (map (fn abs -> abs r) abses)
 
-  (* FIXME HERE NOW: don't use pre- and post-compose! *)
   (* Compose two abstractions *)
   op [c1,c2,a] compose_abstractions (abs1: CToCAbstraction (c1,c2),
                                      abs2: CAbstraction (c2, a)) : CAbstraction (c1, a) =
@@ -126,7 +125,7 @@ C_Permissions qualifying spec
 
 
   (***
-   *** The Allocation Abstraction
+   *** The Allocation Abstractions
    ***)
 
   (* True iff map1 has at least all the bindings of map2 *)
@@ -134,29 +133,48 @@ C_Permissions qualifying spec
   op [a,b] submap? (map1: Map (a,b), map2: Map (a,b)) : Bool =
     fa (x) x in? (domain map1) => map1 x = map2 x
 
-  (* The abstraction that allows storage to be allocated *)
-  op [c,a] allocation_abstraction : CAbstraction (c,a) =
+  (* Build an abstraction that only looks at the storage tree, and allows it to
+  evolve via relation R *)
+  op [c,a] storage_evolution_abstraction (R: ISet.PreOrder (SplTree Storage)) : CAbstraction (c,a) =
     fn _ ->
       {biview = fn _ -> true,
        bv_leq1 = fn ((stree1,ctree1),(stree2,ctree2)) ->
-         (* Allocation will not change the non-storage C object *)
+         (* The abstraction does not allow the ctree to be modified *)
          ctree1 = ctree2 &&
-         (fa (spl)
-            (* stree2 has all the static bindings of stree1 *)
-            submap? ((stree1 spl).static, (stree2 spl).static) &&
-            (* stree2 has at least as many automatic scopes as stree1 *)
-            length (stree1 spl).automatic <= length (stree1 spl).automatic &&
-            (* stree2 has all the automatic bindings of stree1 *)
-            forall? (fn opt_scopes ->
-                       case opt_scopes of
-                         | (None, None) -> true
-                         | (Some scope1, Some scope2) ->
-                           scope1.scope_parent = scope2.scope_parent &&
-                           submap? (scope1.scope_bindings, scope2.scope_bindings)
-                         | _ -> false)
-              (zip ((stree1 spl).automatic,
-                    prefix ((stree2 spl).automatic,
-                            length (stree1 spl).automatic))) &&
+         (* Otherwise, the storage trees must be related by R *)
+         R (stree1, stree2),
+       bv_leq2 = fn (a1,a2) ->
+         (* The abstraction does not allow modification of the a object *)
+         a1 = a2}
+
+  (* This abs allows allocation of automatic storage, i.e., stack frames *)
+  op [c,a] auto_allocation_abstraction : CAbstraction (c,a) =
+    storage_evolution_abstraction
+      (fn (stree1, stree2) ->
+         fa (spl)
+           (* stree2 has at least as many automatic scopes as stree1 *)
+           length (stree1 spl).automatic <= length (stree1 spl).automatic &&
+           (* stree2 has all the automatic bindings of stree1 *)
+           forall? (fn opt_scopes ->
+                      case opt_scopes of
+                        | (None, None) -> true
+                        | (Some scope1, Some scope2) ->
+                          scope1.scope_parent = scope2.scope_parent &&
+                          submap? (scope1.scope_bindings, scope2.scope_bindings)
+                        | _ -> false)
+             (zip ((stree1 spl).automatic,
+                   prefix ((stree2 spl).automatic,
+                           length (stree1 spl).automatic))))
+
+  (* Conjoin auto_allocation_abstraction with an abstraction *)
+  op [c,a] conjoin_auto_alloc_abs (abs: CAbstraction (c,a)) : CAbstraction (c,a) =
+    conjoin_abstractions2 (abs, auto_allocation_abstraction)
+
+  (* The abstraction that allows malloc *)
+  op [c,a] malloc_allocation_abstraction : CAbstraction (c,a) =
+    storage_evolution_abstraction
+      (fn (stree1, stree2) ->
+         fa (spl)
             (* stree2 has at least as many allocated bindings as stree1 *)
             length (stree1 spl).allocated <= length (stree1 spl).allocated &&
             (* All the allocated objects in stree1 are present and equal in stree2 *)
@@ -167,13 +185,7 @@ C_Permissions qualifying spec
                          | _ -> false)
               (zip ((stree1 spl).allocated,
                     prefix ((stree2 spl).allocated,
-                            length (stree1 spl).allocated)))),
-       bv_leq2 = fn (a1,a2) ->
-         (* Allocation will not change the functional object a being viewed *)
-         a1 = a2}
-
-  op [c,a] conjoin_alloc_abs (abs: CAbstraction (c,a)) : CAbstraction (c,a) =
-    conjoin_abstractions2 (abs, allocation_abstraction)
+                            length (stree1 spl).allocated))))
 
 
   (***
@@ -405,15 +417,15 @@ C_Permissions qualifying spec
 
   (* This property states that monadic function m can be modeled using function
   f using the given input and output abstractions. Note that it has the
-  allocation abstraction built in, meaning that intuitively that all
-  computations are allowed to allocate and also that all abstractions being used
-  must be compatible with allocation. *)
+  automatic allocation abstraction built in, meaning intuitively that all
+  computations are allowed to allocate stack frames and also that all
+  abstractions being used must be compatible with allocation of stack frames. *)
   op [c1,c2,a,b] abstracts_computation_fun (env_pred : EnvPred)
                                            (abs_in: CAbstraction (c1, a))
                                            (abs_out: CAbstraction (c1*c2, b))
                                            (f: a -> b) (m: c1 -> Monad c2) : Bool =
-    let abs_in' = conjoin_alloc_abs abs_in in
-    let abs_out' = conjoin_alloc_abs abs_out in
+    let abs_in' = conjoin_auto_alloc_abs abs_in in
+    let abs_out' = conjoin_auto_alloc_abs abs_out in
     (* The bv_leq1 of abs_in must be at least as permissive as that of abs_out;
     i.e., any changes allowed at the end of the computation were already allowed
     at the beginning *)
