@@ -521,6 +521,9 @@ WhileSemantics1 = WhileSemantics
       }
    }
 
+
+GetAlgorithm = transform WhileSemantics1 by {finalizeCoType(CState)}
+
    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
@@ -549,8 +552,6 @@ WhileSemantics_by_hand = spec
          ]
         ) st
 end-spec
-
-GetAlgorithm = transform WhileSemantics1 by {finalizeCoType(CState)}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 
