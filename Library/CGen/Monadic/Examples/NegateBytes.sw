@@ -128,8 +128,6 @@ Program_Structures = spec
   =
     fn st -> if cnd st then WHILE cnd body (body st) else st
 
-  % ------------- the proofs --------------------
-    
   proof Isa repeat_n ()
   apply (auto)
   sorry
@@ -175,8 +173,12 @@ Stateful = spec
   =  
   FUNBODY (NegateBytes_C_1, out) (init input)
 
+  % ---------------------------------------------
+
   theorem negateBytes_1_correct is
      fa (input: Bytes) NegateBytes_1 input = negateBytes input
+
+  % ------------- the proofs --------------------
 
   proof Isa negateBytes_1_correct
   by (simp add: NegateBytes_1_def FUNBODY_def
@@ -234,9 +236,17 @@ WithPointers_by_hand = spec
   import Program_Structures
   import NegateBytes 
 
-  op src : Pointer
+  op src : Pointer  
   op dst : Pointer
   op len : Nat
+
+  % To be precise we would have to make src,dst, and len input parameters of 
+  % the C program NegateBytes_C_1 
+  %
+  % The axiom negateC_correct needs to be modified accordingly
+  %
+  % I'll deal with that later
+
 
   op NegateBytes_C_1 (st: CState)
   :
@@ -249,8 +259,12 @@ WithPointers_by_hand = spec
   =  
   FUNBODY (NegateBytes_C_1, fn st -> extractBytes (st, dst, len)) (init input)
 
+  % ---------------------------------------------
+
   theorem negateBytes_1_correct is
      fa (input: Bytes) NegateBytes_1 input = negateBytes input
+
+  % ------------- the proofs --------------------
 
   proof Isa negateBytes_1_correct
   by (simp add: NegateBytes_1_def FUNBODY_def
@@ -274,19 +288,22 @@ end-spec
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Introduce algorithm structures
-%%
-%% I need some new theorems about lists for that
-%% move these into List.sw later
+%% Prepare the introduction of algorithmic structures by switching from a
+%% global view (list equality) in the spec of NegateBytes_C_1 to a local one 
+%% (component-wise equality) 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+% ------------------------------------------------------------
+% I need some new theorems about lists for that
+% move these into List.sw later
+% ------------------------------------------------------------
 ListThms = spec 
 
   theorem list_eq_nth is [a]                                     
     fa (l1: List a, l2 : List a)                                 
       (l1 = l2) = (length l1 = length l2                         
-                   && (fa (i:Nat) i < length l1 => l1@i = l2@i)) 
+                   && (fa (i:Nat) i < length l2 => l1@i = l2@i)) 
                                                                  
   theorem length_map is [a,b]                                    
     fa (f: a -> b, l: List a)                                    
@@ -294,8 +311,8 @@ ListThms = spec
                                    
   theorem map_nth is [a,b]                                    
     fa (f: a -> b, l: List a, i:Nat)  i < length l =>
-      (map f l) @ i = f (l@i)                               
-
+      map f l @ i = f (l@i)                               
+        
   % ------------- the proofs --------------------
     
    proof Isa list_eq_nth
@@ -305,13 +322,23 @@ ListThms = spec
 end-spec 
 
 
-WithPointers2 = spec
+% ------------------------------------------------------------
+
+
+GlobalView = spec
    import WithPointers_by_hand   % or WithPointers1
    import ListThms
 
    theorem negateBytes_with_map_op is
       fa (bs : Bytes)  negateBytes bs = List.map (Bits.not) bs
+         
+  % Specware doesn't rewrite with the precondition
+  % I'll worry about this later and drop it for now
 
+  theorem map_nth2 is [a,b]
+    fa (f: a -> b, l: List a, i:Nat)  % i < length l =>
+      map f l @ i = f (l@i)    
+      
   % ------------- the proofs --------------------
     
    proof Isa negateBytes_with_map_op
@@ -322,22 +349,226 @@ end-spec
 
 
 % ------------------------------------------------------------
-S1 = WithPointers2
-   { at (NegateBytes_C_1)     
-      { lr list_eq_nth
-      ; repeat {lr negateBytes_with_map_op}
-      ; lr length_map
+
+
+LocalView = GlobalView
+   { at (NegateBytes_C_1)     % The order of rewrites is crucial 
+      { lr negateBytes_with_map_op
+      ; lr list_eq_nth
+      ; repeat {lr length_map}
+      ; lr map_nth2
       ; repeat {lr extractBytes_len}
-      ; lr map_nth
+      ; SimpStandard
       }                     
    }      
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Refine CState and extractBytes, introduce arrays as structurs on CState
+%%
+%% We make state a map from addresses to bytes 
+%% This permits direct access and updates 
+%% - pointers will become addresses
+%% - extractBytes will extract a list of bytes beginning at an address
+%% - arrays are an auxiliary construct 
+%%   modelled as a submap of a given length beginning at an address
+%%
+%% TODO: deal with addresses that are out of range
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+WithCState = spec
+  import LocalView
+  import /Library/General/Map
+
+  type Address = Nat % Nat32 ?? I need to be able to add
+  
+  type CState  = Map (Address, Byte)
+  type Pointer = Address
+
+  
+  op get (st:CState) (addr:Address): Byte            
+  = st @ addr
+  op :=  ((st:CState, addr:Address), val:Byte) infixl 20 : CState
+  = update st addr val
+
+
+  % get requires addr to be in range --> Isabelle obligations
+    
+  op interval (start:Address) (howmany:Nat) : List Address
+  =
+    if howmany = 0 
+       then [] 
+       else start :: (interval (start+1) (howmany-1))
+  
+  def extractBytes (st, ptr, len) = map (get st) (interval ptr len)
+  
+  % ------------------------------------------------
+  % 
+
+  op [a] lift (f:a->a) : (CState -> a) -> (CState -> a)
+  = 
+       (fn var -> fn st -> f (var st))
+
+  % ------------------------------------------------
+  % Variables of type Nat ... this is not clean yet, since we only have Nat8
+  % if we convert bytes to Nat
+  %
+  % I should make this polymorphic ... later
+  %
+  % I prefix ops on natvars with a @
+
+  type NatVar = Pointer   % should that be CState -> Nat ???
+      
+  op @! (st:CState, i:NatVar) infixl 20 : Nat         = toNat (st@i)
+  
+  % --------------------------------
+
+  op @: (i:NatVar)                   : CState -> Nat  = fn st -> st@!i
+
+  op @< (i:NatVar, j:Nat) infixl 20  : CState -> Bool = fn st -> st@!i < j
+
+  op @+ (i:NatVar, j:Nat)  infixl 20 : CState -> Nat  = fn st -> st@!i + j
+
+  op @0                              : CState -> Nat  = fn st -> 0
+  
+  op @= (i:NatVar, val:CState->Nat) infixl 20 : CState -> CState 
+  =
+    fn st -> (st, i) := byte (val st)
+  
+
+  % ----------------------------------------------------
+  % I should make this polymorphic, not specific to bytes
+  %
+  % I prefix ops on arrays with a $
+  % ----------------------------------------------------
+
+  type Array = Pointer % Right now we're missing the bounds
+                       % add this later
+  
+  op $! ((st:CState, a:Array), i:Nat) infixl 20 : Byte = get st (a+i)
+  
+  % --------------------------------
+
+  op $: (a:Array, i:Nat) infixl 20 : CState -> Byte = fn st ->  st @ (a+i)
+  
+  op $= ((a:Array, i:NatVar), var:CState->Byte) infixl 20 : CState -> CState
+  =
+   fn st -> (st, a+(st@!i)) := var st
+  
+  % ---------------------------------------------
+  
+  theorem interval_nth is
+    fa (start:Address, howmany:Nat, i:Nat) % i < howmany =>
+       interval start howmany @ i = start + i
+
+end-spec
+
+
+
+WithCState1 = WithCState
+   { at (NegateBytes_C_1)  
+      { repeat {unfold extractBytes}
+      ; repeat {lr map_nth2}
+      ; repeat {lr interval_nth}
+      ; repeat {fold $!}        
+      }
+   }
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Introduce algorithm structures
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% so far I only have a spec with quantifiers over list components, 
+% not the algorithmic structure for determining it.
+
+WhileSemantics = spec
+   import WithCState1
+    
+
+    theorem WHILE_simple_array is
+    fa (st:CState ,st':CState, a:Array, b:Array, lg:Nat, i:NatVar,
+        f:Byte->Byte, Cprog:CState->CState)
+       
+      (Cprog = 
+        BLOCK 
+         [ i @= @0,
+          WHILE ( i @< lg)
+                (BLOCK [ (b,i) $= (lift f) (a$:i), 
+                         i @= (i @+ 1)
+                       ]
+                )
+         ]
+       &&  
+       st' = Cprog st)
+       =>
+      (fa(i:Nat) i<lg => (st',b)$!i  =  f ((st,a)$!i))
+
+    % not yet correct: i is a variable in the program and a nat in the spec
+
+    theorem WHILE_simple_array2 is
+    fa (st:CState ,st':CState, a:Pointer, b:Pointer, lg:Nat, i:Nat,
+        f:Byte->Byte)
+       
+      (st' = 
+        (BLOCK 
+         [ i @= @0,
+          WHILE ( i @< lg)
+                (BLOCK [ (b,i) $= (lift f) (a$:i), 
+                         i @= (i @+ 1)
+                       ]
+                )
+         ]
+        ) st)
+       =
+      (fa(i:Nat) i<lg => (st',b)$!i  =  f ((st,a)$!i))
+
+  % ------------- the proofs --------------------
+    
+end
+
+WhileSemantics1 = WhileSemantics 
+   { at (NegateBytes_C_1)  
+      { rl WHILE_simple_array2 
+      }
+   }
+
+% doesn't work yet
+   
+WhileSemantics2 = spec
+  import WhileSemantics 
+
+  op i : NatVar % must declare this IN the program
+
+  refine def NegateBytes_C_1 (st: CState) 
+  =
+    (BLOCK 
+         [ i @= @0,
+          WHILE ( i @< len)
+                (BLOCK [ (dst,i) $= (lift Bits.not) (src$:i), 
+                         i @= (i @+ 1)
+                       ]
+                )
+         ]
+        ) st
+
+end-spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
