@@ -403,9 +403,9 @@ WithCState = spec
   def extractBytes (st, ptr, len) = map (get st) (interval ptr len)
   
   % ------------------------------------------------
-  % 
+  % Lifting a function to a state based one
 
-  op [a] lift (f:a->a) : (CState -> a) -> (CState -> a)
+  op [a] lift(f:a->a) : (CState -> a) -> (CState -> a)
   = 
        (fn var -> fn st -> f (var st))
 
@@ -472,6 +472,9 @@ WithCState1 = WithCState
       ; repeat {lr interval_nth}
       ; repeat {fold $!}        
       }
+   ; at (init)
+      { unfold extractBytes
+      }
    }
 
 
@@ -489,12 +492,13 @@ WithCState1 = WithCState
 WhileSemantics = spec
    import WithCState1
     
+    op i : NatVar % must declare this IN the program, not globally
+                  % need a variant of withVarDecl for that
 
     theorem WHILE_simple_array is
-    fa (st:CState ,st':CState, a:Array, b:Array, lg:Nat, i:NatVar,
-        f:Byte->Byte, Cprog:CState->CState)
+    fa (st:CState ,st':CState, a:Array, b:Array, lg:Nat, f:Byte->Byte)
        
-      (Cprog = 
+      (st' = 
         BLOCK 
          [ i @= @0,
           WHILE ( i @< lg)
@@ -502,29 +506,8 @@ WhileSemantics = spec
                          i @= (i @+ 1)
                        ]
                 )
-         ]
-       &&  
-       st' = Cprog st)
+         ] st)
        =>
-      (fa(i:Nat) i<lg => (st',b)$!i  =  f ((st,a)$!i))
-
-    % not yet correct: i is a variable in the program and a nat in the spec
-
-    theorem WHILE_simple_array2 is
-    fa (st:CState ,st':CState, a:Pointer, b:Pointer, lg:Nat, i:Nat,
-        f:Byte->Byte)
-       
-      (st' = 
-        (BLOCK 
-         [ i @= @0,
-          WHILE ( i @< lg)
-                (BLOCK [ (b,i) $= (lift f) (a$:i), 
-                         i @= (i @+ 1)
-                       ]
-                )
-         ]
-        ) st)
-       =
       (fa(i:Nat) i<lg => (st',b)$!i  =  f ((st,a)$!i))
 
   % ------------- the proofs --------------------
@@ -533,16 +516,26 @@ end
 
 WhileSemantics1 = WhileSemantics 
    { at (NegateBytes_C_1)  
-      { rl WHILE_simple_array2 
+      { strengthen WHILE_simple_array
+      ; lr _.eta           % not sure why I need to qualify this
       }
    }
 
-% doesn't work yet
    
-WhileSemantics2 = spec
-  import WhileSemantics 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% The above refinement gives us the spec below
+% Unfortunately the emmitted proofs don't go through
+%
+% On top of that Isabelle has severe problems with the 
+% translated infix notations. I'll worry about this later.
+% First let's see if the refinement goes through. 
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op i : NatVar % must declare this IN the program
+
+WhileSemantics_by_hand = spec
+  import WhileSemantics 
 
   refine def NegateBytes_C_1 (st: CState) 
   =
@@ -555,8 +548,9 @@ WhileSemantics2 = spec
                 )
          ]
         ) st
-
 end-spec
+
+GetAlgorithm = transform WhileSemantics1 by {finalizeCoType(CState)}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 
