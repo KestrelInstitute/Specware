@@ -138,13 +138,13 @@ BisimView qualifying spec
      bv_leq1 = rt_closure (relCompose (sbv1.bv_leq1, sbv2.bv_leq1)),
      bv_leq2 = rt_closure (relCompose (sbv1.bv_leq2, sbv2.bv_leq2))}
 
+  (* The trivial biview, that relates everything and provides no permissions *)
+  op [a,b] trivial_biview : BisimView (a,b) =
+    {biview = fn _ -> true, bv_leq1 = (=), bv_leq2 = (=)}
+
   (* Conjoin a list of bi-views *)
   op [a,b] conjoin_biviews (sbvs: List (BisimView (a,b))) : BisimView (a,b) =
-    foldr conjoin_biviews2 constant_biview sbvs
-
-  (* The constant bi-view that allows no changes to anything *)
-  op [a,b] constant_biview : BisimView (a,b) =
-    {biview = fn _ -> true, bv_leq1 = (=), bv_leq2 = (=)}
+    foldr conjoin_biviews2 trivial_biview sbvs
 
   (* Conjunction with the constant view forms a commutative monoid *)
   theorem conjoin_biviews_assoc is [a,b]
@@ -157,7 +157,7 @@ BisimView qualifying spec
       conjoin_biviews2 (sbv2, sbv1)
   theorem conjoin_biviews_constant is [a,b]
     fa (sbv:BisimView (a,b))
-      conjoin_biviews2 (sbv,constant_biview) = sbv
+      conjoin_biviews2 (sbv,trivial_biview) = sbv
 
 
   (***
@@ -222,8 +222,8 @@ BisimView qualifying spec
                          compose_biviews (sbv1',sbv2'))
 
   (* The constant bi-view is separate from all other bi-views *)
-  theorem constant_biview_separate is [a,b]
-    fa (sbv:BisimView (a, b)) separate_biviews? (constant_biview, sbv)
+  theorem trivial_biview_separate is [a,b]
+    fa (sbv:BisimView (a, b)) separate_biviews? (trivial_biview, sbv)
 
 
   (***
@@ -287,13 +287,42 @@ BisimView qualifying spec
   op [a,b] impl_succ_biview (implview: ImplBisimView a) : BisimView (a,b) =
     biview_of_leq1 (compose_impl_succ_preorders implview)
 
-  (* Compose a single implicational view with a relation, allowing the succedent
-  preorder to be use only if the existing relation satisfies the antecedent *)
+  (* Map an impl bisim view backwards using a function *)
+  op [a,b] impl_biview_map (f: a -> b) (implview: ImplBisimView b) : ImplBisimView a =
+    map
+      (fn impl1 ->
+         {implview_ant = map_endo f impl1.implview_ant,
+          implview_succ = map_endo f impl1.implview_succ})
+      implview
+
+  (* Compose a relation R with an implview *)
+  op [a,b] compose_rel_impl_biview (R: Relation (a,b))
+                                   (implview: ImplBisimView b) : ImplBisimView a =
+    map
+      (fn impl1 ->
+         {implview_ant =
+            (fn (a1,a2) ->
+               a1 = a2 ||
+               (ex (b1) R (a1,b1)) &&
+               (fa (b1)
+                  R (a1,b1) =>
+                  (ex (b2) R (a2,b2) && impl1.implview_ant (b1,b2)))),
+          implview_succ =
+            (fn (a1,a2) ->
+               a1 = a2 ||
+               (ex (b1) R (a1,b1)) &&
+               (fa (b1)
+                  R (a1,b1) =>
+                  (ex (b2) R (a2,b2) && impl1.implview_succ (b1,b2))))})
+      implview
+
+  (* Compose a single implicational view with leq, allowing the succedent
+  preorder to be used only at points where leq satisfies the antecedent *)
   op [a] rel_compose_impl1 (implview1: ImplBisimView1 a,
                             leq: PreOrder a) : PreOrder a =
     rt_closure (fn (a1,a2) ->
                   leq (a1,a2) ||
-                  (subset? (implview1.implview_ant, leq) &&
+                  ((fa (a3) implview1.implview_ant (a1,a3) => leq (a1,a3)) &&
                      implview1.implview_succ (a1,a2)))
 
   (* Compose a list of implicational views with a relation; this allows the
@@ -338,5 +367,50 @@ BisimView qualifying spec
       separate_biviews? (bv,impl_succ_biview implview) =>
       biview_impl_separate? (bv, implview)
 
+  (* If the succedent relation of implview always leads to a "bad" state of bv,
+  and if it commutes with the leq1 of bv, then implview is separate from bv *)
+  theorem succ_bad_separate_biview_impl is [a,b]
+    fa (bv:BisimView (a,b),implview)
+      (fa (a1,a2)
+         implview.implview_succ (a1,a2) =>
+         a1 = a2 || (fa (b) ~(bv.biview (a2,b)))) &&
+      relations_commute? (bv.bv_leq1, implview.implview_succ) =>
+      biview_impl_separate? (bv, [implview])
+
+  (* Whether all of the individual succedent relations in one implicational
+  biview commute with all those in another *)
+  op [a] impl_biviews_commute? (impl1:ImplBisimView a,
+                                impl2:ImplBisimView a) : Bool =
+    forall? (fn impl1_1 ->
+               forall? (fn impl1_2 ->
+                          relations_commute? (impl1_1.implview_succ,
+                                              impl1_2.implview_succ))
+                 impl1) impl2
+
+  (* Whether all of the individual succedent relations in an implicational
+  biview commute with each other *)
+  op [a] impl_biview_self_commutes? (impl:ImplBisimView a) : Bool =
+    impl_biviews_commute? (impl,impl)
+
+  (* If bv is separate from two impl biviews that commute then it is separate
+  from the combination of the two impl biviews *)
+  theorem separate_biview_impl_append is [a,b]
+    fa (bv:BisimView (a,b),impl1,impl2)
+      biview_impl_separate? (bv, impl1) &&
+      biview_impl_separate? (bv, impl2) &&
+      impl_biviews_commute? (impl1,impl2) =>
+      biview_impl_separate? (bv, impl1 ++ impl2)
+
+  (* The implicational bisimilarity view with the given succedent that is always
+  allowed to be used, i.e., whose antecedent is always satisfied. This works
+  because = is the smallest preorder on any type. *)
+  op [a] always_impl_biview (succ: PreOrder a) : ImplBisimView a =
+    [{implview_ant = (=), implview_succ = succ}]
+
+  (* The always implicational view acts like its succedent view *)
+  theorem conjoin_always_impl_biview is [a,b]
+    fa (bv:BisimView (a,b),succ)
+      conjoin_biview_impl (bv, always_impl_biview succ) =
+      conjoin_biviews2 (bv, impl_succ_biview (always_impl_biview succ))
 
 end-spec

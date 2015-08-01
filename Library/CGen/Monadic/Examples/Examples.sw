@@ -7,8 +7,8 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         []
-         ([], Some ([], value_abs_add_lens (bool_valueabs, proj2_lens)))
+         ([], [])
+         (([], []), Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          just_return_true
          (TN_sint, "just_return_true", [])
          m}
@@ -23,8 +23,8 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         []
-         ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
+         ([], [])
+         (([], []), Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          just_return_false
          (TN_sint, "just_return_false", [])
          m}
@@ -39,8 +39,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         [([], bool_valueabs)]
-         ([], Some ([], value_abs_map (invert_biview proj2_biview) bool_valueabs))
+         ([], [[ValPerm ([], bool_valueabs)]])
+         (([], [[ValPerm ([], value_abs_add_lens (bool_valueabs, proj1_lens))]]),
+          Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])
          m}
@@ -57,8 +58,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         [([], mk_const_value_abs bool_valueabs)]
-         ([], Some ([], value_abs_add_lens (bool_valueabs, proj2_lens)))
+         ([], [[ValPerm ([], bool_valueabs)]])
+         (([], [[]]),
+          Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          negate_bool
          (TN_sint, "just_return_true", [(TN_sint, "b")])
          m}

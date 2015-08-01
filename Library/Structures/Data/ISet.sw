@@ -186,6 +186,38 @@ ISet qualifying spec
       relations_commute? (R1,R2) => equivalence? (relCompose (R1,R2))
 
 
+  (***
+   *** EndoRelation as a Functor
+   ***)
+
+  % The contravariant functor for EndoRelation
+  op [a,b] map_endo (f: a -> b) (R: EndoRelation b) : EndoRelation a =
+    fn (a1,a2) -> R (f a1, f a2)
+
+  % The contravariant functor laws for EndoRelation
+  theorem map_endo_id is [a]
+    fa (R: EndoRelation a) map_endo (fn x -> x) R = R
+  theorem map_endo_compose is [a,b,c]
+    fa (f:a->b,g:b->c,R)
+      map_endo (fn x -> g (f x)) R =
+      map_endo f (map_endo g R)
+
+  % map_endo preserves a number of properties
+  theorem map_endo_reflexivity is [a,b]
+    fa (f:a->b,R)
+      reflexive? R => reflexive? (map_endo f R)
+  theorem map_endo_symmetry is [a,b]
+    fa (f:a->b,R)
+      symmetric? R => symmetric? (map_endo f R)
+  theorem map_endo_transitivity is [a,b]
+    fa (f:a->b,R)
+      transitive? R => transitive? (map_endo f R)
+
+
+  (***
+   *** Isabelle Theory Morphism
+   ***)
+
   % Isabelle morphism to map ISet and its associated operators to the
   % Isabelle set type
   proof Isa Thy_Morphism 
