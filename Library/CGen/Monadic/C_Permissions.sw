@@ -414,6 +414,30 @@ C_Permissions qualifying spec
     | ValPerm (SplSetExpr * ValueAbs a)
     | ValIPerm (ImplPerm Value)
 
+  (* Permissions for the storage used to pass to and from functions *)
+  type FunStPerm a =
+    | FunStPerm (SplSetExpr * UnitAbs a)
+    | FunStIPerm (ImplPerm ())
+
+  (* Zero or more permissions for each value in a list, along *)
+  type ArgListPerms a = List (FunStPerm a) * List (List (ValPerm a))
+
+  (* Build a perm from a value perm and an lvalue *)
+  op [a] perm_of_val_perm (lv:LValue) (vperm: ValPerm a) : Perm a =
+    case vperm of
+      | ValPerm (splexpr, vabs) -> LVPerm (lv, splexpr, vabs)
+      | ValIPerm impl -> LVIPerm (lv, impl)
+
+  (* Build a perm from a function storage perm *)
+  op [a] perm_of_fun_st_perm (fstperm: FunStPerm a) : Perm a =
+    case fstperm of
+      | FunStPerm (splexpr, uabs) -> StPerm (splexpr, uabs)
+      | FunStIPerm impl -> StIPerm impl
+
+  (* Build a perm set from a list of function storage perm *)
+  op [a] perm_set_of_fun_st_perms (fstperms: List (FunStPerm a)) : PermSet a =
+    map perm_of_fun_st_perm fstperms
+
   (* Use a lens for viewing b at a to turn a ValPerm a into a ValPerm b *)
   op [a,b] val_perm_add_lens (vperm: ValPerm a, lens: Lens (b,a)) : ValPerm b =
     case vperm of
@@ -421,26 +445,40 @@ C_Permissions qualifying spec
         ValPerm (splexpr, splittable_abs_compose_lens (vabs, lens))
       | ValIPerm impl -> ValIPerm impl
 
+  (* Compose a list of value perms with a lens *)
   op [a,b] val_perms_add_lens (vperms: List (ValPerm a),
                                lens: Lens (b,a)) : List (ValPerm b) =
     map (fn vperm -> val_perm_add_lens (vperm, lens)) vperms
 
+  (* Evaluate a value permission *)
   op [a] eval_val_perm (asgn: SplAssign) (vperm: ValPerm a) : PermEval (Value,a) =
     case vperm of
       | ValPerm (splexpr, vabs) -> eval_splittable_abs asgn (splexpr, vabs)
       | ValIPerm impl -> eval_impl_perm impl
 
+  (* Evaluate a list of value permissions *)
   op [a] eval_val_perms (asgn: SplAssign) (vperms: List (ValPerm a)) : PermEval (Value,a) =
     conjoin_perm_evalsN (map (eval_val_perm asgn) vperms)
 
-  (* Zero or more permissions for each value in a list, along *)
-  type ArgListPerms a = PermSet a * List (List (ValPerm a))
+  (* Evaluate a function storage permission *)
+  op [a] eval_fun_st_perm (asgn: SplAssign) (fstperm: FunStPerm a) : PermEval ((), a) =
+    eval_perm asgn (perm_of_fun_st_perm fstperm)
 
   op [a] eval_arg_list_perms (asgn: SplAssign)
                              (perms: ArgListPerms a) : PermEval (List Value,a) =
     (conjoin_perm_evals
-       (lift_unit_perm_eval (eval_perm_set asgn perms.1),
+       (lift_unit_perm_eval (eval_perm_set asgn (perm_set_of_fun_st_perms perms.1)),
         list_perm_eval (map (eval_val_perms asgn) perms.2)))
+
+  (* Construct a perm set from an ArgListPerms and a list of variable names;
+  note that the value permissions are all made into constant value permissions,
+  because function arguments are not allowed to be modified in its body *)
+  op [a] perm_set_of_arg_perms (perms: ArgListPerms a, vars: List Identifier |
+                                  equiLong (perms.2, vars)) : PermSet a =
+    perm_set_of_fun_st_perms perms.1 ++
+    flatten (map (fn (var,vperms) ->
+                    map (perm_of_val_perm (LV_ident var)) vperms)
+               (zip (vars,perms.2)))
 
   (* Permissions for a return value of a function *)
   type RetValPerm a = Option (List (ValPerm a))
@@ -569,13 +607,11 @@ C_Permissions qualifying spec
     fa (asgn)
       abstracts_computation_fun
         env_pred
-        (abs_in_global_scope
-           (abs_of_perm_eval (eval_arg_list_perms asgn perms_in)))
-        (abs_in_global_scope
-           (abs_of_perm_eval
-              (perm_eval_pair_l
-                 (eval_arg_list_perms asgn perms_out.1,
-                  eval_ret_val_perm asgn perms_out.2))))
+        (abs_of_perm_eval (eval_arg_list_perms asgn perms_in))
+        (abs_of_perm_eval
+           (perm_eval_pair_l
+              (eval_arg_list_perms asgn perms_out.1,
+               eval_ret_val_perm asgn perms_out.2)))
         f
         m
 

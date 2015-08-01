@@ -83,28 +83,22 @@ CGen qualifying spec
       perms_weaker? (perms1,perms2)
       *)
 
-  (* The only output permissions allowed for functions are ones that do not
-  allow the corresponding input argument itself to be changed, because the
-  caller of a function cannot see the value of a variable that has been modified
-  inside the body of a function. *)
   (* FIXME: also need a value_abs_has_type precondition *)
-(*
   theorem FUNCTION_correct is [a,b]
     fa (envp,perms_in,perms_out,perms_out_sub,f:a->b,m,prototype,body)
       m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
-      equiLong (perms_in, prototype.3) &&
-      forall? constant_value_perm? perms_out.1 &&
-      perms_weaker? (perms_out_sub.1,
-                     zip (map (fn (ptp,pname) ->
-                                 LV_ident pname) prototype.3, perms_out.1)) &&
+      equiLong (perms_in.2, prototype.3) &&
+      equiLong (perms_out.1.2, prototype.3) &&
+      perm_set_weaker? (perms_out_sub.1,
+                        perm_set_of_arg_perms (perms_out.1,
+                                               map (fn x -> x.2) prototype.3)) &&
       perms_out.2 = perms_out_sub.2 &&
       abstracts_ret_statement
         envp
-        (zip (map (fn (ptp,pname) -> LV_ident pname) prototype.3, perms_in))
+        (perm_set_of_arg_perms (perms_in, map (fn x -> x.2) prototype.3))
         perms_out_sub
         f
         body =>
       abstracts_c_function_decl envp perms_in perms_out f prototype m
-*)
 
 end-spec
