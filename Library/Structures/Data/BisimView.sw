@@ -55,35 +55,35 @@ BisimView qualifying spec
      bv_leq2 = fn _ -> true}
 
   (* Compose two bi-views. Elements of the domain type (a) are considered bv_leq
-  iff they are bv_leq by sbv1 and sbv1 maps them to sets of elements of the
-  intermediate type (b) that are considered bv_leq by sbv2; similarly with
+  iff they are bv_leq by bv1 and bv1 maps them to sets of elements of the
+  intermediate type (b) that are considered bv_leq by bv2; similarly with
   elements of the co-domain type (c). *)
-  op [a,b,c] compose_biviews (sbv1: BisimView (a,b),
-                              sbv2: BisimView (b,c)) : BisimView (a,c) =
-    {biview = relCompose (sbv1.biview, sbv2.biview),
+  op [a,b,c] compose_biviews (bv1: BisimView (a,b),
+                              bv2: BisimView (b,c)) : BisimView (a,c) =
+    {biview = relCompose (bv1.biview, bv2.biview),
      bv_leq1 = fn (a1,a2) ->
-       sbv1.bv_leq1 (a1,a2) &&
-       (fa (b1) sbv1.biview (a1,b1) =>
-          (ex (b2) sbv1.biview (a2,b2) && sbv2.bv_leq1 (b1,b2))) &&
-       (fa (b2) sbv1.biview (a2,b2) =>
-          (ex (b1) sbv1.biview (a1,b1) && sbv2.bv_leq1 (b1,b2))),
+       bv1.bv_leq1 (a1,a2) &&
+       (fa (b1) bv1.biview (a1,b1) =>
+          (ex (b2) bv1.biview (a2,b2) && bv2.bv_leq1 (b1,b2))) &&
+       (fa (b2) bv1.biview (a2,b2) =>
+          (ex (b1) bv1.biview (a1,b1) && bv2.bv_leq1 (b1,b2))),
      bv_leq2 = fn (c1,c2) ->
-       sbv2.bv_leq2 (c1,c2) &&
-       (fa (b1) sbv2.biview (b1,c1) =>
-          (ex (b2) sbv2.biview (b2,c2) && sbv1.bv_leq2 (b1,b2))) &&
-       (fa (b2) sbv2.biview (b2,c2) =>
-          (ex (b1) sbv2.biview (b1,c1) && sbv1.bv_leq2 (b1,b2)))}
+       bv2.bv_leq2 (c1,c2) &&
+       (fa (b1) bv2.biview (b1,c1) =>
+          (ex (b2) bv2.biview (b2,c2) && bv1.bv_leq2 (b1,b2))) &&
+       (fa (b2) bv2.biview (b2,c2) =>
+          (ex (b1) bv2.biview (b1,c1) && bv1.bv_leq2 (b1,b2)))}
 
   theorem compose_identity_biview_l is [a,b]
-    fa (sbv:BisimView(a,b))
-      compose_biviews (identity_biview, sbv) = sbv
+    fa (bv:BisimView(a,b))
+      compose_biviews (identity_biview, bv) = bv
   theorem compose_identity_biview_r is [a,b]
-    fa (sbv:BisimView(a,b))
-      compose_biviews (sbv, identity_biview) = sbv
+    fa (bv:BisimView(a,b))
+      compose_biviews (bv, identity_biview) = bv
   theorem compose_biviews_assoc is [a,b,c,d]
-    fa (sbv1:BisimView(a,b),sbv2:BisimView(b,c),sbv3:BisimView(c,d))
-      compose_biviews (compose_biviews (sbv1, sbv2), sbv3) =
-      compose_biviews (sbv1, compose_biviews (sbv2, sbv3))
+    fa (bv1:BisimView(a,b),bv2:BisimView(b,c),bv3:BisimView(c,d))
+      compose_biviews (compose_biviews (bv1, bv2), bv3) =
+      compose_biviews (bv1, compose_biviews (bv2, bv3))
 
 
   (***
@@ -91,10 +91,10 @@ BisimView qualifying spec
    ***)
 
   (* Invert a bi-view, turning it around *)
-  op [a,b] invert_biview (sbv: BisimView (a,b)) : BisimView (b,a) =
-    {biview = fn (b,a) -> sbv.biview (a,b),
-     bv_leq1 = sbv.bv_leq2,
-     bv_leq2 = sbv.bv_leq1}
+  op [a,b] invert_biview (bv: BisimView (a,b)) : BisimView (b,a) =
+    {biview = fn (b,a) -> bv.biview (a,b),
+     bv_leq1 = bv.bv_leq2,
+     bv_leq2 = bv.bv_leq1}
 
   (* FIXME: theorems stating that invert_biview is an involution *)
 
@@ -109,7 +109,7 @@ BisimView qualifying spec
     (fa (a',b')
        leq1 (a,a') && leq2 (b,b') && R (a,b) => R (a',b'))
 
-  (* States that all leq1 and leq2 updates preserve R *)
+  (* States that leq1 and leq2 updates preserve R at all points *)
   op [a,b] preorders_preserve_R? (leq1:PreOrder a, leq2:PreOrder b,
                                   R:Relation (a,b)) : Bool =
     (fa (a,b) preorders_preserve_R_at_point? (leq1,leq2,R) (a,b))
@@ -123,41 +123,47 @@ BisimView qualifying spec
        relCompose (leq1,leq2) (x,y) && relCompose (leq2,leq1) (x,y))
 
   (* Conjoin two bisimilarity views, intuitively building the bisimilarity view
-  that allows updates using sbv1 and/or sbv2. *)
+  that allows updates using bv1 and/or bv2. *)
   (* FIXME: explain the biview relation better... *)
-  op [a,b] conjoin_biviews2 (sbv1: BisimView (a,b),
-                             sbv2: BisimView (a,b)) : BisimView (a,b) =
+  op [a,b] conjoin_biviews (bv1: BisimView (a,b),
+                            bv2: BisimView (a,b)) : BisimView (a,b) =
     {biview = fn (a,b) ->
-       sbv1.biview (a,b) && sbv2.biview (a,b) &&
-       preorders_preserve_R_at_point? (sbv1.bv_leq1,sbv1.bv_leq2,
-                                       sbv2.biview) (a,b) &&
-       preorders_preserve_R_at_point? (sbv2.bv_leq1,sbv2.bv_leq2,
-                                       sbv1.biview) (a,b) &&
-       preorders_decompose_at_point? (sbv1.bv_leq1,sbv2.bv_leq1) a &&
-       preorders_decompose_at_point? (sbv1.bv_leq2,sbv2.bv_leq2) b,
-     bv_leq1 = rt_closure (relCompose (sbv1.bv_leq1, sbv2.bv_leq1)),
-     bv_leq2 = rt_closure (relCompose (sbv1.bv_leq2, sbv2.bv_leq2))}
+       bv1.biview (a,b) && bv2.biview (a,b) &&
+       preorders_preserve_R_at_point? (bv1.bv_leq1,bv1.bv_leq2,
+                                       bv2.biview) (a,b) &&
+       preorders_preserve_R_at_point? (bv2.bv_leq1,bv2.bv_leq2,
+                                       bv1.biview) (a,b) &&
+       preorders_decompose_at_point? (bv1.bv_leq1,bv2.bv_leq1) a &&
+       preorders_decompose_at_point? (bv1.bv_leq2,bv2.bv_leq2) b,
+     bv_leq1 = rt_closure (relCompose (bv1.bv_leq1, bv2.bv_leq1)),
+     bv_leq2 = rt_closure (relCompose (bv1.bv_leq2, bv2.bv_leq2))}
 
   (* The trivial biview, that relates everything and provides no permissions *)
   op [a,b] trivial_biview : BisimView (a,b) =
     {biview = fn _ -> true, bv_leq1 = (=), bv_leq2 = (=)}
 
   (* Conjoin a list of bi-views *)
-  op [a,b] conjoin_biviews (sbvs: List (BisimView (a,b))) : BisimView (a,b) =
-    foldr conjoin_biviews2 trivial_biview sbvs
+  op [a,b] conjoin_biviewsN (bvs: List (BisimView (a,b))) : BisimView (a,b) =
+    foldr conjoin_biviews trivial_biview bvs
 
-  (* Conjunction with the constant view forms a commutative monoid *)
+  (* Conjunction with the trivial view forms a commutative monoid *)
   theorem conjoin_biviews_assoc is [a,b]
-    fa (sbv1,sbv2,sbv3:BisimView(a,b))
-      conjoin_biviews2 (sbv1, conjoin_biviews2 (sbv2, sbv3)) =
-      conjoin_biviews2 (conjoin_biviews2 (sbv1, sbv2), sbv3)
+    fa (bv1,bv2,bv3:BisimView(a,b))
+      conjoin_biviews (bv1, conjoin_biviews (bv2, bv3)) =
+      conjoin_biviews (conjoin_biviews (bv1, bv2), bv3)
   theorem conjoin_biviews_comm is [a,b]
-    fa (sbv1,sbv2:BisimView(a,b))
-      conjoin_biviews2 (sbv1, sbv2) =
-      conjoin_biviews2 (sbv2, sbv1)
-  theorem conjoin_biviews_constant is [a,b]
-    fa (sbv:BisimView (a,b))
-      conjoin_biviews2 (sbv,trivial_biview) = sbv
+    fa (bv1,bv2:BisimView(a,b))
+      conjoin_biviews (bv1, bv2) =
+      conjoin_biviews (bv2, bv1)
+  theorem conjoin_biviews_trivial is [a,b]
+    fa (bv:BisimView (a,b))
+      conjoin_biviews (bv,trivial_biview) = bv
+
+  (* Intuitively, one bisimilarity view is stronger than another iff it is the
+  conjunction of the other with some other bisimilarity view *)
+  (* FIXME: there should be some way to define this before conjunction... *)
+  op [a,b] biview_weaker? : PreOrder (BisimView (a,b)) =
+    fn (bv1,bv2) -> (ex (bv) bv2 = conjoin_biviews (bv1, bv))
 
 
   (***
@@ -167,16 +173,16 @@ BisimView qualifying spec
   (* Two bisimilarity views are separate iff each biview is preserved by the
   other's preorder and the respective preorders commute. Intutively, this means
   that the updates allowed by one biview do not interfere with the other. *)
-  op [a,b] separate_biviews? (sbv1: BisimView (a,b), sbv2: BisimView (a,b)) : Bool =
-    preorders_preserve_R? (sbv1.bv_leq1, sbv1.bv_leq2, sbv2.biview) &&
-    preorders_preserve_R? (sbv2.bv_leq1, sbv2.bv_leq2, sbv1.biview) &&
-    relations_commute? (sbv1.bv_leq1, sbv2.bv_leq1) &&
-    relations_commute? (sbv1.bv_leq2, sbv2.bv_leq2)
+  op [a,b] separate_biviews? (bv1: BisimView (a,b), bv2: BisimView (a,b)) : Bool =
+    preorders_preserve_R? (bv1.bv_leq1, bv1.bv_leq2, bv2.biview) &&
+    preorders_preserve_R? (bv2.bv_leq1, bv2.bv_leq2, bv1.biview) &&
+    relations_commute? (bv1.bv_leq1, bv2.bv_leq1) &&
+    relations_commute? (bv1.bv_leq2, bv2.bv_leq2)
 
   (* Separation is commutative *)
   theorem separation_commutative is [a,b]
-    fa (sbv1,sbv2: BisimView (a,b))
-      separate_biviews? (sbv1,sbv2) => separate_biviews? (sbv2,sbv1)
+    fa (bv1,bv2: BisimView (a,b))
+      separate_biviews? (bv1,bv2) => separate_biviews? (bv2,bv1)
 
   (* Good-only bisimulation is closed under composition with preorders that
   preserve R and that commute with the original preorders *)
@@ -193,37 +199,37 @@ BisimView qualifying spec
   (* Conjoining separate biviews yields the intersection for biview and the
   composition for the two equalities *)
   theorem conjoin_separate_biviews is [a,b]
-    fa (sbv1,sbv2: BisimView (a,b))
-      separate_biviews? (sbv1,sbv2) =>
-      conjoin_biviews2 (sbv1,sbv2) =
-      {biview = iSetInter (sbv1.biview, sbv2.biview),
-       bv_leq1 = relCompose (sbv1.bv_leq1, sbv2.bv_leq1),
-       bv_leq2 = relCompose (sbv1.bv_leq2, sbv2.bv_leq2)}
+    fa (bv1,bv2: BisimView (a,b))
+      separate_biviews? (bv1,bv2) =>
+      conjoin_biviews (bv1,bv2) =
+      {biview = iSetInter (bv1.biview, bv2.biview),
+       bv_leq1 = relCompose (bv1.bv_leq1, bv2.bv_leq1),
+       bv_leq2 = relCompose (bv1.bv_leq2, bv2.bv_leq2)}
 
   (* Separation from two bi-views implies separation from their conjunction *)
   theorem biview_separate_from_conjunction is [a,b]
-    fa (sbv1,sbv2,sbv: BisimView (a,b))
-      separate_biviews? (sbv1, sbv) && separate_biviews? (sbv2, sbv) =>
-      separate_biviews? (conjoin_biviews2 (sbv1, sbv2), sbv)
+    fa (bv1,bv2,bv: BisimView (a,b))
+      separate_biviews? (bv1, bv) && separate_biviews? (bv2, bv) =>
+      separate_biviews? (conjoin_biviews (bv1, bv2), bv)
 
   (* Separation from the conjunction of separate biviews implies separation from
   the individual biviews themselves *)
   theorem biview_separation_un_conjoin is [a,b]
-    fa (sbv1,sbv2,sbv:BisimView (a,b))
-      separate_biviews? (sbv1, sbv2) &&
-      separate_biviews? (conjoin_biviews2 (sbv1, sbv2), sbv) =>
-       separate_biviews?(sbv1, sbv)
+    fa (bv1,bv2,bv:BisimView (a,b))
+      separate_biviews? (bv1, bv2) &&
+      separate_biviews? (conjoin_biviews (bv1, bv2), bv) =>
+      separate_biviews? (bv1, bv)
 
   (* Separation commutes with composition (FIXME: should this be an iff?) *)
   theorem compose_biviews_separate is [a,b,c]
-    fa (sbv1:BisimView(a,b),sbv2:BisimView(b,c),sbv1',sbv2')
-      separate_biviews? (sbv1,sbv1') && separate_biviews? (sbv2,sbv2') =>
-      separate_biviews? (compose_biviews (sbv1,sbv2),
-                         compose_biviews (sbv1',sbv2'))
+    fa (bv1:BisimView(a,b),bv2:BisimView(b,c),bv1',bv2')
+      separate_biviews? (bv1,bv1') && separate_biviews? (bv2,bv2') =>
+      separate_biviews? (compose_biviews (bv1,bv2),
+                         compose_biviews (bv1',bv2'))
 
-  (* The constant bi-view is separate from all other bi-views *)
+  (* The trivial bi-view is separate from all other bi-views *)
   theorem trivial_biview_separate is [a,b]
-    fa (sbv:BisimView (a, b)) separate_biviews? (trivial_biview, sbv)
+    fa (bv:BisimView (a, b)) separate_biviews? (trivial_biview, bv)
 
 
   (***
@@ -245,16 +251,16 @@ BisimView qualifying spec
     biview_of_lens proj2_lens
 
   (* Combine a view of a and a view of b to a view of a*b *)
-  op [a,b,c] tensor_biviews_l (sbv1: BisimView (a,c),
-                               sbv2: BisimView (b,c)) : BisimView (a*b,c) =
-    conjoin_biviews2 (compose_biviews (proj1_biview, sbv1),
-                      compose_biviews (proj2_biview, sbv2))
+  op [a,b,c] tensor_biviews_l (bv1: BisimView (a,c),
+                               bv2: BisimView (b,c)) : BisimView (a*b,c) =
+    conjoin_biviews (compose_biviews (proj1_biview, bv1),
+                      compose_biviews (proj2_biview, bv2))
 
   (* Combine a view of a at b and a view of a at c to a view of a at b*c *)
-  op [a,b,c] tensor_biviews_r (sbv1: BisimView (a,b),
-                               sbv2: BisimView (a,c)) : BisimView (a,b*c) =
-    conjoin_biviews2 (compose_biviews (sbv1, invert_biview proj1_biview),
-                      compose_biviews (sbv2, invert_biview proj2_biview))
+  op [a,b,c] tensor_biviews_r (bv1: BisimView (a,b),
+                               bv2: BisimView (a,c)) : BisimView (a,b*c) =
+    conjoin_biviews (compose_biviews (bv1, invert_biview proj1_biview),
+                      compose_biviews (bv2, invert_biview proj2_biview))
 
 
   (***
@@ -266,7 +272,7 @@ BisimView qualifying spec
   updates, are already allowed. In general, there could be multiple pairs of
   antecedent and succedent updates, which is represented as a list. For
   simplicity, the updates are always on the a / left-hand type, and
-  implicational bisimilarity views are like the constant view for the b /
+  implicational bisimilarity views are like the trivial view for the b /
   right-hand type and the biview relation. *)
   type ImplBisimView1 a =
     {implview_ant: PreOrder a,
@@ -345,6 +351,17 @@ BisimView qualifying spec
      bv_leq1 = rel_compose_impl (implview, bv.bv_leq1),
      bv_leq2 = bv.bv_leq2}
 
+  (* An impl biview is stronger than another iff any composition with a preorder
+  always yields a superset *)
+  (* FIXME: I don't think this does what we want... *)
+  (*
+  op [a] impl_biview_weaker? (implview1: ImplBisimView a,
+                              implview2: ImplBisimView a) : Bool =
+    fa (leq)
+      subset? (rel_compose_impl (implview1, leq),
+               rel_compose_impl (implview2, leq))
+   *)
+
   (* This separation requires that adding all the succ preorders of an implview
   to bv does not mess with the good-only bisimulation property of bv *)
   op [a,b] biview_impl_separate? (bv: BisimView (a,b),
@@ -411,6 +428,6 @@ BisimView qualifying spec
   theorem conjoin_always_impl_biview is [a,b]
     fa (bv:BisimView (a,b),succ)
       conjoin_biview_impl (bv, always_impl_biview succ) =
-      conjoin_biviews2 (bv, impl_succ_biview (always_impl_biview succ))
+      conjoin_biviews (bv, impl_succ_biview (always_impl_biview succ))
 
 end-spec

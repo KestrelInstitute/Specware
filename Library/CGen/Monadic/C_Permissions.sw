@@ -47,18 +47,23 @@ C_Permissions qualifying spec
     fn r -> trivial_biview
 
   (* Conjoin two abstractions *)
-  op [c,a] conjoin_abstractions2 (abs1: CAbstraction (c,a),
+  op [c,a] conjoin_abstractions (abs1: CAbstraction (c,a),
                                   abs2: CAbstraction (c,a)) : CAbstraction (c,a) =
-    fn r -> conjoin_biviews2 (abs1 r, abs2 r)
+    fn r -> conjoin_biviews (abs1 r, abs2 r)
 
   (* Conjoin a list of abstractions *)
-  op [c,a] conjoin_abstractions (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
-    fn r -> conjoin_biviews (map (fn abs -> abs r) abses)
+  op [c,a] conjoin_abstractionsN (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
+    fn r -> conjoin_biviewsN (map (fn abs -> abs r) abses)
 
   (* Compose two abstractions *)
   op [c1,c2,a] compose_abstractions (abs1: CToCAbstraction (c1,c2),
                                      abs2: CAbstraction (c2, a)) : CAbstraction (c1, a) =
     fn r -> compose_biviews (abs1 r, abs2 r)
+
+  (* The strength preorder lifted to C abstractions *)
+  op [c,a] abstraction_weaker? (abs1: CAbstraction (c,a),
+                                abs2: CAbstraction (c,a)) : Bool =
+    fa (r) biview_weaker? (abs1 r, abs2 r)
 
   (* Build the C-to-C abstraction that applies relations pointwise *)
   op [c1,c2] pointwise_ctoc_abs (R: ISet.Relation (c1,c2), leq1: ISet.PreOrder c1,
@@ -88,8 +93,8 @@ C_Permissions qualifying spec
   (* Take the cross product of two abstractions on the left *)
   op [c1,c2,a] abstractions_cross_l (abs1: CAbstraction (c1,a),
                                      abs2: CAbstraction (c2,a)) : CAbstraction (c1*c2,a) =
-    conjoin_abstractions2 (compose_abstractions (proj1_abstraction, abs1),
-                           compose_abstractions (proj2_abstraction, abs2))
+    conjoin_abstractions (compose_abstractions (proj1_abstraction, abs1),
+                          compose_abstractions (proj2_abstraction, abs2))
 
   (* Compose an abstraction with a bi-view on the a type *)
   op [c,a,b] compose_abstraction_with_biview
@@ -99,7 +104,7 @@ C_Permissions qualifying spec
   (* Take the cross product of two abstractions on the left *)
   op [c,a,b] abstractions_cross_r (abs1: CAbstraction (c,a),
                                    abs2: CAbstraction (c,b)) : CAbstraction (c,a*b) =
-    conjoin_abstractions2 (compose_abstraction_with_biview
+    conjoin_abstractions (compose_abstraction_with_biview
                              (abs1, invert_biview proj1_biview),
                            compose_abstraction_with_biview
                              (abs2, invert_biview proj2_biview))
@@ -127,7 +132,7 @@ C_Permissions qualifying spec
   (* Conjoin two splittable abstractions *)
   op [c,a] conjoin_splittable_abstractions2 (abs1:SplittableAbs (c,a),
                                              abs2:SplittableAbs (c,a)) : SplittableAbs (c,a) =
-    fn spl -> conjoin_abstractions2 (abs1 spl, abs2 spl)
+    fn spl -> conjoin_abstractions (abs1 spl, abs2 spl)
 
   (* A value abstraction is said to have a particular C type iff it only relates
   C values of that type. This judgment requires a predicate on the C environment
@@ -225,7 +230,7 @@ C_Permissions qualifying spec
   (* Conjoin two permission evaluation results *)
   op [c,a] conjoin_perm_evals (ev1:PermEval (c,a),
                                ev2:PermEval (c,a)) : PermEval (c,a) =
-    (conjoin_abstractions2 (ev1.1,ev2.1),
+    (conjoin_abstractions (ev1.1,ev2.1),
      conjoin_impl_perms (ev1.2, ev2.2))
 
   (* Conjoin N permission evaluation results *)
@@ -241,6 +246,18 @@ C_Permissions qualifying spec
                                       ev:PermEval (c2,a)) : PermEval (c1,a) =
     (compose_abstractions (abs, ev.1),
      compose_abs_impl_perm (abs, ev.2))
+
+  (* The strength preorder for permission evaluation results, which maps to the
+  C abstraction strength preorder of all abstractions obtained from the related
+  permission evaluation results after possibly conjoining with another abs *)
+  op [c,a] perm_eval_weaker? : ISet.PreOrder (PermEval (c,a)) =
+    fn (ev1,ev2) ->
+      (fa (abs) abstraction_weaker? (abs_of_perm_eval
+                                       (conjoin_perm_evals
+                                          (ev1, (abs, trivial_impl_perm))),
+                                     abs_of_perm_eval
+                                       (conjoin_perm_evals
+                                          (ev2, (abs, trivial_impl_perm)))))
 
 
   (***
@@ -381,6 +398,11 @@ C_Permissions qualifying spec
   op [a] eval_perm_set (asgn: SplAssign) (perms: PermSet a) : PermEval ((),a) =
     conjoin_perm_evalsN (map (eval_perm asgn) perms)
 
+  (* The strength preorder for permission sets *)
+  op [a] perm_set_weaker? : ISet.PreOrder (PermSet a) =
+    fn (perms1,perms2) ->
+      (fa (asgn) perm_eval_weaker? (eval_perm_set asgn perms1,
+                                    eval_perm_set asgn perms2))
 
 
   (***
