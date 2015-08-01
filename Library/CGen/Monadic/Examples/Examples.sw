@@ -7,8 +7,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([], [])
-         (([], []), Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
+         ([FunStIPerm auto_allocation_perm], [])
+         (([FunStIPerm auto_allocation_perm], []),
+          Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          just_return_true
          (TN_sint, "just_return_true", [])
          m}
@@ -23,8 +24,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([], [])
-         (([], []), Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
+         ([FunStIPerm auto_allocation_perm], [])
+         (([FunStIPerm auto_allocation_perm], []),
+          Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          just_return_false
          (TN_sint, "just_return_false", [])
          m}
@@ -39,8 +41,10 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([], [[ValPerm ([], bool_valueabs)]])
-         (([], [[ValPerm ([], value_abs_add_lens (bool_valueabs, proj1_lens))]]),
+         ([FunStIPerm auto_allocation_perm],
+          [[ValPerm ([], value_abs_add_lens (bool_valueabs, id_lens))]])
+         (([FunStIPerm auto_allocation_perm],
+           [[ValPerm ([], value_abs_add_lens (bool_valueabs, proj1_lens))]]),
           Some [ValPerm ([], value_abs_add_lens (bool_valueabs, proj2_lens))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])

@@ -8,6 +8,21 @@ C_Permissions qualifying spec
 
 
   (***
+   *** Executable Version of List Functions, for Automated Refinement
+   ***)
+
+  op [a,b] map_exec (f: a->b) (l:List a) : List b =
+    case l of
+      | [] -> []
+      | x::l' -> f x :: map_exec f l'
+
+  op [a,b] zip_exec (l1: List a, l2: List b | equiLong (l1, l2)) : List (a*b) =
+    case (l1,l2) of
+      | ([],[]) -> []
+      | (x::l1', y::l2') -> (x,y) :: zip_exec (l1',l2')
+
+
+  (***
    *** Abstraction Relations
    ***)
 
@@ -53,7 +68,7 @@ C_Permissions qualifying spec
 
   (* Conjoin a list of abstractions *)
   op [c,a] conjoin_abstractionsN (abses: List (CAbstraction (c,a))) : CAbstraction (c,a) =
-    fn r -> conjoin_biviewsN (map (fn abs -> abs r) abses)
+    fn r -> conjoin_biviewsN (map_exec (fn abs -> abs r) abses)
 
   (* Compose two abstractions *)
   op [c1,c2,a] compose_abstractions (abs1: CToCAbstraction (c1,c2),
@@ -359,7 +374,7 @@ C_Permissions qualifying spec
 
   (* Use a lens for viewing b at a to turn a PermSet a into a PermSet b *)
   op [a,b] perm_set_add_lens (perms: PermSet a, lens: Lens (b,a)) : PermSet b =
-    map (fn p -> perm_add_lens (p, lens)) perms
+    map_exec (fn p -> perm_add_lens (p, lens)) perms
 
   (* Build the CAbstraction that relates an lvalue to its value(s) *)
   op lvalue_abstraction (lv:LValue) : CToCAbstraction ((), Value) =
@@ -396,7 +411,7 @@ C_Permissions qualifying spec
 
   (* Evaluate a permission set *)
   op [a] eval_perm_set (asgn: SplAssign) (perms: PermSet a) : PermEval ((),a) =
-    conjoin_perm_evalsN (map (eval_perm asgn) perms)
+    conjoin_perm_evalsN (map_exec (eval_perm asgn) perms)
 
   (* The strength preorder for permission sets *)
   op [a] perm_set_weaker? : ISet.PreOrder (PermSet a) =
@@ -436,7 +451,7 @@ C_Permissions qualifying spec
 
   (* Build a perm set from a list of function storage perm *)
   op [a] perm_set_of_fun_st_perms (fstperms: List (FunStPerm a)) : PermSet a =
-    map perm_of_fun_st_perm fstperms
+    map_exec perm_of_fun_st_perm fstperms
 
   (* Use a lens for viewing b at a to turn a ValPerm a into a ValPerm b *)
   op [a,b] val_perm_add_lens (vperm: ValPerm a, lens: Lens (b,a)) : ValPerm b =
@@ -448,7 +463,7 @@ C_Permissions qualifying spec
   (* Compose a list of value perms with a lens *)
   op [a,b] val_perms_add_lens (vperms: List (ValPerm a),
                                lens: Lens (b,a)) : List (ValPerm b) =
-    map (fn vperm -> val_perm_add_lens (vperm, lens)) vperms
+    map_exec (fn vperm -> val_perm_add_lens (vperm, lens)) vperms
 
   (* Evaluate a value permission *)
   op [a] eval_val_perm (asgn: SplAssign) (vperm: ValPerm a) : PermEval (Value,a) =
@@ -458,7 +473,7 @@ C_Permissions qualifying spec
 
   (* Evaluate a list of value permissions *)
   op [a] eval_val_perms (asgn: SplAssign) (vperms: List (ValPerm a)) : PermEval (Value,a) =
-    conjoin_perm_evalsN (map (eval_val_perm asgn) vperms)
+    conjoin_perm_evalsN (map_exec (eval_val_perm asgn) vperms)
 
   (* Evaluate a function storage permission *)
   op [a] eval_fun_st_perm (asgn: SplAssign) (fstperm: FunStPerm a) : PermEval ((), a) =
@@ -468,7 +483,7 @@ C_Permissions qualifying spec
                              (perms: ArgListPerms a) : PermEval (List Value,a) =
     (conjoin_perm_evals
        (lift_unit_perm_eval (eval_perm_set asgn (perm_set_of_fun_st_perms perms.1)),
-        list_perm_eval (map (eval_val_perms asgn) perms.2)))
+        list_perm_eval (map_exec (eval_val_perms asgn) perms.2)))
 
   (* Construct a perm set from an ArgListPerms and a list of variable names;
   note that the value permissions are all made into constant value permissions,
@@ -476,9 +491,9 @@ C_Permissions qualifying spec
   op [a] perm_set_of_arg_perms (perms: ArgListPerms a, vars: List Identifier |
                                   equiLong (perms.2, vars)) : PermSet a =
     perm_set_of_fun_st_perms perms.1 ++
-    flatten (map (fn (var,vperms) ->
-                    map (perm_of_val_perm (LV_ident var)) vperms)
-               (zip (vars,perms.2)))
+    flatten (map_exec (fn (var,vperms) ->
+                         map_exec (perm_of_val_perm (LV_ident var)) vperms)
+               (zip_exec (vars,perms.2)))
 
   (* Permissions for a return value of a function *)
   type RetValPerm a = Option (List (ValPerm a))
@@ -562,7 +577,7 @@ C_Permissions qualifying spec
         (abs_of_perm_eval
            (perm_eval_pair_r
               (lift_unit_perm_eval (eval_perm_set asgn perms_out),
-               conjoin_perm_evalsN (map (eval_val_perm asgn) vperms_out))))
+               conjoin_perm_evalsN (map_exec (eval_val_perm asgn) vperms_out))))
         (fn x -> (x, f x))
         m
 
@@ -678,7 +693,7 @@ C_Permissions qualifying spec
                               scope1.scope_parent = scope2.scope_parent &&
                               submap? (scope1.scope_bindings, scope2.scope_bindings)
                             | _ -> false)
-                 (zip (auto1, prefix (auto2, length auto1)))),
+                 (zip_exec (auto1, prefix (auto2, length auto1)))),
             (=)))
 
   (* Permission allowing malloc *)
@@ -696,7 +711,7 @@ C_Permissions qualifying spec
                            | (None,None) -> true
                            | (Some b1, Some b2) -> b1 = b2
                            | _ -> false)
-                (zip (alloc1, prefix (alloc2, length alloc1))))))
+                (zip_exec (alloc1, prefix (alloc2, length alloc1))))))
 
   (*  *)
   op equal_except_current_scope (r:R,leq:ISet.PreOrder (Option LocalScope))

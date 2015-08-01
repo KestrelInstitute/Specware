@@ -42,11 +42,53 @@ proof Isa lens_compose_Obligation_subtype
                      Lens__satisfies_put_get_def Lens__satisfies_put_put_def)
 end-proof
 
+  (* The identity lens *)
+  op [a] id_lens : Lens (a,a) =
+    {lens_get = fn a -> a, lens_set = fn a -> fn a' -> a'}
+
+  (* The unit lens *)
+  op [a] unit_lens : Lens (a,()) =
+    {lens_get = fn a -> (), lens_set = fn a -> fn () -> a}
+
   (* The lens for the first projection of a pair *)
   op [a,b] proj1_lens : Lens (a*b,a) =
     {lens_get = fn (a,b) -> a, lens_set = fn (a,b) -> fn a' -> (a',b)}
   (* The lens for the second projection of a pair *)
   op [a,b] proj2_lens : Lens (a*b,b) =
     {lens_get = fn (a,b) -> b, lens_set = fn (a,b) -> fn b' -> (a,b')}
+
+
+  (***
+   *** Lenses for Triples, Quadruples, etc.
+   ***)
+
+  (* The format is tuple_lens_i_j for the jth project of an i-tuple *)
+
+  op [a,b,c] tuple_lens_3_1 : Lens (a*b*c,a) =
+    {lens_get = fn (a,b,c) -> a, lens_set = fn (a,b,c) -> fn a' -> (a',b,c)}
+  op [a,b,c] tuple_lens_3_2 : Lens (a*b*c,b) =
+    {lens_get = fn (a,b,c) -> b, lens_set = fn (a,b,c) -> fn b' -> (a,b',c)}
+  op [a,b,c] tuple_lens_3_3 : Lens (a*b*c,c) =
+    {lens_get = fn (a,b,c) -> c, lens_set = fn (a,b,c) -> fn c' -> (a,b,c')}
+
+  op [a,b,c,d] tuple_lens_4_1 : Lens (a*b*c*d,a) =
+    {lens_get = fn (a,b,c,d) -> a, lens_set = fn (a,b,c,d) -> fn a' -> (a',b,c,d)}
+  op [a,b,c,d] tuple_lens_4_2 : Lens (a*b*c*d,b) =
+    {lens_get = fn (a,b,c,d) -> b, lens_set = fn (a,b,c,d) -> fn b' -> (a,b',c,d)}
+  op [a,b,c,d] tuple_lens_4_3 : Lens (a*b*c*d,c) =
+    {lens_get = fn (a,b,c,d) -> c, lens_set = fn (a,b,c,d) -> fn c' -> (a,b,c',d)}
+  op [a,b,c,d] tuple_lens_4_4 : Lens (a*b*c*d,d) =
+    {lens_get = fn (a,b,c,d) -> d, lens_set = fn (a,b,c,d) -> fn d' -> (a,b,c,d')}
+
+  op [a,b,c,d,e] tuple_lens_5_1 : Lens (a*b*c*d*e,a) =
+    {lens_get = fn (a,b,c,d,e) -> a, lens_set = fn (a,b,c,d,e) -> fn a' -> (a',b,c,d,e)}
+  op [a,b,c,d,e] tuple_lens_5_2 : Lens (a*b*c*d*e,b) =
+    {lens_get = fn (a,b,c,d,e) -> b, lens_set = fn (a,b,c,d,e) -> fn b' -> (a,b',c,d,e)}
+  op [a,b,c,d,e] tuple_lens_5_3 : Lens (a*b*c*d*e,c) =
+    {lens_get = fn (a,b,c,d,e) -> c, lens_set = fn (a,b,c,d,e) -> fn c' -> (a,b,c',d,e)}
+  op [a,b,c,d,e] tuple_lens_5_4 : Lens (a*b*c*d*e,d) =
+    {lens_get = fn (a,b,c,d,e) -> d, lens_set = fn (a,b,c,d,e) -> fn d' -> (a,b,c,d',e)}
+  op [a,b,c,d,e] tuple_lens_5_5 : Lens (a*b*c*d*e,e) =
+    {lens_get = fn (a,b,c,d,e) -> e, lens_set = fn (a,b,c,d,e) -> fn e' -> (a,b,c,d,e')}
 
 end-spec
