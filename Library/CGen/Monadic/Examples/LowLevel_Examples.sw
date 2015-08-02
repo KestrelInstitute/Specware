@@ -33,7 +33,7 @@ Examples_spec = spec
                 [(TN_pointer TN_uchar, "src"), (TN_uint, "src_len"),
                  (TN_pointer TN_uchar, "dest"),
                  (TN_pointer TN_uint, "dest_len")],
-                BLOCK_m [DECL_m (TN_uint, "i"),
+                BLOCK_m [VARDECL_m (TN_uint, "i"),
                          STMT_m (ASSIGN_m (LVAR_m "i", ICONST_m "0")),
                          STMT_m
                            (WHILE_m

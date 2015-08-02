@@ -97,22 +97,23 @@ C_DSL qualifying spec
            if isZero then return () else
              {_ <- body; recurse ()}}) ()
 
-  type BlockItem_m =
-    | STMT_m (Monad ())
-    | DECL_m (TypeName * Identifier)
+  (* Blocks: BLOCK_m_helper sequences all the statements / declarations, and
+  BLOCK_m adds the fresh local scope around them *)
+  op BLOCK_m_helper (body: List (Monad ())) : Monad () =
+    {_ <- mapM id body; return ()}
+  op BLOCK_m (body: List (Monad ())) : Monad () =
+    withFreshLocalBindings empty (BLOCK_m_helper body)
 
-  (* A simpler way to do blocks... *)
-  op BLOCK_m (body: List BlockItem_m) : Monad () =
-    {_ <- mapM (fn mod ->
-                  case mod of
-                    | STMT_m m -> m
-                    | DECL_m (tp_name, id) ->
-                      {tp <- expandTypeNameM tp_name;
-                       addLocalBinding (id, V_undefined tp)}) body;
-     return ()}
+  (* STMT_m marks statements (as opposed to variable declarations) inside a block *)
+  op STMT_m (m: Monad ()) : Monad () =
+    m
 
-  (* External declarations, which have type XUMonad (Option ObjectFileBinding) *)
+  (* Variable declarations *)
+  op VARDECL_m (tp_name: TypeName, id: Identifier) : Monad () =
+    {tp <- expandTypeNameM tp_name;
+     addLocalBinding (id, V_undefined tp)}
 
+  (* External declarations, which have type XUMonad () *)
   type ExtDecl = XUMonad ()
 
   (* Function combinator *)
@@ -367,60 +368,30 @@ C_DSL qualifying spec
       =>
       evalStatement stmt = WHILE_m (rv, m)
 
-(*
-  theorem BLOCK_m_correct is
-    fa (decls,ms,stmt,blockitems)
-      stmt = S_block blockitems &&
-      evalBlockItems blockitems = BLOCK_m_helper (decls, ms)
-      =>
-      evalStatement stmt = BLOCK_m (decls, ms)
-
-  theorem BLOCK_m_helper_correct1 is
-    fa (decl,decls,ms,blockitems,blockitems')
-      blockitems = (BlockItem_declaration decl) :: blockitems' &&
-      evalBlockItems blockitems' = BLOCK_m_helper (decls, ms)
-      =>
-      evalBlockItems blockitems = BLOCK_m_helper (decl::decls, ms)
-
-  theorem BLOCK_m_helper_correct2 is
-    fa (stmt,m,ms,blockitems,blockitems')
-      blockitems = (BlockItem_statement stmt) :: blockitems' &&
-      evalStatement stmt = m &&
-      evalBlockItems blockitems' = BLOCK_m_helper ([], ms)
-      =>
-      evalBlockItems blockitems = BLOCK_m_helper ([], m::ms)
-
-  theorem BLOCK_m_helper_correct3 is
-    fa (blockitems)
-      blockitems = []
-      =>
-      evalBlockItems blockitems = BLOCK_m_helper ([], [])
-      *)
-
   theorem BLOCK_m_correct is
     fa (mods,stmt,blockitems)
       stmt = S_block blockitems &&
-      evalBlockItems blockitems = BLOCK_m mods
+      evalBlockItems blockitems = BLOCK_m_helper mods
       =>
       evalStatement stmt = BLOCK_m mods
 
-  theorem BLOCK_m_correct_nil is
+  theorem BLOCK_m_helper_correct_nil is
     fa (blockitems)
       blockitems = [] =>
-      evalBlockItems blockitems = BLOCK_m []
+      evalBlockItems blockitems = BLOCK_m_helper []
 
-  theorem BLOCK_m_correct_cons_stmt is
+  theorem BLOCK_m_helper_correct_cons_stmt is
     fa (blockitems,m,mods,stmt,blockitems')
       blockitems = BlockItem_statement stmt::blockitems' &&
       evalStatement stmt = m &&
-      evalBlockItems blockitems' = BLOCK_m mods =>
-      evalBlockItems blockitems = BLOCK_m (STMT_m m :: mods)
+      evalBlockItems blockitems' = BLOCK_m_helper mods =>
+      evalBlockItems blockitems = BLOCK_m_helper (STMT_m m :: mods)
 
   theorem BLOCK_m_correct_cons_decl is
     fa (blockitems,tp,id,mods,blockitems')
       blockitems = BlockItem_declaration (tp,id)::blockitems' &&
-      evalBlockItems blockitems' = BLOCK_m mods =>
-      evalBlockItems blockitems = BLOCK_m (DECL_m (tp,id) :: mods)
+      evalBlockItems blockitems' = BLOCK_m_helper mods =>
+      evalBlockItems blockitems = BLOCK_m_helper (VARDECL_m (tp,id) :: mods)
 
   (* External Declarations *)
   theorem FUNCTION_m_correct is

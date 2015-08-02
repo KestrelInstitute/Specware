@@ -298,17 +298,13 @@ CGen qualifying spec
 
   (* FIXME: documentation! *)
 
-  (* Abstraction for blocks, which are lists of unit computations *)
-  op [a,b] abstracts_block (env_pred : EnvPred)
-                           (perms_in: PermSet a)
-                           (perms_out: PermSet b)
-                           (f: a -> b) (ms: List BlockItem_m) : Bool =
-    abstracts_statement env_pred perms_in perms_out f (BLOCK_m ms)
 
-
+  (* FIXME: a block of length 1 still creates a fresh scope, so is not equal to
+  the statement it contains; figure out another way to do this... *)
   (* Relation to turn a list of statements into a statement, omitting the block
   for the special case of a list of length 1 *)
-  op block_as_statement? (block: List BlockItem_m, stmt: Monad ()) : Bool =
+  (*
+  op block_as_statement? (block: List (Monad ()), stmt: Monad ()) : Bool =
     BLOCK_m block = stmt
 
   theorem block_as_statement_1 is
@@ -321,6 +317,7 @@ CGen qualifying spec
     fa (stmt1,stmt2,stmts,stmt_out)
       stmt_out = BLOCK_m (stmt1::stmt2::stmts) =>
       block_as_statement? (stmt1::stmt2::stmts, stmt_out)
+      *)
 
 (*
   theorem return_1_2_correct is [a,b,c]

@@ -588,6 +588,13 @@ C_Permissions qualifying spec
         f
         m
 
+  (* Abstraction for blocks, which are lists of unit computations *)
+  op [a,b] abstracts_block (env_pred : EnvPred)
+                           (perms_in: PermSet a)
+                           (perms_out: PermSet b)
+                           (f: a -> b) (ms: List (Monad ())) : Bool =
+    abstracts_statement env_pred perms_in perms_out f {_ <- mapM id ms; return ()}
+
   (* Abstraction for statements that optionally do a return at the end *)
   op [a,b] abstracts_ret_statement (env_pred : EnvPred)
                                    (perms_in: PermSet a)
@@ -603,6 +610,14 @@ C_Permissions qualifying spec
                eval_ret_val_perm asgn ret_perms)))
         f
         (catchReturns m)
+
+  (* Abstraction for blocks that return a value *)
+  op [a,b] abstracts_ret_block (env_pred : EnvPred)
+                               (perms_in: PermSet a)
+                               (perms_out: PermSet b * RetValPerm b)
+                               (f: a -> b) (ms: List (Monad ())) : Bool =
+    abstracts_ret_statement env_pred perms_in perms_out f {_ <- mapM id ms; return ()}
+
 
   (* Abstraction for C functions, which are computation functions mapping lists
   of values, for the arguments, to an optional return value. Note that perms_out
