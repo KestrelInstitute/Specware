@@ -242,6 +242,18 @@ BisimView qualifying spec
      bv_leq1 = fn (a1,a2) -> l.lens_set a1 (l.lens_get a2) = a2,
      bv_leq2 = fn (b1,b2) -> true}
 
+  (* Composition of lens biviews = the composed lens biview *)
+  theorem biview_of_lens_compose is [a,b,c]
+    fa (lens1:Lens (a,b), lens2:Lens (b,c))
+      compose_biviews (biview_of_lens lens1, biview_of_lens lens2) =
+      biview_of_lens (lens_compose (lens1,lens2))
+
+  (* Composition of a lens biviews with the trivial view = the trivial view *)
+  theorem biview_of_lens_compose_trivial is [a,b,c]
+    fa (lens1:Lens (a,b))
+      compose_biviews (biview_of_lens lens1, trivial_biview: BisimView (b,c)) =
+      trivial_biview
+
   (* The biview for viewing the first element of a pair *)
   op [a,b] proj1_biview : BisimView (a*b, a) =
     biview_of_lens proj1_lens

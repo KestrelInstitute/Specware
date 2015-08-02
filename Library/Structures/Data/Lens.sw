@@ -62,7 +62,8 @@ end-proof
    *** Lenses for Triples, Quadruples, etc.
    ***)
 
-  (* The format is tuple_lens_i_j for the jth project of an i-tuple *)
+  (* Lenses for projecting a component of a tuple. The naming convention is that
+  tuple_lens_i_j projects the jth element of an i-tuple. *)
 
   op [a,b,c] tuple_lens_3_1 : Lens (a*b*c,a) =
     {lens_get = fn (a,b,c) -> a, lens_set = fn (a,b,c) -> fn a' -> (a',b,c)}
@@ -90,5 +91,19 @@ end-proof
     {lens_get = fn (a,b,c,d,e) -> d, lens_set = fn (a,b,c,d,e) -> fn d' -> (a,b,c,d',e)}
   op [a,b,c,d,e] tuple_lens_5_5 : Lens (a*b*c*d*e,e) =
     {lens_get = fn (a,b,c,d,e) -> e, lens_set = fn (a,b,c,d,e) -> fn e' -> (a,b,c,d,e')}
+
+  (* Lenses for projecting a sub-tuple from a larger tuple. The naming
+  convention is that subtuple_lens_i projects the first i-1 elements, as an
+  i-1-tuple, of an i-tuple. *)
+
+  op [a,b,c] subtuple_lens_3 : Lens (a*b*c, a*b) =
+    {lens_get = fn (a,b,c) -> (a,b),
+     lens_set = fn (a,b,c) -> fn (a',b') -> (a',b',c)}
+  op [a,b,c,d] subtuple_lens_4 : Lens (a*b*c*d, a*b*c) =
+    {lens_get = fn (a,b,c,d) -> (a,b,c),
+     lens_set = fn (a,b,c,d) -> fn (a',b',c') -> (a',b',c',d)}
+  op [a,b,c,d,e] subtuple_lens_5 : Lens (a*b*c*d*e, a*b*c*d) =
+    {lens_get = fn (a,b,c,d,e) -> (a,b,c,d),
+     lens_set = fn (a,b,c,d,e) -> fn (a',b',c',d') -> (a',b',c',d',e)}
 
 end-spec

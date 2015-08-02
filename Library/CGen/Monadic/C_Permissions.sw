@@ -2,7 +2,6 @@
 
 C_Permissions qualifying spec
   import C_Predicates
-  import /Library/Structures/Data/OptLens
   import /Library/Structures/Data/BisimView
   import SplittingAlg
 
@@ -111,18 +110,18 @@ C_Permissions qualifying spec
     conjoin_abstractions (compose_abstractions (proj1_abstraction, abs1),
                           compose_abstractions (proj2_abstraction, abs2))
 
-  (* Compose an abstraction with a bi-view on the a type *)
+  (* Compose an abstraction with a biview on the a type. It turns out to be most
+  useful to have the biview inverted, since it is generally used as a view of
+  the right-hand side type of the result; i.e., type b is usually "bigger". *)
   op [c,a,b] compose_abstraction_with_biview
-      (abs: CAbstraction (c,a), sbv: BisimView (a,b)) : CAbstraction (c,b) =
-    fn r -> compose_biviews (abs r, sbv)
+      (abs: CAbstraction (c,a), sbv: BisimView (b,a)) : CAbstraction (c,b) =
+    fn r -> compose_biviews (abs r, invert_biview sbv)
 
   (* Take the cross product of two abstractions on the left *)
   op [c,a,b] abstractions_cross_r (abs1: CAbstraction (c,a),
                                    abs2: CAbstraction (c,b)) : CAbstraction (c,a*b) =
-    conjoin_abstractions (compose_abstraction_with_biview
-                             (abs1, invert_biview proj1_biview),
-                           compose_abstraction_with_biview
-                             (abs2, invert_biview proj2_biview))
+    conjoin_abstractions (compose_abstraction_with_biview (abs1, proj1_biview),
+                          compose_abstraction_with_biview (abs2, proj2_biview))
 
   (* Map an abstraction to only look at the global scope *)
   op [c,a] abs_in_global_scope (abs: CAbstraction (c,a)) : CAbstraction (c,a) =
@@ -159,20 +158,15 @@ C_Permissions qualifying spec
       (ex (tp) expandTypeName (r.r_xenv, tp_name) = Some tp
                && (fa (spl) valueHasType (vtree spl, tp)))
 
-  (* Compose a splittable abstraction with a bi-view *)
+  (* Compose a splittable abstraction with a bi-view on the output type *)
   op [c,a,b] splittable_abs_compose (vabs: SplittableAbs (c,a),
-                                     sbv: BisimView (a,b)) : SplittableAbs (c,b) =
+                                     sbv: BisimView (b,a)) : SplittableAbs (c,b) =
     fn splset -> compose_abstraction_with_biview (vabs splset, sbv)
 
-  (* Use lens to turn a SplittableAbs a into a SplittableAbs b, where the latter
-  relates C values to elements of type b by first applying the lens get function
-  and then calling the former to relate C values to type a *)
-  op [c,a,b] splittable_abs_compose_lens (abs: SplittableAbs (c,a),
-                                          lens: Lens (b,a)) : SplittableAbs (c,b) =
-    splittable_abs_compose (abs, invert_biview (biview_of_lens lens))
-
-  op [a,b] value_abs_add_lens : ValueAbs a * Lens (b,a) -> ValueAbs b =
-    splittable_abs_compose_lens
+  op [a,b] value_abs_add_view : ValueAbs a * BisimView (b,a) -> ValueAbs b =
+    splittable_abs_compose
+  op [a,b] unit_abs_add_view : UnitAbs a * BisimView (b,a) -> UnitAbs b =
+    splittable_abs_compose
 
   (* Build a value abstraction that does not look at the heap *)
   op [a] scalar_value_abstraction (R: ISet.Relation (Value,a)) : ValueAbs a =
@@ -360,21 +354,21 @@ C_Permissions qualifying spec
 
   type PermSet a = List (Perm a)
 
-  (* Use a lens for viewing b at a to turn a Perm a into a Perm b *)
-  op [a,b] perm_add_lens (perm: Perm a, lens: Lens (b,a)) : Perm b =
+  (* Use a view of b at a to turn a Perm a into a Perm b *)
+  op [a,b] perm_add_view (perm: Perm a, bv: BisimView (b,a)) : Perm b =
     case perm of
       | LVPerm (lv, splexpr, vabs) ->
         LVPerm (lv, splexpr,
-                splittable_abs_compose_lens (vabs, lens))
+                splittable_abs_compose (vabs, bv))
       | LVIPerm (lv, impl) -> LVIPerm (lv, impl)
       | StPerm (splexpr, uabs) ->
         StPerm (splexpr,
-                splittable_abs_compose_lens (uabs, lens))
+                splittable_abs_compose (uabs, bv))
       | StIPerm impl -> StIPerm impl
 
-  (* Use a lens for viewing b at a to turn a PermSet a into a PermSet b *)
-  op [a,b] perm_set_add_lens (perms: PermSet a, lens: Lens (b,a)) : PermSet b =
-    map_exec (fn p -> perm_add_lens (p, lens)) perms
+  (* Use a view of b at a to turn a PermSet a into a PermSet b *)
+  op [a,b] perm_set_add_view (perms: PermSet a, bv: BisimView (b,a)) : PermSet b =
+    map_exec (fn p -> perm_add_view (p, bv)) perms
 
   (* Build the CAbstraction that relates an lvalue to its value(s) *)
   op lvalue_abstraction (lv:LValue) : CToCAbstraction ((), Value) =
@@ -453,17 +447,17 @@ C_Permissions qualifying spec
   op [a] perm_set_of_fun_st_perms (fstperms: List (FunStPerm a)) : PermSet a =
     map_exec perm_of_fun_st_perm fstperms
 
-  (* Use a lens for viewing b at a to turn a ValPerm a into a ValPerm b *)
-  op [a,b] val_perm_add_lens (vperm: ValPerm a, lens: Lens (b,a)) : ValPerm b =
+  (* Use a view of b at a to turn a ValPerm a into a ValPerm b *)
+  op [a,b] val_perm_add_view (vperm: ValPerm a, bv: BisimView (b,a)) : ValPerm b =
     case vperm of
       | ValPerm (splexpr, vabs) ->
-        ValPerm (splexpr, splittable_abs_compose_lens (vabs, lens))
+        ValPerm (splexpr, splittable_abs_compose (vabs, bv))
       | ValIPerm impl -> ValIPerm impl
 
-  (* Compose a list of value perms with a lens *)
-  op [a,b] val_perms_add_lens (vperms: List (ValPerm a),
-                               lens: Lens (b,a)) : List (ValPerm b) =
-    map_exec (fn vperm -> val_perm_add_lens (vperm, lens)) vperms
+  (* Compose a list of value perms with a bv *)
+  op [a,b] val_perms_add_view (vperms: List (ValPerm a),
+                               bv: BisimView (b,a)) : List (ValPerm b) =
+    map_exec (fn vperm -> val_perm_add_view (vperm, bv)) vperms
 
   (* Evaluate a value permission *)
   op [a] eval_val_perm (asgn: SplAssign) (vperm: ValPerm a) : PermEval (Value,a) =

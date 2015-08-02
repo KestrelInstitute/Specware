@@ -13,7 +13,7 @@ Examples_spec = spec
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyByte *)
-  op copyByte_C : { d:TranslationUnitElem | eval1XU d = copyByte }
+  op copyByte_C : { d:TranslationUnitElem | evalTranslationUnitElem d = copyByte }
 
   (* This is the semantic object for the following function:
 
@@ -33,21 +33,25 @@ Examples_spec = spec
                 [(TN_pointer TN_uchar, "src"), (TN_uint, "src_len"),
                  (TN_pointer TN_uchar, "dest"),
                  (TN_pointer TN_uint, "dest_len")],
-                BLOCK_m ([(TN_uint, "i")],
-                         [ASSIGN_m (LVAR_m "i", ICONST_m "0"),
-                          WHILE_m
-                            (LAND_m (LT_m (VAR_m "i", VAR_m "src_len"),
-                                     LT_m (VAR_m "i", STAR_m (VAR_m "dest_len"))),
-                             BLOCK_m
-                               ([],
-                                [ASSIGN_m (LSUBSCRIPT_m (VAR_m "dest", VAR_m "i"),
-                                           SUBSCRIPT_m (VAR_m "src", VAR_m "i")),
-                                 ASSIGN_m (LVAR_m "i", ADD_m (VAR_m "i", ICONST_m "1"))])),
-                      ASSIGN_m (LSTAR_m (VAR_m "dest_len"), STAR_m (VAR_m "i"))]))
+                BLOCK_m [DECL_m (TN_uint, "i"),
+                         STMT_m (ASSIGN_m (LVAR_m "i", ICONST_m "0")),
+                         STMT_m
+                           (WHILE_m
+                              (LAND_m (LT_m (VAR_m "i", VAR_m "src_len"),
+                                       LT_m (VAR_m "i", STAR_m (VAR_m "dest_len"))),
+                               BLOCK_m
+                                 [STMT_m
+                                    (ASSIGN_m (LSUBSCRIPT_m (VAR_m "dest", VAR_m "i"),
+                                               SUBSCRIPT_m (VAR_m "src", VAR_m "i"))),
+                                  STMT_m
+                                    (ASSIGN_m (LVAR_m "i",
+                                               ADD_m (VAR_m "i", ICONST_m "1")))])),
+                         STMT_m
+                           (ASSIGN_m (LSTAR_m (VAR_m "dest_len"), STAR_m (VAR_m "i")))])
 
   (* This is the specification for the syntax, in the form of a top-level
   external declaration, whose semantics equals copyBytes *)
-  op copyBytes_C : { d:TranslationUnitElem | eval1XU d = copyBytes }
+  op copyBytes_C : { d:TranslationUnitElem | evalTranslationUnitElem d = copyBytes }
 
 end-spec
 
