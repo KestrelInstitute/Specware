@@ -186,6 +186,9 @@ spec
         let not_thm = mkBind(Forall, vs, mkEquality(boolType, t2, t1)) in
         axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight
           (Some (prove_withTheorem (qid, formula)))
+      | _ ->
+        fail ("strengthenRules: not a valid strengthening rule: "
+                ^ printQualifiedId qid)
 
   op weakenRules (context: Context) ((pt,qid,tyVars,formula,a): Property): List RewriteRule =
     case formula of
