@@ -29,6 +29,23 @@ CGen qualifying spec
       bv_out = trivial_biview =>
       is_compose_biviews (biview_of_lens lens, trivial_biview, bv_out)
 
+  theorem compose_lens_identity_l is [a,b]
+    fa (bv: BisimView (a,b), bv_out)
+      bv_out = bv =>
+      is_compose_biviews (identity_biview, bv, bv_out)
+
+  theorem compose_lens_identity_r is [a,b]
+    fa (bv: BisimView (a,b), bv_out)
+      bv_out = bv =>
+      is_compose_biviews (bv, identity_biview, bv_out)
+
+
+  (* proving pseudo_monic *)
+
+  theorem pseudo_monic_of_lens_pair is [a,b,c]
+    fa (lens1:Lens (a,b), lens2:Lens (c,b))
+      true => pseudo_monic? (biview_of_lens_pair (lens1,lens2))
+
 
   (* perm_add_view *)
 
@@ -82,6 +99,44 @@ CGen qualifying spec
       is_perm_set_add_view ([], bv, perms_out)
 
 
+  (* val_perm_add_view *)
+
+  op [a,b] is_val_perm_add_view (vperm: ValPerm a, bv: BisimView (b,a),
+                                 vperm_out: ValPerm b) : Bool =
+    val_perm_add_view (vperm, bv) = vperm_out
+
+  theorem is_val_perm_add_view_1 is [a,b,c]
+    fa (splexpr,vabs:ValueAbs c,bv1,bv:BisimView (b,a),bv_out,vperm_out)
+      is_compose_biviews (bv, bv1, bv_out) &&
+      vperm_out = ValPerm (splexpr, value_abs_add_view (vabs, bv_out)) =>
+      is_val_perm_add_view (ValPerm (splexpr, value_abs_add_view (vabs, bv1)),
+                            bv, vperm_out)
+
+  theorem is_val_perm_add_view_2 is [a,b]
+    fa (impl,bv:BisimView (b,a),vperm_out)
+      vperm_out = ValIPerm impl =>
+      is_val_perm_add_view (ValIPerm impl, bv, vperm_out)
+
+
+  (* val_perms_add_view *)
+
+  op [a,b] is_val_perms_add_view (vperms: List (ValPerm a), bv: BisimView (b,a),
+                                  vperms_out: List (ValPerm b)) : Bool =
+    val_perms_add_view (vperms, bv) = vperms_out
+
+  theorem is_val_perms_add_view_cons is [a,b]
+    fa (vperm,vperms,bv:BisimView (b,a),vperms_out,vperms_out',vperm')
+      is_val_perm_add_view (vperm, bv, vperm') &&
+      is_val_perms_add_view (vperms, bv, vperms_out') &&
+      vperms_out = vperm'::vperms_out' =>
+      is_val_perms_add_view (vperm::vperms, bv, vperms_out)
+
+  theorem is_val_perms_add_view_nil is [a,b]
+    fa (bv:BisimView (b,a),vperms_out)
+      vperms_out = [] =>
+      is_val_perms_add_view ([], bv, vperms_out)
+
+
   (* perm_set_of_arg_perms *)
 
   op [a] is_perm_set_of_arg_perms (perms: ArgListPerms a, vars: ParameterList,
@@ -120,16 +175,6 @@ CGen qualifying spec
     fa (perm_set:PermSet a)
       perm_set = [] =>
       is_perm_set_of_arg_perms (([],[]), [], perm_set)
-
-
-  op [a,b] is_val_perm_add_view (vperm: ValPerm a, bv: BisimView (b,a),
-                                 vperm_out: ValPerm b) : Bool =
-    val_perm_add_view (vperm, bv) = vperm_out
-
-
-  op [a,b] is_val_perms_add_view (vperms: List (ValPerm a), bv: BisimView (b,a),
-                                  vperms_out: List (ValPerm b)) : Bool =
-    val_perms_add_view (vperms, bv) = vperms_out
 
 
   (***
@@ -366,7 +411,10 @@ CGen qualifying spec
    *** Canonicalizing Permission Sets by Proving perm_set_weaker?
    ***)
 
-  (* FIXME *)
+  (* FIXME HERE: shouldn't just be the identity... *)
+  theorem perm_set_weaker_id is [a]
+    fa (perms:PermSet a)
+      true => perm_set_weaker? (perms, perms)
 
 
   (***
@@ -383,16 +431,20 @@ CGen qualifying spec
       lvalue_expr_and_lvalue_abses? (lv, bool_valueabs, expr_vabs, lv_vabs)
 
   theorem true_correct is [a]
-    fa (envp,perms_in:PermSet a,perms_out,m)
+    fa (envp,perms_in:PermSet a,perms_out,ret_perms,m)
       m = ICONST_m "1" &&
-      perms_out = (perms_in, [ValPerm ([], bool_valueabs)]) =>
-      abstracts_expression envp perms_in perms_out (fn _ -> true) m
+      perms_out = perms_in &&
+      ret_perms = [ValPerm ([], value_abs_add_view (bool_valueabs,
+                                                    identity_biview))] =>
+      abstracts_expression envp perms_in perms_out ret_perms (fn _ -> true) m
 
   theorem false_correct is [a]
-    fa (envp,perms_in:PermSet a,perms_out,m)
+    fa (envp,perms_in:PermSet a,perms_out,ret_perms,m)
       m = ICONST_m "0" &&
-      perms_out = (perms_in, [ValPerm ([], bool_valueabs)]) =>
-      abstracts_expression envp perms_in perms_out (fn _ -> false) m
+      perms_out = perms_in &&
+      ret_perms = [ValPerm ([], value_abs_add_view (bool_valueabs,
+                                                    identity_biview))] =>
+      abstracts_expression envp perms_in perms_out ret_perms (fn _ -> false) m
 
 
   (***
@@ -404,28 +456,31 @@ CGen qualifying spec
   context with i variables (represented as an i-tuple) is correct. *)
 
   theorem var_1_1_correct is [a]
-    fa (envp,perms_in:PermSet a,eperms_out,perms_out,vperms,m,x)
+    fa (envp,perms_in:PermSet a,eperms_out,evperms,perms_out,vperms,m,x)
       m = VAR_m x &&
       view_perms_extract_to? (perms_in, identity_biview,
                               LV_ident x, vperms, perms_out) &&
-      eperms_out = (perms_out, vperms) =>
-      abstracts_expression envp perms_in eperms_out (fn a -> a) m
+      eperms_out = perms_out &&
+      evperms = vperms =>
+      abstracts_expression envp perms_in eperms_out evperms (fn a -> a) m
 
   theorem var_2_1_correct is [a,b]
-    fa (envp,perms_in:PermSet (a*b),eperms_out,perms_out,vperms,m,x)
+    fa (envp,perms_in:PermSet (a*b),eperms_out,evperms,perms_out,vperms,m,x)
       m = VAR_m x &&
       view_perms_extract_to? (perms_in, proj1_biview,
                               LV_ident x, vperms, perms_out) &&
-      eperms_out = (perms_out, vperms) =>
-      abstracts_expression envp perms_in eperms_out (fn (a,b) -> a) m
+      eperms_out = perms_out &&
+      evperms = vperms =>
+      abstracts_expression envp perms_in eperms_out evperms (fn (a,b) -> a) m
 
   theorem var_2_2_correct is [a,b]
-    fa (envp,perms_in:PermSet (a*b),eperms_out,perms_out,vperms,m,x)
+    fa (envp,perms_in:PermSet (a*b),eperms_out,evperms,perms_out,vperms,m,x)
       m = VAR_m x &&
       view_perms_extract_to? (perms_in, proj2_biview,
                               LV_ident x, vperms, perms_out) &&
-      eperms_out = (perms_out, vperms) =>
-      abstracts_expression envp perms_in eperms_out (fn (a,b) -> b) m
+      eperms_out = perms_out &&
+      evperms = vperms =>
+      abstracts_expression envp perms_in eperms_out evperms (fn (a,b) -> b) m
 
 
   (***
@@ -468,18 +523,19 @@ CGen qualifying spec
   "forgetting" permissions that are not represented in the first projection of
   the pair. This latter task is handled by the unmapping. *)
   theorem return_correct is [a,b,c]
-    fa (envp,perms_in,perms_out,eperms_out,
+    fa (envp,perms_in,perms_out,ret_perms,eperms_out,evperms,
         lens:Lens (a,b),e:a->c,
         expr,stmt,perm_set_out,val_perms_out)
-      abstracts_expression envp perms_in eperms_out e expr &&
-      perm_set_unmaps_to (eperms_out.1, biview_of_lens_pair (lens, proj1_lens),
+      abstracts_expression envp perms_in eperms_out evperms e expr &&
+      perm_set_unmaps_to (eperms_out, biview_of_lens_pair (lens, proj1_lens),
                           perm_set_out) &&
-      is_val_perms_add_view (eperms_out.2, biview_of_lens (proj2_lens),
+      is_val_perms_add_view (evperms, biview_of_lens (proj2_lens),
                              val_perms_out) &&
-      perms_out = (perm_set_out, Some val_perms_out) &&
+      perms_out = perm_set_out &&
+      ret_perms = Some val_perms_out &&
       stmt = RETURN_m expr =>
       abstracts_ret_statement
-        envp perms_in perms_out
+        envp perms_in perms_out ret_perms
         (fn x -> (lens.lens_get x, e x))
         stmt
 
@@ -488,13 +544,13 @@ CGen qualifying spec
   that the precondition just adds in the unit lens, which in turn causes the
   general return_correct theorem to be used. *)
   theorem return_correct_unit_left is [a,b]
-    fa (envp,perms_in,perms_out,e:a->b,stmt)
+    fa (envp,perms_in,perms_out,ret_perms,e:a->b,stmt)
       abstracts_ret_statement
-        envp perms_in perms_out
+        envp perms_in perms_out ret_perms
         (fn x -> (unit_lens.lens_get x, e x))
         stmt =>
       abstracts_ret_statement
-        envp perms_in perms_out
+        envp perms_in perms_out ret_perms
         (fn x -> ((), e x))
         stmt
 
@@ -502,12 +558,13 @@ CGen qualifying spec
   return_correct. As with that theorem, the lens is for "forgetting"
   permissions, which is handled by the unmapping. *)
   theorem return_void_correct is [a,b]
-    fa (envp,perms_in,lens:Lens (a,b),stmt,perms_out,perms_out')
+    fa (envp,perms_in,lens:Lens (a,b),stmt,ret_perms,perms_out,perms_out')
       perm_set_unmaps_to (perms_in, biview_of_lens lens, perms_out') &&
-      perms_out = (perms_out', None) &&
+      perms_out = perms_out' &&
+      ret_perms = None &&
       stmt = RETURN_VOID_m =>
       abstracts_ret_statement
-        envp perms_in perms_out
+        envp perms_in perms_out ret_perms
         (fn x -> lens.lens_get x)
         stmt
 
@@ -519,20 +576,21 @@ CGen qualifying spec
   (* FIXME: need permissions to deallocate the current stack from at the end of body *)
   (* FIXME: also need a value_abs_has_type precondition *)
   theorem FUNCTION_correct is [a,b]
-    fa (envp,perms_in,perms_in_sub,perms_out,perms_out_sub,perms_out_sub',
-        f:a->b,m,prototype,body)
+    fa (envp,perms_in,perms_in_sub,perms_out,ret_perms,perms_out_sub,ret_perms_sub,
+        perms_out_sub',f:a->b,m,prototype,body)
       m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
-      FunStIPerm auto_allocation_perm in? perms_out.1.1 &&
-      is_perm_set_of_arg_perms (perms_out.1, prototype.3, perms_out_sub') &&
+      FunStIPerm auto_allocation_perm in? perms_out.1 &&
+      is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&
       is_perm_set_of_arg_perms (perms_in, prototype.3, perms_in_sub) &&
-      perm_set_weaker? (perms_out_sub.1, perms_out_sub') &&
-      perms_out.2 = perms_out_sub.2 &&
+      perm_set_weaker? (perms_out_sub, perms_out_sub') &&
+      ret_perms = ret_perms_sub &&
       abstracts_ret_statement
         envp
         perms_in_sub
         perms_out_sub
+        ret_perms_sub
         f
         body =>
-      abstracts_c_function_decl envp perms_in perms_out f prototype m
+      abstracts_c_function_decl envp perms_in perms_out ret_perms f prototype m
 
 end-spec

@@ -8,8 +8,8 @@ Examples_spec = spec
        abstracts_c_function_decl
          (fn _ -> true)
          ([FunStIPerm auto_allocation_perm], [])
-         (([FunStIPerm auto_allocation_perm], []),
-          Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([FunStIPerm auto_allocation_perm], [])
+         (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
          just_return_true
          (TN_sint, "just_return_true", [])
          m}
@@ -25,8 +25,8 @@ Examples_spec = spec
        abstracts_c_function_decl
          (fn _ -> true)
          ([FunStIPerm auto_allocation_perm], [])
-         (([FunStIPerm auto_allocation_perm], []),
-          Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([FunStIPerm auto_allocation_perm], [])
+         (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
          just_return_false
          (TN_sint, "just_return_false", [])
          m}
@@ -43,9 +43,9 @@ Examples_spec = spec
          (fn _ -> true)
          ([FunStIPerm auto_allocation_perm],
           [[ValPerm ([], value_abs_add_view (bool_valueabs, identity_biview))]])
-         (([FunStIPerm auto_allocation_perm],
-           [[ValPerm ([], value_abs_add_view (bool_valueabs, proj1_biview))]]),
-          Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([FunStIPerm auto_allocation_perm],
+          [[ValPerm ([], value_abs_add_view (bool_valueabs, proj1_biview))]])
+         (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])
          m}
@@ -63,8 +63,8 @@ Examples_spec = spec
        abstracts_c_function_decl
          (fn _ -> true)
          ([], [[ValPerm ([], bool_valueabs)]])
-         (([], [[]]),
-          Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([], [[]])
+         (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
          negate_bool
          (TN_sint, "just_return_true", [(TN_sint, "b")])
          m}

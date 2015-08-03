@@ -581,7 +581,7 @@ C_Permissions qualifying spec
   Value computation using the abstractions obtained from the given perms *)
   op [a,b] abstracts_expression (env_pred : EnvPred)
                                 (perms_in: PermSet a)
-                                (perms_out: PermSet a, vperms_out: List (ValPerm b))
+                                (perms_out: PermSet a) (vperms_out: List (ValPerm b))
                                 (f: a -> b) (m: Monad Value) : Bool =
     fa (asgn)
       abstracts_computation
@@ -617,7 +617,7 @@ C_Permissions qualifying spec
   (* Abstraction for statements that optionally do a return at the end *)
   op [a,b] abstracts_ret_statement (env_pred : EnvPred)
                                    (perms_in: PermSet a)
-                                   (perms_out: PermSet b, ret_perms: RetValPerm b)
+                                   (perms_out: PermSet b) (ret_perms: RetValPerm b)
                                    (f: a -> b) (m: Monad ()) : Bool =
     fa (asgn)
       abstracts_computation
@@ -633,9 +633,11 @@ C_Permissions qualifying spec
   (* Abstraction for blocks that return a value *)
   op [a,b] abstracts_ret_block (env_pred : EnvPred)
                                (perms_in: PermSet a)
-                               (perms_out: PermSet b * RetValPerm b)
+                               (perms_out: PermSet b) (ret_perms: RetValPerm b)
                                (f: a -> b) (ms: List (Monad ())) : Bool =
-    abstracts_ret_statement env_pred perms_in perms_out f {_ <- mapM id ms; return ()}
+    abstracts_ret_statement
+      env_pred perms_in perms_out ret_perms f
+      {_ <- mapM id ms; return ()}
 
 
   (* Abstraction for C functions, which are computation functions mapping lists
@@ -644,7 +646,7 @@ C_Permissions qualifying spec
   arguments, *not* the values of those variables at the end of the function *)
   op [a,b] abstracts_c_function (env_pred : EnvPred)
                                 (perms_in: ArgListPerms a)
-                                (perms_out: ArgListPerms b * RetValPerm b)
+                                (perms_out: ArgListPerms b) (ret_perms:RetValPerm b)
                                 (f: a -> b)
                                 (m: CFunction) : Bool =
     fa (asgn)
@@ -653,8 +655,8 @@ C_Permissions qualifying spec
         (abs_of_perm_eval (eval_arg_list_perms asgn perms_in))
         (abs_of_perm_eval
            (perm_eval_pair_l
-              (eval_arg_list_perms asgn perms_out.1,
-               eval_ret_val_perm asgn perms_out.2)))
+              (eval_arg_list_perms asgn perms_out,
+               eval_ret_val_perm asgn ret_perms)))
         f
         m
 
@@ -662,7 +664,7 @@ C_Permissions qualifying spec
   single function binding of name to a function that is abstracted by f *)
   op [a,b] abstracts_c_function_decl
       (env_pred : EnvPred) (perms_in: ArgListPerms a)
-      (perms_out: ArgListPerms b * RetValPerm b)
+      (perms_out: ArgListPerms b) (ret_perms:RetValPerm b)
       (f: a -> b)
       (retTypeName: TypeName, name: Identifier, paramDecls : ParameterList)
       (m: XUMonad ()) : Bool =
@@ -680,7 +682,7 @@ C_Permissions qualifying spec
                (incls, funtab, xenv_out)
                (evalCFunctionType (retTypeName, paramDecls)) funtp &&
              xenv_out.xenv_funtypes name = Some funtp &&
-             abstracts_c_function (fn _ -> true) perms_in perms_out f cfun
+             abstracts_c_function (fn _ -> true) perms_in perms_out ret_perms f cfun
            | _ -> false)
 
 
