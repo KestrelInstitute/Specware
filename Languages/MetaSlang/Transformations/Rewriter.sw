@@ -383,7 +383,7 @@ MetaSlangRewriter qualifying spec
                                path,boundVars,demod))
         else
         case flexVarNum M1 of
-          | Some n | ~(hasFlexRef? M2)->
+          | Some n (* | ~(hasFlexRef? M2) *) (* emw4: change needed for C gen... *) ->
             unit(trueTerm,
                  (updateSubst(emptySubstitution,n,M2),
                   mkSimpRule ("Subst", inferType(spc, term), term, trueTerm),
