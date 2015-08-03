@@ -181,16 +181,24 @@ CGen qualifying spec
    *** Extracting LValue Perms from the Current Permission Set
    ***)
 
+  (* Helper predicate to test if two objects are equal, and conditionally choose
+  which "continuation" to keep proving *)
   op [a] ifequal (x:a,y:a,res1:Bool,res2:Bool) : Bool =
     if x = y then res1 else res2
 
   theorem ifequal_eq is [a]
     fa (x:a,res1,res2)
       res1 => ifequal (x,x,res1,res2)
-
   theorem ifequal_neq is [a]
     fa (x:a,y,res1,res2)
       x ~= y && res2 => ifequal (x,y,res1,res2)
+
+  (* Predicate to destructure two lvalues and prove they are equal *)
+  op lvs_equal (lv1: LValue, lv2: LValue) : Bool = lv1 = lv2
+
+  theorem lvs_equal_ident is
+    fa (x,y) x = y => lvs_equal (LV_ident x, LV_ident y)
+
 
   (* When an expression reads the value of an lvalue, the resulting value might
   have some aliasing with the lvalue, specifically if the value is a pointer
@@ -246,9 +254,11 @@ CGen qualifying spec
         vperms',perms_out',expr_vabs,lv_vabs)
       view_perms_extract_toH (perms_in,bv,lv,vperms',perms_out') &&
       ifequal (bv,bv1,
-               (lv = lv1 &&
+               (lvs_equal (lv, lv1) &&
                   lvalue_expr_and_lvalue_abses? (lv, vabs, expr_vabs, lv_vabs) &&
-                  vperms = ValPerm (splexpr, expr_vabs)::vperms' &&
+                  vperms = ValPerm (splexpr,
+                                    value_abs_add_view (expr_vabs,
+                                                        identity_biview))::vperms' &&
                   perms_out = LVPerm (lv,splexpr,
                                       value_abs_add_view (lv_vabs, bv1))::perms_out'),
                (vperms = vperms' &&
@@ -317,6 +327,12 @@ CGen qualifying spec
       is_compose_biviews (biview_of_lens (lens2), bv_suffix', bv_suffix) =>
       biview_decomposes_to (bv, biview_of_lens_pair (lens1,lens2),
                             bv_suffix)
+
+  (* The unit lens is not a prefix of anything, so bv_suffix here is trivial *)
+  theorem biview_decomposes_unit_lens is [a,b]
+    fa (bv:BisimView (a,b),bv_suffix)
+      bv_suffix = trivial_biview =>
+      biview_decomposes_to (bv, biview_of_lens unit_lens, bv_suffix)
 
 
   (* FIXME HERE: theorems for decomposing biviews *)
@@ -411,10 +427,151 @@ CGen qualifying spec
    *** Canonicalizing Permission Sets by Proving perm_set_weaker?
    ***)
 
-  (* FIXME HERE: shouldn't just be the identity... *)
-  theorem perm_set_weaker_id is [a]
+  (* The val_perm_weaker? op combined with a sort of a continuation for what
+  needs to be proved if val_perm_weaker? cannot be proved *)
+  op [a] if_not_val_perm_weaker (splexpr:SplSetExpr, vabs:ValueAbs a,
+                                 splexpr1:SplSetExpr, vabs1:ValueAbs a,
+                                 rest: Bool) : Bool =
+    val_perm_weaker? (ValPerm (splexpr,vabs),
+                      ValPerm (splexpr1,vabs1)) || rest
+
+  theorem val_perm_weaker_eq is [a]
+    fa (splexpr,vabs,splexpr1,vabs1:ValueAbs a,rest)
+      true =>
+      if_not_val_perm_weaker (splexpr,vabs,splexpr1,vabs1,rest)
+
+  (* perm_weaker_than_set *)
+  (* FIXME HERE: figure out how to deal with strictly weaker perms... *)
+
+  op [a] perm_weaker_than_set? (perm: Perm a, perms: PermSet a) : Bool =
+    perm_set_weaker? ([perm], perms)
+
+  theorem perm_weaker_than_set_lv_lv is [a]
+    fa (lv,splexpr,vabs,lv1,splexpr1,vabs1,perms:PermSet a)
+      ifequal (lv,lv1,
+               (if_not_val_perm_weaker
+                  (splexpr, vabs, splexpr1, vabs1,
+                   perm_weaker_than_set? (LVPerm (lv, splexpr, vabs), perms))),
+               perm_weaker_than_set? (LVPerm (lv, splexpr, vabs), perms)) =>
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs),
+                             LVPerm (lv1, splexpr1, vabs1)::perms)
+
+  theorem perm_weaker_than_set_lv_lvi is [a]
+    fa (lv,splexpr,vabs,lv1,impl1,perms:PermSet a)
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs), perms) =>
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs),
+                             LVIPerm (lv1, impl1)::perms)
+
+  theorem perm_weaker_than_set_lv_st is [a]
+    fa (lv,splexpr,vabs,splexpr1,uabs1,perms:PermSet a)
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs), perms) =>
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs),
+                             StPerm (splexpr1,uabs1)::perms)
+
+  theorem perm_weaker_than_set_lv_sti is [a]
+    fa (lv,splexpr,vabs,impl1,perms:PermSet a)
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs), perms) =>
+      perm_weaker_than_set? (LVPerm (lv, splexpr, vabs),
+                             StIPerm impl1::perms)
+
+  theorem perm_weaker_than_set_lvi_lv is [a]
+    fa (lv,impl,lv1,splexpr1,vabs1,perms:PermSet a)
+      perm_weaker_than_set? (LVIPerm (lv, impl), perms) =>
+      perm_weaker_than_set? (LVIPerm (lv, impl),
+                             LVPerm (lv1, splexpr1, vabs1)::perms)
+
+  theorem perm_weaker_than_set_lvi_lvi_eq is [a,b]
+    fa (lv,impl,perms:PermSet a)
+      true =>
+      perm_weaker_than_set? (LVIPerm (lv, impl),
+                             LVIPerm (lv, impl)::perms)
+
+  theorem perm_weaker_than_set_lvi_lvi_neq is [a,b]
+    fa (lv,impl,lv1,impl1,perms:PermSet a)
+      perm_weaker_than_set? (LVIPerm (lv, impl), perms) =>
+      perm_weaker_than_set? (LVIPerm (lv, impl),
+                             LVIPerm (lv1, impl1)::perms)
+
+  theorem perm_weaker_than_set_lvi_st is [a]
+    fa (lv,impl,splexpr1,uabs1,perms:PermSet a)
+      perm_weaker_than_set? (LVIPerm (lv, impl), perms) =>
+      perm_weaker_than_set? (LVIPerm (lv, impl),
+                             StPerm (splexpr1, uabs1)::perms)
+
+  theorem perm_weaker_than_set_lvi_sti is [a]
+    fa (lv,impl,impl1,perms:PermSet a)
+      perm_weaker_than_set? (LVIPerm (lv, impl), perms) =>
+      perm_weaker_than_set? (LVIPerm (lv, impl), StIPerm impl1::perms)
+
+  theorem perm_weaker_than_set_st_lv is [a]
+    fa (splexpr,uabs,lv1,splexpr1,vabs1,perms:PermSet a)
+      perm_weaker_than_set? (StPerm (splexpr, uabs), perms) =>
+      perm_weaker_than_set? (StPerm (splexpr,uabs),
+                             LVPerm (lv1, splexpr1, vabs1)::perms)
+
+  theorem perm_weaker_than_set_st_lvi is [a]
+    fa (splexpr,uabs,lv1,impl1,perms:PermSet a)
+      perm_weaker_than_set? (StPerm (splexpr, uabs), perms) =>
+      perm_weaker_than_set? (StPerm (splexpr,uabs),
+                             LVIPerm (lv1, impl1)::perms)
+
+  theorem perm_weaker_than_set_st_st_eq is [a,b]
+    fa (splexpr,uabs:UnitAbs b,bv,perms:PermSet a)
+      true =>
+      perm_weaker_than_set? (StPerm (splexpr, unit_abs_add_view (uabs, bv)),
+                             StPerm (splexpr,
+                                     unit_abs_add_view (uabs, bv))::perms)
+
+  theorem perm_weaker_than_set_st_st_neq is [a]
+    fa (splexpr,uabs,splexpr1,uabs1,perms:PermSet a)
+      perm_weaker_than_set? (StPerm (splexpr, uabs), perms) =>
+      perm_weaker_than_set? (StPerm (splexpr, uabs),
+                             StPerm (splexpr1, uabs1)::perms)
+
+  theorem perm_weaker_than_set_st_sti is [a]
+    fa (splexpr,uabs,impl1,perms:PermSet a)
+      perm_weaker_than_set? (StPerm (splexpr, uabs), perms) =>
+      perm_weaker_than_set? (StPerm (splexpr,uabs),
+                             StIPerm impl1::perms)
+
+  theorem perm_weaker_than_set_sti_lv is [a]
+    fa (impl,lv1,splexpr1,vabs1,perms:PermSet a)
+      perm_weaker_than_set? (StIPerm impl, perms) =>
+      perm_weaker_than_set? (StIPerm impl,
+                             LVPerm (lv1, splexpr1, vabs1)::perms)
+
+  theorem perm_weaker_than_set_sti_lvi is [a]
+    fa (impl,lv1,impl1,perms:PermSet a)
+      perm_weaker_than_set? (StIPerm impl, perms) =>
+      perm_weaker_than_set? (StIPerm impl, LVIPerm (lv1, impl1)::perms)
+
+  theorem perm_weaker_than_set_sti_st is [a]
+    fa (impl,splexpr1,uabs1,perms:PermSet a)
+      perm_weaker_than_set? (StIPerm impl, perms) =>
+      perm_weaker_than_set? (StIPerm impl,
+                             StPerm (splexpr1, uabs1)::perms)
+
+  theorem perm_weaker_than_set_sti_sti_eq is [a,b]
+    fa (impl,perms:PermSet a)
+      true => perm_weaker_than_set? (StIPerm impl, StIPerm impl::perms)
+
+  theorem perm_weaker_than_set_sti_sti_neq is [a,b]
+    fa (impl,impl1,perms:PermSet a)
+      perm_weaker_than_set? (StIPerm impl, perms) =>
+      perm_weaker_than_set? (StIPerm impl, StIPerm impl1::perms)
+
+
+  (* perm_set_weaker *)
+
+  theorem perm_set_weaker_nil is [a]
     fa (perms:PermSet a)
-      true => perm_set_weaker? (perms, perms)
+      true => perm_set_weaker? ([], perms)
+
+  theorem perm_set_weaker_cons is [a]
+    fa (perm,perms_l,perms_r:PermSet a)
+      perm_weaker_than_set? (perm, perms_r) &&
+      perm_set_weaker? (perms_l, perms_r) =>
+      perm_set_weaker? (perm::perms_l, perms_r)
 
 
   (***
@@ -578,19 +735,19 @@ CGen qualifying spec
   theorem FUNCTION_correct is [a,b]
     fa (envp,perms_in,perms_in_sub,perms_out,ret_perms,perms_out_sub,ret_perms_sub,
         perms_out_sub',f:a->b,m,prototype,body)
-      m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
-      FunStIPerm auto_allocation_perm in? perms_out.1 &&
-      is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&
-      is_perm_set_of_arg_perms (perms_in, prototype.3, perms_in_sub) &&
-      perm_set_weaker? (perms_out_sub, perms_out_sub') &&
-      ret_perms = ret_perms_sub &&
       abstracts_ret_statement
         envp
         perms_in_sub
         perms_out_sub
         ret_perms_sub
         f
-        body =>
+        body &&
+      m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
+      FunStIPerm auto_allocation_perm in? perms_out.1 &&
+      is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&
+      is_perm_set_of_arg_perms (perms_in, prototype.3, perms_in_sub) &&
+      perm_set_weaker? (perms_out_sub', perms_out_sub) &&
+      ret_perms = ret_perms_sub =>
       abstracts_c_function_decl envp perms_in perms_out ret_perms f prototype m
 
 end-spec

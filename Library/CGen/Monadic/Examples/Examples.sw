@@ -36,15 +36,14 @@ Examples_spec = spec
   op just_return_false_String : String = runPP0 (printTranslationUnitElem just_return_false_C)
 
   (* The identity function on Booleans *)
-  op boolean_identity (b:Bool) : Bool * Bool = (b, b)
+  op boolean_identity (b:Bool) : () * Bool = ((), b)
   op boolean_identity_m :
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
          ([FunStIPerm auto_allocation_perm],
           [[ValPerm ([], value_abs_add_view (bool_valueabs, identity_biview))]])
-         ([FunStIPerm auto_allocation_perm],
-          [[ValPerm ([], value_abs_add_view (bool_valueabs, proj1_biview))]])
+         ([FunStIPerm auto_allocation_perm],[[]])
          (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])
@@ -108,10 +107,17 @@ transform Examples_m by
     rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
    ;
  makeDefsFromPostConditions [just_return_false_C]
+   ;
+ at boolean_identity_C
+   {unfold boolean_identity_m;
+    rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
+   ;
+ makeDefsFromPostConditions [boolean_identity_C]
  }
 
 
 (* Pretty-print the examples as C code *)
 Examples_printed = transform Examples_impl by
 {at just_return_true_String {simplify};
- at just_return_false_String {simplify}}
+ at just_return_false_String {simplify};
+ at boolean_identity_String {simplify}}
