@@ -1264,6 +1264,16 @@ type ObjectDesignator =
   | OD_Member     ObjectDesignator * Identifier
   | OD_Subscript  ObjectDesignator * Nat
 
+(* Whether d1 is a prefix of d2 *)
+op object_desig_prefix? : PartialOrder (ObjectDesignator) =
+  fn (d1,d2) ->
+    d1 = d2 ||
+    (case d2 of
+       | OD_Member (d2', _) -> object_desig_prefix? (d1,d2')
+       | OD_Subscript (d2', _) -> object_desig_prefix? (d1,d2')
+       | OD_Top _ -> false
+       | OD_Allocated _ -> false)
+
 
 (* A function designator [ISO 6.3.2.1] is defined to be any expression that has
 function type. We diverge slightly from this definition, and define a function

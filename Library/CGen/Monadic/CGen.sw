@@ -589,9 +589,6 @@ CGen qualifying spec
    *** Boolean Expressions
    ***)
 
-  op bool_valueabs : ValueAbs Bool =
-    scalar_value_abstraction (fn (v,b) -> zeroScalarValue? v = return b)
-
   (* No aliasing between a Boolean value and the lvalue it came from *)
   theorem bool_valueabs_expr_and_lvalue_abses is
     fa (lv, expr_vabs, lv_vabs)

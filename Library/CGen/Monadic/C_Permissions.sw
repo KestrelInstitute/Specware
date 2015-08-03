@@ -133,15 +133,21 @@ C_Permissions qualifying spec
    ***)
 
   (* A splittable C abstraction is a CAbstraction that is splittable. This is
-  modeled as a function from splitting sets to C abstractions such that separate
-  (aka "compatible") splitting sets map to separate abstractions. *)
-  type SplittableAbs (c,a) = {f: SplittingSet -> CAbstraction (c, a) |
-                                fa (splset1,splset2)
-                                  splitting_sets_compatible? (splset1,splset2) =>
-                                  separate_abstractions? (f splset1, f splset2)}
+  modeled as a function from splitting sets to C abstractions such that
+  combining splittings sets yields a conjoined abstraction. *)
+  type SplittableAbs (c,a) = {f: SplTree (CAbstraction (c, a)) |
+                                fa (spl)
+                                  f spl = conjoin_abstractions (f (SplitL::spl),
+                                                                f (SplitR::spl))}
 
   type UnitAbs a = SplittableAbs ((), a)
   type ValueAbs a = SplittableAbs (Value, a)
+
+  (* Get out the combined abstractions for a splitting set *)
+  op [c,a] abs_for_splset (abs: SplittableAbs (c,a))
+                          (splset: SplittingSet) : CAbstraction (c,a) =
+    foldr (fn (spl,rest) ->
+             conjoin_abstractions (abs spl, rest)) trivial_abstraction splset
 
   (* Conjoin two splittable abstractions *)
   op [c,a] conjoin_splittable_abstractions2 (abs1:SplittableAbs (c,a),
@@ -167,23 +173,6 @@ C_Permissions qualifying spec
     splittable_abs_compose
   op [a,b] unit_abs_add_view : UnitAbs a * BisimView (b,a) -> UnitAbs b =
     splittable_abs_compose
-
-  (* Build a value abstraction that does not look at the heap *)
-  op [a] scalar_value_abstraction (R: Relation (Value,a)) : ValueAbs a =
-    fn splset -> fn r ->
-      {biview = fn ((stree,vtree),a) -> fa (spl) R (vtree spl, a),
-       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
-       bv_leq2 = fn _ -> true}
-
-  (* Turn a value abstraction into a constant value abstraction, by adding a
-  side condition that prevents the value itself from being modified *)
-  op [a] mk_const_value_abs (vabs: ValueAbs a) : ValueAbs a =
-    fn splset -> fn r ->
-      {biview = (vabs splset r).biview,
-       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
-         (vabs splset r).bv_leq1 ((stree1,vtree1),(stree2,vtree2)) &&
-         vtree1 = vtree2,
-       bv_leq2 = (vabs splset r).bv_leq2}
 
 
   (***
@@ -230,7 +219,7 @@ C_Permissions qualifying spec
   op [c,a] eval_splittable_abs (asgn: SplAssign)
                                (splexpr: SplSetExpr,
                                 abs: SplittableAbs (c,a)) : PermEval (c,a) =
-    (abs (instantiate_splset_expr asgn splexpr), trivial_impl_perm)
+    (abs_for_splset abs (instantiate_splset_expr asgn splexpr), trivial_impl_perm)
 
   (* Turn an ImplPerm into a PermEval *)
   op [c,a] eval_impl_perm (impl: ImplPerm c) : PermEval (c,a) =
@@ -785,6 +774,60 @@ C_Permissions qualifying spec
                    scope1.scope_bindings x = scope2.scope_bindings x
                  | (Some _, None) -> true
                  | (None, Some _) -> false)}]
+
+
+  (***
+   *** Some Useful Value Abstractions
+   ***)
+
+  (* Build a value abstraction that does not look at the heap *)
+  (* FIXME: this should involve a type... *)
+  op [a] scalar_value_abstraction (R: Relation (Value,a)) : ValueAbs a =
+    fn splset -> fn r ->
+      {biview = fn ((stree,vtree),a) -> fa (spl) R (vtree spl, a),
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
+       bv_leq2 = fn _ -> true}
+
+  (* The value abstraction for boolean values *)
+  op bool_valueabs : ValueAbs Bool =
+    scalar_value_abstraction (fn (v,b) -> zeroScalarValue? v = return b)
+
+  (* Turn a value abstraction into a constant value abstraction, by adding a
+  side condition that prevents the value itself from being modified *)
+  op [a] mk_const_value_abs (vabs: ValueAbs a) : ValueAbs a =
+    fn splset -> fn r ->
+      {biview = (vabs splset r).biview,
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
+         (vabs splset r).bv_leq1 ((stree1,vtree1),(stree2,vtree2)) &&
+         vtree1 = vtree2,
+       bv_leq2 = (vabs splset r).bv_leq2}
+
+  (* Build a standard pointer-based value abstraction, where non-unity
+  fractional permissions = read-only permissions *)
+  op [a] standard_pointer_valueabs (bv:BisimView (Storage * Type
+                                                    * ObjectDesignator, a)) : ValueAbs a =
+    fn spl -> fn r ->
+      {biview = fn ((stree,vtree),a) ->
+         (case vtree spl of
+            | V_pointer (tp, ObjPointer d) ->
+              bv.biview ((stree spl, tp, d), a) &&
+              (fa (spl')
+                 splitting_leq (spl,spl') || splitting_leq (spl',spl) =>
+                 vtree spl' = vtree spl &&
+                 bv.biview ((stree spl', tp, d), a))),
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
+         (fa (spl')
+            (splitting_leq (spl',spl) =>
+               (case (vtree1 spl', vtree2 spl') of
+                  | (V_pointer (tp1, ObjPointer d1),
+                     V_pointer (tp2, ObjPointer d2)) ->
+                    bv.bv_leq1 ((stree1 spl', tp1, d1),(stree2 spl', tp2, d2))
+                  | (V_pointer (_, ObjPointer _), _) -> false
+                  | (_, V_pointer (_, ObjPointer _)) -> false
+                  | (_, _) -> true)) &&
+            (~(splitting_leq (spl',spl)) =>
+               stree1 spl' = stree2 spl' && vtree1 spl' = vtree2 spl')),
+       bv_leq2 = bv.bv_leq2}
 
 
 end-spec

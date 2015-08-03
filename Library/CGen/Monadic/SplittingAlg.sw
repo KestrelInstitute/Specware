@@ -166,6 +166,11 @@ SplittingAlg qualifying spec
                                  splset2: SplittingSet) : Bool =
     splitting_set_consistent? (combine_splitting_multisets (splset1, splset2))
 
+  (* Combine two compatible splitting set to get a splitting set *)
+  op combine_splitting_sets (splset1: SplittingSet, splset2: SplittingSet |
+                               splitting_sets_compatible? (splset1, splset2)) : SplittingSet =
+    combine_splitting_multisets (splset1, splset2)
+
 
   (***
    *** Splitting Expressions
