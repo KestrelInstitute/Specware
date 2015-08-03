@@ -12,6 +12,9 @@ ISet qualifying spec
     where "setToPred s x \<equiv> x \<in> s"
   end-proof
 
+  % membership
+  op [a] memb? (x:a, s:ISet a) infixl 20 : Bool = s x
+
   % subset
   (* FIXME: map this to Isabelle's subset in the theory morphism below *)
   op [a] subset? (s1:ISet a, s2:ISet a) : Bool =

@@ -80,8 +80,8 @@ C_Permissions qualifying spec
     fa (r) biview_weaker? (abs1 r, abs2 r)
 
   (* Build the C-to-C abstraction that applies relations pointwise *)
-  op [c1,c2] pointwise_ctoc_abs (R: ISet.Relation (c1,c2), leq1: ISet.PreOrder c1,
-                                 leq2: ISet.PreOrder c2) : CToCAbstraction (c1,c2) =
+  op [c1,c2] pointwise_ctoc_abs (R: Relation (c1,c2), leq1: PreOrder c1,
+                                 leq2: PreOrder c2) : CToCAbstraction (c1,c2) =
     fn r ->
       {biview = (fn ((stree1,c1tree),(stree2,c2tree)) ->
                    stree1 = stree2 && (fa (spl) R (c1tree spl, c2tree spl))),
@@ -169,7 +169,7 @@ C_Permissions qualifying spec
     splittable_abs_compose
 
   (* Build a value abstraction that does not look at the heap *)
-  op [a] scalar_value_abstraction (R: ISet.Relation (Value,a)) : ValueAbs a =
+  op [a] scalar_value_abstraction (R: Relation (Value,a)) : ValueAbs a =
     fn splset -> fn r ->
       {biview = fn ((stree,vtree),a) -> fa (spl) R (vtree spl, a),
        bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
@@ -207,7 +207,7 @@ C_Permissions qualifying spec
     fn r -> compose_rel_impl_biview (abs r).biview (impl r)
 
   (* Pre-compose an impl perm with a relation R, which is applied pointwise *)
-  op [c1,c2] compose_rel_impl_perm (R:ISet.Relation (c1,c2),
+  op [c1,c2] compose_rel_impl_perm (R:Relation (c1,c2),
                                     impl: ImplPerm c2) : ImplPerm c1 =
     fn r -> (compose_rel_impl_biview
                (fn ((stree1,c1tree),(stree2,c2tree)) ->
@@ -259,7 +259,7 @@ C_Permissions qualifying spec
   (* The strength preorder for permission evaluation results, which maps to the
   C abstraction strength preorder of all abstractions obtained from the related
   permission evaluation results after possibly conjoining with another abs *)
-  op [c,a] perm_eval_weaker? : ISet.PreOrder (PermEval (c,a)) =
+  op [c,a] perm_eval_weaker? : PreOrder (PermEval (c,a)) =
     fn (ev1,ev2) ->
       (fa (abs) abstraction_weaker? (abs_of_perm_eval
                                        (conjoin_perm_evals
@@ -275,8 +275,8 @@ C_Permissions qualifying spec
 
   (* Relate two lists iff both are empty or their heads and tails are related by
   R1 and R2, respectively *)
-  op [a] list_head_tail_rel (R1:ISet.EndoRelation a,
-                             R2:ISet.EndoRelation (List a)) : ISet.EndoRelation (List a) =
+  op [a] list_head_tail_rel (R1:EndoRelation a,
+                             R2:EndoRelation (List a)) : EndoRelation (List a) =
     fn (l1,l2) ->
       case (l1,l2) of
         | ([],[]) -> true
@@ -408,13 +408,13 @@ C_Permissions qualifying spec
     conjoin_perm_evalsN (map_exec (eval_perm asgn) perms)
 
   (* The strength preorder for permissions *)
-  op [a] perm_weaker? : ISet.PreOrder (Perm a) =
+  op [a] perm_weaker? : PreOrder (Perm a) =
     fn (perm1,perm2) ->
       (fa (asgn) perm_eval_weaker? (eval_perm asgn perm1,
                                     eval_perm asgn perm2))
 
   (* The strength preorder for permission sets *)
-  op [a] perm_set_weaker? : ISet.PreOrder (PermSet a) =
+  op [a] perm_set_weaker? : PreOrder (PermSet a) =
     fn (perms1,perms2) ->
       (fa (asgn) perm_eval_weaker? (eval_perm_set asgn perms1,
                                     eval_perm_set asgn perms2))
@@ -503,13 +503,13 @@ C_Permissions qualifying spec
     opt_perm_eval (mapOption (eval_val_perms asgn) rvperm)
 
   (* The strength preorder for value permissions *)
-  op [a] val_perm_weaker? : ISet.PreOrder (ValPerm a) =
+  op [a] val_perm_weaker? : PreOrder (ValPerm a) =
     fn (vperm1,vperm2) ->
       (fa (asgn) perm_eval_weaker? (eval_val_perm asgn vperm1,
                                     eval_val_perm asgn vperm2))
 
   (* The strength preorder for lists of value permissions *)
-  op [a] val_perms_weaker? : ISet.PreOrder (List (ValPerm a)) =
+  op [a] val_perms_weaker? : PreOrder (List (ValPerm a)) =
     fn (vperms1,vperms2) ->
       (fa (asgn) perm_eval_weaker? (eval_val_perms asgn vperms1,
                                     eval_val_perms asgn vperms2))
@@ -690,16 +690,11 @@ C_Permissions qualifying spec
    *** Permissions for Allocation and Deallocation
    ***)
 
-  (* True iff map1 has at least all the bindings of map2 *)
-  (* FIXME: should this be in the Map spec? *)
-  op [a,b] submap? (map1: Map (a,b), map2: Map (a,b)) : Bool =
-    fa (x) x in? (domain map1) => map1 x = map2 x
-
   (* Lift preorders on the components of a storage to a preorder on storage trees *)
-  op storage_preorder (leq_static: ISet.PreOrder NamedStorage,
-                       leq_automatic: ISet.PreOrder (List (Option LocalScope)),
-                       leq_allocated: ISet.PreOrder AllocatedStorage)
-      : ISet.PreOrder (SplTree Storage * SplTree ()) =
+  op storage_preorder (leq_static: PreOrder NamedStorage,
+                       leq_automatic: PreOrder (List (Option LocalScope)),
+                       leq_allocated: PreOrder AllocatedStorage)
+      : PreOrder (SplTree Storage * SplTree ()) =
     fn ((stree1,_), (stree2,_)) ->
       (fa (spl)
          leq_static ((stree1 spl).static, (stree2 spl).static) &&
@@ -744,8 +739,8 @@ C_Permissions qualifying spec
                 (zip_exec (alloc1, prefix (alloc2, length alloc1))))))
 
   (*  *)
-  op equal_except_current_scope (r:R,leq:ISet.PreOrder (Option LocalScope))
-      : ISet.PreOrder (SplTree Storage * SplTree ()) =
+  op equal_except_current_scope (r:R,leq:PreOrder (Option LocalScope))
+      : PreOrder (SplTree Storage * SplTree ()) =
     storage_preorder
       ((=),
        (fn (auto1,auto2) ->

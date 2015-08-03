@@ -1,6 +1,8 @@
 C qualifying spec
 
-import /Library/General/TwosComplementNumber
+%import /Library/General/TwosComplementNumber
+import /Library/Structures/Data/TwosComplementNumber
+import /Library/Structures/Data/IMap
 import /Library/General/OptionExt
 
 
@@ -264,7 +266,7 @@ op identifierNonDigit? (ch:Char) : Bool =
 op ppIdentifier? (str:String) : Bool =
   let chars = explode str in
   nonEmpty? chars &&
-  forall? (identifierNonDigit? \/ digit?) chars &&
+  forall? (fn c -> identifierNonDigit? c || digit? c) chars &&
   ~ (digit? (head chars))
 
 op keywords : List String =
@@ -610,7 +612,7 @@ op maxOfIntegerType (ty:Type | integerType? ty) : Int =
   | T_ullong -> ULLONG_MAX
   | T_sllong ->  LLONG_MAX
 
-op rangeOfIntegerType (ty:Type | integerType? ty) : FiniteSet Int =
+op rangeOfIntegerType (ty:Type | integerType? ty) : ISet Int =
   fn x:Int -> minOfIntegerType ty <= x && x <= maxOfIntegerType ty
 
 
@@ -683,7 +685,7 @@ promoted value, given that the initial value has the argument type. *)
 
 op promoteType (ty:Type) : Type =
   if ty rank_<= T_sint then
-    if rangeOfIntegerType ty <= rangeOfIntegerType T_sint then T_sint else T_uint
+    if subset? (rangeOfIntegerType ty, rangeOfIntegerType T_sint) then T_sint else T_uint
   else
     ty  % unchanged
 
@@ -710,7 +712,7 @@ op arithConvertTypes
     let sty = if signedIntegerType? ty1 then ty1 else ty2 in  % signed one
     let uty = if unsignedIntegerType? ty1 then ty1 else ty2 in  % unsigned one
     if uty rank_>= sty then uty
-    else if rangeOfIntegerType sty >= rangeOfIntegerType uty then sty
+    else if subset? (rangeOfIntegerType uty, rangeOfIntegerType sty) then sty
     else correspondingUnsignedOf sty
 
 
@@ -888,7 +890,7 @@ op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
 op integerConstantType (c:IntegerConstant) : Option Type =
   let tys = integerConstantCandidateTypes c in
   let val = integerConstantValue c in
-  findLeftmost (fn tp -> (val:Int) in? rangeOfIntegerType tp) tys
+  findLeftmost (fn tp -> (val:Int) memb? rangeOfIntegerType tp) tys
 
 
 %subsection (* Unary operators *)
@@ -1289,7 +1291,7 @@ type Pointer =
 C are always interpreted at a specific type [ISO 3.19] and the type of an
 integer affects the semantics of C in a lot of places *)
 type TypedInt = { ty_i : Type * Int |
-                   integerType? ty_i.1 && ty_i.2 in? rangeOfIntegerType ty_i.1 }
+                   integerType? ty_i.1 && ty_i.2 memb? rangeOfIntegerType ty_i.1 }
 
 (* We now define the values. The C spec defines a value as the contents of an
 object when interpreted at a specific type [ISO 3.19], where an object is a
@@ -1395,7 +1397,7 @@ type at which an object is being viewed in a named storage is the effective type
 of the object [ISO 6.5/6], which is the same as the type at which the object was
 declared. *)
 
-type NamedStorage = FiniteMap (Identifier, Value)
+type NamedStorage = IMap (Identifier, Value)
 
 (* A "local scope" is a runtime instance of a block scope [ISO 6.2.1]. Each time
 a function is executed, a new local scope is created for the function itself,
@@ -1784,14 +1786,14 @@ information, we use a reader monad with type "TranslationEnv", defined below. *)
 (* To define the TranslationEnv type, we start by defining a symbol table for
 type definitions, i.e. an association of types to typedef names. *)
 
-type TypedefTable = FiniteMap (Identifier, Type)
+type TypedefTable = IMap (Identifier, Type)
 
 (* A structure type, introduced by a structure specifier, consists of
 an ordered list of typed members, each of which is modeled as a pair
 of a member name and its type. A symbol table for structure specifiers
 associates typed members to structure tags (which are identifiers). *)
 
-type StructTable = FiniteMap (Identifier, StructMemberTypes)
+type StructTable = IMap (Identifier, StructMemberTypes)
 
 (* A function table is a mapping from identifiers to monadic functions on zero
 or more values. These monadic functions are restricted so that they cannot
@@ -1820,7 +1822,7 @@ as "runReaderT" in Haskell) is the other direction of the isomorphism. *)
 (* FIXME HERE: update documentation with the new FunctionTable and
 FunctionTypes types! *)
 
-type FunctionTypeTable = FiniteMap (Identifier, FunType)
+type FunctionTypeTable = IMap (Identifier, FunType)
 
 type CFunction = List Value -> Monad (Option Value)
 
@@ -2009,7 +2011,7 @@ op valueOfInt (i : TypedInt) : Value =
 
 (* Create a list of bits from an integer, given a type *)
 op bitsOfInt (ty:Type, i:Int |
-                integerType? ty && i in? rangeOfIntegerType ty) : List Bit =
+                integerType? ty && i memb? rangeOfIntegerType ty) : List Bit =
   tcNumber (i, typeBits ty)
 
 (* Create a value from a list of bits, given a type *)
@@ -2074,11 +2076,11 @@ If the new type is signed, the outcome is non-standard [ISO 6.3.1.3/3]. *)
 
 op convertInteger (val:Value, ty:Type | integerType? ty) : Monad Value =
   {i <- intOfValue val;
-   if i in? rangeOfIntegerType ty then
+   if i memb? rangeOfIntegerType ty then
      return (valueOfInt (ty, i))
    else if unsignedIntegerType? ty || (plainCharsAreUnsigned && ty = T_char) then
      let max1:Nat = maxOfIntegerType ty + 1 in
-     let i':Int = the(i':Int) i' in? rangeOfIntegerType ty &&
+     let i':Int = the(i':Int) i' memb? rangeOfIntegerType ty &&
                               (ex(k:Int) i' = i + k * max1) in
      return (valueOfInt (ty, i'))
    else
@@ -2297,7 +2299,7 @@ op operator_MINUS (val:Value) : Monad Value =
    if unsignedIntegerType? ty then
      return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
-     if y in? rangeOfIntegerType ty then
+     if y memb? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
        raiseErr Err_nonstd}
@@ -2309,7 +2311,7 @@ op operator_NOT (val:Value) : Monad Value =
   {val' <- promoteValue val;
    x <- intOfValue val';
    bits <- return (bitsOfInt (typeOfValue val', x));
-   return (valueOfBits (Bits.not bits, typeOfValue val'))}
+   return (valueOfBits (map not bits, typeOfValue val'))}
 
 (* The '!' operator requires a scalar operand [ISO 6.5.3.3/1] and returns the
 signed int 1 or 0 depending on whether the operator compares equal or unequal to
@@ -2337,7 +2339,7 @@ op operator_MUL (val1:Value, val2:Value) : Monad Value =
    if unsignedIntegerType? ty then
      return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
-     if y in? rangeOfIntegerType ty then
+     if y memb? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
        nonstd}
@@ -2361,7 +2363,7 @@ op operator_DIV (val1:Value, val2:Value) : Monad Value =
    if unsignedIntegerType? ty then
      return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
-     if y in? rangeOfIntegerType ty then
+     if y memb? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
        nonstd}
@@ -2386,7 +2388,7 @@ op operator_REM (val1:Value, val2:Value) : Monad Value =
    if unsignedIntegerType? ty then
      return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
-     if y in? rangeOfIntegerType ty then
+     if y memb? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
        nonstd}
@@ -2415,7 +2417,7 @@ op operator_ADD (val1:Value, val2:Value) : Monad Value =
      if unsignedIntegerType? ty then
        return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
      else
-       if y in? rangeOfIntegerType ty then
+       if y memb? rangeOfIntegerType ty then
          return (valueOfInt (ty, y))
        else
          nonstd}
@@ -2454,7 +2456,7 @@ op operator_SUB (val1:Value, val2:Value) : Monad Value =
      let y = x1 - x2 in
      if unsignedIntegerType? ty then
        return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
-     else if y in? rangeOfIntegerType ty then
+     else if y memb? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
        error}
@@ -2490,7 +2492,7 @@ op operator_SHL (val1:Value, val2:Value) : Monad Value =
    if unsignedIntegerType? ty then
      return (valueOfInt (ty, y modF (maxOfIntegerType ty + 1)))
    else
-     if x1 >= 0 && y in? rangeOfIntegerType ty then
+     if x1 >= 0 && y memb? rangeOfIntegerType ty then
        return (valueOfInt (ty, y))
      else
        nonstd}
@@ -2622,19 +2624,19 @@ op operator_AND (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let bits1 = bitsOfInt (ty, x1) in
    let bits2 = bitsOfInt (ty, x2) in
-   return (valueOfBits (Bits.and (bits1, bits2), ty))}
+   return (valueOfBits (map2 (and) (bits1, bits2), ty))}
 
 op operator_XOR (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let bits1 = bitsOfInt (ty, x1) in
    let bits2 = bitsOfInt (ty, x2) in
-   return (valueOfBits (Bits.xor (bits1, bits2), ty))}
+   return (valueOfBits (map2 (xor) (bits1, bits2), ty))}
 
 op operator_IOR (val1:Value, val2:Value) : Monad Value =
   {(ty, x1, x2) <- arithConvertValues (val1, val2);
    let bits1 = bitsOfInt (ty, x1) in
    let bits2 = bitsOfInt (ty, x2) in
-   return (valueOfBits (Bits.ior (bits1, bits2), ty))}
+   return (valueOfBits (map2 (ior) (bits1, bits2), ty))}
 
 (* The logical 'and' and 'or' operators are different from the above operators
 because the second operand is only evaluated depending on the value of the
@@ -3326,7 +3328,7 @@ transformer for FunctionTable and writer transformer for ObjectFileBindings *)
 type XUSubMonad a =
    FunctionTable -> TranslationEnv ->
    Option (TranslationEnv * (Option ObjectFile * a))
-type IncludeFileMap = Map (String * Bool, XUSubMonad ())
+type IncludeFileMap = IMap (String * Bool, XUSubMonad ())
 type XUMonad a = IncludeFileMap -> XUSubMonad a
 
 (* XUMonad's return *)
@@ -3375,8 +3377,8 @@ op xu_emit (obj: ObjectFileBinding) : XUMonad () =
 (* An error in XUMonad *)
 op [a] xu_error : XUMonad a = fn _ -> fn _ -> fn _ -> None
 
-(* Test that a FiniteMap in the current top-level does not have a binding for id *)
-op [a] xu_errorIfBound (id : Identifier, f : TranslationEnv -> FiniteMap (Identifier, a)) : XUMonad () =
+(* Test that a IMap in the current top-level does not have a binding for id *)
+op [a] xu_errorIfBound (id : Identifier, f : TranslationEnv -> IMap (Identifier, a)) : XUMonad () =
   {xenv <- xu_get;
    if some? (f xenv id) then xu_error else return ()}
 
