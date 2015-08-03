@@ -407,6 +407,12 @@ C_Permissions qualifying spec
   op [a] eval_perm_set (asgn: SplAssign) (perms: PermSet a) : PermEval ((),a) =
     conjoin_perm_evalsN (map_exec (eval_perm asgn) perms)
 
+  (* The strength preorder for permissions *)
+  op [a] perm_weaker? : ISet.PreOrder (Perm a) =
+    fn (perm1,perm2) ->
+      (fa (asgn) perm_eval_weaker? (eval_perm asgn perm1,
+                                    eval_perm asgn perm2))
+
   (* The strength preorder for permission sets *)
   op [a] perm_set_weaker? : ISet.PreOrder (PermSet a) =
     fn (perms1,perms2) ->
@@ -495,6 +501,19 @@ C_Permissions qualifying spec
   op [a] eval_ret_val_perm (asgn: SplAssign)
                            (rvperm: RetValPerm a) : PermEval (Option Value, a) =
     opt_perm_eval (mapOption (eval_val_perms asgn) rvperm)
+
+  (* The strength preorder for value permissions *)
+  op [a] val_perm_weaker? : ISet.PreOrder (ValPerm a) =
+    fn (vperm1,vperm2) ->
+      (fa (asgn) perm_eval_weaker? (eval_val_perm asgn vperm1,
+                                    eval_val_perm asgn vperm2))
+
+  (* The strength preorder for lists of value permissions *)
+  op [a] val_perms_weaker? : ISet.PreOrder (List (ValPerm a)) =
+    fn (vperms1,vperms2) ->
+      (fa (asgn) perm_eval_weaker? (eval_val_perms asgn vperms1,
+                                    eval_val_perms asgn vperms2))
+
 
 
   (***

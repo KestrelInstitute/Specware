@@ -54,25 +54,22 @@ BisimView qualifying spec
      bv_leq1 = fn _ -> true,
      bv_leq2 = fn _ -> true}
 
-  (* Compose two bi-views. Elements of the domain type (a) are considered bv_leq
-  iff they are bv_leq by bv1 and bv1 maps them to sets of elements of the
-  intermediate type (b) that are considered bv_leq by bv2; similarly with
-  elements of the co-domain type (c). *)
+  (* Compose two bi-views. The allowed updates on the domain type, type a, must
+  be allowed by the first bisimilarity view, bv1, restricted so that all related
+  updates on the intermediate type, type b, are allowed by the second
+  bisimilarity view, bv2. The allowed updates on the co-domain type, type c, are
+  defined similarly. *)
   op [a,b,c] compose_biviews (bv1: BisimView (a,b),
                               bv2: BisimView (b,c)) : BisimView (a,c) =
     {biview = relCompose (bv1.biview, bv2.biview),
      bv_leq1 = fn (a1,a2) ->
        bv1.bv_leq1 (a1,a2) &&
-       (fa (b1) bv1.biview (a1,b1) =>
-          (ex (b2) bv1.biview (a2,b2) && bv2.bv_leq1 (b1,b2))) &&
-       (fa (b2) bv1.biview (a2,b2) =>
-          (ex (b1) bv1.biview (a1,b1) && bv2.bv_leq1 (b1,b2))),
+       (fa (b1,b2) bv1.biview (a1,b1) && bv1.biview (a2,b2) =>
+          bv2.bv_leq1 (b1,b2)),
      bv_leq2 = fn (c1,c2) ->
        bv2.bv_leq2 (c1,c2) &&
-       (fa (b1) bv2.biview (b1,c1) =>
-          (ex (b2) bv2.biview (b2,c2) && bv1.bv_leq2 (b1,b2))) &&
-       (fa (b2) bv2.biview (b2,c2) =>
-          (ex (b1) bv2.biview (b1,c1) && bv1.bv_leq2 (b1,b2)))}
+       (fa (b1,b2) bv2.biview (b1,c1) && bv2.biview (b2,c2) =>
+          bv1.bv_leq2 (b1,b2))}
 
   theorem compose_identity_biview_l is [a,b]
     fa (bv:BisimView(a,b))
@@ -233,10 +230,58 @@ BisimView qualifying spec
 
 
   (***
-   *** More Examples of Bisimilarity Views
+   *** Pseudo-Monic Bisimilarity Views
    ***)
 
-  (* Create a bi-view from a lens *)
+  (* We call a biview "pseudo-monic" iff every domain element is related to some
+  co-domain element and if the relation is one-to-one for domain elements
+  related by the bv_leq1 relation. Stated differently, this latter condition
+  says that, if the biview allows a1 to be updated to some unequal a2, then a2
+  will be related to different b's. Pseudo-monic-ness intuitively captures the
+  condition that a biview is lens-like, where the first condition says that
+  there is always some b corresponding to a given a, and the second condition is
+  like the get-put lens law, saying that if we update an a to have the same b
+  that it already has, then we get the same a. *)
+  op [a,b] pseudo_monic? (bv: BisimView (a,b)) : Bool =
+    (fa (a) ex (b) bv.biview (a,b)) &&
+    (fa (a1,a2,b)
+       bv.biview (a1,b) && bv.biview (a2,b) &&
+       bv.bv_leq1 (a1,a2) => a1 = a2)
+
+  (* The pseudo-monic condition is precisely what is needed to prove that
+  composing a view with the trivial biview yields the trivial biview *)
+  theorem compose_trivial_iff_pseudo_monic is [a,b,c]
+    fa (bv:BisimView (a,b))
+      pseudo_monic? bv <=>
+      compose_biviews (bv, trivial_biview: BisimView (b,c)) = trivial_biview
+
+  (* The trivial biview is pseudo-monic *)
+  theorem trivial_pseudo_monic is [a,b]
+    pseudo_monic? (trivial_biview: BisimView (a,b))
+
+  (* The identity biview is pseudo-monic *)
+  theorem identity_pseudo_monic is [a]
+    pseudo_monic? (identity_biview: BisimView (a,a))
+
+  (* Composition preserves pseudo-monic-ness *)
+  theorem pseudo_monic_compose is [a,b,c]
+    fa (bv1:BisimView (a,b), bv2:BisimView (b,c))
+      pseudo_monic? (bv1) && pseudo_monic? (bv2) =>
+      pseudo_monic? (compose_biviews (bv1, bv2))
+
+  (* Conjunction of separate biviews preserves pseudo-monic-ness *)
+  theorem pseudo_monic_conjoin is [a,b]
+    fa (bv1, bv2:BisimView (a,b))
+      pseudo_monic? (bv1) && pseudo_monic? (bv2) &&
+      separate_biviews? (bv1,bv2) =>
+      pseudo_monic? (conjoin_biviews (bv1, bv2))
+
+
+  (***
+   *** Biviews Built from Lenses
+   ***)
+
+  (* Build the biview corresponding to a lens *)
   op [a,b] biview_of_lens (l: Lens(a,b)) : BisimView(a,b) =
     {biview = fn (a,b) -> l.lens_get a = b,
      bv_leq1 = fn (a1,a2) -> l.lens_set a1 (l.lens_get a2) = a2,
@@ -248,11 +293,34 @@ BisimView qualifying spec
       compose_biviews (biview_of_lens lens1, biview_of_lens lens2) =
       biview_of_lens (lens_compose (lens1,lens2))
 
-  (* Composition of a lens biviews with the trivial view = the trivial view *)
-  theorem biview_of_lens_compose_trivial is [a,b,c]
-    fa (lens1:Lens (a,b))
-      compose_biviews (biview_of_lens lens1, trivial_biview: BisimView (b,c)) =
-      trivial_biview
+  (* Lens biviews are pseudo-monic, as discussed above *)
+  theorem lens_biview_pseudo_monic is [a,b]
+    fa (lens: Lens (a,b))
+      pseudo_monic? (biview_of_lens lens)
+
+  (* Inverse lenses are also pseudo-monic, provided the domain is non-empty *)
+  theorem lens_biview_inverse_pseudo_monic is [a,b]
+    fa (lens: Lens (a,b))
+      (ex (a:a) true) =>
+      pseudo_monic? (invert_biview (biview_of_lens lens))
+
+  (* Build a biview out of two lenses to the same type; intuitively, two objects
+  are related iff each lens maps its object to the same result *)
+  op [a,b,c] biview_of_lens_pair (lens1: Lens (a,b),
+                                  lens2: Lens (c,b)) : BisimView (a,c) =
+    compose_biviews (biview_of_lens lens1,
+                     invert_biview (biview_of_lens lens2))
+
+  (* A lens pair biview is pseudo-monic iff its co-domain type is non-empty *)
+  theorem lens_pair_biview_pseudo_monic is [a,b,c]
+    fa (lens1: Lens (a,b),lens2: Lens (c,b))
+      (ex (c:c) true) =>
+      pseudo_monic? (biview_of_lens_pair (lens1,lens2))
+
+
+  (***
+   *** More Examples of Bisimilarity Views
+   ***)
 
   (* The biview for viewing the first element of a pair *)
   op [a,b] proj1_biview : BisimView (a*b, a) =
@@ -266,13 +334,13 @@ BisimView qualifying spec
   op [a,b,c] tensor_biviews_l (bv1: BisimView (a,c),
                                bv2: BisimView (b,c)) : BisimView (a*b,c) =
     conjoin_biviews (compose_biviews (proj1_biview, bv1),
-                      compose_biviews (proj2_biview, bv2))
+                     compose_biviews (proj2_biview, bv2))
 
   (* Combine a view of a at b and a view of a at c to a view of a at b*c *)
   op [a,b,c] tensor_biviews_r (bv1: BisimView (a,b),
                                bv2: BisimView (a,c)) : BisimView (a,b*c) =
     conjoin_biviews (compose_biviews (bv1, invert_biview proj1_biview),
-                      compose_biviews (bv2, invert_biview proj2_biview))
+                     compose_biviews (bv2, invert_biview proj2_biview))
 
 
   (***
