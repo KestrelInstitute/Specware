@@ -269,7 +269,7 @@ MetaSlangRewriter qualifying spec
                   substs))) 
       rules)
    @@ (fn () -> if standardSimplify? && context.useStandardSimplify?
-                  then standardSimplify spc (term,path,boundVars,demod)
+                  then standardSimplify (context, spc) (term,path,boundVars,demod)
                   else Nil)
 
 (*
@@ -314,7 +314,7 @@ MetaSlangRewriter qualifying spec
  op pushFunctionsIn?: Bool = true
  op evalGroundTerms?: Bool = true
 
- op standardSimplify (spc: Spec) (term: MSTerm, path:Path, boundVars: MSVars, demod: Demod RewriteRule)
+ op standardSimplify (context: Context,spc: Spec) (term: MSTerm, path:Path, boundVars: MSVars, demod: Demod RewriteRule)
     :  LazyList(RRResult) =
    %let _ = (writeLine "ss:"; printSubst subst) in
    let (simp?, new_term) =
@@ -383,7 +383,7 @@ MetaSlangRewriter qualifying spec
                                path,boundVars,demod))
         else
         case flexVarNum M1 of
-          | Some n (* | ~(hasFlexRef? M2) *) (* emw4: change needed for C gen... *) ->
+          | Some n | ~(hasFlexRef? M2) || context.allowUnboundVars? ->
             unit(trueTerm,
                  (updateSubst(emptySubstitution,n,M2),
                   mkSimpRule ("Subst", inferType(spc, term), term, trueTerm),
