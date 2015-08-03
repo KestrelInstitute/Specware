@@ -749,10 +749,12 @@ op printStatement (stmt:Statement) : PP0 =
         indentOut;
         startLine;
         print "}";
-        if elseBranch? = None then printNewline
-        else printSpace}
+        (case elseBranch? of
+           | None -> printNewline
+           | Some _ -> printSpace)}
      | S_if (_, _, None) ->
-       if elseBranch? ~= None then
+       (case elseBranch? of
+        | Some _ ->
          % put 'then' branch into block, to associate 'else' to outer 'if':
          {print " {";
           printNewline;
@@ -761,22 +763,25 @@ op printStatement (stmt:Statement) : PP0 =
           indentOut;
           startLine;
           print "}";
-          if elseBranch? = None then printNewline
-          else printSpace}
-       else
+          (case elseBranch? of
+             | None -> printNewline
+             | Some _ -> printSpace)}
+        | None ->
          {printNewline;
           indentIn;
           printStatement thenBranch;
           indentOut;
-          if elseBranch? = None then printNothing
-          else startLine}
+          (case elseBranch? of
+             | None -> printNothing
+             | Some _ -> startLine)})
      | _ ->
        {printNewline;
         indentIn;
         printStatement thenBranch;
         indentOut;
-        if elseBranch? = None then printNothing
-        else startLine};
+        (case elseBranch? of
+           | None -> printNothing
+           | Some _ -> startLine)};
      case elseBranch? of
      | Some elseBranch ->
        {print "else";

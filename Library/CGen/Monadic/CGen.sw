@@ -3,6 +3,30 @@ CGen qualifying spec
 
 
   (***
+   *** "Control" Predicates
+   ***)
+
+  (* Helper predicate to test if two objects are equal, and conditionally choose
+  which "continuation" to keep proving *)
+  op [a] ifequal (x:a,y:a,res1:Bool,res2:Bool) : Bool =
+    if x = y then res1 else res2
+  theorem ifequal_eq is [a]
+    fa (x:a,res1,res2)
+      res1 => ifequal (x,x,res1,res2)
+  theorem ifequal_neq is [a]
+    fa (x:a,y,res1,res2)
+      x ~= y && res2 => ifequal (x,y,res1,res2)
+
+  (* Helper predicate to make sure one thing is proved before another *)
+  (*
+  op prove_1st (b1:Bool, b2:Bool) : Bool = b1 && b2
+
+  theorem prove_1st_true is
+    fa (b1, b2)
+*)
+
+
+  (***
    *** Relational Versions of Operations on Permissions
    ***)
 
@@ -181,24 +205,11 @@ CGen qualifying spec
    *** Extracting LValue Perms from the Current Permission Set
    ***)
 
-  (* Helper predicate to test if two objects are equal, and conditionally choose
-  which "continuation" to keep proving *)
-  op [a] ifequal (x:a,y:a,res1:Bool,res2:Bool) : Bool =
-    if x = y then res1 else res2
-
-  theorem ifequal_eq is [a]
-    fa (x:a,res1,res2)
-      res1 => ifequal (x,x,res1,res2)
-  theorem ifequal_neq is [a]
-    fa (x:a,y,res1,res2)
-      x ~= y && res2 => ifequal (x,y,res1,res2)
-
   (* Predicate to destructure two lvalues and prove they are equal *)
   op lvs_equal (lv1: LValue, lv2: LValue) : Bool = lv1 = lv2
 
   theorem lvs_equal_ident is
     fa (x,y) x = y => lvs_equal (LV_ident x, LV_ident y)
-
 
   (* When an expression reads the value of an lvalue, the resulting value might
   have some aliasing with the lvalue, specifically if the value is a pointer
@@ -638,6 +649,31 @@ CGen qualifying spec
       eperms_out = perms_out &&
       evperms = vperms =>
       abstracts_expression envp perms_in eperms_out evperms (fn (a,b) -> b) m
+
+
+  (***
+   *** If Statements
+   ***)
+
+  (* This generates an if statement all of whose branches must return *)
+  theorem if_ret_correct is [a,b]
+    fa (envp,perms_in,perms_out,ret_perms,eperms_out,evperms,
+        perms_out1,ret_perms1,perms_out2,ret_perms2,
+        e:a->Bool,expr,f1:a->b,f2,m1,m2,m)
+      abstracts_expression envp perms_in eperms_out evperms e expr &&
+      (* FIXME: give back the evperms to eperms_out *)
+      abstracts_ret_statement envp eperms_out perms_out1 ret_perms1 f1 m1 &&
+      abstracts_ret_statement envp eperms_out perms_out2 ret_perms2 f2 m2 &&
+      (* FIXME: unify these permissions, instead of just equating them... *)
+      perms_out = perms_out1 &&
+      perms_out = perms_out2 &&
+      ret_perms = ret_perms1 &&
+      ret_perms = ret_perms2 &&
+      m = IFTHENELSE_m (expr, m1, m2) =>
+      abstracts_ret_statement
+        envp perms_in perms_out ret_perms
+        (fn x -> if e x then f1 x else f2 x)
+        m
 
 
   (***

@@ -61,12 +61,17 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([], [[ValPerm ([], bool_valueabs)]])
-         ([], [[]])
+         ([FunStIPerm auto_allocation_perm],
+          [[ValPerm ([], value_abs_add_view (bool_valueabs, identity_biview))]])
+         ([FunStIPerm auto_allocation_perm],[[]])
          (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
          negate_bool
-         (TN_sint, "just_return_true", [(TN_sint, "b")])
+         (TN_sint, "negate_bool", [(TN_sint, "b")])
          m}
+  op negate_bool_C :
+    {elem:TranslationUnitElem |
+       evalTranslationUnitElem elem = negate_bool_m }
+  op negate_bool_String : String = runPP0 (printTranslationUnitElem negate_bool_C)
 end-spec
 
 
@@ -90,6 +95,12 @@ transform Examples_spec by
     rewrite [strengthen CGen._] {allowUnboundVars? = true, depth = 10000}}
    ;
  makeDefsFromPostConditions [boolean_identity_m]
+   ;
+ at negate_bool_m
+   {unfold negate_bool;
+    rewrite [strengthen CGen._] {allowUnboundVars? = true, depth = 10000}}
+   ;
+ makeDefsFromPostConditions [negate_bool_m]
  }
 
 
@@ -113,6 +124,12 @@ transform Examples_m by
     rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
    ;
  makeDefsFromPostConditions [boolean_identity_C]
+   ;
+ at negate_bool_C
+   {unfold negate_bool_m;
+    rewrite [strengthen C_DSL._] {allowUnboundVars? = true, depth = 10000}}
+   ;
+ makeDefsFromPostConditions [negate_bool_C]
  }
 
 
@@ -120,4 +137,5 @@ transform Examples_m by
 Examples_printed = transform Examples_impl by
 {at just_return_true_String {simplify};
  at just_return_false_String {simplify};
- at boolean_identity_String {simplify}}
+ at boolean_identity_String {simplify};
+ at negate_bool_String {simplify}}
