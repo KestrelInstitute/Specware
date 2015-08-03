@@ -350,7 +350,7 @@ CGen qualifying spec
   theorem val_perm_unmaps_to_2 is [a,b,c]
     fa (impl,bv_prefix:BisimView (a,b),vperm_out)
       pseudo_monic? bv_prefix &&
-      vperm_out = ValIPerm impl &&
+      vperm_out = ValIPerm impl =>
       val_perm_unmaps_to (ValIPerm impl, bv_prefix, vperm_out)
 
 
@@ -477,7 +477,7 @@ CGen qualifying spec
       is_val_perms_add_view (eperms_out.2, biview_of_lens (proj2_lens),
                              val_perms_out) &&
       perms_out = (perm_set_out, Some val_perms_out) &&
-      stmt = RETURN_m expr &&
+      stmt = RETURN_m expr =>
       abstracts_ret_statement
         envp perms_in perms_out
         (fn x -> (lens.lens_get x, e x))
@@ -505,7 +505,7 @@ CGen qualifying spec
     fa (envp,perms_in,lens:Lens (a,b),stmt,perms_out,perms_out')
       perm_set_unmaps_to (perms_in, biview_of_lens lens, perms_out') &&
       perms_out = (perms_out', None) &&
-      stmt = RETURN_VOID_m &&
+      stmt = RETURN_VOID_m =>
       abstracts_ret_statement
         envp perms_in perms_out
         (fn x -> lens.lens_get x)
