@@ -689,10 +689,14 @@ CGen qualifying spec
                   (lv, bool_valueabs, expr_vabs, lv_vabs))
 
   theorem abstracts_constant_true is
-    fa (envp) true => enabled? (user_abstracts_constant envp true bool_valueabs "1")
+    fa (envp,vabs,i)
+      vabs = bool_valueabs && i = "1" =>
+      enabled? (user_abstracts_constant envp true vabs i)
 
   theorem abstracts_constant_false is
-    fa (envp) true => enabled? (user_abstracts_constant envp false bool_valueabs "0")
+    fa (envp,vabs,i)
+      vabs = bool_valueabs && i = "0" =>
+      enabled? (user_abstracts_constant envp false vabs i)
 
 
   (***
@@ -721,8 +725,9 @@ CGen qualifying spec
 
   (* Some useful lvalue-lenses *)
   theorem lvalue_lens_identity is [a]
-    fa (u:())
-      true => enabled? (user_lvalue_lens ((fn x -> x), id_lens:Lens (a,a)))
+    fa (lens:Lens (a,a))
+      lens = id_lens =>
+      enabled? (user_lvalue_lens ((fn x -> x), lens))
   theorem lvalue_lens_proj1 is [a,b]
     fa (u:())
       true => enabled? (user_lvalue_lens ((fn x -> x.1), proj1_lens:Lens (a*b,a)))
