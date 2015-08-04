@@ -7,6 +7,10 @@ C_DSL qualifying spec
 
   (* Expression combinators, which have type Monad Value *)
 
+  (* Embedding an already-translated expression into a computation *)
+  op EMBEDEXPR_m (e:Expression) : Monad C.Value =
+    evaluate e
+
   (* Variables *)
   op VAR_m (id:Identifier) : Monad C.Value =
     lookupIdentifierValue id
@@ -16,8 +20,8 @@ C_DSL qualifying spec
     evaluateIntegerConstant str
 
   (* Unary operators *)
-  type Operator1 = Monad C.Value -> Monad C.Value
-  op liftOperator1 (f : C.Value -> Monad C.Value) : Operator1 =
+  type Operator1 = Monad C.ExpressionValue -> Monad C.ExpressionValue
+  op liftOperator1 (f : C.ExpressionValue -> Monad C.ExpressionValue) : Operator1 =
     fn m -> {val <- m; f val}
 
   op STAR_m : Operator1 = liftOperator1 readPtrValue
@@ -26,9 +30,14 @@ C_DSL qualifying spec
   op NOT_m : Operator1 = liftOperator1 operator_NOT
   op NEG_m : Operator1 = liftOperator1 operator_NEG
 
+  (* FIXME HERE: write correctness theorems for UNARYOP_m and BINARYOP_m *)
+  op UNARYOP_m (uop: UnaryOp) : Operator1 = evaluatorForUnaryOp uop
+
   (* Binary operators *)
-  type Operator2 = Monad C.Value * Monad C.Value -> Monad C.Value
-  op liftOperator2 (f : C.Value * C.Value -> Monad C.Value) : Operator2 =
+  type Operator2 = Monad C.ExpressionValue * Monad C.ExpressionValue ->
+                   Monad C.ExpressionValue
+  op liftOperator2 (f : C.ExpressionValue * C.ExpressionValue ->
+                      Monad C.ExpressionValue) : Operator2 =
     fn (m1,m2) -> {val1 <- m1; val2 <- m2; f (val1, val2)}
 
   op MUL_m : Operator2 = liftOperator2 operator_MUL
@@ -50,6 +59,8 @@ C_DSL qualifying spec
 
   op LAND_m : Operator2 = operator_LAND
   op LOR_m : Operator2 = operator_LOR
+
+  op BINARYOP_m (bop: BinaryOp) : Operator2 = evaluatorForBinaryOp bop
 
   (* Array subscripting *)
   op SUBSCRIPT_m : Operator2 = fn (m1,m2) -> STAR_m (ADD_m (m1,m2))
@@ -133,6 +144,9 @@ C_DSL qualifying spec
   (*** Theorems ***)
 
   (** Expressions **)
+
+  theorem EMBEDEXPR_m_correct is
+    fa (expr,expr') expr = expr' => evaluate expr = EMBEDEXPR_m expr'
 
   theorem VAR_m_correct is
     fa (id,e) e = E_lvalue (LV_ident id) => evaluate e = VAR_m id

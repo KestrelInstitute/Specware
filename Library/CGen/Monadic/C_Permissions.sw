@@ -137,8 +137,8 @@ C_Permissions qualifying spec
   combining splittings sets yields a conjoined abstraction. *)
   type SplittableAbs (c,a) = {f: SplTree (CAbstraction (c, a)) |
                                 fa (spl)
-                                  f spl = conjoin_abstractions (f (SplitL::spl),
-                                                                f (SplitR::spl))}
+                                  conjoin_abstractions (f (SplitL::spl),
+                                                        f (SplitR::spl)) = f spl}
 
   type UnitAbs a = SplittableAbs ((), a)
   type ValueAbs a = SplittableAbs (Value, a)
@@ -782,15 +782,22 @@ C_Permissions qualifying spec
 
   (* Build a value abstraction that does not look at the heap *)
   (* FIXME: this should involve a type... *)
-  op [a] scalar_value_abstraction (R: Relation (Value,a)) : ValueAbs a =
-    fn splset -> fn r ->
-      {biview = fn ((stree,vtree),a) -> fa (spl) R (vtree spl, a),
-       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> stree1 = stree2,
+  op [a] non_heap_abstraction (R: Relation (Value,a)) : ValueAbs a =
+    fn spl -> fn r ->
+      {biview = fn ((stree,vtree),a) ->
+         (fa (spl')
+            splitting_leq (spl,spl') || splitting_leq (spl',spl) =>
+            vtree spl' = vtree spl &&
+            R (vtree spl', a)),
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) ->
+         stree1 = stree2 &&
+         (fa (spl')
+            splitting_leq (spl',spl) || vtree1 spl' = vtree2 spl'),
        bv_leq2 = fn _ -> true}
 
   (* The value abstraction for boolean values *)
   op bool_valueabs : ValueAbs Bool =
-    scalar_value_abstraction (fn (v,b) -> zeroScalarValue? v = return b)
+    non_heap_abstraction (fn (v,b) -> zeroScalarValue? v = return b)
 
   (* Turn a value abstraction into a constant value abstraction, by adding a
   side condition that prevents the value itself from being modified *)

@@ -634,72 +634,164 @@ CGen qualifying spec
 
 
   (***
+   *** Constant Expressions
+   ***)
+
+  op [a,b] fun_matches_constant (f: a -> b, c:b) : Bool =
+    f = (fn _ -> c)
+
+  theorem fun_matches_constant_rule is [a,b]
+    fa (c:b)
+      true => enabled? (fun_matches_constant ((fn (x:a) -> c), c))
+
+  (* Specialization of abstracts_expression to constants *)
+  op [a,b] abstracts_expression_constant (envp: EnvPred) (perms_in: PermSet a)
+                                         (perms_out: PermSet a)
+                                         (vperms_out: List (ValPerm b))
+                                         (c: b) (m: Monad Value) : Bool =
+    abstracts_expression envp perms_in perms_out vperms_out (fn _ -> c) m
+
+  (* User-proved predicate: this is what "users" need to prove in order to
+  refine constant a into an integer constant i. It holds iff iff vabs relates i,
+  in any storage tree, to a. *)
+  op [a] user_abstracts_constant (envp:EnvPred) (c:a) (vabs:ValueAbs a)
+                                 (i:IntegerConstant) : Bool =
+    integerConstant? i &&
+    (case integerConstantType i of
+       | None -> false
+       | Some tp ->
+         (fa (stree,r)
+            envp (r.r_xenv, r.r_functions) =>
+            (vabs [] r).biview
+              ((stree,(fn _ -> valueOfInt (tp, integerConstantValue i))), c)))
+
+  theorem abstracts_expression_constant_rule is [a,b]
+    fa (envp,perms_in:PermSet a,perms_out,vperms_out,c:b,m,vabs,i)
+      enabled? (user_abstracts_constant envp c vabs i) &&&&
+      perms_out === perms_in &&&&
+      vperms_out === [ValPerm ([([],None)],
+                               value_abs_add_view (vabs, identity_biview))] &&&&
+      m === ICONST_m i =>
+      enabled? (abstracts_expression_constant envp perms_in
+                  perms_out vperms_out c m)
+
+
+  (***
    *** Boolean Expressions
    ***)
 
   (* No aliasing between a Boolean value and the lvalue it came from *)
+  (* FIXME: make this a theorem about scalar abstractions in general *)
   theorem bool_valueabs_expr_and_lvalue_abses is
     fa (lv, expr_vabs, lv_vabs)
       expr_vabs = bool_valueabs && lv_vabs = bool_valueabs =>
       enabled? (lvalue_expr_and_lvalue_abses?
                   (lv, bool_valueabs, expr_vabs, lv_vabs))
 
-  theorem true_correct is [a]
-    fa (envp,perms_in:PermSet a,perms_out,ret_perms,m)
-      m = ICONST_m "1" &&
-      perms_out = perms_in &&
-      ret_perms = [ValPerm ([], value_abs_add_view (bool_valueabs,
-                                                    identity_biview))] =>
-      enabled? (abstracts_expression envp perms_in perms_out ret_perms
-                  (fn _ -> true) m)
+  theorem abstracts_constant_true is
+    fa (envp) true => enabled? (user_abstracts_constant envp true bool_valueabs "1")
 
-  theorem false_correct is [a]
-    fa (envp,perms_in:PermSet a,perms_out,ret_perms,m)
-      m = ICONST_m "0" &&
-      perms_out = perms_in &&
-      ret_perms = [ValPerm ([], value_abs_add_view (bool_valueabs,
-                                                    identity_biview))] =>
-      enabled? (abstracts_expression envp perms_in perms_out ret_perms
-                  (fn _ -> false) m)
+  theorem abstracts_constant_false is
+    fa (envp) true => enabled? (user_abstracts_constant envp false bool_valueabs "0")
 
 
   (***
-   *** Variable Expressions
+   *** LValue Expressions
    ***)
 
-  (* The following theorems all prove that a variable expression is correct. The
-  general form is var_i_j_correct, which proves that the jth variable in a
-  context with i variables (represented as an i-tuple) is correct. *)
+  (* abstracts_expression for lvalues, which are represented as lenses *)
+  op [a,b] abstracts_expression_lvalue (envp: EnvPred) (perms_in: PermSet a)
+                                       (perms_out: PermSet a)
+                                       (vperms_out: List (ValPerm b))
+                                       (lens: Lens (a,b))
+                                       (m: Monad Value) : Bool =
+    abstracts_expression envp perms_in perms_out vperms_out lens.lens_get m
 
-  theorem var_1_1_correct is [a]
-    fa (envp,perms_in:PermSet a,eperms_out,evperms,perms_out,vperms,m,x)
-      m = VAR_m x &&
-      enabled? (view_perms_extract_to? (perms_in, identity_biview,
-                                        LV_ident x, vperms, perms_out)) &&
-      eperms_out = perms_out &&
-      evperms = vperms =>
-      enabled? (abstracts_expression envp perms_in eperms_out evperms
-                  (fn a -> a) m)
+  theorem abstracts_expression_lvalue_rule is [a,b]
+    fa (envp,perms_in:PermSet a,perms_out,vperms:List (ValPerm b),lens,lv,m)
+      enabled? (view_perms_extract_to? (perms_in, biview_of_lens lens,
+                                        lv, vperms, perms_out)) &&&&
+      m === EMBEDEXPR_m (E_lvalue lv) =>
+      enabled? (abstracts_expression_lvalue envp perms_in perms_out vperms lens m)
 
-  theorem var_2_1_correct is [a,b]
-    fa (envp,perms_in:PermSet (a*b),eperms_out,evperms,perms_out,vperms,m,x)
-      m = VAR_m x &&
-      enabled? (view_perms_extract_to? (perms_in, proj1_biview,
-                                        LV_ident x, vperms, perms_out)) &&
-      eperms_out = perms_out &&
-      evperms = vperms =>
-      enabled? (abstracts_expression envp perms_in eperms_out evperms
-                  (fn (a,b) -> a) m)
+  (* User-proved predicate: states that f should be seen as a lens for the
+  purpose of synthesizing an lvalue expression *)
+  op [a,b] user_lvalue_lens (f: a -> b, lens: Lens (a,b)) : Bool =
+    f = lens.lens_get
 
-  theorem var_2_2_correct is [a,b]
-    fa (envp,perms_in:PermSet (a*b),eperms_out,evperms,perms_out,vperms,m,x)
-      m = VAR_m x &&
-      enabled? (view_perms_extract_to? (perms_in, proj2_biview,
-                                        LV_ident x, vperms, perms_out)) &&
-      eperms_out = perms_out &&
-      evperms = vperms =>
-      enabled? (abstracts_expression envp perms_in eperms_out evperms
-                  (fn (a,b) -> b) m)
+  (* Some useful lvalue-lenses *)
+  theorem lvalue_lens_identity is [a]
+    fa (u:())
+      true => enabled? (user_lvalue_lens ((fn x -> x), id_lens:Lens (a,a)))
+  theorem lvalue_lens_proj1 is [a,b]
+    fa (u:())
+      true => enabled? (user_lvalue_lens ((fn x -> x.1), proj1_lens:Lens (a*b,a)))
+  theorem lvalue_lens_proj2 is [a,b]
+    fa (u:())
+      true => enabled? (user_lvalue_lens ((fn x -> x.2), proj2_lens:Lens (a*b,b)))
+
+
+  (***
+   *** Unary Operations
+   ***)
+
+  op [a,b] user_abstracts_unary_op (envp: EnvPred) (g: a->b) (f: a->b)
+                                   (oper: b->b) (uop:UnaryOp)
+                                   (vabs: ValueAbs b) : Bool =
+    fa (stree,vtree,r,a)
+      envp (r.r_xenv, r.r_functions) &&
+      g = (fn x -> oper (f x)) &&
+      (vabs [] r).biview ((stree,vtree), f a) =>
+      (ex (vtree')
+         (computation_has_value r (stree [])
+            (evaluatorForUnaryOp uop (return (vtree [])))
+            (vtree' [])) &&
+         (vabs [] r).biview ((stree,vtree'), oper (f a)))
+
+  op [a,b] abstracts_expression_unary (envp: EnvPred) (perms_in: PermSet a)
+                                      (perms_out: PermSet a)
+                                      (vabs: ValueAbs b)
+                                      (f: a -> b) (oper: b -> b) (uop:UnaryOp)
+                                      (m: Monad Value) : Bool =
+    user_abstracts_unary_op envp (fn x -> oper (f x)) f oper uop vabs =>
+    abstracts_expression
+      envp perms_in perms_out
+      [ValPerm ([([],None)], vabs)]
+      (fn x -> oper (f x))
+      m
+
+  theorem abstracts_expression_unary_rule is [a,b]
+    fa (envp,perms_in,perms_out,vperms_out,f:a->b,oper,m,uop,expr,vabs)
+      enabled? (abstracts_expression envp perms_in perms_out vperms_out f expr) &&&&
+      m === UNARYOP_m uop expr &&&&
+      (* FIXME: the below should be the rhs is weaker than the left *)
+      vperms_out === [ValPerm ([([],None)], vabs)] =>
+      enabled? (abstracts_expression_unary envp perms_in
+                  perms_out vabs f oper uop m)
+
+
+  (***
+   *** Binary Operations
+   ***)
+
+
+  (***
+   *** General Rule for Expressions
+   ***)
+
+  theorem abstracts_expression_rule is [a,b]
+    fa (envp,perms_in,perms_out,vperms_out,f:a->b,m,
+        c,lens,f_sub,oper,uop,vabs)
+      (enabled? (fun_matches_constant (f, c)) &&&&
+       abstracts_expression_constant envp perms_in perms_out vperms_out c m)
+      ||
+      (enabled? (user_lvalue_lens (f, lens)) &&&&
+       abstracts_expression_lvalue envp perms_in perms_out vperms_out lens m)
+      ||
+      (enabled? (user_abstracts_unary_op envp f f_sub oper uop vabs) &&&&
+       abstracts_expression_unary envp perms_in perms_out vabs f_sub oper uop m &&&&
+       vperms_out === [ValPerm ([([],None)], vabs)]) =>
+      enabled? (abstracts_expression envp perms_in perms_out vperms_out f m)
 
 
   (***
