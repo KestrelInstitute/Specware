@@ -49,6 +49,31 @@ CGen qualifying spec
   theorem prove_enabled_equality is [a]
     fa (x,y:a) x = y => enabled? (x === y)
 
+  (* Special form of disjunction that chooses the first branch that becomes
+  "enabled?". *)
+  op |||| (b1: Bool, b2: Bool) infixr 14 : Bool = b1 || b2
+
+  theorem disj_choose_enabled_left is
+    fa (b1, b2)
+      enabled? b1 => (enabled? b1) |||| b2
+
+  theorem disj_true_left is
+    fa (b2) true => true |||| b2
+
+  theorem disj_choose_enabled_right is
+    fa (b1, b2)
+      enabled? b2 => b1 |||| (enabled? b2)
+
+  theorem disj_true_right is
+    fa (b1) true => b1 |||| true
+
+  (* Conjunctive clause, to be used in ||||, that only becomes enabled if the
+  first argument is rewritten to true. *)
+  op clause (b1: Bool, b2: Bool) : Bool = b1 && b2
+
+  theorem enable_clause is
+    fa (b2) enabled? b2 => clause (true, b2)
+
   (* Helper predicate to test if two objects are equal, and conditionally choose
   which "continuation" to keep proving *)
   op [a] ifequal (x:a,y:a,res1:Bool,res2:Bool) : Bool =
@@ -78,6 +103,17 @@ CGen qualifying spec
       enabled? (pred x) &&
       enabled? (forall_pred pred l) =>
       forall_pred pred (x::l)
+
+  op [a] in_pred (x:a, l:List a) : Bool =
+    ex (i) l@@i = Some x
+
+  theorem in_pred_base is [a]
+    fa (x:a,l)
+      true => enabled? (in_pred (x, x::l))
+
+  theorem in_pred_cons is [a]
+    fa (x:a,x',l)
+      enabled? (in_pred (x,l)) => enabled? (in_pred (x, x'::l))
 
   op [a] is_append (l1: List a, l2: List a, l_out: List a) : Bool =
     l_out = l1 ++ l2
@@ -646,7 +682,7 @@ CGen qualifying spec
 
   theorem perm_weaker_id is [a]
     fa (perm: Perm a)
-      true => perm_weaker? (perm, perm)
+      true => enabled? (perm_weaker? (perm, perm))
 
   op [a] perm_weaker_than_set? (perm: Perm a, perms: PermSet a) : Bool =
     perm_set_weaker? ([perm], perms)
@@ -655,7 +691,7 @@ CGen qualifying spec
     fa (perm:Perm a, perm1, perms)
       enabled? (perm_weaker? (perm, perm1)) ||
       enabled? (perm_weaker_than_set? (perm, perms)) =>
-      perm_weaker_than_set? (perm, perm1::perms)
+      enabled? (perm_weaker_than_set? (perm, perm1::perms))
 
 
   (* perm_set_weaker *)
@@ -814,11 +850,11 @@ CGen qualifying spec
   theorem abstracts_expression_rule is [a,b]
     fa (envp,perms_in,perms_out,vperms_out,f:a->b,m,
         c,lens(*,f_sub,oper,uop,vabs*))
-      (enabled? (fun_matches_constant (f, c)) &&&&
-       abstracts_expression_constant envp perms_in perms_out vperms_out c m)
-      ||
-      (enabled? (USER_variable_lens (f, lens)) &&&&
-       abstracts_expression_var envp perms_in perms_out vperms_out lens m)
+      clause (enabled? (fun_matches_constant (f, c)),
+              abstracts_expression_constant envp perms_in perms_out vperms_out c m)
+      ||||
+      clause (enabled? (USER_variable_lens (f, lens)),
+              abstracts_expression_var envp perms_in perms_out vperms_out lens m)
       (*
       ||
       (enabled? (USER_abstracts_unary_op envp f f_sub oper uop vabs) &&&&
@@ -849,11 +885,11 @@ CGen qualifying spec
        abstracts_ret_statement envp eperms_out perms_out1 ret_perms1 f1 m1 &&&&
        abstracts_ret_statement envp eperms_out perms_out2 ret_perms2 f2 m2 &&&&
        (* FIXME: unify these permissions, instead of just equating them... *)
-       perms_out = perms_out1 &&
-       perms_out = perms_out2 &&
-       ret_perms = ret_perms1 &&
-       ret_perms = ret_perms2 &&
-       m = IFTHENELSE_m (expr, m1, m2)) =>
+       perms_out === perms_out1 &&&&
+       perms_out === perms_out2 &&&&
+       ret_perms === ret_perms1 &&&&
+       ret_perms === ret_perms2 &&&&
+       m === IFTHENELSE_m (expr, m1, m2)) =>
       enabled? (abstracts_ret_statement_if
                   envp perms_in perms_out ret_perms e f1 f2 m)
 
@@ -958,6 +994,46 @@ CGen qualifying spec
                   envp perms_in perms_out ret_perms lens stmt)
 
 
+  (* Common patterns for matching return statements *)
+
+  theorem USER_return_expr_unit_pair is [a,b]
+    fa (st_lens,e_out,iso,e:a->b)
+      st_lens = unit_lens &&
+      e_out = e &&
+      iso = (fn x -> x) =>
+      enabled? (USER_is_return_expr ((fn x -> ((), e x)), st_lens, e_out, iso))
+
+  theorem USER_return_expr_in_pair_unit_pair is [a]
+    fa (st_lens,e_out,iso,e:a)
+      st_lens = unit_lens &&
+      e_out = (fn _ -> e) &&
+      iso = (fn x -> x) =>
+      enabled? (USER_is_return_expr ((fn () -> ((), e)), st_lens, e_out, iso))
+
+  theorem USER_return_expr_in_pair_unit_pair_bool is
+    fa (st_lens,e_out,iso,e:Bool)
+      st_lens = unit_lens &&
+      e_out = (fn _ -> e) &&
+      iso = (fn x -> x) =>
+      enabled? (USER_is_return_expr ((fn () -> ((), e)), st_lens, e_out, iso))
+
+(*
+  theorem USER_return_expr_test1 is [a]
+    fa (st_lens,e_out,iso,e:a)
+      st_lens = unit_lens &&
+      e_out = (fn _ -> e) &&
+      iso = (fn x -> x) =>
+      enabled? (USER_is_return_expr ((fn (x:()) -> ((), e)), st_lens, e_out, iso))
+
+  theorem USER_return_expr_test2 is
+    fa (st_lens,e_out,iso,e:Bool)
+      st_lens = unit_lens &&
+      e_out = (fn _ -> e) &&
+      iso = (fn x -> x) =>
+      enabled? (USER_is_return_expr ((fn (x:()) -> ((), e)), st_lens, e_out, iso))
+*)
+
+
   (***
    *** General Rules for Statements
    ***)
@@ -966,19 +1042,19 @@ CGen qualifying spec
     fa (envp,perms_in:PermSet a,perms_out:PermSet b,ret_vperms,f,m,
         ret_lens,ret_e,ret_iso:Bijection (c*d,b),
         retv_lens,if_cond,if_f1,if_f2)
-      enabled? (USER_is_return_expr (f, ret_lens, ret_e, ret_iso)) &&&&
-      (abstracts_ret_statement_return
-         envp perms_in perms_out ret_vperms ret_lens ret_e ret_iso m)
-      ||
-      enabled? (USER_is_return_void (f, retv_lens)) &&&&
-      (abstracts_ret_statement_return_void
-         envp perms_in perms_out ret_vperms retv_lens m)
-      ||
-      enabled? (fun_matches_if_expression (f, if_cond, if_f1, if_f2)) &&&&
-      (abstracts_ret_statement_if
-         envp perms_in perms_out ret_vperms if_cond if_f1 if_f2 m)
+      clause (enabled? (USER_is_return_expr (f, ret_lens, ret_e, ret_iso)),
+              (abstracts_ret_statement_return
+                 envp perms_in perms_out ret_vperms ret_lens ret_e ret_iso m))
+      ||||
+      clause (enabled? (USER_is_return_void (f, retv_lens)),
+              (abstracts_ret_statement_return_void
+                 envp perms_in perms_out ret_vperms retv_lens m))
+      ||||
+      clause (enabled? (fun_matches_if_expression (f, if_cond, if_f1, if_f2)),
+              (abstracts_ret_statement_if
+                 envp perms_in perms_out ret_vperms if_cond if_f1 if_f2 m))
       =>
-      abstracts_ret_statement envp perms_in perms_out ret_vperms f m
+      enabled? (abstracts_ret_statement envp perms_in perms_out ret_vperms f m)
 
 
   (***
@@ -990,17 +1066,17 @@ CGen qualifying spec
   theorem FUNCTION_correct is [a,b]
     fa (envp,perms_in,perms_in_sub,perms_out,ret_perms,perms_out_sub,ret_perms_sub,
         perms_out_sub',f:a->b,m,prototype,body)
-      enabled? (abstracts_ret_statement
-                  envp
-                  perms_in_sub
-                  perms_out_sub
-                  ret_perms_sub
-                  f
-                  body) &&&&
-      m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&&&
-      StPerm ([([], None)], auto_allocation_perm) in? perms_out.1 &&&&
+      m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
+      enabled? (in_pred (StPerm ([([], None)], auto_allocation_perm), perms_out.1)) &&&&
       is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&&&
       is_perm_set_of_arg_perms (perms_in, prototype.3, perms_in_sub) &&&&
+      (abstracts_ret_statement
+         envp
+         perms_in_sub
+         perms_out_sub
+         ret_perms_sub
+         f
+         body) &&&&
       perm_set_weaker? (perms_out_sub', perms_out_sub) &&&&
       ret_perms === ret_perms_sub =>
       abstracts_c_function_decl envp perms_in perms_out ret_perms f prototype m
