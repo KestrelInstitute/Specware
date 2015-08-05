@@ -10,7 +10,7 @@ C_Permissions qualifying spec
    *** Abstraction Relations
    ***)
 
-  (* FIXME HERE: update the documentation! *)
+  (* FIXME: update the documentation! *)
 
   (* Splitting trees *)
   type SplTree a = Splitting -> a
@@ -136,14 +136,19 @@ C_Permissions qualifying spec
   type ValueAbs a = SplittableAbs (Value, a)
 
   (* Conjoin the abstractions in abs for the splittings in the splitting set *)
-  op [c,a] abs_for_splset (abs: SplittableAbs (c,a))
-                          (splset: SplittingSet) : CAbstraction (c,a) =
+  op [c,a] abs_of_spl_abs (splset: SplittingSet,
+                           abs: SplittableAbs (c,a)) : CAbstraction (c,a) =
     foldr (fn (spl,rest) ->
              conjoin_abstractions (abs spl, rest)) trivial_abstraction splset
 
+  (* Compose an abstraction with a splittable abstractions *)
+  op [c1,c2,a] compose_splittable_abstraction (abs:CToCAbstraction (c1,c2),
+                                               sabs:SplittableAbs (c2,a)) : SplittableAbs (c1,a) =
+    fn spl -> compose_abstractions (abs, sabs spl)
+
   (* Conjoin two splittable abstractions *)
-  op [c,a] conjoin_splittable_abstractions2 (abs1:SplittableAbs (c,a),
-                                             abs2:SplittableAbs (c,a)) : SplittableAbs (c,a) =
+  op [c,a] conjoin_splittable_abstractions (abs1:SplittableAbs (c,a),
+                                            abs2:SplittableAbs (c,a)) : SplittableAbs (c,a) =
     fn spl -> conjoin_abstractions (abs1 spl, abs2 spl)
 
   (* A value abstraction is said to have a particular C type iff it only relates
@@ -157,14 +162,14 @@ C_Permissions qualifying spec
                && (fa (spl) valueHasType (vtree spl, tp)))
 
   (* Compose a splittable abstraction with a bi-view on the output type *)
-  op [c,a,b] splittable_abs_compose (vabs: SplittableAbs (c,a),
-                                     sbv: BisimView (b,a)) : SplittableAbs (c,b) =
-    fn splset -> compose_abstraction_with_biview (vabs splset, sbv)
+  op [c,a,b] splittable_abs_add_view (vabs: SplittableAbs (c,a),
+                                      bv: BisimView (b,a)) : SplittableAbs (c,b) =
+    fn splset -> compose_abstraction_with_biview (vabs splset, bv)
 
   op [a,b] value_abs_add_view : ValueAbs a * BisimView (b,a) -> ValueAbs b =
-    splittable_abs_compose
+    splittable_abs_add_view
   op [a,b] unit_abs_add_view : UnitAbs a * BisimView (b,a) -> UnitAbs b =
-    splittable_abs_compose
+    splittable_abs_add_view
 
 
   (***
@@ -197,49 +202,99 @@ C_Permissions qualifying spec
 
 
   (***
+   *** Permissions
+   ***)
+
+  (* A gneric permission is a splittable abstraction + implicational perm *)
+  type CPermission (c,a) = SplittableAbs (c, a) * ImplPerm c
+
+  (* The trivial permission *)
+  op [c,a] trivial_perm : CPermission (c,a) =
+    ((fn spl -> trivial_abstraction), trivial_impl_perm)
+
+  op [c,a] conjoin_perms (perm1: CPermission (c,a),
+                          perm2: CPermission (c,a)) : CPermission (c,a) =
+    (conjoin_splittable_abstractions (perm1.1, perm2.1),
+     conjoin_impl_perms (perm1.2, perm2.2))
+
+  (* Evaluate a splittable abstraction with splitting set expression *)
+  op [c,a] perm_of_spl_abs (abs: SplittableAbs (c,a)) : CPermission (c,a) =
+    (abs, trivial_impl_perm)
+
+  (* Turn an ImplPerm into a permission *)
+  op [c,a] perm_of_impl_perm (impl: ImplPerm c) : CPermission (c,a) =
+    ((fn spl -> trivial_abstraction), impl)
+
+  (* Turn a CPermission into a CAbstraction *)
+  op [c,a] abs_of_perm (splset: SplittingSet,
+                        perm: CPermission (c,a)) : CAbstraction (c,a) =
+    fn r -> conjoin_biview_impl (abs_of_spl_abs (splset, perm.1) r,
+                                 perm.2 r)
+
+  (* Compose an abstraction with a permission *)
+  op [c1,c2,a] compose_abs_perm (abs:CToCAbstraction (c1,c2),
+                                 perm:CPermission (c2,a)) : CPermission (c1,a) =
+    (compose_splittable_abstraction (abs, perm.1),
+     compose_abs_impl_perm (abs, perm.2))
+
+  (* Compose a permission with a lens *)
+  op [c,a,b] cperm_add_lens (perm: CPermission (c,b),
+                             lens: Lens (a,b)) : CPermission (c,a) =
+    (splittable_abs_add_view (perm.1, biview_of_lens lens), perm.2)
+
+  (* The strength preorder for permissions, which maps to the C abstraction
+  strength preorder of all abstractions obtained from the related permissions
+  after possibly conjoining with another abs *)
+  op [c,a] cperm_weaker? : PreOrder (CPermission (c,a)) =
+    fn (perm1,perm2) ->
+      (fa (spl_abs,splset)
+         abstraction_weaker? (abs_of_perm
+                                (splset,
+                                 conjoin_perms
+                                   (perm1, perm_of_spl_abs spl_abs)),
+                              abs_of_perm
+                                (splset,
+                                 conjoin_perms
+                                   (perm2, perm_of_spl_abs spl_abs))))
+
+  (***
    *** Permission Evaluations
    ***)
 
-  (* The result of evaluating a permission or permission set *)
-  type PermEval (c,a) = CAbstraction (c, a) * ImplPerm c
+  (* A PermEval is a permisson where we have already passed in a splitting set
+  to the splittable abstraction *)
+  type PermEval (c, a) = CAbstraction (c, a) * ImplPerm c
 
-  (* The trivial perm eval *)
   op [c,a] trivial_perm_eval : PermEval (c,a) =
     (trivial_abstraction, trivial_impl_perm)
 
-  (* Evaluate a splittable abstraction with splitting set expression *)
-  op [c,a] eval_splittable_abs (asgn: SplAssign)
-                               (splexpr: SplSetExpr,
-                                abs: SplittableAbs (c,a)) : PermEval (c,a) =
-    (abs_for_splset abs (instantiate_splset_expr asgn splexpr), trivial_impl_perm)
-
-  (* Turn an ImplPerm into a PermEval *)
-  op [c,a] eval_impl_perm (impl: ImplPerm c) : PermEval (c,a) =
-    (trivial_abstraction, impl)
-
-  (* Conjoin two permission evaluation results *)
-  op [c,a] conjoin_perm_evals (ev1:PermEval (c,a),
-                               ev2:PermEval (c,a)) : PermEval (c,a) =
-    (conjoin_abstractions (ev1.1,ev2.1),
+  op [c,a] conjoin_perm_evals (ev1: PermEval (c,a),
+                               ev2: PermEval (c,a)) : PermEval (c,a) =
+    (conjoin_abstractions (ev1.1, ev2.1),
      conjoin_impl_perms (ev1.2, ev2.2))
 
   (* Conjoin N permission evaluation results *)
   op [c,a] conjoin_perm_evalsN (evs:List (PermEval (c,a))) : PermEval (c,a) =
     foldr conjoin_perm_evals trivial_perm_eval evs
 
-  (* Turn a PermEval into a CAbstraction *)
-  op [c,a] abs_of_perm_eval (ev: PermEval (c,a)) : CAbstraction (c,a) =
-    fn r -> conjoin_biview_impl (ev.1 r, ev.2 r)
-
-  (* Compose an abstraction with a PermEval *)
+  (* Compose an abstraction with a permission evaluation *)
   op [c1,c2,a] compose_abs_perm_eval (abs:CToCAbstraction (c1,c2),
                                       ev:PermEval (c2,a)) : PermEval (c1,a) =
     (compose_abstractions (abs, ev.1),
      compose_abs_impl_perm (abs, ev.2))
 
-  (* The strength preorder for permission evaluation results, which maps to the
-  C abstraction strength preorder of all abstractions obtained from the related
-  permission evaluation results after possibly conjoining with another abs *)
+  (* Turn a PermEval into a CAbstraction *)
+  op [c,a] abs_of_perm_eval (ev: PermEval (c,a)) : CAbstraction (c,a) =
+    fn r -> conjoin_biview_impl (ev.1 r, ev.2 r)
+
+  (* Evaluate a permission *)
+  op [c,a] eval_cperm (asgn:SplAssign, splexpr:SplSetExpr)
+                      (perm:CPermission (c,a)) : PermEval (c,a) =
+    (abs_of_spl_abs (instantiate_splset_expr asgn splexpr, perm.1), perm.2)
+
+  (* The strength preorder for permission evaluations, which maps to the C
+  abstraction strength preorder of all abstractions obtained from the related
+  permission evaluations after possibly conjoining with another abs *)
   op [c,a] perm_eval_weaker? : PreOrder (PermEval (c,a)) =
     fn (ev1,ev2) ->
       (fa (abs) abstraction_weaker? (abs_of_perm_eval
@@ -251,18 +306,8 @@ C_Permissions qualifying spec
 
 
   (***
-   *** Building PermEvals for List and Option Types
+   *** Building Permission Evaluations for List and Option Types
    ***)
-
-  (* Relate two lists iff both are empty or their heads and tails are related by
-  R1 and R2, respectively *)
-  op [a] list_head_tail_rel (R1:EndoRelation a,
-                             R2:EndoRelation (List a)) : EndoRelation (List a) =
-    fn (l1,l2) ->
-      case (l1,l2) of
-        | ([],[]) -> true
-        | (x1::l1',x2::l2') -> R1 (x1,x2) && R2 (l1',l2')
-        | _ -> false
 
   (* Build the abstraction that can only look at the head of a list *)
   op [c] list_head_ctoc_abs : CToCAbstraction (List c, c) =
@@ -292,7 +337,7 @@ C_Permissions qualifying spec
        bv_leq1 = (=),
        bv_leq2 = (=)}
 
-  (* Turn an optional PermEval into a PermEval for the option type *)
+  (* Turn an optional Permission into a Permission for the option type *)
   op [c,a] opt_perm_eval (ev_opt: Option (PermEval (c,a))) : PermEval (Option c,a) =
     case ev_opt of
       | Some ev -> compose_abs_perm_eval (opt_some_ctoc_abs, ev)
@@ -320,27 +365,24 @@ C_Permissions qualifying spec
 
   (* Permissions for just the storage *)
   type StPerm a =
-    | StPerm (SplSetExpr * UnitAbs a)
-    | StIPerm (ImplPerm ())
+    | StPerm (SplSetExpr * CPermission ((), a))
 
   (* Add a view to a storage permission *)
-  op [a,b] st_perm_add_view (stperm: StPerm a, bv: BisimView (b,a)) : StPerm b =
+  op [a,b] st_perm_add_lens (stperm: StPerm a, lens: Lens (b,a)) : StPerm b =
     case stperm of
-      | StPerm (splexpr, uabs) ->
-        StPerm (splexpr, splittable_abs_compose (uabs, bv))
-      | StIPerm impl -> StIPerm impl
+      | StPerm (splexpr, cperm) ->
+        StPerm (splexpr, cperm_add_lens (cperm, lens))
 
   (* Compose a list of unit perms with a bv *)
-  op [a,b] st_perms_add_view (stperms: List (StPerm a),
-                              bv: BisimView (b,a)) : List (StPerm b) =
-    map (fn stperm -> st_perm_add_view (stperm, bv)) stperms
+  op [a,b] st_perms_add_lens (stperms: List (StPerm a),
+                              lens: Lens (b,a)) : List (StPerm b) =
+    map (fn stperm -> st_perm_add_lens (stperm, lens)) stperms
 
   (* Evaluate a storage permission *)
   op [a] eval_st_perm (asgn: SplAssign) (stperm: StPerm a) : PermEval ((),a) =
     case stperm of
-      | StPerm (splexpr, uabs) ->
-        eval_splittable_abs asgn (splexpr, uabs)
-      | StIPerm impl -> eval_impl_perm impl
+      | StPerm (splexpr, cperm) ->
+        eval_cperm (asgn, splexpr) cperm
 
   op [a] eval_st_perms (asgn: SplAssign) (stperms: List (StPerm a)) : PermEval ((),a) =
     conjoin_perm_evalsN (map (eval_st_perm asgn) stperms)
@@ -353,23 +395,21 @@ C_Permissions qualifying spec
 
   (* Permissions for a value *)
   type ValPerm a =
-    | ValPerm (SplSetExpr * ValueAbs a)
-    | ValEqPerm (SplSetExpr * ValueAbs a * LValue)
-    | ValIPerm (ImplPerm Value)
+    | ValPerm (SplSetExpr * CPermission (Value, a))
+    | ValEqPerm (SplSetExpr * CPermission (Value, a) * LValue)
 
-  (* Use a view of b at a to turn a ValPerm a into a ValPerm b *)
-  op [a,b] val_perm_add_view (vperm: ValPerm a, bv: BisimView (b,a)) : ValPerm b =
+  (* Use a lens from b to a to turn a ValPerm a into a ValPerm b *)
+  op [a,b] val_perm_add_lens (vperm: ValPerm a, lens: Lens (b,a)) : ValPerm b =
     case vperm of
-      | ValPerm (splexpr, vabs) ->
-        ValPerm (splexpr, splittable_abs_compose (vabs, bv))
-      | ValEqPerm (splexpr, vabs, lv) ->
-        ValEqPerm (splexpr, splittable_abs_compose (vabs, bv), lv)
-      | ValIPerm impl -> ValIPerm impl
+      | ValPerm (splexpr, cperm) ->
+        ValPerm (splexpr, cperm_add_lens (cperm, lens))
+      | ValEqPerm (splexpr, cperm, lv) ->
+        ValEqPerm (splexpr, cperm_add_lens (cperm, lens), lv)
 
   (* Compose a list of value perms with a bv *)
-  op [a,b] val_perms_add_view (vperms: List (ValPerm a),
-                               bv: BisimView (b,a)) : List (ValPerm b) =
-    map (fn vperm -> val_perm_add_view (vperm, bv)) vperms
+  op [a,b] val_perms_add_lens (vperms: List (ValPerm a),
+                               lens: Lens (b,a)) : List (ValPerm b) =
+    map (fn vperm -> val_perm_add_lens (vperm, lens)) vperms
 
   (* The CAbstraction that relates an lvalue to its value, if any *)
   op lvalue_abstraction (lv:LValue) : CToCAbstraction ((), Value) =
@@ -396,13 +436,13 @@ C_Permissions qualifying spec
   (* Evaluate a value permission *)
   op [a] eval_val_perm (asgn: SplAssign) (vperm: ValPerm a) : PermEval (Value,a) =
     case vperm of
-      | ValPerm (splexpr, vabs) -> eval_splittable_abs asgn (splexpr, vabs)
-      | ValEqPerm (splexpr, vabs, lv) ->
-        compose_abs_perm_eval (compose_abstractions
-                                 (invert_abstraction (lvalue_abstraction lv),
-                                  lvalue_abstraction lv),
-                               eval_splittable_abs asgn (splexpr, vabs))
-      | ValIPerm impl -> eval_impl_perm impl
+      | ValPerm (splexpr, cperm) -> eval_cperm (asgn, splexpr) cperm
+      | ValEqPerm (splexpr, cperm, lv) ->
+        eval_cperm (asgn, splexpr)
+          (compose_abs_perm (compose_abstractions
+                               (invert_abstraction (lvalue_abstraction lv),
+                                lvalue_abstraction lv),
+                             cperm))
 
   (* Evaluate a list of value permissions *)
   op [a] eval_val_perms (asgn: SplAssign) (vperms: List (ValPerm a)) : PermEval (Value,a) =
@@ -432,14 +472,14 @@ C_Permissions qualifying spec
   type PermSet a = List (Perm a)
 
   (* Use a view of b at a to turn a Perm a into a Perm b *)
-  op [a,b] perm_add_view (perm: Perm a, bv: BisimView (b,a)) : Perm b =
+  op [a,b] perm_add_lens (perm: Perm a, lens: Lens (b,a)) : Perm b =
     case perm of
-      | VarPerm (x, vperm) -> VarPerm (x, val_perm_add_view (vperm, bv))
-      | NoVarPerm stperm -> NoVarPerm (st_perm_add_view (stperm, bv))
+      | VarPerm (x, vperm) -> VarPerm (x, val_perm_add_lens (vperm, lens))
+      | NoVarPerm stperm -> NoVarPerm (st_perm_add_lens (stperm, lens))
 
   (* Use a view of b at a to turn a PermSet a into a PermSet b *)
-  op [a,b] perm_set_add_view (perms: PermSet a, bv: BisimView (b,a)) : PermSet b =
-    map (fn p -> perm_add_view (p, bv)) perms
+  op [a,b] perm_set_add_lens (perms: PermSet a, lens: Lens (b,a)) : PermSet b =
+    map (fn p -> perm_add_lens (p, lens)) perms
 
   (* Evaluate a permission to a PermEval *)
   op [a] eval_perm (asgn: SplAssign) (perm: Perm a) : PermEval ((), a) =
@@ -683,7 +723,7 @@ C_Permissions qualifying spec
          leq_allocated ((stree1 spl).allocated, (stree2 spl).allocated))
 
   (* Permission allowing allocation of automatic storage, i.e., stack frames *)
-  op auto_allocation_perm : ImplPerm () =
+  op auto_allocation_impl_perm : ImplPerm () =
     fn _ ->
       always_impl_biview
         (storage_preorder
@@ -702,8 +742,11 @@ C_Permissions qualifying spec
                  (zip (auto1, prefix (auto2, length auto1)))),
             (=)))
 
+  op [a] auto_allocation_perm : CPermission ((), a) =
+    perm_of_impl_perm auto_allocation_impl_perm
+
   (* Permission allowing malloc *)
-  op malloc_allocation_perm : ImplPerm () =
+  op malloc_allocation_impl_perm : ImplPerm () =
     fn _ ->
       always_impl_biview
         (storage_preorder
@@ -718,6 +761,9 @@ C_Permissions qualifying spec
                            | (Some b1, Some b2) -> b1 = b2
                            | _ -> false)
                 (zip (alloc1, prefix (alloc2, length alloc1))))))
+
+  op [a] malloc_allocation_perm : CPermission ((), a) =
+    perm_of_impl_perm malloc_allocation_impl_perm
 
   (*  *)
   op equal_except_current_scope (r:R,leq:PreOrder (Option LocalScope))
@@ -741,7 +787,7 @@ C_Permissions qualifying spec
 
   (* Permission for deallocating the current stack frame assuming that we have
   permission to arbitrarily modify any variable in vars *)
-  op current_frame_dealloc_perm (vars: List Identifier) : ImplPerm () =
+  op current_frame_dealloc_impl_perm (vars: List Identifier) : ImplPerm () =
     fn r ->
       [{implview_ant =
           equal_except_current_scope
@@ -767,14 +813,17 @@ C_Permissions qualifying spec
                  | (Some _, None) -> true
                  | (None, Some _) -> false)}]
 
+  op [a] current_frame_dealloc_perm (vars: List Identifier) : CPermission ((), a) =
+    perm_of_impl_perm (current_frame_dealloc_impl_perm vars)
+
 
   (***
-   *** Some Useful Value Abstractions
+   *** Some Useful Value Permissions
    ***)
 
   (* Build a value abstraction that does not look at the heap *)
   (* FIXME: this should involve a type... *)
-  op [a] non_heap_abstraction (R: Relation (Value,a)) : ValueAbs a =
+  op [a] non_heap_valueabs (R: Relation (Value,a)) : ValueAbs a =
     fn spl -> fn r ->
       {biview = fn ((stree,vtree),a) ->
          (fa (spl')
@@ -787,12 +836,16 @@ C_Permissions qualifying spec
             splitting_leq (spl',spl) || vtree1 spl' = vtree2 spl'),
        bv_leq2 = fn _ -> true}
 
+  op [a] non_heap_cperm (R: Relation (Value,a)) : CPermission (Value, a) =
+    perm_of_spl_abs (non_heap_valueabs R)
+
   (* The value abstraction for boolean values *)
-  op bool_valueabs : ValueAbs Bool =
-    non_heap_abstraction (fn (v,b) -> zeroScalarValue? v = return b)
+  op bool_cperm : CPermission (Value, Bool) =
+    non_heap_cperm (fn (v,b) -> zeroScalarValue? v = return b)
 
   (* Turn a value abstraction into a constant value abstraction, by adding a
   side condition that prevents the value itself from being modified *)
+  (*
   op [a] mk_const_value_abs (vabs: ValueAbs a) : ValueAbs a =
     fn splset -> fn r ->
       {biview = (vabs splset r).biview,
@@ -800,11 +853,13 @@ C_Permissions qualifying spec
          (vabs splset r).bv_leq1 ((stree1,vtree1),(stree2,vtree2)) &&
          vtree1 = vtree2,
        bv_leq2 = (vabs splset r).bv_leq2}
+   *)
 
   (* Build a standard pointer-based value abstraction, where non-unity
   fractional permissions = read-only permissions *)
-  op [a] standard_pointer_valueabs (bv:BisimView (Storage * Type
-                                                    * ObjectDesignator, a)) : ValueAbs a =
+  (*
+  op [a] pointer_valueabs (bv:BisimView (Storage * Type
+                                           * ObjectDesignator, a)) : ValueAbs a =
     fn spl -> fn r ->
       {biview = fn ((stree,vtree),a) ->
          (case vtree spl of
@@ -827,6 +882,24 @@ C_Permissions qualifying spec
             (~(splitting_leq (spl',spl)) =>
                stree1 spl' = stree2 spl' && vtree1 spl' = vtree2 spl')),
        bv_leq2 = bv.bv_leq2}
+   *)
 
+
+  (* FIXME: define all these! *)
+
+  op [a] pointer_cperm (perm:CPermission (Value, a)) : CPermission (Value, a)
+
+  (* FIXME: need to borrow individual fields from an array... *)
+  op [a] arary_pointer_cperm (perm:CPermission (Value, a)) : CPermission (Value, a)
+
+  type StructFieldCPerms a = List (Identifier * Option (CPermission (Value, a)))
+
+  op [a] struct_cperm (fields: StructFieldCPerms a) : CPermission (Value, a)
+
+  op [a] struct_pointer_cperm (fields: StructFieldCPerms a) : CPermission (Value, a)
+
+  (* FIXME: figure out the monotonicity condition here... *)
+  op [a] struct_pointer_rec_cperm (fields: CPermission (Value, a) ->
+                                     StructFieldCPerms a) : CPermission (Value, a)
 
 end-spec
