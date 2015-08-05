@@ -324,7 +324,7 @@ CGen qualifying spec
 
 
   (***
-   *** Unfolding Value Abstractions
+   *** Unfolding / Simplifying Things
    ***)
 
   (* The user needs to supply theorems for this to unfold the definition of any
@@ -337,6 +337,25 @@ CGen qualifying spec
     fa (vabs')
       vabs' = non_heap_abstraction (fn (v,b) -> zeroScalarValue? v = return b) =>
       enabled? (USER_unfold_value_abs (bool_valueabs, vabs'))
+
+  op [a,b] USER_simplify_biview (bv: BisimView (a,b),
+                                 bv_simp: BisimView (a,b)) : Bool =
+    bv = bv_simp
+
+  theorem USER_simplify_biview_id_biview is [a]
+    fa (bv_simp:BisimView (a,a))
+      bv_simp = biview_of_lens id_lens =>
+      enabled? (USER_simplify_biview (identity_biview, bv_simp))
+
+  theorem USER_simplify_biview_proj1_biview is [a,b]
+    fa (bv_simp:BisimView (a*b,a))
+      bv_simp = biview_of_lens proj1_lens =>
+      enabled? (USER_simplify_biview (proj1_biview, bv_simp))
+
+  theorem USER_simplify_biview_proj2_biview is [a,b]
+    fa (bv_simp:BisimView (a*b,b))
+      bv_simp = biview_of_lens proj2_lens =>
+      enabled? (USER_simplify_biview (proj2_biview, bv_simp))
 
 
   (***
@@ -393,23 +412,30 @@ CGen qualifying spec
   that correponds to a given lens, and extract all permissions for that variable
   as value permissions *)
   op [a,b] extract_var_perms_for_lens_pred (perms_in: PermSet a,
-                                            var_lens: Lens (a,b),
+                                            var_bv: BisimView (a,b),
                                             var: Identifier,
                                             vperms: List (ValPerm b),
                                             perms_out: PermSet a) : Bool =
     perm_set_weaker? (perms_out ++
                       map (fn vperm ->
-                             VarPerm (var,
-                                      val_perm_add_view
-                                        (vperm, biview_of_lens var_lens)))
+                             VarPerm (var, val_perm_add_view (vperm, var_bv)))
                         vperms,
                       perms_in)
 
+
+  op [a,b] extract_var_perms_for_lens_pred_SIMP (perms_in: PermSet a,
+                                                 var_bv: BisimView (a,b),
+                                                 var: Identifier,
+                                                 vperms: List (ValPerm b),
+                                                 perms_out: PermSet a) : Bool =
+    extract_var_perms_for_lens_pred (perms_in, var_bv, var, vperms, perms_out)
+
+
   theorem extract_var_perms_for_lens_pred_var1 is [a,b]
-    fa (x,splexpr,vabs,perms_in,var_lens:Lens (a,b),
+    fa (x,splexpr,vabs,perms_in,var_bv:BisimView (a,b),
         var,vperms_out,perms_out,vperms',perms_out',read_vabs,rem_vabs)
       enabled? (extract_var_perms_for_lens_pred
-                  (perms_in,var_lens,var,vperms',perms_out')) &&
+                  (perms_in,var_bv,var,vperms',perms_out')) &&
       enabled? (extract_perm_for_var_read_pred (vabs, read_vabs, rem_vabs)) &&
       var = x &&
       vperms_out = ValPerm (splexpr,
@@ -417,46 +443,50 @@ CGen qualifying spec
                               (read_vabs, identity_biview))::vperms' &&
       perms_out = VarPerm (x,
                            ValEqPerm (splexpr,
-                                      value_abs_add_view
-                                        (rem_vabs,
-                                         biview_of_lens var_lens),
+                                      value_abs_add_view (rem_vabs, var_bv),
                                       LV_ident x))::perms_out'
       =>
-      enabled? (extract_var_perms_for_lens_pred
+      enabled? (extract_var_perms_for_lens_pred_SIMP
                   (VarPerm
-                     (x, ValPerm (splexpr,
-                                  value_abs_add_view
-                                    (vabs, biview_of_lens var_lens)))
+                     (x, ValPerm (splexpr, value_abs_add_view (vabs, var_bv)))
                      ::perms_in,
-                   var_lens,var,vperms_out,perms_out))
+                   var_bv,var,vperms_out,perms_out))
 
 
   theorem extract_var_perms_for_lens_pred_var2 is [a,b,c]
-    fa (x,splexpr,vabs,lens:Lens (a,b),perms_in,var_lens:Lens (a,c),
+    fa (x,splexpr,vabs,bv:BisimView (a,b),perms_in,var_bv:BisimView (a,c),
         var,vperms_out,perms_out,vperms',perms_out')
       enabled? (extract_var_perms_for_lens_pred
-                  (perms_in,var_lens,var,vperms',perms_out')) &&
+                  (perms_in,var_bv,var,vperms',perms_out')) &&
       vperms_out = vperms' &&
       perms_out = VarPerm (x, ValPerm (splexpr,
-                                       value_abs_add_view
-                                         (vabs, biview_of_lens lens)))::perms_out'
+                                       value_abs_add_view (vabs, bv)))::perms_out'
       =>
-      enabled? (extract_var_perms_for_lens_pred
+      enabled? (extract_var_perms_for_lens_pred_SIMP
                   (VarPerm
                      (x, ValPerm (splexpr,
-                                    value_abs_add_view (vabs, biview_of_lens lens)))
+                                    value_abs_add_view (vabs, bv)))
                      ::perms_in,
-                   var_lens,var,vperms_out,perms_out))
+                   var_bv,var,vperms_out,perms_out))
 
   theorem extract_var_perms_for_lens_pred_novar is [a,b]
-    fa (stperm,perms_in,var_lens:Lens (a,b),var,vperms_out,perms_out,perms_out')
+    fa (stperm,perms_in,var_bv:BisimView (a,b),var,vperms_out,perms_out,perms_out')
       enabled? (extract_var_perms_for_lens_pred
-                  (perms_in,var_lens,var,vperms_out,perms_out')) &&
+                  (perms_in,var_bv,var,vperms_out,perms_out')) &&
       perms_out = (NoVarPerm stperm)::perms_out'
       =>
-      enabled? (extract_var_perms_for_lens_pred
+      enabled? (extract_var_perms_for_lens_pred_SIMP
                   (NoVarPerm stperm::perms_in,
-                   var_lens,var,vperms_out,perms_out))
+                   var_bv,var,vperms_out,perms_out))
+
+
+  theorem extract_var_perms_for_lens_pred_rule is [a,b]
+    fa (perms_in, var_bv:BisimView (a,b), var_bv_simp, var, vperms, perms_out)
+      enabled? (USER_simplify_biview (var_bv, var_bv_simp)) &&&&
+      extract_var_perms_for_lens_pred_SIMP (perms_in, var_bv_simp,
+                                            var, vperms, perms_out) =>
+      enabled? (extract_var_perms_for_lens_pred (perms_in, var_bv,
+                                                 var, vperms, perms_out))
 
 
   (***
@@ -676,7 +706,7 @@ CGen qualifying spec
   theorem abstracts_expression_var_rule is [a,b]
     fa (envp,perms_in,perms_out,vperms,lens:Lens (a,b),x,m)
       enabled? (extract_var_perms_for_lens_pred
-                  (perms_in, lens, x, vperms, perms_out)) &&&&
+                  (perms_in, biview_of_lens lens, x, vperms, perms_out)) &&&&
       m === VAR_m x =>
       enabled? (abstracts_expression_var envp perms_in perms_out vperms lens m)
 
