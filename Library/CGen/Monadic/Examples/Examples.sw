@@ -7,9 +7,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StIPerm auto_allocation_perm], [])
-         ([StIPerm auto_allocation_perm], [])
-         (Some [ValPerm ([([], None)], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([StPerm ([([], None)], auto_allocation_perm)], [])
+         ([StPerm ([([], None)], auto_allocation_perm)], [])
+         (Some [ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          just_return_true
          (TN_sint, "just_return_true", [])
          m}
@@ -24,9 +24,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StIPerm auto_allocation_perm], [])
-         ([StIPerm auto_allocation_perm], [])
-         (Some [ValPerm ([([], None)], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([StPerm ([([], None)], auto_allocation_perm)], [])
+         ([StPerm ([([], None)], auto_allocation_perm)], [])
+         (Some [ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          just_return_false
          (TN_sint, "just_return_false", [])
          m}
@@ -41,10 +41,10 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StIPerm auto_allocation_perm],
-          [[ValPerm ([], value_abs_add_view (bool_valueabs, identity_biview))]])
-         ([StIPerm auto_allocation_perm],[[]])
-         (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([StPerm ([([], None)], auto_allocation_perm)],
+          [[ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
+         ([StPerm ([([], None)], auto_allocation_perm)],[[]])
+         (Some [ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])
          m}
@@ -61,10 +61,10 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StIPerm auto_allocation_perm],
-          [[ValPerm ([], value_abs_add_view (bool_valueabs, identity_biview))]])
-         ([StIPerm auto_allocation_perm],[[]])
-         (Some [ValPerm ([], value_abs_add_view (bool_valueabs, proj2_biview))])
+         ([StPerm ([([], None)], auto_allocation_perm)],
+          [[ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
+         ([StPerm ([([], None)], auto_allocation_perm)],[[]])
+         (Some [ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          negate_bool
          (TN_sint, "negate_bool", [(TN_sint, "b")])
          m}

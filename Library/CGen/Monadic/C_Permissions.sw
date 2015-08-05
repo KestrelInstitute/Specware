@@ -841,9 +841,9 @@ C_Permissions qualifying spec
   op [a] non_heap_cperm (R: Relation (Value,a)) : CValPerm a =
     perm_of_spl_abs (non_heap_valueabs R)
 
-  (* The value abstraction for boolean values *)
-  op bool_cperm : CValPerm Bool =
-    non_heap_cperm (fn (v,b) -> zeroScalarValue? v = return b)
+  (* The permission for boolean values *)
+  op bool_R : Relation (Value,Bool) = (fn (v,b) -> zeroScalarValue? v = return b)
+  op bool_cperm : CValPerm Bool = non_heap_cperm bool_R
 
   (* Turn a value abstraction into a constant value abstraction, by adding a
   side condition that prevents the value itself from being modified *)
