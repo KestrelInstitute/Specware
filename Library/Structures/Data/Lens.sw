@@ -50,6 +50,11 @@ end-proof
   op [a] unit_lens : Lens (a,()) =
     {lens_get = fn a -> (), lens_set = fn a -> fn () -> a}
 
+  (* The lens of an isomorphism *)
+  op [a,b] iso_lens (iso: Bijection (a,b)) : Lens (a,b) =
+    {lens_get = iso,
+     lens_set = fn a -> fn b -> inverse iso b}
+
   (* The lens for the first projection of a pair *)
   op [a,b] proj1_lens : Lens (a*b,a) =
     {lens_get = fn (a,b) -> a, lens_set = fn (a,b) -> fn a' -> (a',b)}

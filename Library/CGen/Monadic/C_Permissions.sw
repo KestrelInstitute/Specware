@@ -207,6 +207,8 @@ C_Permissions qualifying spec
 
   (* A gneric permission is a splittable abstraction + implicational perm *)
   type CPermission (c,a) = SplittableAbs (c, a) * ImplPerm c
+  type CValPerm a = CPermission (Value, a)
+  type CUnitPerm a = CPermission ((), a)
 
   (* The trivial permission *)
   op [c,a] trivial_perm : CPermission (c,a) =
@@ -395,8 +397,8 @@ C_Permissions qualifying spec
 
   (* Permissions for a value *)
   type ValPerm a =
-    | ValPerm (SplSetExpr * CPermission (Value, a))
-    | ValEqPerm (SplSetExpr * CPermission (Value, a) * LValue)
+    | ValPerm (SplSetExpr * CValPerm a)
+    | ValEqPerm (SplSetExpr * CValPerm a * LValue)
 
   (* Use a lens from b to a to turn a ValPerm a into a ValPerm b *)
   op [a,b] val_perm_add_lens (vperm: ValPerm a, lens: Lens (b,a)) : ValPerm b =
@@ -836,11 +838,11 @@ C_Permissions qualifying spec
             splitting_leq (spl',spl) || vtree1 spl' = vtree2 spl'),
        bv_leq2 = fn _ -> true}
 
-  op [a] non_heap_cperm (R: Relation (Value,a)) : CPermission (Value, a) =
+  op [a] non_heap_cperm (R: Relation (Value,a)) : CValPerm a =
     perm_of_spl_abs (non_heap_valueabs R)
 
   (* The value abstraction for boolean values *)
-  op bool_cperm : CPermission (Value, Bool) =
+  op bool_cperm : CValPerm Bool =
     non_heap_cperm (fn (v,b) -> zeroScalarValue? v = return b)
 
   (* Turn a value abstraction into a constant value abstraction, by adding a
@@ -887,19 +889,27 @@ C_Permissions qualifying spec
 
   (* FIXME: define all these! *)
 
-  op [a] pointer_cperm (perm:CPermission (Value, a)) : CPermission (Value, a)
+  op [a] pointer_cperm (perm:CValPerm a) : CValPerm a
 
   (* FIXME: need to borrow individual fields from an array... *)
-  op [a] arary_pointer_cperm (perm:CPermission (Value, a)) : CPermission (Value, a)
+  op [a] arary_pointer_cperm (perm:CValPerm a) : CValPerm a
 
-  type StructFieldCPerms a = List (Identifier * Option (CPermission (Value, a)))
+  type StructFieldCPerms a = List (Identifier * Option (CValPerm a))
 
-  op [a] struct_cperm (fields: StructFieldCPerms a) : CPermission (Value, a)
+  op [a] struct_cperm (fields: StructFieldCPerms a) : CValPerm a
 
-  op [a] struct_pointer_cperm (fields: StructFieldCPerms a) : CPermission (Value, a)
+  op [a] struct_pointer_cperm (fields: StructFieldCPerms a) : CValPerm a
 
   (* FIXME: figure out the monotonicity condition here... *)
-  op [a] struct_pointer_rec_cperm (fields: CPermission (Value, a) ->
-                                     StructFieldCPerms a) : CPermission (Value, a)
+  op [a] struct_pointer_rec_cperm (fields: CValPerm a ->
+                                     StructFieldCPerms a) : CValPerm a
+
+  (* Same as struct_pointer_cperm, but folded_fields is a hint to the C
+  generator that we should view this as a single unfolding of
+  struct_pointer_rec_cperm, and try to fold it back when possible *)
+  op [a] struct_pointer_rec_unfolded_cperm (fields: StructFieldCPerms a,
+                                            folded_fields: CValPerm a ->
+                                              StructFieldCPerms a) : CValPerm a =
+    struct_pointer_cperm fields
 
 end-spec
