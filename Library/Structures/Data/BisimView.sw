@@ -1,6 +1,6 @@
 BisimView qualifying spec
   import ISet
-  import Lens
+  import Lens, OptLens
 
   (* We say relation R is a good-only bisimulation between preorders leq1 and
   leq2 iff the following forall-exists diagrams hold (where "solid" lines are
@@ -112,7 +112,7 @@ BisimView qualifying spec
     (fa (a,b) preorders_preserve_R_at_point? (leq1,leq2,R) (a,b))
 
   (* States that any number of leq1 and leq2 steps starting at x can be
-  decomposed into leq1 steps followed by leq2 steps or vice-versa *)
+  decomposed into leq1 steps followed by leq2 steps *)
   op [a] preorders_decompose_at_point? (leq1: PreOrder a, leq2: PreOrder a)
                                        (x: a) : Bool =
     (fa (y)
@@ -126,12 +126,15 @@ BisimView qualifying spec
                             bv2: BisimView (a,b)) : BisimView (a,b) =
     {biview = fn (a,b) ->
        bv1.biview (a,b) && bv2.biview (a,b) &&
-       preorders_preserve_R_at_point? (bv1.bv_leq1,bv1.bv_leq2,
-                                       bv2.biview) (a,b) &&
-       preorders_preserve_R_at_point? (bv2.bv_leq1,bv2.bv_leq2,
-                                       bv1.biview) (a,b) &&
-       preorders_decompose_at_point? (bv1.bv_leq1,bv2.bv_leq1) a &&
-       preorders_decompose_at_point? (bv1.bv_leq2,bv2.bv_leq2) b,
+       (preorders_preserve_R_at_point? (bv1.bv_leq1,bv1.bv_leq2,
+                                        bv2.biview) (a,b) &&
+        preorders_decompose_at_point? (bv1.bv_leq1,bv2.bv_leq1) a &&
+        preorders_decompose_at_point? (bv1.bv_leq2,bv2.bv_leq2) b)
+       ||
+       (preorders_preserve_R_at_point? (bv2.bv_leq1,bv2.bv_leq2,
+                                        bv1.biview) (a,b) &&
+        preorders_decompose_at_point? (bv2.bv_leq1,bv1.bv_leq1) a &&
+        preorders_decompose_at_point? (bv2.bv_leq2,bv1.bv_leq2) b),
      bv_leq1 = rt_closure (relCompose (bv1.bv_leq1, bv2.bv_leq1)),
      bv_leq2 = rt_closure (relCompose (bv1.bv_leq2, bv2.bv_leq2))}
 
@@ -341,6 +344,26 @@ BisimView qualifying spec
                                bv2: BisimView (a,c)) : BisimView (a,b*c) =
     conjoin_biviews (compose_biviews (bv1, invert_biview proj1_biview),
                      compose_biviews (bv2, invert_biview proj2_biview))
+
+  (* Build the biview corresponding to an option lens; this biview allows an a
+  to be updated to one that does not satisfy the relation, but not vice-versa *)
+  op [a,b] biview_of_opt_lens (optlens: OptLens(a,b)) : BisimView(a,b) =
+    {biview = fn (a,b) -> optlens.optlens_get a = Some b,
+     bv_leq1 = (fn (a1,a2) ->
+                  case (optlens.optlens_get a1, optlens.optlens_get a2) of
+                    | (None, None) -> true
+                    | (Some _, None) -> true
+                    | (None, Some _) -> false
+                    | (Some _, Some b2) ->
+                      optlens.optlens_set a1 b2 = Some a2),
+     bv_leq2 = fn (b1,b2) -> true}
+
+  (* Intersect the relation of a biview with another relation *)
+  op [a,b] biview_intersect (R: Relation (a,b),
+                             bv: BisimView (a,b)) : BisimView (a,b) =
+    {biview = iSetInter (R, bv.biview),
+     bv_leq1 = bv.bv_leq1,
+     bv_leq2 = bv.bv_leq2}
 
 
   (***

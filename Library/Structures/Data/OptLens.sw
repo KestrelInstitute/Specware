@@ -1,5 +1,6 @@
 OptLens qualifying spec
   import /Library/General/OptionExt
+  import Lens
 
 (* Option lenses are like lenses (see Lens.sw), but where the getter and setter
    functions can fail, returning None. Stated differently, option lenses are
@@ -60,6 +61,36 @@ op [a,b,c] optlens_separate? (l1: OptLens (a,b), l2: OptLens (a,c)) : Bool =
   (fa (a,b,c)
      {a' <- l1.optlens_set a b; l2.optlens_set a c} =
      {a' <- l2.optlens_set a c; l1.optlens_set a b})
-  
+
+  (* Build an option lens out of a lens *)
+  op [a,b] opt_lens_of_lens (l: Lens (a,b)) : OptLens (a,b) =
+    {optlens_get = fn a -> Some (l.lens_get a),
+     optlens_set = fn a -> fn b -> Some (l.lens_set a b)}
+
+  (* The option lens for an option type *)
+  op [a] option_opt_lens : OptLens (Option a, a) =
+    {optlens_get = fn opt -> opt,
+     optlens_set = fn opt -> fn a -> Some (Some a)}
+
+  (* The option lenses that look at the head and the tail, respectively, of a
+  non-empty list. Both fail for empty lists. *)
+  op [a] list_head_opt_lens : OptLens (List a, a) =
+    {optlens_get = (fn l ->
+                      case l of
+                        | [] -> None
+                        | x::_ -> Some x),
+     optlens_set = (fn l -> fn x' ->
+                      case l of
+                        | [] -> None
+                        | x::l' -> Some (x'::l'))}
+  op [a] list_tail_opt_lens : OptLens (List a, List a) =
+    {optlens_get = (fn l ->
+                      case l of
+                        | [] -> None
+                        | _::l' -> Some l'),
+     optlens_set = (fn l -> fn l' ->
+                      case l of
+                        | [] -> None
+                        | x::_ -> Some (x::l'))}
 
 end-spec
