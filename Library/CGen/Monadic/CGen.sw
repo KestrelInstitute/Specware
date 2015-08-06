@@ -917,6 +917,42 @@ CGen qualifying spec
       =>
       enabled? (perm_set_weaker? (perms1, perms2))
 
+  (* arg_list_perms_perm_set_weaker? *)
+  (* Special-purpose predicate to reduce the rewriting we need to do *)
+  op [a] arg_list_perms_perm_set_weaker? (alperms: ArgListPerms a,
+                                          vars: List (TypeName * Identifier),
+                                          perms: PermSet a) : Bool =
+    perm_set_weaker? (perm_set_of_arg_perms (alperms, map (fn x -> x.2) vars),
+                      perms)
+
+  theorem arg_list_perms_perm_set_weaker_1 is [a]
+    fa (stperm:StPerm a,stperms,vpermss,vars,perms)
+      enabled? (exists_pred
+                  (fn perm ->
+                     perm_weaker? (NoVarPerm stperm, perm)) perms) &&
+      enabled? (arg_list_perms_perm_set_weaker? ((stperms,vpermss), vars, perms)) =>
+      enabled? (arg_list_perms_perm_set_weaker?
+                  ((stperm::stperms,vpermss), vars, perms))
+
+  theorem arg_list_perms_perm_set_weaker_2 is [a]
+    fa (vperm,vperms,vpermss,tp,var,vars,perms:PermSet a)
+      enabled? (exists_pred
+                  (fn perm ->
+                     perm_weaker? (VarPerm (var,vperm), perm)) perms) &&
+      enabled? (arg_list_perms_perm_set_weaker? (([],vperms::vpermss), vars, perms)) =>
+      enabled? (arg_list_perms_perm_set_weaker?
+                  (([],(vperm::vperms)::vpermss), ((tp,var)::vars), perms))
+
+  theorem arg_list_perms_perm_set_weaker_3 is [a]
+    fa (vpermss,tp,var,vars,perms:PermSet a)
+      enabled? (arg_list_perms_perm_set_weaker? (([],vpermss), vars, perms)) =>
+      enabled? (arg_list_perms_perm_set_weaker?
+                  (([],[]::vpermss), ((tp,var)::vars), perms))
+
+  theorem arg_list_perms_perm_set_weaker_4 is [a]
+    fa (perms:PermSet a)
+      true => enabled? (arg_list_perms_perm_set_weaker? (([],[]), [], perms))
+
 
   (***
    *** Constant Expressions
@@ -1269,7 +1305,7 @@ CGen qualifying spec
   (* FIXME: also need a value_abs_has_type precondition *)
   theorem FUNCTION_correct is [a,b]
     fa (envp,perms_in,perms_in_sub,perms_out,ret_perms,perms_out_sub,ret_perms_sub,
-        perms_out_sub',f:a->b,m,prototype,body)
+        f:a->b,m,prototype,body)
       m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
       enabled? (in_pred (StPerm ([([], None)],
                                  cperm_add_lens (auto_allocation_perm, unit_lens)),
@@ -1283,8 +1319,7 @@ CGen qualifying spec
          ret_perms_sub
          f
          body) &&&&
-      is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&&&
-      perm_set_weaker? (perms_out_sub', perms_out_sub) &&&&
+      arg_list_perms_perm_set_weaker? (perms_out, prototype.3, perms_out_sub) &&&&
       ret_val_perm_weaker? (ret_perms, ret_perms_sub) =>
       abstracts_c_function_decl envp perms_in perms_out ret_perms f prototype m
 
