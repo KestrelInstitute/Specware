@@ -548,6 +548,11 @@ C_Permissions qualifying spec
                            (rvperm: RetValPerm a) : PermEval (Option Value, a) =
     opt_perm_eval (mapOption (eval_val_perms asgn) rvperm)
 
+  op [a] ret_val_perm_weaker? : PreOrder (RetValPerm a) =
+    fn (rvperm1,rvperm2) ->
+      (fa (asgn) perm_eval_weaker? (eval_ret_val_perm asgn rvperm1,
+                                    eval_ret_val_perm asgn rvperm2))
+
 
   (***
    *** Proving Abstraction Properties of Computations

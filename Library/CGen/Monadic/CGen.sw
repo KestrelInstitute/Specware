@@ -102,7 +102,21 @@ CGen qualifying spec
     fa (pred: a -> Bool, x, l)
       enabled? (pred x) &&
       enabled? (forall_pred pred l) =>
-      forall_pred pred (x::l)
+      enabled? (forall_pred pred (x::l))
+
+  (* NOTE: this predicate is for ground terms pred and l only *)
+  op [a] exists_pred (pred: a -> Bool) (l: List a) : Bool =
+    exists? pred l
+
+  theorem exists_pred_nil is [a]
+    fa (pred: a -> Bool)
+      true => enabled? (exists_pred pred [])
+
+  theorem exists_pred_cons is [a]
+    fa (pred: a -> Bool, x, l)
+      enabled? (pred x) ||
+      enabled? (exists_pred pred l) =>
+      enabled? (exists_pred pred (x::l))
 
   op [a] in_pred (x:a, l:List a) : Bool =
     ex (i) l@@i = Some x
@@ -813,29 +827,95 @@ CGen qualifying spec
    *** Proving perm_set_weaker?
    ***)
 
+  (* FIXME: the rules for stperms and vperms should consider the splexprs... *)
+
+  (* cperm_weaker? *)
+
+  theorem cperm_weaker_lens is [a,b,c]
+    fa (lens:Lens (a,b),cperm1,cperm2:CPermission (c,b))
+      enabled? (cperm_weaker? (cperm1,cperm2)) =>
+      enabled? (cperm_weaker? (cperm_add_lens (cperm1, lens),
+                               cperm_add_lens (cperm2, lens)))
+
+  theorem cperm_weaker_no_heap is [a]
+    fa (R: Relation (Value,a))
+      true => enabled? (cperm_weaker? (non_heap_cperm R, non_heap_cperm R))
+
+  (* Short-circuit for equal cperms *)
+  theorem cperm_weaker_id is [a,c]
+    fa (cperm:CPermission (c,a))
+      true => enabled? (cperm_weaker? (cperm,cperm))
+
+  (* val_perm_weaker? *)
+
+  theorem val_perm_weaker_noeq is [a]
+    fa (splexpr,cperm1,cperm2:CValPerm a)
+      enabled? (cperm_weaker? (cperm1,cperm2)) =>
+      enabled? (val_perm_weaker? (ValPerm (splexpr,cperm1),
+                                  ValPerm (splexpr,cperm2)))
+
+  theorem val_perm_weaker_noeq_eq is [a]
+    fa (splexpr,lv,cperm1,cperm2:CValPerm a)
+      enabled? (cperm_weaker? (cperm1,cperm2)) =>
+      enabled? (val_perm_weaker? (ValPerm (splexpr,cperm1),
+                                  ValEqPerm (splexpr,cperm2,lv)))
+
+  theorem val_perm_weaker_eq is [a]
+    fa (splexpr,lv,cperm1,cperm2:CValPerm a)
+      enabled? (cperm_weaker? (cperm1,cperm2)) =>
+      enabled? (val_perm_weaker? (ValEqPerm (splexpr,cperm1,lv),
+                                  ValEqPerm (splexpr,cperm2,lv)))
+
+  (* Short-circuit for equal val perms *)
+  theorem val_perm_weaker_id is [a]
+    fa (vperm:ValPerm a)
+      true => enabled? (val_perm_weaker? (vperm,vperm))
+
+  (* val_perms_weaker? *)
+
+  theorem val_perms_weaker_rule is [a]
+    fa (vperms1,vperms2:List (ValPerm a))
+      enabled? (forall_pred
+                  (fn vperm1 ->
+                     exists_pred (fn vperm2 ->
+                                    val_perm_weaker? (vperm1, vperm2)) vperms2)
+                  vperms1) =>
+      enabled? (val_perms_weaker? (vperms1,vperms2))
+
+  (* ret_val_perm_weaker? *)
+
+  theorem ret_val_perm_weaker_some is [a]
+    fa (vperms1,vperms2:List (ValPerm a))
+      enabled? (val_perms_weaker? (vperms1,vperms2)) =>
+      enabled? (ret_val_perm_weaker? (Some vperms1, Some vperms2))
+
+  (* perm_weaker? *)
+
+  theorem perm_weaker_novar is [a]
+    fa (stperm: StPerm a)
+      true => enabled? (perm_weaker? (NoVarPerm stperm, NoVarPerm stperm))
+
+  theorem perm_weaker_var is [a]
+    fa (x,vperm1,vperm2: ValPerm a)
+      enabled? (val_perm_weaker? (vperm1,vperm2)) =>
+      enabled? (perm_weaker? (VarPerm (x, vperm1), VarPerm (x, vperm2)))
+
+  (* Short-circuit for equal perms *)
   theorem perm_weaker_id is [a]
-    fa (perm: Perm a)
-      true => enabled? (perm_weaker? (perm, perm))
+    fa (perm:Perm a)
+      true => enabled? (perm_weaker? (perm,perm))
 
-  op [a] perm_weaker_than_set? (perm: Perm a, perms: PermSet a) : Bool =
-    perm_set_weaker? ([perm], perms)
-
-  theorem perm_weaker_than_set_rule is [a]
-    fa (perm:Perm a, perm1, perms)
-      enabled? (perm_weaker? (perm, perm1)) ||
-      enabled? (perm_weaker_than_set? (perm, perms)) =>
-      enabled? (perm_weaker_than_set? (perm, perm1::perms))
-
-
-  (* perm_set_weaker *)
+  (* perm_set_weaker? *)
 
   theorem perm_set_weaker_rule is [a]
-    fa (perms_l,perms_r:PermSet a)
+    fa (perms1,perms2:PermSet a)
       enabled? (forall_pred
-                  (fn perm -> perm_weaker_than_set? (perm, perms_r))
-                  perms_l)
+                  (fn perm1 ->
+                     exists_pred (fn perm2 ->
+                                    perm_weaker? (perm1, perm2)) perms2)
+                  perms1)
       =>
-      enabled? (perm_set_weaker? (perms_l, perms_r))
+      enabled? (perm_set_weaker? (perms1, perms2))
 
 
   (***
@@ -1205,7 +1285,7 @@ CGen qualifying spec
          body) &&&&
       is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&&&
       perm_set_weaker? (perms_out_sub', perms_out_sub) &&&&
-      ret_perms === ret_perms_sub =>
+      ret_val_perm_weaker? (ret_perms, ret_perms_sub) =>
       abstracts_c_function_decl envp perms_in perms_out ret_perms f prototype m
 
 end-spec

@@ -42,9 +42,9 @@ Examples_spec = spec
        abstracts_c_function_decl
          (fn _ -> true)
          ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],
-          [[ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
+          [[ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
          ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],[[]])
-         (Some [ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
+         (Some [ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])
          m}
@@ -62,9 +62,9 @@ Examples_spec = spec
        abstracts_c_function_decl
          (fn _ -> true)
          ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],
-          [[ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
+          [[ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
          ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],[[]])
-         (Some [ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
+         (Some [ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          negate_bool
          (TN_sint, "negate_bool", [(TN_sint, "b")])
          m}
