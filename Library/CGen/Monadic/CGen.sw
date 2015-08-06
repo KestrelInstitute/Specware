@@ -34,7 +34,7 @@ CGen qualifying spec
   (* When the first conjunct is an equality, then enable the second conjunct,
   because the rewriter can already see the equality anyway and maybe cannot
   progress (as in post-conditions...) *)
-  theorem enable_second_conjunct is [a]
+  theorem enable_second_conjunct_eq is [a]
     fa (x:a,y:a,b2) x=y && enabled? b2 => x=y &&&& b2
 
   (* When the second conjunct is already proved, we can drop it *)
@@ -1093,12 +1093,35 @@ CGen qualifying spec
 
 
   (***
+   *** Struct Accesses
+   ***)
+
+  op [a,b,c] abstracts_expression_struct_access (envp: EnvPred) (perms_in: PermSet a)
+                                                (perms_out: PermSet a)
+                                                (vperms_out: List (ValPerm c))
+                                                (lens: Lens (b,c)) (e: a -> b)
+                                                (m: Monad Value) : Bool =
+    abstracts_expression envp perms_in perms_out vperms_out (fn x -> lens.lens_get (e x)) m
+
+(*
+  theorem abstracts_expression_struct_access is [a,b,c]
+    fa ()
+      enabled? (abstracts_expression_struct_access
+                  envp perms_in perms_out vperms_out struct_lens struct_e m)
+*)
+
+  op [a,b,c] USER_struct_access (f:a->c, lens:Lens (b,c), e: a->b) : Bool =
+    f = (fn x -> lens.lens_get (e x))
+
+
+  (***
    *** General Rule for Expressions
    ***)
 
-  theorem abstracts_expression_rule is [a,b]
+  theorem abstracts_expression_rule is [a,b,str]
     fa (envp,perms_in,perms_out,vperms_out,f:a->b,m,
-        c,lens(*,f_sub,oper,uop,vabs*))
+        c,lens, (*,f_sub,oper,uop,vabs*)
+        struct_lens,struct_e:a->str)
       clause (enabled? (fun_matches_constant (f, c)),
               abstracts_expression_constant envp perms_in perms_out vperms_out c m)
       ||||
@@ -1110,6 +1133,10 @@ CGen qualifying spec
        abstracts_expression_unary envp perms_in perms_out vabs f_sub oper uop m &&&&
        vperms_out === [ValPerm ([([],None)], vabs)])
          *)
+      ||||
+      clause (enabled? (USER_struct_access (f, struct_lens, struct_e)),
+              abstracts_expression_struct_access
+                envp perms_in perms_out vperms_out struct_lens struct_e m)
       =>
       enabled? (abstracts_expression envp perms_in perms_out vperms_out f m)
 

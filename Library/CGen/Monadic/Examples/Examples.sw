@@ -2,7 +2,7 @@ Examples_spec = spec
   import ../CGen, ../CPrettyPrinter
 
   (* Function that just returns true, as the statement "return 1" *)
-  op just_return_true (x:()) : () * Bool = ((), true)
+  op just_return_true () : () * Bool = ((), true)
   op just_return_true_m :
     {m:ExtDecl |
        abstracts_c_function_decl
