@@ -7,8 +7,8 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))], [])
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))], [])
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))], [])
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))], [])
          (Some [ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          just_return_true
          (TN_sint, "just_return_true", [])
@@ -24,8 +24,8 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))], [])
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))], [])
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))], [])
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))], [])
          (Some [ValPerm ([([], None)], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          just_return_false
          (TN_sint, "just_return_false", [])
@@ -41,9 +41,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))],
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],
           [[ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))],[[]])
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],[[]])
          (Some [ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          boolean_identity
          (TN_sint, "boolean_identity", [(TN_sint, "b")])
@@ -61,9 +61,9 @@ Examples_spec = spec
     {m:ExtDecl |
        abstracts_c_function_decl
          (fn _ -> true)
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))],
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],
           [[ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, id_lens))]])
-         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, id_lens))],[[]])
+         ([StPerm ([([], None)], cperm_add_lens (auto_allocation_perm, unit_lens))],[[]])
          (Some [ValPerm ([], cperm_add_lens (non_heap_cperm bool_R, proj2_lens))])
          negate_bool
          (TN_sint, "negate_bool", [(TN_sint, "b")])

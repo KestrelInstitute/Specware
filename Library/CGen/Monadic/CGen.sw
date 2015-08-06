@@ -240,6 +240,11 @@ CGen qualifying spec
       lens_out = lens =>
       enabled? (is_lens_compose (lens, iso_lens (inverse (fn x -> x)), lens_out))
 
+  theorem is_lens_compose_unit is [a,b]
+    fa (lens:Lens (a,b), lens_out)
+      lens_out = unit_lens =>
+      enabled? (is_lens_compose (lens, unit_lens, lens_out))
+
 
 
   (* compose_biviews *)
@@ -624,11 +629,25 @@ CGen qualifying spec
        res1 lens_suffix) ||
     res2
 
-  (* Nothing factors w.r.t. the unit lens *)
-  theorem if_lens_factors_unit is [a,c]
-    fa (lens: Lens (a,c), res1, res2)
+  (* The unit lens always factors w.r.t. any prefix *)
+  theorem if_lens_factors_unit is [a,b]
+    fa (lens_prefix: Lens (a,b), res1, res2)
+      enabled? (res1 unit_lens) =>
+      enabled? (if_lens_factors (lens_prefix, unit_lens, res1, res2))
+
+  (* Nothing factors w.r.t. the unit lens... except the unit lens, above *)
+  theorem if_lens_factors_unit_id is [a]
+    fa (res1:Lens ((),a)->Bool, res2)
       enabled? res2 =>
-      enabled? (if_lens_factors (unit_lens, lens, res1, res2))
+      enabled? (if_lens_factors (unit_lens, id_lens, res1, res2))
+  theorem if_lens_factors_unit_proj1 is [a,b]
+    fa (res1, res2)
+      enabled? res2 =>
+      enabled? (if_lens_factors (unit_lens, proj1_lens:Lens (a*b,a), res1, res2))
+  theorem if_lens_factors_unit_proj2 is [a,b]
+    fa (res1, res2)
+      enabled? res2 =>
+      enabled? (if_lens_factors (unit_lens, proj2_lens:Lens (a*b,b), res1, res2))
 
   (* Everything factors w.r.t. the identity lens *)
   theorem if_lens_factors_unit is [a,c]
@@ -1173,10 +1192,10 @@ CGen qualifying spec
         perms_out_sub',f:a->b,m,prototype,body)
       m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
       enabled? (in_pred (StPerm ([([], None)],
-                                 cperm_add_lens (auto_allocation_perm, id_lens)),
+                                 cperm_add_lens (auto_allocation_perm, unit_lens)),
                          perms_out.1)) &&&&
-      is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&&&
       is_perm_set_of_arg_perms (perms_in, prototype.3, perms_in_sub) &&&&
+      (* perms_in_sub === perm_set_of_arg_perms (perms_in, map (fn x -> x.2) prototype.3) &&&& *)
       (abstracts_ret_statement
          envp
          perms_in_sub
@@ -1184,6 +1203,7 @@ CGen qualifying spec
          ret_perms_sub
          f
          body) &&&&
+      is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&&&
       perm_set_weaker? (perms_out_sub', perms_out_sub) &&&&
       ret_perms === ret_perms_sub =>
       abstracts_c_function_decl envp perms_in perms_out ret_perms f prototype m

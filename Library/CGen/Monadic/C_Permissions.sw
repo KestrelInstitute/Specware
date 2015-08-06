@@ -754,7 +754,7 @@ C_Permissions qualifying spec
                  (zip (auto1, prefix (auto2, length auto1)))),
             (=)))
 
-  op [a] auto_allocation_perm : CPermission ((), a) =
+  op auto_allocation_perm : CPermission ((), ()) =
     perm_of_impl_perm auto_allocation_impl_perm
 
   (* Permission allowing malloc *)
