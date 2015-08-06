@@ -244,6 +244,10 @@ C_Permissions qualifying spec
                              lens: Lens (a,b)) : CPermission (c,a) =
     (splittable_abs_add_view (perm.1, biview_of_lens lens), perm.2)
 
+  (* Compose a permission with the trivial biview, meaning it is ignored *)
+  op [c,a,b] cperm_ignore (perm: CPermission (c,b)) : CPermission (c,a) =
+    (splittable_abs_add_view (perm.1, trivial_biview), perm.2)
+
   (* The strength preorder for permissions, which maps to the C abstraction
   strength preorder of all abstractions obtained from the related permissions
   after possibly conjoining with another abs *)
@@ -461,6 +465,12 @@ C_Permissions qualifying spec
     fn (vperms1,vperms2) ->
       (fa (asgn) perm_eval_weaker? (eval_val_perms asgn vperms1,
                                     eval_val_perms asgn vperms2))
+
+  (* The strength preorder for lists of storage permissions *)
+  op [a] st_perms_weaker? : PreOrder (List (StPerm a)) =
+    fn (stperms1,stperms2) ->
+      (fa (asgn) perm_eval_weaker? (eval_st_perms asgn stperms1,
+                                    eval_st_perms asgn stperms2))
 
 
   (***

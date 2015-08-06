@@ -201,12 +201,44 @@ CGen qualifying spec
                               lens_out: Lens (a,c)) : Bool =
     lens_compose (lens1, lens2) = lens_out
 
+(*
   theorem is_lens_compose_rule is [a,b,c]
     fa (l1: Lens (a,b), l2: Lens (b,c), lens_out)
       lens_out = {lens_get = (fn a -> l2.lens_get (l1.lens_get a)),
                   lens_set = (fn a -> fn c ->
                                 l1.lens_set a (l2.lens_set (l1.lens_get a) c))} =>
       enabled? (is_lens_compose (l1, l2, lens_out))
+*)
+
+  theorem is_lens_compose_id_l is [a,b]
+    fa (lens:Lens (a,b), lens_out:Lens (a,b))
+      lens_out = lens =>
+      enabled? (is_lens_compose (id_lens, lens, lens_out))
+
+  theorem is_lens_compose_id_r is [a,b]
+    fa (lens:Lens (a,b), lens_out:Lens (a,b))
+      lens_out = lens =>
+      enabled? (is_lens_compose (lens, id_lens, lens_out))
+
+  theorem is_lens_compose_iso_id_l is [a,b]
+    fa (lens:Lens (a,b), lens_out:Lens (a,b))
+      lens_out = lens =>
+      enabled? (is_lens_compose (iso_lens (fn x -> x), lens, lens_out))
+
+  theorem is_lens_compose_iso_id_r is [a,b]
+    fa (lens:Lens (a,b), lens_out:Lens (a,b))
+      lens_out = lens =>
+      enabled? (is_lens_compose (lens, iso_lens (fn x -> x), lens_out))
+
+  theorem is_lens_compose_iso_inv_id_l is [a,b]
+    fa (lens:Lens (a,b), lens_out:Lens (a,b))
+      lens_out = lens =>
+      enabled? (is_lens_compose (iso_lens (inverse (fn x -> x)), lens, lens_out))
+
+  theorem is_lens_compose_iso_inv_id_r is [a,b]
+    fa (lens:Lens (a,b), lens_out:Lens (a,b))
+      lens_out = lens =>
+      enabled? (is_lens_compose (lens, iso_lens (inverse (fn x -> x)), lens_out))
 
 
 
@@ -295,7 +327,7 @@ CGen qualifying spec
   (* st_perm_add_lens *)
 
   op [a,b] is_st_perm_add_lens (lens: Lens (b,a)) (stperm: StPerm a,
-                                                       stperm_out: StPerm b) : Bool =
+                                                   stperm_out: StPerm b) : Bool =
     st_perm_add_lens (stperm, lens) = stperm_out
 
   theorem is_st_perm_add_lens_st is [a,b]
@@ -556,6 +588,13 @@ CGen qualifying spec
                   (NoVarPerm stperm::perms_in,
                    var_lens,var,vperms_out,perms_out))
 
+  theorem extract_var_perms_for_lens_nil is [a,b]
+    fa (var_lens:Lens (a,b),var,vperms_out,perms_out)
+      perms_out = [] && vperms_out = []
+      =>
+      enabled? (extract_var_perms_for_lens
+                  ([],var_lens,var,vperms_out,perms_out))
+
 
   (***
    *** Factoring Permission Sets
@@ -601,79 +640,154 @@ CGen qualifying spec
   (* FIXME HERE: theorems for decomposing lenses *)
 
 
-  (* FIXME HERE NOW: add rules! *)
-  op [a,b] perm_set_factors_to (lens_prefix: Lens (a,b)) (perms: PermSet a,
-                                                          perms_out: PermSet b) : Bool =
-    perm_set_weaker? (perm_set_add_lens (perms_out, lens_prefix), perms)
-
-(*
   (* Predicate for factoring value permissions *)
-  op [a,b] val_perm_unmaps_to (lens_prefix: BisimView (a,b))
-                              (vperm_in: ValPerm a, vperm_out: ValPerm b) : Bool =
-    val_perm_weaker? (val_perm_add_view (vperm_out, lens_prefix), vperm_in)
+  op [a,b] val_perms_factor_to (lens_prefix: Lens (a,b))
+                               (vperms_in: List (ValPerm a),
+                                vperms_out: List (ValPerm b)) : Bool =
+    val_perms_weaker? (val_perms_add_lens (vperms_out, lens_prefix), vperms_in)
 
-  theorem val_perm_unmaps_to_1 is [a,b,c]
-    fa (splexpr,vabs:ValueAbs c,lens,lens_prefix:BisimView (a,b),lens_suffix,vperm_out)
-      enabled? (biview_decomposes_to (lens, lens_prefix, lens_suffix)) &&&&
-      vperm_out === ValPerm (splexpr,value_abs_add_view (vabs, lens_suffix)) =>
-      enabled? (val_perm_unmaps_to
+  theorem val_perms_factor_to_cons is [a,b,c]
+    fa (splexpr,cperm:CValPerm c,lens,vperms,lens_prefix:Lens (a,b),vperms_out,vperms_out1)
+      enabled? (val_perms_factor_to lens_prefix (vperms, vperms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             vperms_out === ValPerm (splexpr,
+                                     cperm_add_lens
+                                       (cperm, lens_suffix))::vperms_out1),
+          vperms_out === vperms_out1)) =>
+      enabled? (val_perms_factor_to
                   lens_prefix
-                  (ValPerm (splexpr,value_abs_add_view (vabs, lens)), vperm_out))
+                  (ValPerm (splexpr,cperm_add_lens (cperm, lens))::vperms, vperms_out))
 
-  theorem val_perm_unmaps_to_2 is [a,b,c]
-    fa (impl,lens_prefix:BisimView (a,b),vperm_out)
-      vperm_out = ValIPerm impl =>
-      enabled? (val_perm_unmaps_to lens_prefix (ValIPerm impl, vperm_out))
-
-
-  (* Predicate for un-mapping storage permissions *)
-  op [a,b] st_perm_unmaps_to (lens_prefix: BisimView (a,b))
-                              (stperm_in: StPerm a, stperm_out: StPerm b) : Bool =
-    st_perm_weaker? (st_perm_add_view (stperm_out, lens_prefix), stperm_in)
-
-  theorem st_perm_unmaps_to_1 is [a,b,c]
-    fa (splexpr,uabs:UnitAbs c,lens,lens_prefix:BisimView (a,b),lens_suffix,stperm_out)
-      enabled? (biview_decomposes_to (lens, lens_prefix, lens_suffix)) &&&&
-      stperm_out === StPerm (splexpr,unit_abs_add_view (uabs, lens_suffix)) =>
-      enabled? (st_perm_unmaps_to
+  theorem val_perms_factor_to_cons_eq is [a,b,c]
+    fa (splexpr,cperm:CValPerm c,lens,lv,vperms,lens_prefix:Lens (a,b),vperms_out,vperms_out1)
+      enabled? (val_perms_factor_to lens_prefix (vperms, vperms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             vperms_out === ValEqPerm (splexpr,
+                                       cperm_add_lens (cperm, lens_suffix),
+                                       lv)::vperms_out1),
+          vperms_out === vperms_out1)) =>
+      enabled? (val_perms_factor_to
                   lens_prefix
-                  (StPerm (splexpr,unit_abs_add_view (uabs, lens)), stperm_out))
+                  (ValEqPerm (splexpr,
+                              cperm_add_lens (cperm, lens),
+                              lv)::vperms, vperms_out))
 
-  theorem st_perm_unmaps_to_2 is [a,b,c]
-    fa (impl,lens_prefix:BisimView (a,b),stperm_out)
-      stperm_out = StIPerm impl =>
-      enabled? (st_perm_unmaps_to lens_prefix (StIPerm impl, stperm_out))
+  theorem val_perms_factor_to_cons_nil is [a,b]
+    fa (lens_prefix:Lens (a,b), vperms_out)
+      vperms_out = [] =>
+      enabled? (val_perms_factor_to lens_prefix ([], vperms_out))
 
 
-  (* Predicate for un-mapping individual permissions *)
-  op [a,b] perm_unmaps_to (lens_prefix: BisimView (a,b))
-                          (perm_in: Perm a, perm_out: Perm b) : Bool =
-    perm_weaker? (perm_add_view (perm_out, lens_prefix), perm_in)
+  (* Predicate for factoring storage permissions *)
+  op [a,b] st_perms_factor_to (lens_prefix: Lens (a,b))
+                               (stperms_in: List (StPerm a),
+                                stperms_out: List (StPerm b)) : Bool =
+    st_perms_weaker? (st_perms_add_lens (stperms_out, lens_prefix), stperms_in)
 
-  theorem perm_unmaps_to_var is [a,b]
-    fa (x,lens_prefix:BisimView (a,b),vperm,vperm_out,perm_out)
-      enabled? (val_perm_unmaps_to lens_prefix (vperm, vperm_out)) &&&&
-      perm_out === VarPerm (x, vperm_out) =>
-      enabled? (perm_unmaps_to lens_prefix (VarPerm (x, vperm), perm_out))
+  theorem st_perms_factor_to_cons is [a,b,c]
+    fa (splexpr,cperm:CUnitPerm c,lens,stperms,lens_prefix:Lens (a,b),stperms_out,stperms_out1)
+      enabled? (st_perms_factor_to lens_prefix (stperms, stperms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             stperms_out === StPerm (splexpr,
+                                     cperm_add_lens
+                                       (cperm, lens_suffix))::stperms_out1),
+          stperms_out === stperms_out1)) =>
+      enabled? (st_perms_factor_to
+                  lens_prefix
+                  (StPerm (splexpr,cperm_add_lens (cperm, lens))::stperms, stperms_out))
 
-  theorem perm_unmaps_to_novar is [a,b]
-    fa (stperm,stperm_out,perm_out,lens_prefix:BisimView (a,b))
-      enabled? (st_perm_unmaps_to lens_prefix (stperm, stperm_out)) &&&&
-      perm_out = NoVarPerm stperm_out =>
-      enabled? (perm_unmaps_to lens_prefix (NoVarPerm stperm, perm_out))
+  theorem st_perms_factor_to_cons_nil is [a,b]
+    fa (lens_prefix:Lens (a,b), stperms_out)
+      stperms_out = [] =>
+      enabled? (st_perms_factor_to lens_prefix ([], stperms_out))
 
 
   (* Predicate for un-mapping permission sets *)
-  op [a,b] perm_set_unmaps_to (lens_prefix: BisimView (a,b))
-                              (perms_in: PermSet a,
-                               perms_out: PermSet b) : Bool =
-    perm_set_weaker? (perm_set_add_view (perms_out, lens_prefix), perms_in)
+  op [a,b] perm_set_factors_to (lens_prefix: Lens (a,b))
+                               (perms_in: PermSet a,
+                                perms_out: PermSet b) : Bool =
+    perm_set_weaker? (perm_set_add_lens (perms_out, lens_prefix), perms_in)
 
-  theorem perm_set_unmaps_to_rule is [a,b]
-    fa (lens_prefix: BisimView (a,b),perms_in,perms_out)
-      enabled? (is_map_pred_of (perm_unmaps_to lens_prefix) (perms_in, perms_out)) =>
-      enabled? (perm_set_unmaps_to lens_prefix (perms_in, perms_out))
-*)
+  theorem perm_set_factors_to_cons_var is [a,b,c]
+    fa (x,splexpr,cperm:CValPerm c,lens,perms,lens_prefix:Lens (a,b),perms_out,perms_out1)
+      enabled? (perm_set_factors_to lens_prefix (perms, perms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             perms_out ===
+             VarPerm (x, ValPerm (splexpr,
+                                  cperm_add_lens
+                                    (cperm, lens_suffix)))::perms_out1),
+          perms_out === perms_out1)) =>
+      enabled? (perm_set_factors_to
+                  lens_prefix
+                  (VarPerm (x, (ValPerm
+                                  (splexpr,
+                                   cperm_add_lens (cperm, lens))))::perms,
+                   perms_out))
+
+  theorem perm_set_factors_to_cons_var_eq is [a,b,c]
+    fa (x,lv,splexpr,cperm:CValPerm c,lens,perms,lens_prefix:Lens (a,b),perms_out,perms_out1)
+      enabled? (perm_set_factors_to lens_prefix (perms, perms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             perms_out ===
+             VarPerm (x, ValEqPerm (splexpr,
+                                    cperm_add_lens
+                                      (cperm, lens_suffix),
+                                    lv))::perms_out1),
+          perms_out === perms_out1)) =>
+      enabled? (perm_set_factors_to
+                  lens_prefix
+                  (VarPerm (x, (ValEqPerm
+                                  (splexpr,
+                                   cperm_add_lens (cperm, lens),
+                                   lv)))::perms,
+                   perms_out))
+
+  theorem perm_set_factors_to_cons_novar is [a,b,c]
+    fa (splexpr,cperm:CUnitPerm c,lens,perms,lens_prefix:Lens (a,b),perms_out,perms_out1)
+      enabled? (perm_set_factors_to lens_prefix (perms, perms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             perms_out === NoVarPerm (StPerm (splexpr,
+                                              cperm_add_lens
+                                                (cperm, lens_suffix)))::perms_out1),
+          perms_out === perms_out1)) =>
+      enabled? (perm_set_factors_to
+                  lens_prefix
+                  (NoVarPerm (StPerm (splexpr,cperm_add_lens (cperm, lens)))::perms,
+                   perms_out))
+
+  (* FIXME: this shouldn't be necessary... *)
+  theorem perm_set_factors_to_cons_auto_alloc is [a,b,c]
+    fa (splexpr,cperm:CUnitPerm c,lens,perms,lens_prefix:Lens (a,b),perms_out,perms_out1)
+      enabled? (perm_set_factors_to lens_prefix (perms, perms_out1)) &&&&
+      (if_lens_factors
+         (lens_prefix, lens,
+          (fn lens_suffix ->
+             perms_out === NoVarPerm (StPerm (splexpr,
+                                              cperm_add_lens
+                                                (cperm, lens_suffix)))::perms_out1),
+          perms_out === perms_out1)) =>
+      enabled? (perm_set_factors_to
+                  lens_prefix
+                  (NoVarPerm (StPerm (splexpr,cperm_add_lens (cperm, lens)))::perms,
+                   perms_out))
+
+  theorem perm_set_factors_to_cons_nil is [a,b]
+    fa (lens_prefix:Lens (a,b), perms_out)
+      perms_out = [] =>
+      enabled? (perm_set_factors_to lens_prefix ([], perms_out))
+
 
 
   (***
@@ -1003,6 +1117,13 @@ CGen qualifying spec
       iso = (fn x -> x) =>
       enabled? (USER_is_return_expr ((fn x -> ((), e x)), st_lens, e_out, iso))
 
+  theorem USER_return_expr_unit_pair_bool is [a]
+    fa (st_lens,e_out,iso,e:a->Bool)
+      st_lens = unit_lens &&
+      e_out = e &&
+      iso = (fn x -> x) =>
+      enabled? (USER_is_return_expr ((fn x -> ((), e x)), st_lens, e_out, iso))
+
   theorem USER_return_expr_in_pair_unit_pair is [a]
     fa (st_lens,e_out,iso,e:a)
       st_lens = unit_lens &&
@@ -1016,22 +1137,6 @@ CGen qualifying spec
       e_out = (fn _ -> e) &&
       iso = (fn x -> x) =>
       enabled? (USER_is_return_expr ((fn () -> ((), e)), st_lens, e_out, iso))
-
-(*
-  theorem USER_return_expr_test1 is [a]
-    fa (st_lens,e_out,iso,e:a)
-      st_lens = unit_lens &&
-      e_out = (fn _ -> e) &&
-      iso = (fn x -> x) =>
-      enabled? (USER_is_return_expr ((fn (x:()) -> ((), e)), st_lens, e_out, iso))
-
-  theorem USER_return_expr_test2 is
-    fa (st_lens,e_out,iso,e:Bool)
-      st_lens = unit_lens &&
-      e_out = (fn _ -> e) &&
-      iso = (fn x -> x) =>
-      enabled? (USER_is_return_expr ((fn (x:()) -> ((), e)), st_lens, e_out, iso))
-*)
 
 
   (***
@@ -1067,7 +1172,9 @@ CGen qualifying spec
     fa (envp,perms_in,perms_in_sub,perms_out,ret_perms,perms_out_sub,ret_perms_sub,
         perms_out_sub',f:a->b,m,prototype,body)
       m = FUNCTION_m (prototype.1, prototype.2, prototype.3, body) &&
-      enabled? (in_pred (StPerm ([([], None)], auto_allocation_perm), perms_out.1)) &&&&
+      enabled? (in_pred (StPerm ([([], None)],
+                                 cperm_add_lens (auto_allocation_perm, id_lens)),
+                         perms_out.1)) &&&&
       is_perm_set_of_arg_perms (perms_out, prototype.3, perms_out_sub') &&&&
       is_perm_set_of_arg_perms (perms_in, prototype.3, perms_in_sub) &&&&
       (abstracts_ret_statement
