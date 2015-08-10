@@ -239,6 +239,11 @@ C_Permissions qualifying spec
     (compose_splittable_abstraction (abs, perm.1),
      compose_abs_impl_perm (abs, perm.2))
 
+  (* Compose a permission with a biview *)
+  op [c,a,b] cperm_add_view (perm: CPermission (c,b),
+                             bv: BisimView (a,b)) : CPermission (c,a) =
+    (splittable_abs_add_view (perm.1, bv), perm.2)
+
   (* Compose a permission with a lens *)
   op [c,a,b] cperm_add_lens (perm: CPermission (c,b),
                              lens: Lens (a,b)) : CPermission (c,a) =
@@ -289,6 +294,11 @@ C_Permissions qualifying spec
                                       ev:PermEval (c2,a)) : PermEval (c1,a) =
     (compose_abstractions (abs, ev.1),
      compose_abs_impl_perm (abs, ev.2))
+
+  (* Compose a biview to the end of a PermEval *)
+  op [c,a,b] perm_eval_add_view (ev:PermEval (c,b),
+                                 bv:BisimView (a,b)) : PermEval (c,a) =
+    (compose_abstraction_with_biview (ev.1, bv), ev.2)
 
   (* Turn a PermEval into a CAbstraction *)
   op [c,a] abs_of_perm_eval (ev: PermEval (c,a)) : CAbstraction (c,a) =
@@ -367,6 +377,59 @@ C_Permissions qualifying spec
 
 
   (***
+   *** Abstractions for LValues, Struct Members, and Pointers
+   ***)
+
+  (* The CAbstraction that relates an lvalue to its value, if any *)
+  op lvalue_abstraction (lv:LValue) : CToCAbstraction ((), Value) =
+    fn r ->
+      {biview = fn ((stree,_),(stree',vtree)) ->
+         (* The input and output storages should be the same *)
+         stree = stree' &&
+         (* Each storage in the tree gives the lvalue the same pointer value, and
+            vtree gives the values at that pointer for each spl *)
+         (fa (spl)
+            (ex (tp,d)
+               lvalue_has_result r (stree spl) lv (tp, ObjPointer d) &&
+               objectHasValue (stree spl) d (vtree spl))),
+       bv_leq1 = fn ((stree1,_),(stree2,_)) ->
+         (* This view could modify anything, because who knows what could be
+         considered "dependent" on this lvalue; restrictions on what can be
+         changed come when we compose lvalue_abstraction with other abstractions
+         on the value that is seen by the biview *)
+         true,
+       bv_leq2 = fn (vtree1,vtree2) ->
+         (* The backwards view "looks at" everything, so bv_leq2 is always true *)
+         true}
+
+  (* The CAbstraction that relates a pointer value to the value it points to *)
+  op deref_abstraction : CToCAbstraction (Value, Value) =
+    fn r ->
+      {biview = fn ((stree,vtree),(stree',vtree_deref)) ->
+         stree = stree' &&
+         (fa (spl)
+            (ex (tp,d)
+               computation_has_value
+                 r (stree spl)
+                 (dereferencePointer (vtree spl)) (tp, ObjPointer d) &&
+               objectHasValue (stree spl) d (vtree_deref spl))),
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> true,
+       bv_leq2 = fn ((stree1,vtree1),(stree2,vtree2)) -> true}
+
+  (* The CAbstraction that relates a struct value to one of its fields *)
+  op struct_member_abstraction (mem:Identifier) : CToCAbstraction (Value, Value) =
+    fn r ->
+      {biview = fn ((stree,vtree),(stree',vtree_mem)) ->
+         stree = stree' &&
+         (fa (spl)
+            computation_has_value
+              r (stree spl)
+              (accessStructValueMember (vtree spl, mem)) (vtree_mem spl)),
+       bv_leq1 = fn ((stree1,vtree1),(stree2,vtree2)) -> true,
+       bv_leq2 = fn ((stree1,vtree1),(stree2,vtree2)) -> true}
+
+
+  (***
    *** Value and Storage Permissions
    ***)
 
@@ -400,72 +463,58 @@ C_Permissions qualifying spec
       (fa (asgn) perm_eval_weaker? (eval_st_perm asgn stperm1,
                                     eval_st_perm asgn stperm2))
 
-  (* Permissions for a value *)
-  type ValPerm a =
-    | ValPerm (SplSetExpr * CValPerm a)
-    | ValEqPerm (SplSetExpr * CValPerm a * LValue)
+  (* Permissions for a value seen at type b in a context of type a *)
+  type ValPerm (a,b) =
+    | ValPerm (SplSetExpr * CValPerm b)
+    | ValEqPerm (SplSetExpr * CValPerm b * LValue * Lens (a,b))
 
-  (* Use a lens from b to a to turn a ValPerm a into a ValPerm b *)
-  op [a,b] val_perm_add_lens (vperm: ValPerm a, lens: Lens (b,a)) : ValPerm b =
+  (* Use a lens to turn a view of a value at a smaller type into a view of a
+  value at a larger type. NOTE: this forgets equalities *)
+  op [a,b,c,d] val_perm_add_lens (vperm: ValPerm (a,b), lens: Lens (c,b)) : ValPerm (d,c) =
     case vperm of
       | ValPerm (splexpr, cperm) ->
         ValPerm (splexpr, cperm_add_lens (cperm, lens))
-      | ValEqPerm (splexpr, cperm, lv) ->
-        ValEqPerm (splexpr, cperm_add_lens (cperm, lens), lv)
+      | ValEqPerm (splexpr, cperm, lv, l) ->
+        ValPerm (splexpr, cperm_add_lens (cperm, lens))
 
   (* Compose a list of value perms with a bv *)
-  op [a,b] val_perms_add_lens (vperms: List (ValPerm a),
-                               lens: Lens (b,a)) : List (ValPerm b) =
+  op [a,b,c,d] val_perms_add_lens (vperms: List (ValPerm (a,b)),
+                                   lens: Lens (c,b)) : List (ValPerm (d,c)) =
     map (fn vperm -> val_perm_add_lens (vperm, lens)) vperms
 
-  (* The CAbstraction that relates an lvalue to its value, if any *)
-  op lvalue_abstraction (lv:LValue) : CToCAbstraction ((), Value) =
-    fn r ->
-      {biview = fn ((stree,_),(stree',vtree)) ->
-         (* The input and output storages should be the same *)
-         stree = stree' &&
-         (* Each storage in the tree gives the lvalue the same pointer value, and
-            vtree gives the values at that pointer for each spl *)
-         (fa (spl)
-            (ex (tp,d)
-               lvalue_has_result r (stree spl) lv (tp, ObjPointer d) &&
-               objectHasValue (stree spl) d (vtree spl))),
-       bv_leq1 = fn ((stree1,_),(stree2,_)) ->
-         (* This view could modify anything, because who knows what could be
-         considered "dependent" on this lvalue; restrictions on what can be
-         changed come when we compose lvalue_abstraction with other abstractions
-         on the value that is seen by the biview *)
-         true,
-       bv_leq2 = fn (vtree1,vtree2) ->
-         (* The backwards view "looks at" everything, so bv_leq2 is always true *)
-         true}
-
   (* Evaluate a value permission *)
-  op [a] eval_val_perm (asgn: SplAssign) (vperm: ValPerm a) : PermEval (Value,a) =
+  op [a,b] eval_val_perm_any (asgn: SplAssign) (vperm: ValPerm (a,b)) : PermEval (Value,a*b) =
     case vperm of
-      | ValPerm (splexpr, cperm) -> eval_cperm (asgn, splexpr) cperm
-      | ValEqPerm (splexpr, cperm, lv) ->
+      | ValPerm (splexpr, cperm) ->
+        eval_cperm (asgn, splexpr) (cperm_add_lens (cperm, proj2_lens))
+      | ValEqPerm (splexpr, cperm, lv, lens) ->
         eval_cperm (asgn, splexpr)
           (compose_abs_perm (compose_abstractions
                                (invert_abstraction (lvalue_abstraction lv),
                                 lvalue_abstraction lv),
-                             cperm))
+                             (cperm_add_lens
+                                (cperm_add_view (cperm,
+                                                 invert_biview diagonal_biview),
+                                 lens_tensor (lens, id_lens)))))
+
+  op [a] eval_val_perm (asgn: SplAssign) (vperm: ValPerm (a,a)) : PermEval (Value,a) =
+    perm_eval_add_view (eval_val_perm_any asgn vperm, diagonal_biview)
 
   (* Evaluate a list of value permissions *)
-  op [a] eval_val_perms (asgn: SplAssign) (vperms: List (ValPerm a)) : PermEval (Value,a) =
-    conjoin_perm_evalsN (map (eval_val_perm asgn) vperms)
+  op [a,b] eval_val_perms_any (asgn: SplAssign) (vperms: List (ValPerm (a,b))) : PermEval (Value,a*b) =
+    conjoin_perm_evalsN (map (eval_val_perm_any asgn) vperms)
 
   (* The strength preorder for value permissions *)
-  op [a] val_perm_weaker? : PreOrder (ValPerm a) =
+  op [a,b] val_perm_weaker? : PreOrder (ValPerm (a,b)) =
     fn (vperm1,vperm2) ->
-      (fa (asgn) perm_eval_weaker? (eval_val_perm asgn vperm1,
-                                    eval_val_perm asgn vperm2))
+      (fa (asgn) perm_eval_weaker? (eval_val_perm_any asgn vperm1,
+                                    eval_val_perm_any asgn vperm2))
 
   (* The strength preorder for lists of value permissions *)
-  op [a] val_perms_weaker? : PreOrder (List (ValPerm a)) =
+  op [a,b] val_perms_weaker? : PreOrder (List (ValPerm (a,b))) =
     fn (vperms1,vperms2) ->
-      (fa (asgn) perm_eval_weaker? (eval_val_perms asgn vperms1,
-                                    eval_val_perms asgn vperms2))
+      (fa (asgn) perm_eval_weaker? (eval_val_perms_any asgn vperms1,
+                                    eval_val_perms_any asgn vperms2))
 
   (* The strength preorder for lists of storage permissions *)
   op [a] st_perms_weaker? : PreOrder (List (StPerm a)) =
@@ -479,7 +528,7 @@ C_Permissions qualifying spec
    ***)
 
   type Perm a =
-    | VarPerm (Identifier * ValPerm a)
+    | VarPerm (Identifier * ValPerm (a,a))
     | NoVarPerm (StPerm a)
 
   type PermSet a = List (Perm a)
@@ -518,13 +567,26 @@ C_Permissions qualifying spec
       (fa (asgn) perm_eval_weaker? (eval_perm_set asgn perms1,
                                     eval_perm_set asgn perms2))
 
+  (* The strength preorder for permission sets plus value permissions *)
+(*
+  op [a,b] perm_set_and_val_weaker? : PreOrder (PermSet a * ValPerm b) =
+    fn ((perms1,vperm1),(perms2,vperm2)) ->
+      (fa (asgn)
+         perm_eval_weaker? (perm_eval_pair_r
+                              (lift_unit_perm_eval (eval_perm_set asgn perms1),
+                               eval_val_perm asgn vperm1),
+                            perm_eval_pair_r
+                              (lift_unit_perm_eval (eval_perm_set asgn perms2),
+                               eval_val_perm asgn vperm2)))
+*)
+
 
   (***
    *** Perm Sets for Inputs and Output of C Functions
    ***)
 
   (* Zero or more permissions for each value in a list, along *)
-  type ArgListPerms a = List (StPerm a) * List (ValPerm a)
+  type ArgListPerms a = List (StPerm a) * List (ValPerm (a,a))
 
   op [a] eval_arg_list_perms (asgn: SplAssign)
                              (perms: ArgListPerms a) : PermEval (List Value,a) =
@@ -540,7 +602,7 @@ C_Permissions qualifying spec
     map NoVarPerm perms.1 ++ (map2 VarPerm (vars,perms.2))
 
   (* Permissions for a return value of a function *)
-  type RetValPerm a = Option (ValPerm a)
+  type RetValPerm a = Option (ValPerm (a,a))
 
   op [a] eval_ret_val_perm (asgn: SplAssign)
                            (rvperm: RetValPerm a) : PermEval (Option Value, a) =
@@ -617,16 +679,17 @@ C_Permissions qualifying spec
   Value computation using the abstractions obtained from the given perms *)
   op [a,b] abstracts_expression (env_pred : EnvPred)
                                 (perms_in: PermSet a)
-                                (perms_out: PermSet a) (vperm_out: ValPerm b)
+                                (perms_out: PermSet a) (vperm_out: ValPerm (a,b))
                                 (f: a -> b) (m: Monad Value) : Bool =
     fa (asgn)
       abstracts_computation
         env_pred
         (abs_of_perm_eval (eval_perm_set asgn perms_in))
         (abs_of_perm_eval
-           (perm_eval_pair_r
-              (lift_unit_perm_eval (eval_perm_set asgn perms_out),
-               eval_val_perm asgn vperm_out)))
+           (conjoin_perm_evals
+              (perm_eval_add_view (lift_unit_perm_eval
+                                     (eval_perm_set asgn perms_out), proj1_biview),
+               eval_val_perm_any asgn vperm_out)))
         (fn x -> (x, f x))
         m
 
@@ -911,18 +974,16 @@ C_Permissions qualifying spec
 
   op [a] struct_cperm (fields: StructFieldCPerms a) : CValPerm a
 
-  op [a] struct_pointer_cperm (fields: StructFieldCPerms a) : CValPerm a
-
   (* FIXME: figure out the monotonicity condition here... *)
-  op [a] struct_pointer_rec_cperm (fields: CValPerm a ->
-                                     StructFieldCPerms a) : CValPerm a
+  op [a] struct_rec_cperm (fields: CValPerm a ->
+                             StructFieldCPerms a) : CValPerm a
 
-  (* Same as struct_pointer_cperm, but folded_fields is a hint to the C
-  generator that we should view this as a single unfolding of
-  struct_pointer_rec_cperm, and try to fold it back when possible *)
-  op [a] struct_pointer_rec_unfolded_cperm (fields: StructFieldCPerms a,
-                                            folded_fields: CValPerm a ->
-                                              StructFieldCPerms a) : CValPerm a =
-    struct_pointer_cperm fields
+  (* Same as struct_cperm, but folded_fields is a hint to the C generator that
+  we should view this as a single unfolding of struct_rec_cperm, and try to fold
+  it back when possible *)
+  op [a] struct_rec_unfolded_cperm (fields: StructFieldCPerms a,
+                                    folded_fields: CValPerm a ->
+                                      StructFieldCPerms a) : CValPerm a =
+    struct_cperm fields
 
 end-spec

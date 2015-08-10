@@ -60,6 +60,11 @@ end-proof
     {lens_get = iso,
      lens_set = fn a -> fn b -> inverse iso b}
 
+  (* Tensor two lenses to get a lens on a pair type *)
+  op [a,b,c,d] lens_tensor (l1: Lens (a,b), l2: Lens (c,d)) : Lens (a*c, b*d) =
+    {lens_get = fn (a,c) -> (l1.lens_get a, l2.lens_get c),
+     lens_set = fn (a,c) -> fn (b,d) -> (l1.lens_set a b, l2.lens_set c d)}
+
   (* The lens for the first projection of a pair *)
   op [a,b] proj1_lens : Lens (a*b,a) =
     {lens_get = fn (a,b) -> a, lens_set = fn (a,b) -> fn a' -> (a',b)}

@@ -371,6 +371,12 @@ BisimView qualifying spec
      bv_leq1 = bv.bv_leq1,
      bv_leq2 = bv.bv_leq2}
 
+  (* The biview that relates objects x to pairs (x,x) *)
+  op [a] diagonal_biview : BisimView (a,a*a) =
+    {biview = (fn (x1,(x2,x3)) -> x1 = x2 && x1 = x3),
+     bv_leq1 = (fn _ -> true),
+     bv_leq2 = (fn _ -> true)}
+
 
   (***
    *** Implicational Bisimilarity Views
