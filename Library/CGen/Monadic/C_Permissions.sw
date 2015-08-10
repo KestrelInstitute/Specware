@@ -244,9 +244,10 @@ C_Permissions qualifying spec
                              lens: Lens (a,b)) : CPermission (c,a) =
     (splittable_abs_add_view (perm.1, biview_of_lens lens), perm.2)
 
-  (* Compose a permission with the trivial biview, meaning it is ignored *)
+  (* Compose a permission with a biview that still allows the C side of things
+  to be updated but that ignores the value on the functional side *)
   op [c,a,b] cperm_ignore (perm: CPermission (c,b)) : CPermission (c,a) =
-    (splittable_abs_add_view (perm.1, trivial_biview), perm.2)
+    (splittable_abs_add_view (perm.1, half_trivial_biview), perm.2)
 
   (* The strength preorder for permissions, which maps to the C abstraction
   strength preorder of all abstractions obtained from the related permissions
@@ -523,30 +524,27 @@ C_Permissions qualifying spec
    ***)
 
   (* Zero or more permissions for each value in a list, along *)
-  type ArgListPerms a = List (StPerm a) * List (List (ValPerm a))
+  type ArgListPerms a = List (StPerm a) * List (ValPerm a)
 
   op [a] eval_arg_list_perms (asgn: SplAssign)
                              (perms: ArgListPerms a) : PermEval (List Value,a) =
     (conjoin_perm_evals
        (lift_unit_perm_eval (eval_st_perms asgn perms.1),
-        list_perm_eval (map (eval_val_perms asgn) perms.2)))
+        list_perm_eval (map (eval_val_perm asgn) perms.2)))
 
   (* Construct a perm set from an ArgListPerms and a list of variable names;
   note that the value permissions are all made into constant value permissions,
   because function arguments are not allowed to be modified in its body *)
   op [a] perm_set_of_arg_perms (perms: ArgListPerms a, vars: List Identifier |
                                   equiLong (perms.2, vars)) : PermSet a =
-    map NoVarPerm perms.1 ++
-    flatten (map2 (fn (var,vperms) ->
-                         map (fn vperm -> VarPerm (var, vperm)) vperms)
-               (vars,perms.2))
+    map NoVarPerm perms.1 ++ (map2 VarPerm (vars,perms.2))
 
   (* Permissions for a return value of a function *)
-  type RetValPerm a = Option (List (ValPerm a))
+  type RetValPerm a = Option (ValPerm a)
 
   op [a] eval_ret_val_perm (asgn: SplAssign)
                            (rvperm: RetValPerm a) : PermEval (Option Value, a) =
-    opt_perm_eval (mapOption (eval_val_perms asgn) rvperm)
+    opt_perm_eval (mapOption (eval_val_perm asgn) rvperm)
 
   op [a] ret_val_perm_weaker? : PreOrder (RetValPerm a) =
     fn (rvperm1,rvperm2) ->
@@ -619,7 +617,7 @@ C_Permissions qualifying spec
   Value computation using the abstractions obtained from the given perms *)
   op [a,b] abstracts_expression (env_pred : EnvPred)
                                 (perms_in: PermSet a)
-                                (perms_out: PermSet a) (vperms_out: List (ValPerm b))
+                                (perms_out: PermSet a) (vperm_out: ValPerm b)
                                 (f: a -> b) (m: Monad Value) : Bool =
     fa (asgn)
       abstracts_computation
@@ -628,7 +626,7 @@ C_Permissions qualifying spec
         (abs_of_perm_eval
            (perm_eval_pair_r
               (lift_unit_perm_eval (eval_perm_set asgn perms_out),
-               conjoin_perm_evalsN (map (eval_val_perm asgn) vperms_out))))
+               eval_val_perm asgn vperm_out)))
         (fn x -> (x, f x))
         m
 

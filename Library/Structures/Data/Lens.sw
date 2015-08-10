@@ -50,6 +50,11 @@ end-proof
   op [a] unit_lens : Lens (a,()) =
     {lens_get = fn a -> (), lens_set = fn a -> fn () -> a}
 
+  (* The unit lens is final in the category of lenses *)
+  theorem compose_unit_lens is [a,b]
+    fa (lens:Lens (a,b))
+      lens_compose (lens, unit_lens) = unit_lens
+
   (* The lens of an isomorphism *)
   op [a,b] iso_lens (iso: Bijection (a,b)) : Lens (a,b) =
     {lens_get = iso,

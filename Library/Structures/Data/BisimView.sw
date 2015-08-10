@@ -142,6 +142,12 @@ BisimView qualifying spec
   op [a,b] trivial_biview : BisimView (a,b) =
     {biview = fn _ -> true, bv_leq1 = (=), bv_leq2 = (=)}
 
+  (* FIXME HERE: understand this better... *)
+  op [a,b] half_trivial_biview : BisimView (a,b) =
+    {biview = (fn _ -> true),
+     bv_leq1 = (=),
+     bv_leq2 = (fn _ -> true)}
+
   (* Conjoin a list of bi-views *)
   op [a,b] conjoin_biviewsN (bvs: List (BisimView (a,b))) : BisimView (a,b) =
     foldr conjoin_biviews trivial_biview bvs
