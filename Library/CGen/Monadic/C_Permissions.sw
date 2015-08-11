@@ -45,6 +45,10 @@ C_Permissions qualifying spec
   op [c,a] trivial_abstraction : CAbstraction (c, a) =
     fn r -> trivial_biview
 
+  (* The identity abstraction *)
+  op [c] identity_abstraction : CToCAbstraction (c, c) =
+    fn r -> identity_biview
+
   (* Conjoin two abstractions *)
   op [c,a] conjoin_abstractions (abs1: CAbstraction (c,a),
                                   abs2: CAbstraction (c,a)) : CAbstraction (c,a) =
