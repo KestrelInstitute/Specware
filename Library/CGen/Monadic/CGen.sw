@@ -880,6 +880,34 @@ CGen qualifying spec
                | LVA_Memberp mem -> LV_memberp (E_lvalue lv, mem)
                | LVA_Deref -> LV_star (E_lvalue lv)) (LV_ident uz.1) uz.2
 
+  op is_unzipped_lvalue (lv: LValue, var: Identifier,
+                         lvas: List LValueAccessor) : Bool =
+    lv = rezip_lvalue (var, lvas)
+
+  theorem is_unzipped_lvalue_ident is
+    fa (var, var_out, lvas)
+      lvas = [] && var_out = var =>
+      enabled? (is_unzipped_lvalue (LV_ident var, var_out, lvas))
+
+  theorem is_unzipped_lvalue_member is
+    fa (lv, mem, var, lvas, lvas')
+      enabled? (is_unzipped_lvalue (lv, var, lvas')) &&&&
+      lvas === LVA_Member mem :: lvas' =>
+      enabled? (is_unzipped_lvalue (LV_member (lv, mem), var, lvas))
+
+  theorem is_unzipped_lvalue_memberp is
+    fa (lv, mem, var, lvas, lvas')
+      enabled? (is_unzipped_lvalue (lv, var, lvas')) &&&&
+      lvas === LVA_Memberp mem :: lvas' =>
+      enabled? (is_unzipped_lvalue (LV_memberp (E_lvalue lv, mem), var, lvas))
+
+  theorem is_unzipped_lvalue_deref is
+    fa (lv, var, lvas, lvas')
+      enabled? (is_unzipped_lvalue (lv, var, lvas')) &&&&
+      lvas === LVA_Deref :: lvas' =>
+      enabled? (is_unzipped_lvalue (LV_star (E_lvalue lv), var, lvas))
+
+
   op abs_of_lvalue_accessors (lvas: List LValueAccessor) : CToCAbstraction (Value, Value) =
     case lvas of
       | [] -> identity_abstraction
@@ -895,7 +923,7 @@ CGen qualifying spec
         compose_abstractions (deref_abstraction,
                               abs_of_lvalue_accessors lvas')
 
-  op [a,b] give_back_permH (cperm_in: CValPerm a, splexpr: SplSetExpr,
+  op [a,b] give_back_perm1 (cperm_in: CValPerm a, splexpr: SplSetExpr,
                             lvas: List LValueAccessor, eq_lens: Lens (a,b),
                             cperm: CValPerm b, cperm_out: CValPerm a) : Bool =
     fa (asgn)
@@ -907,26 +935,103 @@ CGen qualifying spec
                                eval_cperm (asgn, splexpr)
                                  (cperm_add_lens (cperm, eq_lens)))))
 
-(*
-  theorem give_back_permH_struct is [a,b]
-    fa ()
-      is_fold_pred_of (fn ((mem',cperm_opt), cperm_out, rest, cperm_out') ->
-                         ifequal (mem, mem',
-                                  caseopt
-                                    (cperm_opt,
-                                     (fn cperm_in' ->
-                                        
-)
-)
-                                  cperm_out ===
-                                  
-,
-                                  rest)
-)
-      enabled? (give_back_permH (struct_cperm field_perms_in, splexpr,
-                                 LVA_Member mem::lvas, eq_lens,
-                                 cperm, cperm_out))
-*)
+  op [a,b] give_back_perm_opt (cperm_opt_in: Option (CValPerm a),
+                               splexpr: SplSetExpr, lvas: List LValueAccessor,
+                               eq_lens: Lens (a,b), cperm: CValPerm b,
+                               cperm_opt_out: Option (CValPerm a)) : Bool =
+    fa (asgn)
+      perm_eval_weaker? ((case cperm_opt_out of
+                            | None -> trivial_perm_eval
+                            | Some cperm_out ->
+                              eval_cperm (asgn, splexpr) cperm_out),
+                         conjoin_perm_evals
+                           ((case cperm_opt_in of
+                               | None -> trivial_perm_eval
+                               | Some cperm_in ->
+                                 eval_cperm (asgn, splexpr) cperm_in),
+                            compose_abs_perm_eval
+                              (abs_of_lvalue_accessors lvas,
+                               eval_cperm (asgn, splexpr)
+                                 (cperm_add_lens (cperm, eq_lens)))))
+
+  op [a,b] give_back_perm_struct (cperms_in: StructFieldCPerms a,
+                                  splexpr: SplSetExpr, mem: Identifier,
+                                  lvas: List LValueAccessor, eq_lens: Lens (a,b),
+                                  cperm: CValPerm b,
+                                  cperms_out: StructFieldCPerms a) : Bool =
+    fa (asgn)
+      perm_eval_weaker? (eval_cperm (asgn, splexpr) (struct_cperm cperms_out),
+                         conjoin_perm_evals
+                           (eval_cperm (asgn, splexpr) (struct_cperm cperms_in),
+                            compose_abs_perm_eval
+                              (abs_of_lvalue_accessors lvas,
+                               eval_cperm (asgn, splexpr)
+                                 (cperm_add_lens (cperm, eq_lens)))))
+
+  theorem give_back_perm1_lens is [a,b,c]
+    fa (cperm_in,lens:Lens(a,c),splexpr,lvas,eq_lens:Lens(a,b),
+        cperm,cperm_out,eq_lens',cperm_out')
+      enabled? (lens_factors_to (lens, eq_lens, eq_lens')) &&&&
+      give_back_perm1 (cperm_in, splexpr, lvas, eq_lens', cperm, cperm_out') &&&&
+      cperm_out === cperm_add_lens (cperm_out', lens) =>
+      enabled? (give_back_perm1 (cperm_add_lens (cperm_in, lens), splexpr, lvas,
+                                 eq_lens, cperm, cperm_out))
+
+  theorem give_back_perm1_member is [a,b]
+    fa (field_perms_in,splexpr,mem,lvas,eq_lens:Lens(a,b),
+        cperm,cperm_out,field_perms_out)
+      enabled? (give_back_perm_struct (field_perms_in, splexpr, mem, lvas,
+                                       eq_lens, cperm, field_perms_out)) &&&&
+      cperm_out === struct_cperm field_perms_out =>
+      enabled? (give_back_perm1 (struct_cperm field_perms_in, splexpr,
+                                 LVA_Member mem::lvas,
+                                 eq_lens, cperm, cperm_out))
+
+  theorem give_back_perm1_memberp is [a,b]
+    fa (cperm_in,splexpr,mem,lvas,eq_lens:Lens(a,b),cperm,cperm_out,cperm_out')
+      enabled? (give_back_perm1 (cperm_in, splexpr, LVA_Member mem::lvas,
+                                 eq_lens, cperm, cperm_out')) &&&&
+      cperm_out === pointer_cperm cperm_out' =>
+      enabled? (give_back_perm1 (pointer_cperm cperm_in, splexpr,
+                                 LVA_Memberp mem::lvas, eq_lens, cperm, cperm_out))
+
+  theorem give_back_perm1_deref is [a,b]
+    fa (cperm_in,splexpr,lvas,eq_lens:Lens(a,b),cperm,cperm_out,cperm_out')
+      enabled? (give_back_perm1 (cperm_in, splexpr, lvas,
+                                 eq_lens, cperm, cperm_out')) &&&&
+      cperm_out === pointer_cperm cperm_out' =>
+      enabled? (give_back_perm1 (pointer_cperm cperm_in, splexpr,
+                                 LVA_Deref::lvas, eq_lens, cperm, cperm_out))
+
+  theorem give_back_perm_struct_cons is [a,b]
+    fa (perm_fields_in,mem1,cperm1_opt,splexpr,mem,lvas,eq_lens:Lens(a,b),cperm,
+        perm_fields_out,perm_fields_out',cperm_opt_out)
+      enabled? (ifequal
+                  (mem, mem1,
+                   give_back_perm_opt (cperm1_opt, splexpr, lvas,
+                                       eq_lens, cperm, cperm_opt_out) &&&&
+                     perm_fields_out === (mem1, cperm_opt_out)::perm_fields_in,
+                   give_back_perm_struct (perm_fields_in, splexpr, mem, lvas,
+                                          eq_lens, cperm, perm_fields_out') &&&&
+                     perm_fields_out === (mem1, cperm1_opt)::perm_fields_out'))
+      =>
+      give_back_perm_struct ((mem1,cperm1_opt)::perm_fields_in, splexpr, mem,
+                             lvas, eq_lens, cperm, perm_fields_out)
+
+  theorem give_back_perm_opt_some is [a,b]
+    fa (cperm_in,splexpr,lvas,eq_lens:Lens(a,b),cperm,cperm_opt_out,cperm_out)
+      enabled? (give_back_perm1 (cperm_in, splexpr, lvas,
+                                 eq_lens, cperm, cperm_out)) &&&&
+      cperm_opt_out === Some cperm_out =>
+      enabled? (give_back_perm_opt (Some cperm_in, splexpr,
+                                    lvas, eq_lens, cperm, cperm_opt_out))
+
+  theorem give_back_perm_opt_none is [a,b]
+    fa (splexpr,eq_lens:Lens(a,b),cperm,cperm_opt_out)
+      cperm_opt_out = Some (cperm_add_lens (cperm, eq_lens)) =>
+      enabled? (give_back_perm_opt (None, splexpr, [],
+                                    eq_lens, cperm, cperm_opt_out))
+
 
   op [a,b] give_back_perm (perms_in: PermSet a, splexpr: SplSetExpr,
                            lv: LValue, eq_lens: Lens (a,b),
@@ -939,6 +1044,21 @@ CGen qualifying spec
                               (lvalue_abstraction lv,
                                eval_cperm (asgn, splexpr)
                                  (cperm_add_lens (cperm, eq_lens)))))
+
+  op [a,b] give_back_permH (perms_in: PermSet a, splexpr: SplSetExpr,
+                            var: Identifier, lvas: List LValueAccessor,
+                            eq_lens: Lens (a,b), cperm: CValPerm b,
+                            perms_out: PermSet a) : Bool =
+    give_back_perm (perms_in, splexpr, rezip_lvalue (var, lvas),
+                    eq_lens, cperm, perms_out)
+
+  theorem give_back_perm_rule is [a,b]
+    fa (perms_in,splexpr,lv,eq_lens:Lens(a,b),cperm,perms_out,var,lvas)
+      enabled? (is_unzipped_lvalue (lv, var, lvas)) &&&&
+      give_back_permH (perms_in, splexpr, var, lvas, eq_lens, cperm, perms_out)
+      =>
+      enabled? (give_back_perm (perms_in, splexpr, lv,
+                                eq_lens, cperm, perms_out))
 
 
   (***
