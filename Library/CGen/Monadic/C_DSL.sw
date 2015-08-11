@@ -65,6 +65,17 @@ C_DSL qualifying spec
   (* Array subscripting *)
   op SUBSCRIPT_m : Operator2 = fn (m1,m2) -> STAR_m (ADD_m (m1,m2))
 
+  (* Struct member access *)
+  op MEMBER_m (e: Monad Value, mem: Identifier) : Monad Value =
+    {v <- e;
+     accessStructValueMember (v, mem)}
+
+  op MEMBERP_m (e: Monad Value, mem: Identifier) : Monad Value =
+    {v <- e;
+     res <- dereferencePointer v;
+     res' <- accessStructLValueMember (res, mem);
+     lvalueConversion res'}
+
 
   (* LValue combinators, which have type Monad LValueRes *)
 
@@ -79,6 +90,16 @@ C_DSL qualifying spec
   (* Array subscripting *)
   op LSUBSCRIPT_m (arr : Monad C.Value, ind : Monad C.Value) : Monad LValueResult =
     LSTAR_m (ADD_m (arr, ind))
+
+  (* Struct member access *)
+  op LMEMBER_m (e: Monad LValueResult, mem: Identifier) : Monad LValueResult =
+    {res <- e;
+     accessStructLValueMember (res, mem)}
+
+  op LMEMBERP_m (e: Monad Value, mem: Identifier) : Monad LValueResult =
+    {v <- e;
+     res' <- dereferencePointer v;
+     accessStructLValueMember (res', mem)}
 
 
   (* Statement combinators, which have type Monad () *)
@@ -323,6 +344,18 @@ C_DSL qualifying spec
       =>
       evaluate e = SUBSCRIPT_m (rv1, rv2)
 
+  theorem MEMBER_m_correct is
+    fa (e1,mem,e,rv1)
+      e = E_strict (E_member (e1, mem)) && evaluateStrictExpr e1 = rv1
+      =>
+      evaluate e = MEMBER_m (rv1, mem)
+
+  theorem MEMBERP_m_correct is
+    fa (e1,mem,e,rv1)
+      e = E_lvalue (LV_memberp (e1, mem)) && evaluate e1 = rv1
+      =>
+      evaluate e = MEMBERP_m (rv1, mem)
+
 
   (** LValues **)
 
@@ -347,6 +380,18 @@ C_DSL qualifying spec
       expr = LV_subscript (e1, e2) && evaluate e1 = rv1 && evaluate e2 = rv2
       =>
       evaluateLValue expr = LSUBSCRIPT_m (rv1, rv2)
+
+  theorem LMEMBER_m_correct is
+    fa (lv1,mem,expr,res1)
+      expr = LV_member (lv1, mem) && evaluateLValue lv1 = res1
+      =>
+      evaluateLValue expr = LMEMBER_m (res1, mem)
+
+  theorem LMEMBERP_m_correct is
+    fa (e1,mem,expr,rv1)
+      expr = LV_memberp (e1, mem) && evaluate e1 = rv1
+      =>
+      evaluateLValue expr = LMEMBERP_m (rv1, mem)
 
 
   (** Statements **)
