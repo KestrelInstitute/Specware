@@ -1494,14 +1494,14 @@ closedTermV detects existence of free variables not included in the argument
                            let subst = if equalType?(d_ty1, m_ty) then subst else insert_var_ty(v1,m_ty,subst) in
                            let subst = if equalType?(d_ty2, m_ty) then subst else insert_var_ty(v2,m_ty,subst) in
                            [Unify subst]
-                         | None -> [NotUnify (d_ty1,d_ty2)])                      
+                         | None -> unify(subst,d_ty1,d_ty2,ty1_orig,equals,optTerm))
                     | (Some d_ty1, None) -> if equivType? spc (d_ty1, ty2) then [Unify subst]
                                             else if occursRec(subst,v2,ty1) || ~(freshTyVarName? v2)
-                                              then [NotUnify (ty1,ty2)]
+                                              then unify(subst,d_ty1,ty2,ty1_orig,equals,optTerm)
                                             else [Unify(insert_var_ty(v2,ty1,subst))]
                     | (None, Some d_ty2) -> if equivType? spc (ty1, d_ty2) then [Unify subst]
                                             else if occursRec(subst,v1,ty2) || ~(freshTyVarName? v1)
-                                              then [NotUnify (ty1,ty2)]
+                                              then unify(subst,ty1,d_ty2,ty1_orig,equals,optTerm)
                                             else [Unify(insert_var_ty(v1,ty2,subst))]
                     | (None, None) -> [Unify(insert_var_ty(v1,ty2,subst))])
                | (TyVar(v1,_), _) ->
@@ -1511,7 +1511,7 @@ closedTermV detects existence of free variables not included in the argument
                          | Some m_ty ->
                            let subst = if equalType?(d_ty1, m_ty) then subst else insert_var_ty(v1,m_ty,subst) in
                            [Unify subst]
-                         | None -> [NotUnify (d_ty1,ty2)])
+                         | None -> unify(subst,d_ty1,ty2,ty1_orig,equals,optTerm))
                     | None -> if occursRec(subst,v1,ty2) || ~(freshTyVarName? v1)
                                 then [NotUnify (ty1,ty2)]
                               else [Unify(insert_var_ty(v1,ty2,subst))])
@@ -1522,7 +1522,7 @@ closedTermV detects existence of free variables not included in the argument
                          | Some m_ty ->
                            let subst = if equalType?(d_ty2, m_ty) then subst else insert_var_ty(v2,m_ty,subst) in
                            [Unify subst]
-                         | None -> [NotUnify (ty1,d_ty2)])
+                         | None -> unify(subst,ty1,d_ty2,ty1_orig,equals,optTerm))
                     | None -> if occursRec(subst,v2,ty1) || ~(freshTyVarName? v2)
                                 then [NotUnify (ty1,ty2)]
                               else [Unify(insert_var_ty(v2,ty1,subst))])
@@ -1683,6 +1683,14 @@ closedTermV detects existence of free variables not included in the argument
                         | Some sty -> Some(Quotient(sty,trm1,a))
                         | None -> None
                else None
+             | (TyVar(v1,_), _) ->
+               (case StringMap.find(subst.1, v1) of 
+                  | Some d_ty1 -> subtypeMeet(d_ty1, ty2, spc, subst)
+                  | None -> None)
+             | (_, TyVar(v2,_)) ->
+               (case StringMap.find(subst.1, v2) of 
+                  | Some d_ty2 -> subtypeMeet(ty1, d_ty2, spc, subst)
+                  | None -> None)
              | (Subtype(sty1,p1,a), Subtype(sty2,p2,_))
                  | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
                (case meet(sty1, sty2) of
