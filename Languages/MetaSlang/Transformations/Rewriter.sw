@@ -739,7 +739,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 
  % The maximum number, exclusive, allowed for a flex variable in a
  % rewrite rule
- op maxRuleFlexVar : Nat = 1000
+ op maxRuleFlexVar : Nat = 5000
 
  % Return a SubstC that "freshens up" all the flex variables in term,
  % so that they do not clash with any rules. We cheat by just adding
@@ -748,7 +748,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
    mkFresheningSubstC
      (foldSubTerms (fn (M,result) ->
                       case flexVarNum M of
-                        | Some n ->
+                        | Some n | n < maxRuleFlexVar ->
                           (case findLeftmost (fn (m,_,_) -> m=n) result of
                              | Some (_, _, T) | equalType? (T, termType M) ->
                                result
@@ -757,9 +757,10 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                 result)
                              | None ->
                                let num = ! context.counter in
+                               let num = max(maxRuleFlexVar, num) in
                                (context.counter := num + 1;
                                 (n, num, termType M) :: result))
-                        | None -> result)
+                        | _ -> result)
         [] term)
 
  op sanitizeFlexVars (context: Context, term : MSTerm): MSTerm =
@@ -1261,7 +1262,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 
  def rewriteRecursivePre(context, boundVars0, rules0, term) =
    let
- def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
+     def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
        % let _ = writeLine("boundVarsC: "^anyToString boundVars) in
        if trueTerm? term then Some (emptySubstitution, prove_true)
        else
