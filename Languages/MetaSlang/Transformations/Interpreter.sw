@@ -985,8 +985,8 @@ spec
       | String      s  -> mkString s
       | Bool        b  -> mkBool b
       | RecordVal   rm -> mkRecord(map (fn (id,x) -> (id,valueToTerm x)) rm)
-      | Constructor (id,arg,ty) -> mkApply(mkOp(id,ty), valueToTerm arg)
-      | Constant    (id,ty) -> mkOp(id,ty)
+      | Constructor (id,arg,ty) -> mkApply(mkFun(Op(id, Constructor1), ty), valueToTerm arg)
+      | Constant    (id,ty) -> mkFun(Op(id, Constructor0), ty)
 % TODO: restore these
       | QuotientVal (f,arg,srt_qid)  ->
         let argtm = valueToTerm arg in
