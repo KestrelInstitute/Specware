@@ -499,38 +499,46 @@ def fixateTwoNames (q_id_fixity : Id * Id * Fixity, explicit_fixity : Fixity)
      | Unspecified -> q_id_fixity.3
      | _           -> explicit_fixity)
 
+op metaFiedTypeForOp (env: LocalEnv, Qualified(q, id): QualifiedId, tm: MSTerm, ty: MSType): MSType =
+  case findTheOp2(env, q, id)
+    | None -> checkType0(env, ty)
+    | Some info -> 
+      let (tvs, d_ty, tm) = unpackFirstOpDef info in
+      let (_, d_ty) = metafyType (Pi (tvs, d_ty, typeAnn d_ty)) in
+      elaborateCheckTypeForOpRef(env, tm, d_ty, ty)
+
 def resolveNameFromType(env, trm, id, ty, pos) =
   case mkEmbed0 (env, ty, id) of
-    | Some qid -> Fun (Op (qid, Constructor0), checkType0 (env, ty), pos)
+    | Some qid -> Fun (Op (qid, Constructor0), metaFiedTypeForOp(env, qid, trm, ty), pos)
     | None -> 
   case mkEmbed1 (env, ty, trm, id, pos) of
     | Some term -> term
     | None ->
-  case uniqueConstr (env, trm, id, pos) of
+  case uniqueConstr (env, trm, id, ty, pos) of
     | Some term -> term
     | _ ->
   case StringMap.find (env.constrs, id) of
     | None -> undeclaredName (env, trm, id, ty, pos)
     | _    -> ambiguousCons (env, trm, id, ty, pos)
 
-op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): MSTerms =
-  case mkEmbed0 (env, ty, id) of
-    | Some qid -> [Fun (Op (qid, Constructor0), checkType0 (env, ty), pos)]
-    | None -> 
-  case mkEmbed1 (env, ty, trm, id, pos) of
-    | Some term -> [term]
-    | None ->
-  case uniqueConstr (env, trm, id, pos) of
-    | Some term -> [term]
-    | _ ->
-  case StringMap.find (env.constrs, id) of
-    | None -> []
-    | Some constrs -> mapPartial (fn (coprod_qid, coprod_ty) -> constrTerm(env, id, coprod_qid, coprod_ty, trm, pos)) constrs
+% op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): MSTerms =
+%   case mkEmbed0 (env, ty, id) of
+%     | Some qid -> [Fun (Op (qid, Constructor0), checkType0 (env, ty), pos)]
+%     | None -> 
+%   case mkEmbed1 (env, ty, trm, id, pos) of
+%     | Some term -> [term]
+%     | None ->
+%   case uniqueConstr (env, trm, id, pos) of
+%     | Some term -> [term]
+%     | _ ->
+%   case StringMap.find (env.constrs, id) of
+%     | None -> []
+%     | Some constrs -> mapPartial (fn (coprod_qid, coprod_ty) -> constrTerm(env, id, coprod_qid, coprod_ty, trm, pos)) constrs
 
 
 op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos: Position): Option MSTerm =
   case mkEmbed0 (env, ty, id) of
-    | Some qid -> Some(Fun (Op (qid, Constructor0), checkType0 (env, ty), pos))
+    | Some qid -> Some(Fun (Op (qid, Constructor0), metaFiedTypeForOp(env, qid, trm, ty), pos))
     | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
 op checkOp (info: OpInfo, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
@@ -700,11 +708,14 @@ def elaborateTerm_top (env, trm, term_type) =
 %%        TODO needs to be documented.
 %%   trm  The term to be typechecked.
 %%   term_type  The expected type.
-%%   args       Local *type* arguments.
+%%   args       Local arguments used for their types (not sure why this is necessary).
 op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTerm = 
   let _ = if debug? then writeLine("tc"^show env.passNum^" "^printType term_type^"\n"^printTermWithTypes trm) else () in
   let typed_term =
         case trm of
+          | Fun (Op(qid, fixity), ty, pos) ->
+            let _ = elaborateCheckTypeForTerm (env, trm, ty, term_type) in
+            trm
           | Fun (OneName (id, fixity), ty, pos) ->
             (let _ = elaborateCheckTypeForTerm (env, trm, ty, term_type) in
              %let _ = if id = "getBits" then writeLine("et0: getBits: "^printType ty) else () in
@@ -1613,7 +1624,7 @@ op lookupEmbedId (env: LocalEnv, id: Id, ty: MSType): Option(Option MSType * Qua
 
 op mkEmbed1 (env: LocalEnv, ty: MSType, trm: MSTerm, id: Id, pos: Position): Option MSTerm = 
   case isArrowCoProduct (env, ty) of
-    | Some (dom_type, coprod_ty, row) ->
+    | Some (_, _, row) ->
       let 
         %% This checks that a sum-type constructor is given the proper type
         def findId ls = 
@@ -1624,10 +1635,8 @@ op mkEmbed1 (env: LocalEnv, ty: MSType, trm: MSTerm, id: Id, pos: Position): Opt
                   %let _ = writeLine ("ty:  "^printType ty) in
                   %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
                 % let constructor_dom_type = checkType (env, constructor_dom_type) in
-                let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
                 % let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
-                let _ = elaborateType(env, constr_ty, ty) in
-                Some (Fun (Op (constructor_qid, Constructor1), constr_ty, pos))
+                Some (Fun (Op (constructor_qid, Constructor1), metaFiedTypeForOp(env, constructor_qid, trm, ty), pos))
               else 
                 findId row
             | _ :: row -> findId row
@@ -1679,7 +1688,7 @@ def mergeFields(env,row1,row2,pos) =
   in 
     loop(row1,row2,[])
 
-op constrTerm(env: LocalEnv, id: Id, coprod_qid: QualifiedId, coprod_ty: MSType, trm: MSTerm, pos: Position): Option MSTerm =
+op constrTerm(env: LocalEnv, id: Id, coprod_qid: QualifiedId, coprod_ty: MSType, trm: MSTerm, ty: MSType, pos: Position): Option MSTerm =
   let (v_ty, c_ty) = metafyBaseType (coprod_qid, coprod_ty, termAnn trm) in
   let id_ty = case c_ty of
                  | CoProduct (fields, pos) ->
@@ -1693,9 +1702,10 @@ op constrTerm(env: LocalEnv, id: Id, coprod_qid: QualifiedId, coprod_ty: MSType,
      | None -> mkEmbed1 (env, id_ty, trm, id, pos))
 
 %% If id is the unique name of a constructor, use that constructor
-def uniqueConstr (env, trm, id, pos) =
+def uniqueConstr (env, trm, id, ty, pos) =
   case StringMap.find (env.constrs, id) of
-    | Some [(coprod_qid, coprod_ty)] -> constrTerm(env, id, coprod_qid, coprod_ty, trm, pos)
+    | Some [(coprod_qid, coprod_ty)] -> constrTerm(env, id, coprod_qid, coprod_ty, trm, ty, pos)
+      
     | _ -> None
 
 def mkProject (env, id, ty, pos) = 

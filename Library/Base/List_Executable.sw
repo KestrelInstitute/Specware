@@ -1081,6 +1081,10 @@ proof isa List__increasingNats_p__1__obligation_refine_def
   apply (drule_tac x=aa in spec, auto)
 end-proof
 
+proof Isa positionsSuchThat__1__loop_Obligation_subtype
+  sorry
+end-proof
+
 proof isa List__positionsSuchThat__1__obligation_refine_def 
   apply (simp add: List__positionsSuchThat__1_def)
   apply (induct l, simp)
@@ -1130,6 +1134,10 @@ proof isa List__sublistAt_p__1__obligation_refine_def
        List__sublistAt_p_def)
   apply (rule_tac x="take i supl" in exI, auto,
          rule_tac x=post in exI, simp)
+end-proof
+
+proof Isa positionsOfSublist__1__loop_Obligation_subtype1
+  sorry
 end-proof
 
 proof isa List__positionsOfSublist__1__obligation_refine_def 
