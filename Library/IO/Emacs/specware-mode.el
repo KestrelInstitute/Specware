@@ -411,7 +411,7 @@ Full documentation will be available after autoloading the function."
 
 (defvar sw:whitespace "\\(\n\\|\\s-\\)")
 
-(defvar sw:basic-unit-intro-regexp "^\\(\\sw+\\)\\(\n\\|\\s-\\)*=\\s-*")
+(defvar sw:basic-unit-intro-regexp "^\\(\\sw+\\)\\(\n\\|\\s-\\)* =\\(\n\\| \\)\\s-*")
 
 (defvar sw:definition-intro-sexp
   (concat "\\<\\(" sw:definition-introducing-words "\\)"))
