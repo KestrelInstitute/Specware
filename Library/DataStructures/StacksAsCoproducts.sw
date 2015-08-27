@@ -102,6 +102,9 @@ op [a] pushl (lst:List a, stk:Stack a): Stack a =
 %% Proofs for StacksAsCoproducts
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+proof Isa push_Obligation_subtype
+   by (simp add: empty_stack_def empty_stack_p_def)
+end-proof
 
 proof isa helperhook
 

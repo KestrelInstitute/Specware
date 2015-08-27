@@ -84,7 +84,9 @@ op [a] pushl (lst:List a, stk:Stack a): Stack a =
 %% Proofs for StacksAsLists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+proof Isa push_Obligation_subtype
+   by (simp add: StacksAsLists__empty_stack_p_def StacksAsLists__empty_stack_def)
+end-proof
 
 proof isa stackToList_Obligation_subtype
    by (metis bij_betw_cong bij_id id_def)
