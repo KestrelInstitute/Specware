@@ -223,7 +223,7 @@ spec
              let new_decls = flattenCompatiblePatternTerm(pat, tm) in
              simplifyOne spc (Let(new_decls, body, pos))
            %% let y = x in f y  --> f x
-           | Let([(VarPat(v,_), w)],body,pos) | embed? Var w ->
+           | Let([(VarPat(v,_), w)],body,pos) | simpleTerm w ->
              simplifyOne spc (substitute(body,[(v,w)]))
            %% case e of pat => bod   --> let pat = e in bod
            | Apply(Lambda([(pat, Fun(Bool true,_,_), body)],_),t,pos) ->
