@@ -1521,9 +1521,9 @@ op lisp (slice : Slice) : LispSpec =
                    [])
  in
  let opnames = 
-     case opsInImplementation slice of
+     case filter (fn op_qid -> definedOp?(spc, op_qid)) (opsInImplementation slice) of
        | [] -> 
-         let _ = writeLine("No ops found in implementation slice, so using all ops") in
+         let _ = writeLine("No defined ops found in implementation slice, so using all ops") in
          foldriAQualifierMap (fn (q, id, info, opnames) ->
                                 mkQualifiedId (q, id) :: opnames)
                              []
@@ -1781,7 +1781,8 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
 
 op toLispSpec (substBaseSpecs? : Bool) (slice? : Bool) (ms_spec : Spec) 
   : LispSpec =
-  let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts ms_spec                        in 
+  %% top level ops are not very useful basis for slicing
+  let (top_ops, top_types) = ([], []) in  % topLevelOpsAndTypesExcludingBaseSubsts ms_spec in 
   let slice?               = case (top_ops, top_types) of
                                | ([], []) -> 
                                  if slice? then
