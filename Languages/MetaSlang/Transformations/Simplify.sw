@@ -79,12 +79,12 @@ spec
 
  op  removeUnnecessaryVariable: Spec -> MSTerm -> MSTerm
  def removeUnnecessaryVariable spc term =
-     % let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
+      let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
        of Let([(vp as VarPat (v,_),e)],body,pos) ->
 	  let noSideEffects = sideEffectFree(e) || embed? Lambda e in
           let new_body = if noSideEffects then termSubst(body, [(e, mkVar v)]) else body in
-          let term = if body = new_body then Let([(vp, e)],new_body,pos) else term in
+          let term = if body ~= new_body then Let([(vp, e)],new_body,pos) else term in
 	  (case countVarRefs(new_body,v)
 	     of 0 -> if noSideEffects then new_body else term
 	      | 1 -> if noSideEffects
@@ -223,8 +223,8 @@ spec
              let new_decls = flattenCompatiblePatternTerm(pat, tm) in
              simplifyOne spc (Let(new_decls, body, pos))
            %% let y = x in f y  --> f x
-           | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
-             simplifyOne spc (substitute(body,[(v,wVar)]))
+           | Let([(VarPat(v,_), w)],body,pos) | embed? Var w ->
+             simplifyOne spc (substitute(body,[(v,w)]))
            %% case e of pat => bod   --> let pat = e in bod
            | Apply(Lambda([(pat, Fun(Bool true,_,_), body)],_),t,pos) ->
              simplifyOne spc (Let([(pat, t)], body, pos))
@@ -615,30 +615,33 @@ spec
   op simplifyRecordBind(spc: Spec, pat: MSPattern, tm: MSTerm, body: MSTerm)
      : Option MSTerm =
     let pairs = flattenCompatiblePatternTerm(pat, tm) in
-    if List.forall? (fn(VarPat _, _) -> true | (WildPat _,_) -> true | _ -> false) pairs 
+    if forall? (fn(VarPat _, _) -> true | (WildPat _,_) -> true | _ -> false) pairs 
       then (if forall? (fn(_,Var _) -> true | _ -> false) pairs
               then Some(substitute(body,makeSubstFromBindPairs pairs))
               else
               %% Sequentializing binds: rename to avoid variable capture
               let (binds,sbst,_)
-                 = foldr (fn ((vp as VarPat(v,a),val),(binds,sbst,fvs)) ->
+                 = foldr (fn ((vp as VarPat(v,a),val), (binds,sbst,fvs)) ->
                             let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
                             if v.1 in? fvs
                               then let nv = (v.1 ^ "__" ^ (Nat.show (length binds)),v.2) in
-                                (Cons((VarPat(nv,a),val),binds),
-                                 Cons((v,Var(nv,a)),sbst),
+                                ((VarPat(nv,a),val) :: binds,
+                                 (v,Var(nv,a)) :: sbst,
                                  new_fvs)
-                            else (Cons((vp,val),binds),sbst,new_fvs)
-                          | ((vp as WildPat _,val),(binds,sbst,fvs)) ->
+                            else ((vp,val) :: binds, sbst, new_fvs)
+                          | ((vp as WildPat _,val), (binds,sbst,fvs)) ->
                             if sideEffectFree val then (binds,sbst,fvs)
                             else
                             let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
-                            (Cons((vp,val),binds),sbst,new_fvs))
+                            ((vp,val) :: binds, sbst, new_fvs))
                      ([],[],[]) pairs
               in
               let body = substitute(body,sbst) in
-              Some(foldr (fn ((v,val),body) ->
-                            simplifyOne spc (mkLet([(v,val)],body)))
+              Some(foldr (fn ((vp,val),body) ->
+                            % let _ = writeLine("srb: "^printTerm (mkLet([(vp,val)],body))) in
+                            let simp_let_tm = simplifyOne spc (mkLet([(vp,val)],body)) in
+                            % let _ = writeLine("---> "^printTerm simp_let_tm) in
+                            simp_let_tm)
                      body binds))
       else None
 
@@ -649,7 +652,7 @@ spec
         simplifyRecordBind(spc, pat, tm, body)
       %% let (x,y,z) = (a,b,c) in g(x,y,z) --> g(a,b,c)
       | Let ([(pat as RecordPat _, tm as Record _)], body, _) ->
-        let (pats, acts) = unzip(flattenCompatiblePatternTerm(pat, tm)) in
+        % let (pats, acts) = unzip(flattenCompatiblePatternTerm(pat, tm)) in
         simplifyRecordBind(spc, pat, tm, body)
       %% case v of (x,y) -> ... --> let x = v.1 and y = v.2 in ...
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),v as Var(vr,_),_) ->
