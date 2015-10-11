@@ -1520,10 +1520,13 @@ op lisp (slice : Slice) : LispSpec =
                  else
                    [])
  in
+ let impl_ops = opsInImplementation slice in
  let opnames = 
-     case filter (fn op_qid -> definedOp?(spc, op_qid)) (opsInImplementation slice) of
+     case filter (fn op_qid -> definedOp?(spc, op_qid)) impl_ops
        | [] -> 
-         let _ = writeLine("No defined ops found in implementation slice, so using all ops") in
+         let _ = if impl_ops ~= []
+                   then writeLine("No defined ops found in implementation slice, so using all ops")
+                 else () in
          foldriAQualifierMap (fn (q, id, info, opnames) ->
                                 mkQualifiedId (q, id) :: opnames)
                              []

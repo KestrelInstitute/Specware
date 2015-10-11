@@ -345,6 +345,8 @@ op SearchPred.childOfConj(tm: MSTerm, pt: PathTerm): Bool =
        case fromPathTerm gpar_ptm of
          | IfThenElse(p, _, _, _) -> p ~= par_tm
          | _ -> true)
+    | IfThenElse(_, q, r, _) | q = tm || r = tm ->
+      childOfConj(par_tm, par_ptm)
     | Lambda _ -> true
     | _ -> false
 
