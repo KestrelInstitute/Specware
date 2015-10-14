@@ -426,12 +426,18 @@ end-proof
     fa(elts:List a,stk:Stack a) ( Stack2L(pushl(elts,stk)) = elts ++ Stack2L(stk))
 
 % I added the non-emptiness condition back in.
+  % theorem Stack2L_tail is [a]
+  %   fa(stk:NE_Stack a) Stack2L(pop(stk)) = tail(Stack2L(stk))
+
   theorem Stack2L_tail is [a]
-    fa(stk:NE_Stack a) Stack2L(pop(stk)) = tail(Stack2L(stk))
+    fa(stk:Stack a) ~(stk = empty_stack) => Stack2L(pop(stk)) = tail(Stack2L(stk))
 
 % I added the non-emptiness condition.
+  % theorem Stack2L_head is [a]
+  %   fa(stk:NE_Stack a) top(stk) = head(Stack2L(stk))
+
   theorem Stack2L_head is [a]
-    fa(stk:NE_Stack a) top(stk) = head(Stack2L(stk))
+    fa(stk:Stack a) ~(stk = empty_stack) => top(stk) = head(Stack2L(stk))
 
   op [a] L2Stack(lst:List a): Stack a =
     case lst of
