@@ -1854,4 +1854,29 @@ proof Isa last_of_append
   apply(metis List__e_lt_bar_def last_snoc)
 end-proof
 
+proof Isa Stack2L_tail_Obligation_subtype
+  by auto(simp add: Stack__empty_stack_p_def)
+end-proof    
+
+proof Isa Stack2L_tail_Obligation_subtype0
+  by auto(simp add: Stack__empty_stack_p_def)   
+end-proof
+
+proof Isa Stack2L_tail
+  by auto(simp add: Stack__empty_stack_p_def)   
+end-proof
+
+proof Isa Stack2L_head_Obligation_subtype
+  by auto(simp add: Stack__empty_stack_p_def)   
+end-proof
+
+proof Isa Stack2L_head_Obligation_subtype0
+  by auto(simp add: Stack__empty_stack_p_def)   
+end-proof
+
+proof Isa Stack2L_head
+  by auto(simp add: Stack__empty_stack_p_def)   
+end-proof
+
+
 end-spec
