@@ -133,7 +133,7 @@
 	(set-socket-init-for-specware))
       ;(message "%s %s" sw:image-is-executable *specware-lisp*)
       (when (null (cdr (window-list))) (split-window nil nil (> (frame-width) 160)))
-      (sleep-for 1)
+      (sleep-for 0.1)
       (let ((log-warning-minimum-level 'error))
 	;; Don't show spurious warning message
 	(sw:common-lisp sw:common-lisp-buffer-name
@@ -142,7 +142,7 @@
 			sw:common-lisp-image-arguments
 			sw:common-lisp-host
 			sw:common-lisp-image-file))
-      (sleep-for 2)
+      (sleep-for 1)
       (wait-for-prompt 0.5)
       ;(delete-other-windows)
       (when (and (fboundp 'set-frame-pixel-size) (fboundp 'frames-of-buffer) (< (frame-pixel-width) 1200))
@@ -309,7 +309,7 @@ sLisp Heap Image File: ")
       (sw:switch-to-lisp))
     (pop-to-buffer *specware-buffer-name*) ; might want to choose explicit frame
     (goto-char (point-max))
-    (sw-move-beginning-of-line 1)
+    (sw:move-beginning-of-line 1)
     (unless (= (point) (point-max))
       (kill-line))
     (insert str)
@@ -320,7 +320,7 @@ sLisp Heap Image File: ")
   (ensure-specware-running)
   (with-current-buffer *specware-buffer-name*
     (goto-char (point-max))
-    (sw-move-beginning-of-line 1)
+    (sw:move-beginning-of-line 1)
     (unless (= (point) (point-max))
       (kill-line))
     (insert str)

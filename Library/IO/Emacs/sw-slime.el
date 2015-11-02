@@ -28,7 +28,7 @@
 (slime-define-keys specware-listener-mode-map
   ("\C-m" 'sw-return)
   ([return] 'sw-return)
-  ("\C-a" 'sw-move-beginning-of-line)
+  ("\C-a" 'sw:move-beginning-of-line)
  ; ("\C-j" 'slime-repl-newline-and-indent)
 ;  ("\C-\M-m" 'slime-repl-closing-return)
 ;  ([(control return)] 'slime-repl-closing-return)
@@ -260,7 +260,7 @@ If NEWLINE is true then add a newline at the end of the input."
   (setq major-mode 'specware-listener-mode)
   (set (make-local-variable 'specware-listener-p) t)
   (use-local-map specware-listener-mode-map)
-  (lisp-mode-variables t)
+  (lisp-mode-variables nil)
   (setq slime-buffer-package "CL-USER")
   (set (make-local-variable 'lisp-indent-function)
        'common-lisp-indent-function)
@@ -425,14 +425,6 @@ to end."
                 (setq sw:license-displayed-p t))
               (setq buffer-undo-list nil)
               prompt-start)))))))
-
-;; This is to make up for the fact that the space is not part of the prompt
-(defun sw-move-beginning-of-line (n)
-  (interactive "P")
-  (move-beginning-of-line n)
-  (when (and (eq (char-after) ? )
-             (eq (char-after (- (point) 1)) ?*))
-    (forward-char 1)))
 
 (defun slime-repl-insert-result (result)
   (with-current-buffer (slime-output-buffer)

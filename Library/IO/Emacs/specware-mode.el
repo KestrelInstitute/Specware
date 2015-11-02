@@ -593,10 +593,26 @@ Mode map
               (setq hs-marker-begin-regexp "\\s-*%{{{")
               (setq hs-marker-end-regexp "\\s-*%}}}"))))
 
+;; This is to make up for the fact that the space is not part of the prompt
+(defun sw:move-beginning-of-line (n)
+  (interactive "P")
+  (move-beginning-of-line n)
+  (when (and (eq (char-after) ? )
+             (eq (char-after (- (point) 1)) ?*))
+    (forward-char 1)))
+
+(defun sw:at-prompt ()
+  (= (point)
+     (with-current-buffer sw:common-lisp-buffer-name
+       (sw:move-beginning-of-line nil)
+       (point))))
+
 (defun sw:process-current-file-and-return ()
   (when sw:process-on-load
     (let ((buf (current-buffer)))
-        (unless (or (eq (point) (point-max)) (eq ?~ (elt buffer-file-name (- (length buffer-file-name) 1))))
+        (unless (or (eq (point) (point-max))
+                    (eq ?~ (elt buffer-file-name (- (length buffer-file-name) 1)))
+                    (not (sw:at-prompt)))
           (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
             (lisp-or-specware-command-quiet ":sw " "proc " filename)))
       ;(pop-to-buffer buf)
@@ -691,7 +707,7 @@ Depending on the context insert the name of function, a \"->\" etc."
                  (point)))
         (tmp "  -> ")
         (case-or-handle-exp t))
-    (if (/= (save-excursion (beginning-of-line) (point))
+    (if (/= (line-beginning-position)
             (save-excursion (skip-chars-backward "\t ") (point)))
         (insert "\n"))
     (insert "|")
@@ -699,14 +715,14 @@ Depending on the context insert the name of function, a \"->\" etc."
       (goto-char match)
       (cond
        ;; It was a function, insert the function name
-       ((looking-at "fun\\b")
+       ((looking-at "fn\\b")
         (setq tmp (concat " " (buffer-substring-no-properties
                                (progn (forward-char 3)
                                       (skip-chars-forward "\t\n ") (point))
                                (progn (forward-word 1) (point))) " "))
         (setq case-or-handle-exp nil))
        ;; It was a datatype, insert nothing
-       ((looking-at "datatype\\b\\|abstype\\b")  ; ??
+       ((looking-at "type\\b")  ; ??
         (setq tmp " ") (setq case-or-handle-exp nil))
        ;; If it is an and, then we have to see what is was
        ((looking-at "and\\b")  ; ??
@@ -714,8 +730,8 @@ Depending on the context insert the name of function, a \"->\" etc."
           (save-excursion
             (condition-case ()
                 (progn
-                  (re-search-backward "datatype\\b\\|abstype\\b\\|fun\\b")
-                  (setq isfun (looking-at "fun\\b")))
+                  (re-search-backward "type\\b\\|fn\\b")
+                  (setq isfun (looking-at "fn\\b")))
               (error (setq isfun nil))))
           (if isfun
               (progn
@@ -727,7 +743,7 @@ Depending on the context insert the name of function, a \"->\" etc."
                 (setq case-or-handle-exp nil))
             (setq tmp " ") (setq case-or-handle-exp nil))))))
     (insert tmp)
-    (sw:indent-line)
+    (sw:indent-line nil)
     (beginning-of-line)
     (skip-chars-forward "\t ")
     (forward-char (1+ (length tmp)))
@@ -762,25 +778,40 @@ If anyone has a good algorithm for this..."
 (defun sw:indent-sexp (n)
   (interactive "p")
   (sw:indent-region (save-excursion (forward-line 1) (point))
-		    (save-excursion (forward-sexp (or n 1)) (point))))
+		    (save-excursion
+                      (skip-chars-forward " \t")
+                      (if (looking-at "\\s(")
+                          (forward-sexp (or n 1))
+                        (sw:end-of-element))
+                      (point))))
 
-(defun sw:indent-region (begin end)
+(defun sw:indent-region (beg end)
   "Indent region of Specware code."
   (interactive "r")
   (message "Indenting region...")
-  (save-excursion
-    (goto-char end) (setq end (point-marker)) (goto-char begin)
-    (while (< (point) end)
-      (skip-chars-forward "\t\n ")
-      (sw:indent-line)
-      (end-of-line))
-    (move-marker end nil))
+  (let ((font-lock-mode nil))           ; Can't rely on font-lock for comment and string info
+    (save-excursion
+      (goto-char end) (setq end (point-marker)) ; necessary for < comparison to work properly when byte-compiled ?!
+      (goto-char beg)
+      (while (looking-at " *\n")
+        (forward-line 1))
+      (while (< (point) end)
+        (sw:indent-line t)
+        (when (looking-at "(\\*")
+          (forward-comment 1))
+        (beginning-of-line 2)
+        (while (looking-at " *\n")
+          (forward-line 1)))))
   (message "Indenting region... done"))
 
-(defun sw:indent-line ()
+(defun sw:indent-line (&optional indent-comment-wrt-next-line)
   "Indent current line of Specware code."
-  (interactive)
-  (let ((indent (sw:calculate-indentation)))
+  (interactive "p")
+  (let* ((indent (sw:calculate-indentation))
+         (indent (if (and (not (equal indent-comment-wrt-next-line 1))
+                          (looking-at " *\\(%\\|(\\*\\)"))
+                     (min indent (sw:indent-from-next-line))
+                   indent)))
     (if (/= (current-indentation) indent)
         (save-excursion                 ;; Added 890601 (point now stays)
           (let ((beg (progn (beginning-of-line) (point))))
@@ -808,31 +839,24 @@ If anyone has a good algorithm for this..."
                   (setq indent 0))))
             (backward-delete-char-untabify (- start-column indent)))))))
 
+(defconst sw:top-starters-reg  ; ??
+  "\\b\\op\\b\\|\\bdef\\b\\|\\btype\\b\\|import\\b"
+  "The starters of new top-level expressions.")
+
 (defconst sw:indent-starters-reg  ; ??
-  "case\\b\\|datatype\\b\
-\\|else\\b\\|fun\\b\\|def\\b\\|if\\b\
+  "let\\b\\|case\\b\\|fn\\b\
+\\|else\\b\\|def\\b\\|if\\b\\|else if\\b\
 \\|in\\b\\|infix\\b\\|infixr\\b\
 \\|nonfix\\b\\|of\\b\\|open\\b\\|raise\\b\\|sig\\b\\|signature\\b\
-\\|struct\\b\\|structure\\b\\|then\\b\\|\\btype\\b\\|val\\b\
+\\|struct\\b\\|structure\\b\\|then\\b\
 \\|specmap\\b\\|progmap\\b\\|while\\b\\|withtype\\b\
-\\|spec\\b\\|espec\\b\\|espec-refinement\\b\\|module\\b\
 \\|\\(initial[ \\t]*\\|final[ \\t]*\\|\\b\\)\\(mode\\|stad\\)\\b\\|prog\\b\\|step\\b"
   "The indentation starters. The next line will be indented.")
 
-(defconst sw:starters-reg  ; ??
-  "\\babstraction\\b\\|\\babstype\\b\\|\\bdatatype\\b\
-\\|\\bdef\\b\\|\\bfun\\b\\|\\bfunctor\\b\\|\\blocal\\b\
-\\|\\binfix\\b\\|\\binfixr\\b\\|\\bsharing\\b\
-\\|\\bnonfix\\b\\|\\bopen\\b\\|\\bsignature\\b\\|\\bstructure\\b\
-\\|\\btype\\b\\|\\bval\\b\\|\\bwithtype\\b"
-  "The starters of new expressions.")
-
-(defconst sw:end-starters-reg  ; ??
-  "\\blet\\b\\|\\blocal\\b\\|\\bsig\\b\\|\\bstruct\\b\\|\\bwith\\b"
-  "Matching reg-expression for the \"end\" keyword.")
+(defconst sw:all-indent-starters-reg (concat sw:top-starters-reg "\\|" sw:indent-starters-reg))
 
 (defconst sw:starters-indent-after
-  "struct\\b"
+  "let\\b"
   "Indent after these.")
 
 (defun sw:calculate-indentation ()
@@ -864,78 +888,65 @@ If anyone has a good algorithm for this..."
                 (1+ (current-indentation))
               0))))
          ;; Are we looking at a case expression ?
-         ((looking-at "|.*->")
-          (sw:skip-block)
-          (if (looking-at "of\\b")
-	      ;; "case of | ..."  treat like "of"
-	      (progn (sw:re-search-backward "\\bcase\\b")
-		     (+ (current-column) 2))
-	    (sw:re-search-backward "->")
+         ((looking-at "| ")
+          (sw:back-exp-until "\\(of\\b\\||\\|case\\b\\|fn\\b\\|handle\\b\\|->\\|| \\|type\\b\\)")
+          (cond ((looking-at "of\\b")
+                 ;; "case of | ..."  treat like "of"
+                 (sw:re-search-backward "\\bcase\\b")
+                 (+ (current-column) sw:indent-level))
 	    ;; Dont get fooled by fn _ -> in case statements (890726)
 	    ;; Changed the regexp a bit, so fn has to be first on line,
 	    ;; in order to let the loop continue (Used to be ".*\bfn....")
 	    ;; (900430).
-	    (let ((loop t))
-	      (while (and loop (save-excursion
-				 (beginning-of-line)
-				 (looking-at "[^ \t]+\\bfn\\b.*->")))
-		(setq loop (sw:re-search-backward "->"))))
-	    (beginning-of-line)
-	    (skip-chars-forward "\t ")
-	    (cond
-	     ((looking-at "|") (current-indentation))
-	     ((and sw:case-indent (looking-at "of\\b"))
-	      (1+ (current-indentation)))
-	     ((looking-at "fn\\b") (1+ (current-indentation)))
-	     ((looking-at "handle\\b") (+ (current-indentation) 5))
-	     (t (+ (current-indentation) sw:pipe-indent)))))
+                ((looking-at "|")
+                 (let (indent
+                       (beg-of-line (line-beginning-position)))
+                   (while (> (point) beg-of-line)
+                     (setq indent (current-column))
+                     (sw:back-exp-until "|"))
+                   indent))
+                ((looking-at "case") (+ (current-column) sw:indent-level))
+                ((looking-at "fn") (1+ (current-indentation)))
+                ((looking-at "type") (+ (current-column) sw:indent-level))
+                ((looking-at "handle") (+ (current-indentation) 5))
+                ((looking-at "->")
+                 (sw:block-back)
+                 (while (not (or (looking-at "of\\b\\|fn\\b") (looking-back "|\\s-*")) )
+                   (sw:block-back))
+                 (if (looking-at "of\\b\\|fn\\b")
+                     (+ (current-column) 1)
+                   (+ (current-indentation) (if (looking-at "of\\b") 1 0))))
+                (t (+ (current-indentation) sw:pipe-indent))))
          ((looking-at "and\\b")
-          (if (sw:find-matching-starter sw:starters-reg)
+          (if (sw:find-matching-starter sw:top-starters-reg)
               (current-column)
             0))
          ((looking-at "in\\b")          ; Match the beginning let/local
-          (sw:find-match-indent "in" "\\bin\\b" "\\blocal\\b\\|\\blet\\b"))
-	 ((looking-at "end-spec\\b")
+          (sw:find-match-indent "in" "\\bin\\b" "\\blet\\b"))
+	 ((looking-at "spec\\b")
+          (backward-sexp)
+          (if (looking-at "qualifying")
+              (progn (backward-sexp)
+                     (current-column))
+            (current-indentation)))
+	 ((looking-at "end-?spec\\b")
 	  (sw:find-match-indent "end-spec" "\\bend-spec\\b" "\\bspec\\b"))
-	 ((looking-at "end-espec\\b")
-	  (sw:find-match-indent "end-espec" "\\bend-espec\\b" "\\bespec\\b"))
-	 ((looking-at "end-espec-refinement\\b")
-	  (sw:find-match-indent "end-espec-refinement" "\\bend-espec-refinement\\b"
-				"\\bespec-refinement\\b"))
-	 ((looking-at "end-specmap\\b")
-	  (sw:find-match-indent "end-specmap" "\\bend-specmap\\b" "\\bspecmap\\b"))
-	 ((looking-at "end-with\\b")
-	  (sw:find-match-indent "end-with" "\\bend-with\\b" "\\bwith\\b"))
-	 ((looking-at "end-progmap\\b")
-	  (sw:find-match-indent "end-progmap" "\\bend-progmap\\b" "\\bprogmap\\b"))
-	 ((looking-at "end-module\\b")
-	  (sw:find-match-indent "end-module" "\\bend-module\\b" "\\bmodule\\b"))
-	 ((looking-at "end-while\\b")
-	  (sw:find-match-indent "end-while" "\\bend-while\\b" "\\bwhile\\b"))
-	 ((looking-at "end-mode\\b")
-	  (sw:find-match-indent-for-stad "end-mode" "\\bend-mode\\b" "\\bmode\\b"))
-	 ((looking-at "end-stad\\b")
-	  (sw:find-match-indent-for-stad "end-stad" "\\bend-stad\\b" "\\bstad\\b"))
-	 ((looking-at "end-step\\b")
-	  (sw:find-match-indent "end-step" "\\bend-step\\b" "\\bstep\\b"))
-	 ((looking-at "end-if\\b")
-	  (sw:find-match-indent "end-if" "\\bend-if\\b" "\\bif\\b"))
-	 ((looking-at "end-prog\\b")
-	  (sw:find-match-indent "end-prog" "\\bend-prog\\b" "\\bprog\\b"))
-         ((looking-at "end\\b")         ; Match the beginning
-          (sw:find-match-indent "end" "\\bend\\b" sw:end-starters-reg))
          ((and sw:nested-if-indent (looking-at "else[\t ]*if\\b"))
           (sw:re-search-backward "\\bif\\b\\|\\belse\\b")
           (current-indentation))
          ((looking-at "else\\b")        ; Match the if
-          (sw:find-match-indent "else" "\\belse\\b" "\\bif\\b" t))
+          (sw:find-match-indent "else" "\\belse\\b" "\\bif\\b" t "\\belse if\\b"))
          ((looking-at "then\\b")        ; Match the if + extra indentation
           (+ (sw:find-match-indent "then" "\\bthen\\b" "\\bif\\b" t)
              sw:indent-level))
          ((and sw:case-indent (looking-at "of\\b"))
           (sw:re-search-backward "\\bcase\\b")
-          (+ (current-column) 2))
-         ((looking-at sw:starters-reg)
+          (+ (current-column) 1))
+         ((looking-at "\\s)")           ; Close paren
+          (forward-char 1)
+          (sw:backward-sexp)
+          (current-column))
+         ((looking-at sw:top-starters-reg)
           (let ((start (point)))
             (sw:backward-sexp)
             (if (and (looking-at sw:starters-indent-after)
@@ -957,98 +968,148 @@ If anyone has a good algorithm for this..."
                        (current-indentation))
                      sw:indent-level)
                 (goto-char start)
-                (if (sw:find-matching-starter sw:starters-reg)
+                (if (sw:find-matching-starter sw:top-starters-reg)
                     (current-column)
                   0)))))
          (t
-          (let ((follows-comma (sw:previous-line-ends-in-comma))
-		(indent (sw:get-indent)))
-            (when (and (looking-at "|") (not (looking-at "||")))
+          (let* ((follows-comma (sw:previous-line-ends-in-comma))
+                 (paren-indent (sw:get-paren-indent follows-comma))
+                 (indent (sw:get-indent-from-previous-line
+                          follows-comma
+                          paren-indent)))
+            (when (and (looking-at "|")
+                       (not (looking-at "||")))
               (setq indent (if (sw:find-matching-starter
-                   "\\bcase\\b\\|\\bfn\\b\\|\\band\\b\\|\\bhandle\\b")
-                  (cond
-                   ((looking-at "case\\b") (- (current-column) sw:pipe-indent))
-                   ((looking-at "fn\\b") (1+ (current-column)))
-                   ((looking-at "and\\b") (1+ (1+ (current-column))))
-                   ((looking-at "handle\\b") (+ (current-column) 5)))
-                (+ indent sw:pipe-indent))))
+                                "\\bcase\\b\\|\\bfn\\b\\|\\band\\b\\|\\bhandle\\b\\|\\btype\\b")
+                               (cond
+                                 ((looking-at "case\\b") (- (current-column) sw:pipe-indent))
+                                 ((looking-at "fn\\b") (1+ (current-column)))
+                                 ((looking-at "type\\b") (1+ (1+ (current-column))))
+                                 ((looking-at "and\\b") (1+ (1+ (current-column))))
+                                 ((looking-at "handle\\b") (+ (current-column) 5)))
+                             (+ indent sw:pipe-indent))))
             (if sw:paren-lookback       ; Look for open parenthesis ?
-                (if (eq follows-comma 'comma)
-                    (sw:get-paren-indent indent t)
-                  (max 
-                   indent ; (if (looking-at "[])}]") (1- indent) indent)
-                   (sw:get-paren-indent indent nil)))
+                (max indent paren-indent)
               indent))))))))
 
 (defun looking-before (str)
-  (save-excursion
-    (forward-char (- (length str)))
-    (looking-at str)))
+  (and (> (point) (length str))
+       (save-excursion
+         (forward-char (- (length str)))
+         (looking-at str))))
 
 (defun sw:previous-line-ends-in-comma ()
   (save-excursion
     (sw:end-of-previous-line)
     (forward-comment -100)
-    (while (re-search-backward comment-start (save-excursion (beginning-of-line)
- 							     (point))
- 			       t)
+    (while (re-search-backward comment-start (line-beginning-position) t)
       (skip-chars-backward "\t\n "))
     (if (looking-before " in") 'in
-      (if (member (preceding-char) '(?, ?\;))
+      (if (or (member (preceding-char) '(?, ?\;))
+              (looking-before "||")
+              (looking-before "&&"))
           'comma nil))))
 
 (defun sw:end-of-previous-line ()
   (beginning-of-line)
   (skip-chars-backward "\t\n "))
 
-(defun sw:get-indent ()
+(defun sw:indent-from-next-line ()
   (save-excursion
-    (let ((case-fold-search nil))
+    (forward-sexp)
+    (current-indentation)))
+
+(defun sw:get-indent-from-previous-line (no-extra-indent-p paren-indent)
+  (save-excursion
+    (let ((case-fold-search nil)
+          (expr-ended no-extra-indent-p)
+          (origpoint (point)))
       (beginning-of-line)
-      (skip-chars-backward "\t\n; ")
-      (if (looking-at ";") (sw:backward-sexp))
-      (cond
-       ((save-excursion (sw:backward-sexp) (looking-at "end\\b"))
-        (- (current-indentation) sw:indent-level))
-       (t
-	;; Go backward by grouped expressions until you are at the beginning of a line
-        (while (/= (current-column) (current-indentation))
-          (let ((ipos (point)))
-	    (sw:backward-sexp)
-	    (when (and (not (sw:same-line-p ipos (point)))
-		       (not (sw:same-line-p ipos (save-excursion (forward-sexp)
-								 (point)))))
-	      (goto-char ipos)
-	      (beginning-of-line)
-	      (skip-chars-forward "\t "))))
-        (skip-chars-forward "\t |")
-        (let ((indent (current-column)))
-          ;; ?? (skip-chars-forward "\t (")
-          (cond
-           ((looking-at "in\\b") (current-column))
-           ;; Started val/fun/structure...
-           ((looking-at sw:indent-starters-reg)
-            (+ indent sw:indent-level))
-           ;; Indent after "->" pattern, but only if its not an fn _ ->
-           ;; (890726)
-           ((and nil (looking-at ".*->")) ; duplication?
-            (if (looking-at ".*\\bfn\\b.*->")
-                indent
-              (+ indent sw:indent-level)))
-           ;; else keep the same indentation as previous line
-           (t indent))))))))
+      ;;(skip-chars-backward "\t\n; ") (when (looking-at ";") (sw:backward-sexp))
+      (if (not (sw:backward-sexp))
+          0                         ; Failed fall back on paren-indent
+        (when (save-excursion
+                (beginning-of-line)
+                (forward-whitespace 1)
+                (looking-at sw:top-starters-reg))
+          (setq expr-ended t))
+        (cond ((bobp) 0)
+              ((looking-at "in\\b")   (sw:find-match-indent "in" "\\bin\\b" "\\blet\\b"))
+              ((looking-at "then\\b") (+ (sw:find-match-indent "then" "\\bthen\\b" "\\bif\\b" t "\\belse if\\b") sw:indent-level))
+              (t 
+               ;; Go backward by grouped expressions until you are at the beginning of a line or after =
+               (let ((backward-sexp-failed nil))
+                 (while (not (or backward-sexp-failed
+                                 (= (current-column) (current-indentation))
+                                 (looking-at sw:indent-starters-reg)
+                                 (and (not expr-ended)
+                                      (looking-back "let .* = *\\|-> *"))))
+                   (let ((ipos (point)))
+                     (when (looking-at "->\\|else\\b\\|else\\b")
+                       (setq expr-ended t))
+                     (unless (sw:backward-sexp)
+                       (setq backward-sexp-failed t)
+                       (forward-char 1))
+                     (when (and (not (sw:same-line-p ipos (point)))
+                                (not (sw:same-line-p ipos (save-excursion (forward-sexp)
+                                                                          (point)))))
+                       (goto-char ipos)
+                       (beginning-of-line)
+                       (forward-whitespace 1)))))
+               ;; (forward-whitespace 1)
+               (let ((indent (current-column)))
+                 ;; ?? (skip-chars-forward "\t (")
+                 (cond
+                  (no-extra-indent-p (min indent paren-indent))
+                  ((looking-at "\\(in\\|then\\|else\\)\\b") (+ indent sw:indent-level))
+                  ((looking-at "let +def\\b") (+ indent 4 sw:indent-level))
+                  ((looking-at "let\\b") (+ indent 4))
+                  ((looking-at "| _ -> *\n")
+                   (- indent 2))
+                  ;; Started fun...
+                  ((or (looking-at sw:indent-starters-reg)
+                       (looking-at "| "))
+                   (+ indent sw:indent-level))
+                  ((looking-at sw:top-starters-reg)
+                   (if (save-excursion
+                         (goto-char origpoint)
+                         (or (looking-at sw:top-starters-reg)
+                             (and (looking-at "%%\\|(\\*")
+                                  (save-excursion
+                                    (sw:end-of-previous-line)
+                                    (skip-chars-backward "\t\n ")
+                                    (not (looking-before "="))))))
+                       indent (+ indent sw:indent-level)))
+                  ;; else keep the same indentation or + sw:indent-level as previous line
+                  (t  (if (or ; (= indent paren-indent)
+                              (sw:prev-line-arg-p indent))
+                          indent
+                        (+ indent sw:indent-level)))))))))))
+
+;;; True if the previous line is a curried arg
+(defun sw:prev-line-arg-p (indent)
+  (and (= (current-column) (current-indentation))
+       (sw:backward-sexp)
+       (not (bobp))
+       (let ((prev-indent (current-indentation)))
+         (beginning-of-line)
+         (forward-char (if (or (= indent prev-indent)
+                               (= indent (+ prev-indent 2)))
+                           prev-indent
+                         indent))
+         (not (or (looking-at sw:all-indent-starters-reg)
+                  (looking-at "| ")
+                  (and (/= (current-column) (current-indentation))
+                       (progn (backward-word 1)
+                              (looking-at sw:all-indent-starters-reg))))))))
 
 (defun sw:same-line-p (pos1 pos2)
   "Return t if buffer positions POS1 and POS2 are on the same line."
   (save-excursion (goto-char (min pos1 pos2))
-                  (<= (max pos1 pos2) (sw:line-end-position 1))))
+                  (<= (max pos1 pos2) (line-end-position 1))))
 
-(defun sw:line-end-position (&optional n)
-  (save-excursion
-    (end-of-line n)
-    (point)))
-
-(defun sw:get-paren-indent (indent after-comma)
+(defun sw:get-paren-indent (;indent
+                            after-comma)
   (save-excursion
     (let ((origpoint (point))
           (at-top-level nil)
@@ -1057,81 +1118,51 @@ If anyone has a good algorithm for this..."
       (condition-case ()
           (backward-sexp 1)
         (error (setq at-top-level t)))
-      (setq open-paren-point (point))
       (save-excursion (goto-char origpoint)
                       (delete-char 1))
-      (if (and (save-excursion
-		   (goto-char origpoint)
-		   (looking-at "[])}]")))
-	    (1+ (current-column))
-	  (if at-top-level indent   ;0
-            (if (or (and after-comma
-                         (save-excursion (forward-char 1)
-                                         (skip-chars-forward "\t ")
-                                         (or (looking-at "\n")
-                                             (looking-at "(\\*")
-                                             (looking-at comment-start))))
-                    ;(looking-at "{")    ; monadic statement block
-                    )
-                (if (save-excursion (goto-char origpoint)
-                                    (beginning-of-line 0)
-                                    (< (point) open-paren-point))
-                    (- indent 1)
-                  indent)
-              (if (save-excursion
-                    (forward-char 1)
-                    (and t        ;(looking-at sw:indent-starters-reg)
-                         (not (looking-at "\n"))
-                         (not (looking-at "let "))
-                         (progn (goto-char origpoint)
-                                (not (sw:previous-line-ends-in-comma)))))
-                  (1+ (+ (current-column) sw:indent-level))
-                (1+ (current-column)))))))))
-
-; (defun sw:get-paren-indent (indent after-comma)
-;   (save-excursion
-;     (let ((levelpar 0)                  ; Level of "()"
-;           (levelcurl 0)                 ; Level of "{}"
-;           (levelsqr 0)			; Level of "[]"
-; 	  (origpoint (save-excursion (point)))
-;           (backpoint (max (- (point) sw:paren-lookback) (point-min))))
-;       (catch 'loop
-;         (while (and (/= levelpar 1) (/= levelsqr 1) (/= levelcurl 1))
-;           (if (re-search-backward "[][{}()]" backpoint t)
-;               (if (not (sw:inside-comment-or-string-p))
-;                   (cond
-;                    ((looking-at "(") (setq levelpar (1+ levelpar)))
-;                    ((looking-at ")") (setq levelpar (1- levelpar)))
-;                    ((looking-at "\\[") (setq levelsqr (1+ levelsqr)))
-;                    ((looking-at "\\]") (setq levelsqr (1- levelsqr)))
-;                    ((looking-at "{") (setq levelcurl (1+ levelcurl)))
-;                    ((looking-at "}") (setq levelcurl (1- levelcurl)))))
-;             (throw 'loop 0)))		; Exit with value 0
-; 	(if (and (save-excursion
-; 		   (goto-char origpoint)
-; 		   (looking-at "[])}]")))
-; 	    (1+ (current-column))
-; 	  (if (and after-comma
-;                    (save-excursion (forward-char 1)
-;                                    (skip-chars-forward "\t ")
-;                                    (or (looking-at "\n")
-;                                        (looking-at "(\\*")
-;                                        (looking-at comment-start))))
-;               indent
-;             (if (save-excursion
-;                   (forward-char 1)
-;                   (and t                ;(looking-at sw:indent-starters-reg)
-;                        (not (looking-at "\n"))
-;                        (progn (goto-char origpoint)
-;                               (not (sw:previous-line-ends-in-comma)))))
-;                 (1+ (+ (current-column) sw:indent-level))
-;               (1+ (current-column)))))))))
+      (setq open-paren-point (point))
+      (if at-top-level 0
+          ;; (if (or (looking-at sw:top-starters-reg)
+          ;;         (looking-at "%\\|(\\*")
+          ;;         (re-search-forward "\\bspec\\b" (save-excursion (end-of-line) (point)) t))
+          ;;     0 sw:indent-level)
+        (progn (forward-char 1)
+               (unless (save-excursion (skip-chars-forward "\t ")
+                                       (looking-at "\n"))
+                 (skip-chars-forward "\t "))
+               (if (save-excursion
+                     (goto-char origpoint)
+                     (looking-at "[\\|]\\|)\\|}\\|(\\*\\|%"))
+                   (current-column)
+                 (if (and after-comma
+                          (save-excursion (skip-chars-forward "\t ")
+                                          (or (looking-at "\n")
+                                              (looking-at "(\\*")
+                                              (looking-at comment-start))))
+                     0
+                   ;; (if (save-excursion (goto-char origpoint)
+                   ;;                     (beginning-of-line 0)
+                   ;;                     (< (point) open-paren-point))
+                   ;;     (- indent 1)
+                   ;;   indent)
+                   (if (save-excursion
+                         (and t         ;(looking-at sw:indent-starters-reg)
+                              (not (looking-at "\n"))
+                              (not (looking-at "let\\b\\|case\\b"))
+                              (progn (goto-char origpoint)
+                                     (not after-comma))
+                              (sw:backward-sexp)))
+                       (+ (current-column) sw:indent-level)
+                     (current-column)))))))))
 
 (defun sw:inside-comment-or-string-p ()
   (if (and (boundp 'font-lock-mode) font-lock-mode)
       (in-comment-or-string-p)
     (let ((start (point)))
       (if (or (save-excursion
+                (beginning-of-line)
+                (search-forward "%" start t))
+              (save-excursion
                 (condition-case ()
                     (progn
                       (search-backward "(*")
@@ -1151,7 +1182,7 @@ If anyone has a good algorithm for this..."
         (let ((numb 0))
           (save-excursion
             (save-restriction
-              (narrow-to-region (progn (beginning-of-line) (point)) start)
+              (narrow-to-region (line-beginning-position) start)
               (condition-case ()
                   (while t
                     (search-forward "\"")
@@ -1163,17 +1194,31 @@ If anyone has a good algorithm for this..."
                                 (not (zerop (% numb 2))))
                            t nil))))))))))
  
-(defun sw:skip-block ()
+(defun sw:block-back ()
   (let ((case-fold-search nil))
-    (sw:backward-sexp)
-    (if (looking-at "end\\b")
-        (progn
-          (goto-char (sw:find-match-backward "end" "\\bend\\b"
-                                              sw:end-starters-reg))
-          (skip-chars-backward "\n\t "))
+    (skip-chars-backward " \t")
+    (if (equal (char-syntax (char-before)) ?.)
+        (skip-syntax-backward ".")
+      (sw:backward-sexp))
+    (cond ((looking-at "else\\b")
+           (while (not (looking-at "if\\b"))
+             (sw:block-back))
+           (sw:block-back))
+          ((looking-at "in\\b")
+           (while (not (looking-at "let\\b"))
+             (sw:block-back))
+           (sw:block-back))
       ;; Here we will need to skip backward past if-then-else
       ;; and case-of expression. Please - tell me how !!
       )))
+
+(defun sw:back-exp-until (pat)
+  (sw:block-back)
+  (while (not (looking-at pat))
+    (sw:block-back))
+  (current-column))
+
+(defvar save-point nil)
 
 (defun sw:find-match-backward (unquoted-this this match &optional start)
   (save-excursion
@@ -1183,17 +1228,26 @@ If anyone has a good algorithm for this..."
       (if start (goto-char start))
       (while (not (zerop level))
         (if (sw:re-search-backward pattern)
-            (setq level (cond
-                         ((looking-at this) (1+ level))
-                         ((looking-at match) (1- level))))
+            (unless (in-comment-or-string-p)
+              (setq level (cond
+                            ((looking-at this) (1+ level))
+                            ((looking-at match) (1- level)))))
           ;; The right match couldn't be found
-          (error (concat "Unbalanced: " unquoted-this))))
+          (progn (setq save-point (point))
+                 (error (concat "Unbalanced: " unquoted-this)))))
       (point))))
 
-(defun sw:find-match-indent (unquoted-this this match &optional indented)
+(defun sw:find-match-indent (unquoted-this this match &optional indented pre-match)
   (save-excursion
     (goto-char (sw:find-match-backward unquoted-this this match))
-    (if (or sw:type-of-indent indented)
+    (when (and pre-match
+               (save-excursion (forward-word -1)
+                               (looking-at pre-match)))
+      (forward-word -1))
+    (if (or indented
+            (and sw:type-of-indent
+                 (not (and (looking-at (concat match " *\n"))
+                           (> (- (current-column) (current-indentation)) 2)))))
         (current-column)
       (if (progn
             (beginning-of-line)
@@ -1215,7 +1269,8 @@ If anyone has a good algorithm for this..."
     (if (sw:re-search-backward regexp)
         (progn
           (condition-case ()
-              (while (or (/= start-up-list (sw:up-list))
+              (while (or (sw:inside-comment-or-string-p)
+                         (/= start-up-list (sw:up-list))
                          (/= start-let-point (sw:point-inside-let-etc)))
                 (re-search-backward regexp))
             (error (setq found nil)))
@@ -1228,12 +1283,11 @@ If anyone has a good algorithm for this..."
       (while loop
         (condition-case ()
             (progn
-              (re-search-forward "\\bend\\b")
+              (re-search-forward "\\bin\\b")
               (while (sw:inside-comment-or-string-p)
-                (re-search-forward "\\bend\\b"))
+                (re-search-forward "\\bin\\b"))
               (forward-char -3)
-              (setq last (sw:find-match-backward "end" "\\bend\\b"
-                                                  sw:end-starters-reg last))
+              (setq last (sw:find-match-backward "in" "\\bin\\b" "\\blet\\b" last))
               (if (< last start)
                   (setq loop nil)
                 (forward-char 3)))
@@ -1282,8 +1336,10 @@ If anyone has a good algorithm for this..."
           (backward-sexp 1)
           (while (and (/= start (point)) (looking-at "(\\*"))
             (setq start (point))
-            (backward-sexp 1))))
-    (error (forward-char -1))))
+            (backward-sexp 1))
+          t))
+    (error (forward-char -1)
+           nil)))
 
 (defun sw:comment-indent ()
   (if (looking-at "^(\\*")              ; Existing comment at beginning
@@ -1309,7 +1365,7 @@ If anyone has a good algorithm for this..."
     ;; default is "let"
     (if (string= name "") (setq name "let"))
     ;; Insert a newline if point is not at empty line
-    (sw:indent-line)                   ; Indent the current line
+    (sw:indent-line nil)                   ; Indent the current line
     (if (save-excursion (beginning-of-line) (skip-chars-forward "\t ") (eolp))
         ()
       (setq newline t)
@@ -1331,7 +1387,7 @@ If anyone has a good algorithm for this..."
   "Insert a case, prompting for case-expresion."
   (let (indent (expr (read-string "Case expr: ")))
     (insert (concat "case " expr))
-    (sw:indent-line)
+    (sw:indent-line nil)
     (setq indent (current-indentation))
     (end-of-line)
     (if sw:case-indent
@@ -1347,7 +1403,7 @@ If anyone has a good algorithm for this..."
 (defun sw:let-local (starter)
   (let (indent)
     (insert starter)
-    (sw:indent-line)
+    (sw:indent-line nil)
     (setq indent (current-indentation))
     (end-of-line)
     (insert "\n") (indent-to (+ sw:indent-level indent))
