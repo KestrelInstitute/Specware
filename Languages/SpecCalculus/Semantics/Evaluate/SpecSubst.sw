@@ -125,6 +125,7 @@ op auxApplySpecMorphismSubstitution (sm    : Morphism)
 
    {spec_replacements <- findSubSpecReplacements(dom_spec, cod_spec);
     spec_replacements <- return((dom_spec, sm_tm, cod_spec, cod_spec_term) :: spec_replacements);
+    % print("orig spec:\n"^printSpecFlat spc^"\n");
     residue <- return(subtractSpecLeavingStubs (spc, 
                                                 sm_tm, 
                                                 dom_spec, 
@@ -132,13 +133,17 @@ op auxApplySpecMorphismSubstitution (sm    : Morphism)
                                                 cod_spec, 
                                                 cod_spec_term,
                                                 spec_replacements));
+    % print("residue spec:\n"^printSpecFlat residue^"\n");
     translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
+    % print("translated residue spec:\n"^printSpecFlat translated_residue^"\n");
     %% Add the elements separately so we can put preserve order
     new_spec <- specUnion [cod_spec << {elements = []}, translated_residue] pos;     % M(S - dom(M)) U cod(M)
     new_spec <- return (new_spec << {elements = 
                                        replaceImportStub (new_spec.elements,
                                                           Import (cod_spec_term, cod_spec, cod_spec.elements, noPos))});
+    % print("reconstructed spec:\n"^printSpecFlat translated_residue^"\n");
     new_spec <- return (removeDuplicateImports new_spec);
+    % print("slimmed spec:\n"^printSpecFlat translated_residue^"\n");
     new_spec <- return (markQualifiedStatus new_spec);
     new_spec <- return (removeVarOpCaptures    new_spec);
     %% new_spec <- return (compressDefs           new_spec);
@@ -179,7 +184,7 @@ op findSubSpecReplacements (dom_spec: Spec, cod_spec: Spec)
 %% The same place as originals. 
 %% The top? parameter in these two functions is to ensure the substitution is done on
 %% the immediate imports so that the correct Subst terms can be constructed, but below that
-%% it is prpbably not necessary and would involve exponential work without caching
+%% it is probably not necessary and would involve exponential work without caching
 
 op subtractSpecLeavingStubs (spc               : Spec, 
                              sm_tm             : SCTerm, 
@@ -194,7 +199,7 @@ op subtractSpecLeavingStubs (spc               : Spec,
      map (fn el ->
             case el of
               | Import (tm, spc, import_elts, pos) ->
-                % let _ = writeLine("r_e: "^show top?^anyToString tm) in
+                % let _ = writeLine("r_e: "^show top?^"\n"^anyToPrettyString el) in
                 (case findLeftmost (fn (dom_spec, sm_tm, cod_spec, cod_spec_term) -> spc = dom_spec) spec_replacements of
                    | Some(dom_spec, sm_tm, cod_spec, cod_spec_term) -> Import (cod_spec_term, cod_spec, [], pos)
                    | None ->
@@ -203,9 +208,8 @@ op subtractSpecLeavingStubs (spc               : Spec,
                                                                 case el of
                                                                   | Import (tm, spc, _, _) -> spc = dom_spec 
                                                                   | _ -> false)
-                                                             (if top? then spc.elements else import_elts))
-                                       spec_replacements
-                      of
+                                            (if top? then spc.elements else import_elts))
+                            spec_replacements
                        | Some (dom_spec, sm_tm, cod_spec, cod_spec_term) ->
                          let new_spec = if top? then
                                           spc << {elements = revise_elements spc.elements false}
@@ -238,7 +242,7 @@ op deleteChangedOpinfos(orig_ops: OpMap) (source_ops: OpMap) (target_ops: OpMap)
                                    case findAQualifierMap (target_ops, q, id) of
                                      | Some trg_info | trg_info = src_info -> Some op_info
                                      | _ -> None)
-                          orig_ops
+   orig_ops
 
 op replaceImportStub (elements   : SpecElements, 
                       new_import : SpecElement) 
