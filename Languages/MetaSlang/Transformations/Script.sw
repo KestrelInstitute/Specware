@@ -187,8 +187,8 @@ spec
         axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight
           (Some (prove_withTheorem (qid, formula)))
       | _ ->
-        fail ("strengthenRules: not a valid strengthening rule: "
-                ^ printQualifiedId qid)
+        let _ = writeLine("Warning: strengthen "^show qid^" not an implication.\n") in
+        []
 
   op weakenRules (context: Context) ((pt,qid,tyVars,formula,a): Property): List RewriteRule =
     case formula of
