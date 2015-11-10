@@ -20,7 +20,7 @@ your system.)
 
 Optional: For proof support, install the Isabelle/HOL theorem prover
 (available from http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  The
-required version of Isabelle is Isabelle2014.  Older versions of
+required version of Isabelle is Isabelle2015.  Older versions of
 Isabelle will not work.
 
 If this is a pre-built (binary) copy of Specware, you can just run
@@ -53,7 +53,7 @@ is this needed?  Maybe on Mac but not on Linux?).  You can put
 something like this line:
 export SPECWARE4=$HOME/Specware 
 into the file:
-~/.isabelle/Isabelle2014/etc/settings
+~/.isabelle/Isabelle2015/etc/settings
 in your home directory.
 
 Errors in launching Specware may be displayed in the "mini-buffer" in
