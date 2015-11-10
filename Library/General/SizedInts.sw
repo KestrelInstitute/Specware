@@ -128,7 +128,7 @@ end-proof
 %% This is verbatim because -1 is not a literal in Specware
 proof Isa -verbatim
 theorem Int__neg_one_fits_32 [simp]: 
-  "Int__intFitsInNBits_p 32 -1"
+  "Int__intFitsInNBits_p 32 (-1)"
   by (simp add: Int__intFitsInNBits_p_def)
 end-proof
 

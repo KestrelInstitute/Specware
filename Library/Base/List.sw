@@ -265,6 +265,9 @@ op [a] filter (p: a -> Bool) (l: List a) : List a =
   | [] -> []
   | hd::tl -> (if p hd then [hd] else []) ++ filter p tl
 
+op [a] partition (p: a -> Bool) (l: List a) : List a * List a =
+   (filter p l, filter (~~~ p) l)
+
 % fold from left/right:
 
 op [a,b] foldl (f: b * a -> b) (base: b) (l: List a) : b =
@@ -833,6 +836,7 @@ proof Isa Thy_Morphism List "~~/src/HOL/Library/Permutation"
   List.forall?        -> list_all
   List.exists?        -> list_ex
   List.filter         -> filter
+  List.partition      -> partition
   List.foldl          -> foldl'
   List.foldr          -> foldr'
   List.zip            -> zip          curried
@@ -1072,18 +1076,16 @@ lemma List__list_nth:
 lemma List__list_nth_the:
     "\<lbrakk>f definedOnInitialSegmentOfLength n; i < n\<rbrakk> \<Longrightarrow> (List__list f) ! i = the (f i)"
   by (rule List__list_nth, 
-      auto simp add: option.collapse definedOnInitialSegmentOfLengthSome)
+      auto simp add: definedOnInitialSegmentOfLengthSome)
 
 lemma List__list_members:
     "\<lbrakk>f definedOnInitialSegmentOfLength n; i < n; f i = Some a\<rbrakk> \<Longrightarrow> a mem (List__list f)"
- by (frule List__list_nth, auto simp add: nth_mem List__length_is_SegmentLength)
+ by (frule List__list_nth, auto simp add: List__length_is_SegmentLength)
   
 (*******************************************************************************
 * Many arguments involve the application of List__list to a function 
 * of the kind  \<lambda>n. if n<len then Some (f n) else None)
 *******************************************************************************)
-
-declare List__list.simps [simp del]
 
 lemma List__list_length_if [simp]:
    "length (List__list (\<lambda>n. if n<len then Some (f n) else None)) = len"
@@ -1194,7 +1196,7 @@ lemma List__list_subtype_constr_refined:
  apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def 
                        fun_eq_iff list_eq_iff_nth_eq list_all_length
                        List__length_is_SegmentLength)
- apply (thin_tac ?P, rotate_tac 1, thin_tac ?P, drule_tac x=xc in spec)
+ apply (thin_tac _, rotate_tac 1, thin_tac _, drule_tac x=xc in spec)
  apply (case_tac "xc<xb", simp_all add: not_less)
  apply (frule definedOnInitialSegmentOfLengthSome, auto, rotate_tac 1,
         frule definedOnInitialSegmentOfLengthSome, auto simp add: List__list_nth)
@@ -1658,7 +1660,7 @@ lemma List__list_1_stp_nil:
  apply (drule_tac x="(\_lambdai. if i < length [] then Some ([] ! i) else None)" and y="[]" 
         in Function__fxy_implies_inverse__stp, auto simp add: List__list.simps)
         (* Map.empty = \_lambdai. None ***)
- apply (thin_tac "?a=?b", simp add: Function__inverse__stp_def )
+ apply (thin_tac "_=_", simp add: Function__inverse__stp_def )
  apply (rule the1_equality, rule_tac a="\_lambdai. None" in ex1I, simp_all)
  apply (erule conjE, simp add: List__list_empty_iff )
 done
@@ -2316,7 +2318,7 @@ proof Isa last_Obligation_subtype
 end-proof
 
 proof Isa last_Obligation_subtype0
-  by (cases l, auto simp add: List__length_suffix)
+  by (cases l, auto)
 end-proof
 
 proof Isa last__def
@@ -2392,7 +2394,7 @@ proof Isa length_butLast [simp]
 end-proof
 
 proof Isa length_butLast_order [simp]
-  by (auto simp add: List__length_butLast)
+  by auto
 end-proof
 
 proof Isa e_pls_pls_Obligation_the
@@ -2539,6 +2541,18 @@ end-proof
 
 proof Isa filter_subtype_constr
   by (auto simp add: list_all_iff)
+end-proof
+
+proof Isa partition_subtype_constr
+  by (auto simp add: List__filter_subtype_constr)
+end-proof
+
+proof Isa partition_subtype_constr1
+  by (auto simp add: list_all_iff)
+end-proof
+
+proof Isa partition__def
+  by (induction l, auto)
 end-proof
 
 proof Isa foldl_subtype_constr
@@ -2837,11 +2851,11 @@ proof Isa removeNones_subtype_constr
   apply (subgoal_tac "\<forall>x\<in>set(List__removeNones l). Some x \<in> set l")  
   apply (simp add: list_all_iff, auto)
   apply (drule_tac x="Some x" in bspec, auto)
-  apply (thin_tac "list_all ?P l")
+  apply (thin_tac "list_all _ l")
   apply (subgoal_tac "Some x \<in> set (map Some (List__removeNones l))")   
   apply (subgoal_tac "map Some (List__removeNones l)
                        = filter (case_option False (\<lambda>x. True)) l", auto)
-  apply (thin_tac "?a \<in> ?S", simp add: List__removeNones_def)
+  apply (thin_tac "_ \<in> _", simp add: List__removeNones_def)
   apply (rule the1I2)
   apply (cut_tac List__removeNones_Obligation_the, auto)
 end-proof
@@ -3374,7 +3388,7 @@ proof Isa unflattenL_subtype_constr
   defer
   apply (drule List__unflattenL_Obligation_the, drule theI', 
          simp add: List__unflattenL_def)
-  apply (thin_tac "?foldl = ?length", auto simp add: Let_def list_all_iff)
+  apply (thin_tac "_ = _", auto simp add: Let_def list_all_iff)
   apply (erule bspec)
   apply (rule_tac t="set l" and s="set( concat (List__unflattenL(l, lens)))" in subst) 
   apply (simp, thin_tac "concat (List__unflattenL (l, lens)) = l", auto) 
@@ -5149,8 +5163,8 @@ proof Isa permute_subtype_constr
                       in k < length prm \<and> prm ! k = n", 
          simp add: Let_def)
   apply (rule the1I2, simp_all add: Let_def)
-  apply (thin_tac "?P \<longrightarrow> ?Q", thin_tac "\<forall>i<?x. ?P i", 
-         thin_tac "?a=?b", thin_tac "?a=?b",
+  apply (thin_tac "_ \<longrightarrow> _", thin_tac "\<forall>i < _ . _ i", 
+         thin_tac "_=_", thin_tac "_=_",
          auto simp add: List__permutation_p_def nth_eq_iff_index_eq)
   (*** the intuitive argument is easy now:
        if prm is distinct and all elements are smaller than length prm    
@@ -5164,7 +5178,7 @@ proof Isa permute_subtype_constr
 end-proof
 
 proof Isa permute_Obligation_subtype0
- by (auto simp: List__permutation_p_def nth_mem)
+ by (auto simp: List__permutation_p_def)
 end-proof
 
 proof Isa permute_Obligation_the
@@ -5272,14 +5286,14 @@ end-proof
 proof Isa isoList_subtype_constr1
   apply (auto simp add: bij_ON_def List__isoList_def)
   (*** prove injectivity **)
-  apply (thin_tac "\<forall>x. ?P x", thin_tac "\<forall>x. ?P x", thin_tac "surj_on ?f ?A ?B",
+  apply (thin_tac "\<forall>x. _ x", thin_tac "\<forall>x. _ x", thin_tac "surj_on _ _ _",
          simp add: inj_on_def)
   apply (rule allI)
   apply (rotate_tac 1, erule rev_mp, induct_tac x, simp, clarify)
   apply (drule mp, simp add: list_all_iff)
   apply (drule_tac x="tl y" in spec, auto simp add: list_all_iff)
   (*** prove surjectivity **)
-  apply (thin_tac "inj_on ?f ?A", auto simp add: surj_on_def)
+  apply (thin_tac "inj_on _ _", auto simp add: surj_on_def)
   apply (rotate_tac 3, erule rev_mp, induct_tac y)
   apply (auto simp add: list_all_iff)
   apply (drule_tac x=a in spec, simp)
@@ -5296,14 +5310,6 @@ end-proof
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 
-(***********************************************************************
- * From now on List__list should not be unfolded automatically  
- * because this may cause the simplifier to loop 
- ***********************************************************************)
-
-declare List__list.simps [simp del]
-
-
 (**************************************************************************)
 (* Extensions to SW_List                                                  *)
 (**************************************************************************)
@@ -5319,7 +5325,7 @@ lemma concat_nth:
     \<Longrightarrow> concat L ! i = L ! (i div n) ! (i mod n)"
   apply (induct L arbitrary: i, auto)
   apply (subgoal_tac "(length a = n) \<and> (\<forall>j<length L. length (L ! j) = n)", 
-         safe, thin_tac ?P)
+         safe, thin_tac _)
   defer 
   apply (drule_tac x=0 in spec, simp,
          drule_tac x="Suc j" in spec, simp)
@@ -5392,7 +5398,7 @@ lemma List__unflatten_cons:
   apply (subgoal_tac "\<forall>i<length xa. length (xa ! i) = n")
   defer
   apply (rule allI, rule impI, drule_tac x=i in spec, case_tac i, simp_all)
-  apply (thin_tac "\<forall>i. ?P i", simp (no_asm_simp) add: list_eq_iff_nth_eq)
+  apply (thin_tac "\<forall>i. _ i", simp (no_asm_simp) add: list_eq_iff_nth_eq)
   apply (rule allI, rule impI,  case_tac i, simp_all)
   apply (rule allI, rule impI,
          frule_tac n=n and L=xa and i="n * 0 + ia" in concat_nth, 
@@ -5400,8 +5406,10 @@ lemma List__unflatten_cons:
   apply (rule allI, rule impI,
          frule_tac n=n and L=xa and i="n * (Suc nat) + ia" in concat_nth, 
          simp_all add: nth_append mult_add_mono)
+  using mult_add_mono apply fastforce
   apply (cut_tac n=n and L=xaa and i="n * nat + ia" in concat_nth, 
          simp_all add: nth_append mult_add_mono)
+  using mult_add_mono apply fastforce
   apply (simp add: mult_Suc_right [symmetric] del: mult_Suc_right)
 done
 
@@ -5461,7 +5469,7 @@ lemma List__in_p__stp_finite:
   "\<lbrakk>list_all P l\<rbrakk>
    \<Longrightarrow>  finite {x. List__in_p__stp P (x, l)}"
 by (simp add:  List__in_p__stp_def List__e_at_at__stp_nth,
-    rule_tac t="?set" and s="{l ! i | i. i < length l}" in subst,
+    rule_tac t="_" and s="{l ! i | i. i < length l}" in subst,
     auto)
 
 lemma List__length_rotateRight2 [simp]: 
@@ -5656,10 +5664,6 @@ lemma List__positionsSuchThat_cons2 [simp]:
   apply (clarsimp simp add: set_eq_iff image_iff, case_tac xb, simp_all)
 done
 
-lemma List__positionsSuchThat_membership2 [simp]: 
-  "i \<in> set (List__positionsSuchThat(l, p)) = (i < length l \<and> p (l ! i))"
-  by simp
-
 lemma List__positionsSuchThat_nil [simp]:
   "List__positionsSuchThat ([], p) = []"
   by (simp add: List__positionsSuchThat_def member_def,
@@ -5827,7 +5831,7 @@ lemma List__increasing_strict_mono:
   apply (drule_tac x=i in spec, drule_tac x="j-i" in spec, auto)
   apply (simp add: List__increasingNats_p_def)
   apply (rotate_tac -2, erule rev_mp, erule rev_mp, induct_tac ja rule: nat_induct, 
-         auto simp add: One_nat_def)
+         auto)
   apply (drule_tac x="ia+n" in spec, auto)
 done
 
@@ -6001,12 +6005,12 @@ end-proof  %% End verbatim block
 
 proof Isa delete1_subtype_constr
   apply(induct lst)
-  apply(simp_all add: List__delete1.simps)
+  apply(simp_all)
 end-proof
 
 proof Isa List__delete1_head
   apply(case_tac lst)
-  apply(simp_all add: List__delete1.simps)
+  apply(simp_all)
 end-proof
 
 proof Isa List__delete1_head__stp
@@ -6016,7 +6020,7 @@ end-proof
 
 proof Isa List__length_of_delete1
   apply(induct lst)
-  apply(simp_all add: List__delete1.simps)
+  apply(simp_all)
   apply(case_tac "n=a")
   apply(simp_all)
 end-proof
@@ -6024,7 +6028,7 @@ end-proof
 proof Isa List__length_of_delete1__stp
   apply(induct lst)
   apply(simp add: List__in_p__stp_def List__e_at_at__stp_nth2)
-  apply(auto simp add: List__in_p__stp_def List__delete1.simps)
+  apply(auto simp add: List__in_p__stp_def)
   apply(case_tac "n=a")
   apply(simp)
   apply(simp add: List__e_at_at__stp_nth)
@@ -6062,13 +6066,10 @@ proof Isa List__intersperse_subtype_constr
   defer
   apply(simp)
   apply(induct l)
-  apply(simp)
-  apply(auto simp add: List__intersperse.simps List__List_P__def)
+  apply(auto simp add: List__List_P__def)
   apply(case_tac l)
-  apply(simp add: List__intersperse.simps List__List_P__def)
-  apply(simp add: List__intersperse.simps List__List_P__def)
+  apply(auto simp add: List__List_P__def)
 end-proof
-
 
 proof Isa List__foldr1_Obligation_subtype
   apply (case_tac tl__v)
@@ -6084,7 +6085,7 @@ proof Isa List__foldr1_subtype_constr
   apply(induct "l")
   apply(simp)
   apply(case_tac l)
-  apply(auto simp add: List__foldr1.simps)
+  apply(auto)
 end-proof
 
 proof Isa List__diff_of_empty

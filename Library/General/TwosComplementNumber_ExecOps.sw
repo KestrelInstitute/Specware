@@ -36,11 +36,11 @@ spec
 
 proof Isa minTCNumber__1_Obligation_subtype2
   apply (cases i, simp_all)
-  apply (thin_tac "?P \<or> ?Q")
+  apply (thin_tac "_ \<or> _")
   apply (simp only: minus_minus  diff_minus_eq_add zadd_int
                     int_1 [symmetric] nat_int,
          auto simp add: Bits__minBits_def)
-  apply (thin_tac ?P, thin_tac ?P)
+  apply (thin_tac _, thin_tac _)
   apply (simp only: convert_to_nat_2 zpower_int int_1 [symmetric]
                     algebra_simps zadd_int zle_int add_0 
                     semiring_numeral_div_class.discrete [symmetric])

@@ -241,7 +241,7 @@ end-proof
 op even? (n:Nat) : Bool = 2 divides n
 
 proof Isa even_p__def
-  by (simp add: Parity.even_odd_class.even_iff_2_dvd)
+  by simp
 end-proof
 
 type EvenNat = (Nat | even?)
@@ -337,7 +337,7 @@ lemma Euler_aux3a: "nat((p - 1) div 2) * 2 =  nat (((p - 1) div 2) * 2)"
 
 lemma Euler_aux4a: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<^sup>2 mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
   apply (simp add: dvd_eq_mod_eq_0 [symmetric] power2_eq_square zmod_eq_dvd_iff)
-  apply (rule classical, erule notE, simp add: not_not)
+  apply (rule classical, erule notE, simp)
   apply (cut_tac x=p and y="y * y - x" in dvd_minus_iff [symmetric], simp)
   apply (drule_tac  zdvd_zdiffD, simp add: dvd_mult, simp)
 done
@@ -391,8 +391,7 @@ lemma Euler_aux1: "\<lbrakk>(2::nat) < p; odd p\<rbrakk>  \<Longrightarrow>  0 <
   by simp
 
 lemma Euler_aux4: "\<lbrakk>(x::nat) mod p \<noteq> 0; y\<^sup>2 mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
-  apply (rule classical, erule notE, simp add: not_not power2_eq_square)
-  apply (drule_tac b=y and c=y in dvd_mult, simp add: dvd_eq_mod_eq_0)
+  apply (rule classical, erule notE, simp add: power2_eq_square)
 done
 
 lemma Euler_aux5: "\<lbrakk>2 < p; prime p; a\<^sup>2 mod p = 1 \<rbrakk>  
@@ -413,13 +412,11 @@ lemma Euler_part1: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightar
 done
 
 lemma Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<^sup>2 mod p = 1"
-   apply (frule prime_odd_nat, simp,
-          frule_tac a=a in fermat_theorem, 
-          simp_all add: dvd_eq_mod_eq_0 del: One_nat_def)
+   apply (frule prime_odd_nat, simp)
+   apply (frule_tac a=a in fermat_theorem)
+   apply (simp add: mod_eq_0_iff_dvd)
    apply (rule_tac s="a ^ (p - 1)" and t = "(a ^ ((p - 1) div 2))\<^sup>2" in subst,
-          simp_all add: power_mult [symmetric] algebra_simps 
-                   del: One_nat_def)
-   apply (simp only: numeral_2_eq_2, subst even_nat_div_two_times_two, auto)
+          simp_all add: power_mult [symmetric] algebra_simps)
 done
 
 lemma Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<rbrakk>
@@ -429,12 +426,7 @@ lemma Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<r
                and s="(a mod p) ^ ((p - 1) div 2) mod p" in subst,
           simp (no_asm) add: power_mod)
    apply (drule sym, simp add: power_mod power_mult [symmetric] del: One_nat_def)
-   apply (simp only: numeral_2_eq_2, subst even_nat_div_two_times_two, auto)
-   apply (frule_tac a=y in fermat_theorem)
-   apply (auto simp add: power2_eq_square Euler_aux4)
-done
-
-
+   using Euler_aux4 fermat_theorem by blast
 
 lemma QuadRes_criterion:
   "\<lbrakk> 2 < p; prime p; a ^ ((p - 1) div 2) mod p = 1\<rbrakk> \<Longrightarrow> QuadRes p a"
@@ -486,7 +478,7 @@ lemma Legendre_unique:
         \<Longrightarrow> Legendre a p = x"
   apply (clarify, subgoal_tac "a ^ ((p - 1) div 2) mod p = x mod int p")
   defer apply (simp add: zmod_int zmod_eq_dvd_iff dvd_def int_power)
-  apply (thin_tac "?a=?b", unfold Legendre_def, rotate_tac 4, split split_if)    
+  apply (thin_tac "_=_", unfold Legendre_def, rotate_tac 4, split split_if)    
   (** Case 1: [a = 0] (mod p) **)
   apply (rule conjI, rule impI, erule rev_mp, subst Euler_part1, simp+)
   apply (erule disjE, simp, erule disjE, simp, simp add: zmod_minus1)
@@ -509,8 +501,8 @@ theorem legendreSymbol_alt_def is
 proof Isa
   apply (rule the1I2)
   apply (rule Integer__legendreSymbol_alt_def_Obligation_the, 
-         simp_all del: semiring_norm)
-  apply (simp add: Integer__legendreSymbol_as_Legendre del: semiring_norm)
+         simp_all)
+  apply (simp add: Integer__legendreSymbol_as_Legendre)
   (** uniqueness proof as above ***)
   apply (frule_tac prime_odd_gt_2, simp, thin_tac "odd p")
   apply (simp add: Legendre_unique nat_div_distrib nat_diff_distrib)
@@ -528,7 +520,7 @@ proof Isa legendreSymbol_alt_def_Obligation_the
 end-proof
 
 proof Isa legendreSymbol_alt_def_Obligation_subtype
-  by (auto, arith+)
+  by (metis Integer__even_p__def diff_Suc_1 even_Suc gr0_conv_Suc int_1 prime_g_zero prime_ge_1_nat zdiff_int)
 end-proof
 
 proof Isa legendreSymbol_alt_def_Obligation_subtype0
@@ -587,7 +579,7 @@ lemma Integer__jacobiSymbol_Obligation_subtype0_aux:
   apply (cut_tac a="Integer__legendreSymbol (a, aa)" 
              and l="map (\<lambda>f. Integer__legendreSymbol (a, f)) factors" 
          in foldl_int_mul_assoc1, simp, 
-        rotate_tac -1, thin_tac "?a=?b", erule conjE, erule conjE)
+        rotate_tac -1, thin_tac "_=_", erule conjE, erule conjE)
   apply (erule disjE, simp_all add: int_mult split: split_if_asm)
   apply (drule_tac a=a and x="-x" in Integer__legendreSymbol_cases, 
          simp_all, clarify)
@@ -622,17 +614,17 @@ proof Isa -verbatim
 
 (* Least, Greatest, etc. are defined on predicates. We need a version for sets *)
 
-consts LeastS :: "('a::order) set \<Rightarrow> 'a"	
-defs LeastS_def:  "LeastS S \<equiv> Least (setToPred S)"
+definition LeastS :: "('a::order) set \<Rightarrow> 'a"	 where
+  LeastS_def:  "LeastS S \<equiv> Least (setToPred S)"
 
-consts GreatestS :: "('a::order) set \<Rightarrow> 'a"	
-defs GreatestS_def:  "GreatestS S \<equiv> Greatest (setToPred S)"
+definition GreatestS :: "('a::order) set \<Rightarrow> 'a"	where
+  GreatestS_def:  "GreatestS S \<equiv> Greatest (setToPred S)"
  
-consts LeastMS :: "('a \<Rightarrow> ('b::order)) \<Rightarrow> 'a set \<Rightarrow> 'a"	
-defs LeastMS_def:  "LeastMS f S \<equiv> LeastM f (setToPred S)"
+definition LeastMS :: "('a \<Rightarrow> ('b::order)) \<Rightarrow> 'a set \<Rightarrow> 'a"where
+  LeastMS_def:  "LeastMS f S \<equiv> LeastM f (setToPred S)"
 
-consts GreatestMS :: "('a \<Rightarrow> ('b::order)) \<Rightarrow> 'a set \<Rightarrow> 'a"
-defs GreatestMS_def:  "GreatestMS f S \<equiv> GreatestM f (setToPred S)"
+definition GreatestMS :: "('a \<Rightarrow> ('b::order)) \<Rightarrow> 'a set \<Rightarrow> 'a" where
+  GreatestMS_def:  "GreatestMS f S \<equiv> GreatestM f (setToPred S)"
 
 declare LeastS_def [simp add]
 declare GreatestS_def [simp add]
@@ -790,13 +782,13 @@ proof Isa lcmOf_Obligation_subtype
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p")
-     apply(thin_tac "?a=?b")
+     apply(thin_tac "_=_")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
-          thin_tac "?P", thin_tac "?P",  
-          simp add: list_all_iff Nat__posNat_p_def)
+          thin_tac "_", thin_tac "_",  
+          simp add: list_all_iff)
    apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> n dvd k)",
-          thin_tac ?P, erule exE)
+          thin_tac _, erule exE)
    apply (drule_tac m="\<lambda>x. x" in ex_has_least_nat, auto)
    apply (rule_tac x="int x" in exI, auto simp add: zdvd_int)
    apply (rotate_tac 2, drule_tac x="nat i1" in spec, auto)
@@ -822,11 +814,11 @@ proof Isa gcdOf_Obligation_subtype
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p")
-     apply(thin_tac "?a=?b")
+     apply(thin_tac "_=_")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
-          thin_tac "?P", thin_tac "?P",
-          simp add: list_all_iff Nat__posNat_p_def)
+          thin_tac "_", thin_tac "_",
+          simp add: list_all_iff)
    apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> k dvd n)", 
           erule exE, erule exE)
    apply (rotate_tac 1, 
@@ -1035,7 +1027,7 @@ lemma Integer__toLittleEndian_p_equality:
       \<longrightarrow> digits1 = digits2")
  apply (drule_tac x=digits1 in spec, drule_tac x=digits2 in spec, drule_tac x=x in spec, 
         drule mp, simp, drule mp, simp, erule mp, simp)
- apply (rotate_tac 1, thin_tac "?P",  thin_tac "?P",  thin_tac "?P", 
+ apply (rotate_tac 1, thin_tac "_",  thin_tac "_",  thin_tac "_", 
         rule allI, induct_tac digits1 rule: rev_induct, simp, clarify)
  apply (case_tac "xs=[]", simp_all)
  (***********)
@@ -1056,7 +1048,7 @@ lemma Integer__toLittleEndian_p_equality:
  apply (drule_tac x="butlast digits2" in spec, drule mp, simp, drule sym, simp)
  apply (drule sym, simp)
  apply (drule_tac x="xa mod base ^ length xs" in spec, drule mp, simp, drule mp, simp)
- apply (thin_tac "Integer__littleEndian_p (?x,base,?y)")+
+ apply (thin_tac "Integer__littleEndian_p (_,base,_)")+
  apply simp
 done
 
@@ -1098,8 +1090,7 @@ proof Isa toMinLittleEndian_Obligation_subtype
                     Integer__minimizers_def 
                     Integer__minimizes_p_def 
                     Integer__littleEndian_p_nil 
-                    conj_imp 
-                    List__nonEmpty_p_def )
+                    conj_imp)
    apply (case_tac "x=0") 
    (** special case: represent x=0 by [0] ***)
    apply (rule_tac x="[0]" in exI, 
@@ -1156,7 +1147,7 @@ proof Isa toMinLittleEndian_Obligation_subtype0
                    unique_singleton,
          erule ex1E)
   apply (erule conjE)+
-  apply (rotate_tac 1, thin_tac ?P, rule_tac x=xa in LeastMI2, 
+  apply (rotate_tac 1, thin_tac _, rule_tac x=xa in LeastMI2, 
          auto simp add: Integer__littleEndian_p_nil)
 end-proof
 
@@ -1170,7 +1161,7 @@ proof Isa toMinBigEndian_Obligation_subtype
                 unique_singleton,
           erule ex1E, clarify)
    apply (rule_tac a="rev xa" in ex1I)
-   apply (thin_tac ?P, clarsimp, drule_tac x="rev x1" in spec, simp)
+   apply (thin_tac _, clarsimp, drule_tac x="rev x1" in spec, simp)
    apply (drule_tac x="rev xaa" in spec, drule mp, auto)
    apply (rotate_tac -3,drule_tac x="rev x1" in spec, auto)
 end-proof
@@ -1184,7 +1175,7 @@ proof Isa toMinBigEndian_Obligation_subtype0
                    unique_singleton,
          erule ex1E)
   apply (erule conjE)+
-  apply (rotate_tac 1, thin_tac ?P, rule_tac x=xa in LeastMI2, 
+  apply (rotate_tac 1, thin_tac _, rule_tac x=xa in LeastMI2, 
          auto simp add: Integer__littleEndian_p_nil)
 end-proof
 % ------------------------------------------------------------------------------

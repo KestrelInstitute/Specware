@@ -268,7 +268,7 @@ proof Isa List__e_fsl_fsl_bsl_bsl_Obligation_subtype
   apply (simp add:FSet__nonEmpty_p_def List__toSet_def Set__nonEmpty_p_def
                   member_def  FSet__fromFSet_def)
   apply (cut_tac FSet__toFSet_subtype_constr, simp add: univ_true)
-  apply (metis FSet__fromFSet_def FSet__fromFSet_f_f List.finite_set set_empty2)
+  apply (smt FSet__fromFSet_def FSet__fromFSet_f_f List.finite_set set_empty)
 end-proof
 
 

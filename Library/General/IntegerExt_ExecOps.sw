@@ -153,11 +153,11 @@ spec
 
 
 proof Isa e_ast_ast__1_Obligation_subtype
-  by (auto, arith)
+  using Integer__even_p__def by blast
 end-proof
 
 proof Isa e_ast_ast__1_Obligation_subtype0
-  by (auto, arith)
+  by simp
 end-proof
 
 proof Isa e_ast_ast__1__obligation_refine_def
@@ -176,7 +176,7 @@ termination
      auto simp add: not_less,
      rule_tac t="Suc n - ((i + 1) * (i + 1))" and s="(Suc n - i*i) - (i+i+1)"
         in subst,
-     auto simp add: algebra_simps diff_less)
+     auto simp add: algebra_simps)
 end-proof
 
 
@@ -271,6 +271,7 @@ proof Isa primeFactorsOf__1__loop_Obligation_subtype1
   apply (erule rev_mp, simp add: zdvd_int  [symmetric])
   apply (rule_tac t="0 < n" and s="0 < f * (n div f)" in subst,
          frule dvd_mult_div_cancel [symmetric], auto)
+  apply (metis dvd_mult_div_cancel mult.commute mult_zero_left neq0_conv)
 end-proof
 
 proof Isa primeFactorsOf__1__loop_Obligation_subtype3
@@ -398,7 +399,7 @@ proof Isa toBigEndian__1__obligation_refine_def
   apply (simp add: Integer__toBigEndian__1_def Integer__toMinBigEndian_def 
                    LeastM_def,
         frule_tac base=base and x=x in Integer__toMinBigEndian_exists)
-  apply (rule someI2_ex, simp, thin_tac "\<exists>a. ?P a", auto)
+  apply (rule someI2_ex, simp, thin_tac "\<exists>a. _ a", auto)
   apply (simp add: Integer__toBigEndian_def)
   apply (rule the1_equality,
          rule Integer__toBigEndian_Obligation_the, simp_all)         

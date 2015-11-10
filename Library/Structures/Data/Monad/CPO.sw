@@ -113,11 +113,11 @@ CPO qualifying spec
 
   proof Isa leastUpperBound_unique
     proof -
-      assume po : "CPO__partialOrder_p r"
+      assume po : "ISet__partialOrder_p r"
       assume lub1_pf : "CPO__leastUpperBound_p r S lub1"
       assume lub2_pf : "CPO__leastUpperBound_p r S lub2"
       have asym : "antisym r"
-        by (insert po, simp add: CPO__partialOrder_p_def)
+        by (insert po, simp add: ISet__partialOrder_p_def)
       have ub1 : "CPO__upperBound_p r S lub1" by (insert lub1_pf, simp add: CPO__leastUpperBound_p_def)
       have ub2 : "CPO__upperBound_p r S lub2" by (insert lub2_pf, simp add: CPO__leastUpperBound_p_def)
       have r12 : "(lub1, lub2) \<in> r"
@@ -131,7 +131,7 @@ CPO qualifying spec
 
   proof Isa supremum_Obligation_the
     proof (rule ex_ex1I)
-      assume po : "CPO__partialOrder_p r"
+      assume po : "ISet__partialOrder_p r"
       assume dir : "CPO__directed_p r S"
       assume disj : "CPO__cpo_p r \<and> CPO__nonempty_p S \<or> CPO__pointedCpo_p r"
       show "\<exists> lub . CPO__leastUpperBound_p r S lub"
@@ -146,11 +146,9 @@ CPO qualifying spec
   end-proof
 
   proof Isa eq_is_cpo_Obligation_subtype
-    apply (auto simp add: CPO__partialOrder_p_def CPO__preOrder_p_def)
+    apply (auto simp add: ISet__partialOrder_p_def ISet__preOrder_p_def)
     apply (simp add: refl_onI)
     apply (rule transI, auto)
-    apply (rule antisymI, auto)
-    done
   end-proof
 
   proof Isa eq_is_cpo
@@ -175,7 +173,7 @@ CPO qualifying spec
     proof -
       fix S
       assume cpo : "CPO__cpo_p r"
-      assume po : "CPO__partialOrder_p r"
+      assume po : "ISet__partialOrder_p r"
       assume dir : "CPO__directed_p (CPO__pcpo_option_fun r) S"
       have lub_emp : "CPO__leastUpperBound_p (CPO__pcpo_option_fun r) {} None"
         by (simp add: CPO__leastUpperBound_p_def CPO__pcpo_option_fun_def CPO__upperBound_p_def)
@@ -233,7 +231,7 @@ CPO qualifying spec
   end-proof
 
   proof Isa pcpo_option_Obligation_subtype0
-    proof (auto simp add: CPO__partialOrder_p_def CPO__preOrder_p_def)
+    proof (auto simp add: ISet__partialOrder_p_def ISet__preOrder_p_def)
       assume r_refl : "refl r"
       assume r_trans : "trans r"
       assume r_antisym : "antisym r"
@@ -253,7 +251,7 @@ CPO qualifying spec
     proof (simp add: CPO__pointedCpo_p_def, rule allI, rule impI)
       fix S
       assume lub_r : "\<forall>S. CPO__directed_p r S --> (\<exists>lub. CPO__leastUpperBound_p r S lub)"
-      assume po_r : "CPO__partialOrder_p r"
+      assume po_r : "ISet__partialOrder_p r"
       assume dir : "CPO__directed_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S"
       def lub \<equiv> "\<lambda>a . The (CPO__leastUpperBound_p r { f a | f . setToPred S f })"
       have ex_lub_a : "!!a . \<exists>lub_a . CPO__leastUpperBound_p r { f a | f . setToPred S f } lub_a"
@@ -275,7 +273,7 @@ CPO qualifying spec
           obtain lub_a where lub_a_lub : "CPO__leastUpperBound_p r { f a | f . setToPred S f } lub_a"
             by (insert ex_lub_a, auto)
           show "CPO__leastUpperBound_p r {f a |f. setToPred S f} (lub a)"
-            by (insert lub_a_lub po_r, simp add: lub_def CPO__partialOrder_p_def,
+            by (insert lub_a_lub po_r, simp add: lub_def ISet__partialOrder_p_def,
                 rule theI, auto, rule antisymD, assumption,
                 auto simp add: CPO__leastUpperBound_p_def)
         qed
@@ -287,7 +285,7 @@ CPO qualifying spec
   end-proof
 
   proof Isa pcpo_fun_Obligation_subtype0
-    proof (auto simp add: CPO__partialOrder_p_def CPO__preOrder_p_def)
+    proof (auto simp add: ISet__partialOrder_p_def ISet__preOrder_p_def)
       assume r_refl : "refl r"
       assume r_trans : "trans r"
       assume r_antisym : "antisym r"

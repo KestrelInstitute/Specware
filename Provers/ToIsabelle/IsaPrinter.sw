@@ -1500,6 +1500,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = addCoercions coercions spc in
     let spc = exploitOverloading coercions true spc in
     %% Second round of simplification could be avoided with smarter construction
+    let spc = adjustElementOrder spc in
     let spc = expandRecordPatterns spc in
     let spc = normalizeNewTypes(spc, true) in
     let spc = if c.simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))

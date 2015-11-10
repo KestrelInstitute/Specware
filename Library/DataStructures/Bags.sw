@@ -432,9 +432,7 @@ proof Isa Bag__bag_fold_true
   defer
   apply(simp)
   apply(rule Bag__induction)
-  apply(auto simp add: Bag__bag_fold1 Bag__bag_fold2)
-  apply (metis Bag__bagin_of_insert)
-  apply (metis (full_types) Bag__bag_insertion Bag__bagin_p_def comm_semiring_1_class.normalizing_semiring_rules(24) gr_implies_not0 less_add_one)
+  apply(auto simp add: Bag__bag_fold1 Bag__bag_fold2 Bag__bagin_of_insert)
 end-proof
 
 proof Isa Bag__bag_fold_true_back

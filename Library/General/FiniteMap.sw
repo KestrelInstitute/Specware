@@ -421,7 +421,7 @@ done
 lemma  FMap__fromSet_inv :  "FMap__fromSet (FMap__toSet m) = m"
   apply (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def e_at_m_def
                    FMap__fromSet_def Relation__apply_def)
-  apply (rule_tac t="?m = m" and s="?m = FMap__toFMap (FMap__fromFMap m)"
+  apply (rule_tac t="_ = m" and s="_ = FMap__toFMap (FMap__fromFMap m)"
          in subst, simp add: FMap__toFMap_f_f)
   apply (rule_tac f=FMap__toFMap in arg_cong, rule sym)
   apply (subst Rep_Map__FiniteMap_simp [symmetric],
@@ -443,7 +443,7 @@ lemma FMap__Set_finite [simp]:
   apply (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def  e_at_m_def)
   apply (cut_tac m=m in FMap__domain_Obligation_subtype, simp add: dom_def,
          cut_tac m=m in FMap__range_Obligation_subtype, simp add: ran_def,
-         drule_tac  finite_cartesian_product, simp, thin_tac ?P)
+         drule_tac  finite_cartesian_product, simp, thin_tac _)
   apply (rule finite_subset, auto)
 done
 
@@ -481,7 +481,7 @@ lemma FMap__Set_less [simp]:
                  FMap__toSet_def Map__maps_p_def definedAt_m_def,
           simp only: FMap__fromFMap_def [symmetric],
           cut_tac m=m and x=x in FMap__e_dsh_Obligation_subtype, 
-          simp, thin_tac "finite ?S")
+          simp, thin_tac "finite _")
    apply (auto simp add: e_dsh_dsh_m_def e_at_m_def split: split_if_asm)
 done
 
@@ -550,7 +550,7 @@ done
 lemma FMap__update_twice:
    "\<lbrakk>FMap__toSet m = insert (a, b) s\<rbrakk> \<Longrightarrow>  FMap__update m a b = m"
   apply (subgoal_tac "FMap__toSet (FMap__update m a b) = FMap__toSet m")
-  apply (thin_tac ?P, drule_tac f=FMap__fromSet in arg_cong,
+  apply (thin_tac _, drule_tac f=FMap__fromSet in arg_cong,
          simp only: FMap__fromSet_inv)
   apply (simp add: FMap__update_at)
 done
@@ -679,9 +679,9 @@ proof Isa fold_Obligation_the
   apply (auto simp del: Set__foldable_p_def)
   apply (case_tac "Set__foldable_p (a, aa, FMap__toSet ba)",
          simp_all add: Set__fold_if_unfoldable del: Set__foldable_p_def,
-         thin_tac ?P, thin_tac ?P)   
+         thin_tac _, thin_tac _)   
   apply (frule_tac s=F and c=a and f=aa and x="(ab,b)" in Set__fold_insert, 
-         auto simp del: Set__foldable_p_def, rotate_tac -1, thin_tac ?P)
+         auto simp del: Set__foldable_p_def, rotate_tac -1, thin_tac _)
   apply (cut_tac m=ba in FMap__Set_Relation__functional_p, 
          simp del: Set__foldable_p_def)
   apply (cut_tac m=ba and s = "insert (ab, b) F" in FMap__Set_inv [symmetric], 
@@ -713,7 +713,7 @@ proof Isa fold_Obligation_subtype0
           simp only: FMap__fromFMap_def [symmetric],
           cut_tac m=m and x=x in FMap__e_dsh_Obligation_subtype, 
           simp add: ,
-          thin_tac "finite ?S")
+          thin_tac "finite _")
    apply (auto simp add: e_dsh_dsh_m_def Map__update_def dom_def e_at_m_def)
    apply (drule_tac x=x1 in spec, drule_tac x=x2 in spec, simp)  
 end-proof
@@ -745,10 +745,10 @@ proof Isa mapWithDomain_Obligation_subtype
 end-proof
 
 proof Isa toFSet_Obligation_subtype
-  apply (simp add: Map__maps_p_def Map__maps_p_def definedAt_m_def e_at_m_def)
+  apply (simp add: Map__maps_p_def definedAt_m_def e_at_m_def)
   apply (cut_tac m=m in FMap__domain_Obligation_subtype, simp add: dom_def,
          cut_tac m=m in FMap__range_Obligation_subtype, simp add: ran_def,
-         drule_tac  finite_cartesian_product, simp, thin_tac ?P)
+         drule_tac  finite_cartesian_product, simp, thin_tac _)
   apply (rule finite_subset, auto)
 end-proof
 

@@ -9,6 +9,8 @@ import IsabelleExtensions
 
 type Boolean = Bool  % "Boolean" is a deprecated name for Bool 
 
+type Prop = Bool
+
 % lifting of negation, conjunction, disjunction, and truth to predicates:
 
 op [a] ~~~ (p: a -> Bool) : a -> Bool = fn x:a -> ~(p x)

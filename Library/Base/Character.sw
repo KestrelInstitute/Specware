@@ -30,7 +30,7 @@ proof Isa -verbatim
 theorem Char_ord_inv:
 "(i<256 \<longrightarrow> nat_of_char(char_of_nat i) = i)
  \<and> char_of_nat(nat_of_char c) = c"
-  by (simp add: nat_of_char_of_nat char_of_nat_of_char)
+  by (simp)
 end-proof
 % ------------------------------------------------------
 
@@ -68,12 +68,12 @@ proof Isa chr_subtype_constr
 end-proof
 
 proof Isa ord_subtype_constr
-   apply (auto simp add: bij_ON_def inj_on_def surj_on_def  Bex_def)
+ apply (auto simp add: bij_ON_def inj_on_def surj_on_def  Bex_def)
  apply (rule_tac s="char_of_nat (nat_of_char x)" in ssubst)
- apply (simp add: char_of_nat_of_char,
-        thin_tac  "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
+ apply (simp,
+        thin_tac  "nat_of_char x = nat_of_char y", simp)
  apply (rule_tac x="char_of_nat y" in exI)
- apply (simp add: nat_of_char_of_nat)
+ apply (simp)
 end-proof
 
 proof Isa ord__def
@@ -82,7 +82,7 @@ proof Isa ord__def
   apply(subst Function__inverse__stp_simp)
   apply (metis bij_ON_UNIV_bij_on) 
   apply (rule inv_on_f_eq)
-  apply( auto simp add: bij_on_def  char_of_nat_of_char)
+  apply( auto simp add: bij_on_def)
   apply (metis bij_ON_def)
 end-proof
 
@@ -149,7 +149,7 @@ lemma Char__compare_trans:
 lemma Char__compare_linear: 
  "\<lbrakk>Char__compare (x, y) \<noteq> Less; y \<noteq> x\<rbrakk> \<Longrightarrow> Char__compare (y, x) = Less"
  apply (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
- apply (drule_tac f="char_of_nat" in arg_cong, simp add: char_of_nat_of_char)
+ apply (drule_tac f="char_of_nat" in arg_cong, simp)
 done
 
 lemma Char__compare_greater2less_rule: 
@@ -167,7 +167,7 @@ lemma Char__compare_antisym:
 lemma Char__compare_equal [simp]: 
   "\<lbrakk>Char__compare (x, y) = Equal\<rbrakk> \<Longrightarrow> x = y"
  apply (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
- apply (drule_tac f="char_of_nat" in arg_cong, simp add: char_of_nat_of_char)
+ apply (drule_tac f="char_of_nat" in arg_cong, simp)
 done
  
 lemma Char__compare_eq_simp [simp]: 

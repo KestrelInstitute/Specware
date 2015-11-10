@@ -877,7 +877,7 @@ proof Isa positionOf_Obligation_subtype0
  apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
  apply (subgoal_tac "\<forall>j. j mem xa = (j = i)", 
         thin_tac "\<forall>ia. ia mem xa = (s ia = s i)",
-        thin_tac "distinct ?l", thin_tac "inj s")
+        thin_tac "distinct _", thin_tac "inj s")
  apply (auto simp add: inj_on_def)
  apply (rule classical, simp add: neq_iff, auto simp add: List__increasingNats_p_def)
  apply (drule_tac x=0 in spec, auto) 

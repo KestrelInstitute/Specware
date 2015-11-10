@@ -81,7 +81,6 @@ end-spec
 Examples_m =
 transform Examples_spec by
 {
-(*
  at just_return_true_m
    {unfold just_return_true;
     rewrite [strengthen CGen._] {allowUnboundVars? = true, depth = 10000}}
@@ -94,7 +93,6 @@ transform Examples_spec by
    ;
  makeDefsFromPostConditions [just_return_false_m]
    ;
-*)
  at boolean_identity_m
    {unfold boolean_identity;
     rewrite [strengthen CGen._] {allowUnboundVars? = true, depth = 10000}}

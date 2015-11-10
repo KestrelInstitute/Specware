@@ -950,7 +950,7 @@ proof Isa divT_Obligation_the
        simp_all add: not_less nat_le_eq_zle) 
  apply(erule ex1E, clarify)
  apply(rule_tac a="q * sign (i*j)" in ex1I, 
-       simp_all add: abs_mult abs_idempotent)
+       simp_all add: abs_mult)
  apply(rule_tac t=q and s="x * (sign i * sign j)" in subst, clarify)
  defer apply (simp add: algebra_simps mult_sign_self)
  apply (drule_tac x="x * (sign i * sign j)" in spec, erule mp)
@@ -1104,9 +1104,9 @@ proof Isa modC_less_than_divisor_in_abs
  apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
  apply (cases "j>0", auto simp add: algebra_simps not_less_iff_gr_or_eq)
  apply (frule_tac i=i in div_pos_low_bound2, 
-        simp add: div_via_mod pos_mod_sign less_le)
+        simp add: div_via_mod less_le)
  apply (frule_tac i=i in div_neg_up_bound2, 
-        simp add: div_via_mod pos_mod_sign less_le)
+        simp add: div_via_mod less_le)
 end-proof
 
 proof Isa modC_of_negated_divisor
@@ -1189,28 +1189,27 @@ proof Isa modE__def
 end-proof
 
 proof Isa exact_divE
-  apply (simp add: divides_iff_modE_0 modE_alt_def)
+  by (simp add: divides_iff_modE_0 modE_alt_def)
 end-proof
 
 proof Isa divE_of_negated_divisor
-  apply (simp add: divE_def) 
+  by (simp add: divE_def) 
 end-proof
 
 proof Isa divE_of_negated_dividend
-  apply (auto simp add: divE_def abs_if zdiv_zminus1_eq_if,
-         auto simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
+by (auto simp add: divE_def abs_if zdiv_zminus1_eq_if)
 end-proof
 
 proof Isa modE_alt_def
- apply (simp add: divE_def modE_def sign_def mod_via_div)
+ by (simp add: divE_def modE_def sign_def mod_via_div)
 end-proof
 
 proof Isa divides_iff_modE_0
-   apply (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
+   by (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
 end-proof
 
 proof Isa divE_equals_divT_on_naturals
-  apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
+  by (simp add: divE_def divT_def sign_def int_mult [symmetric])
 end-proof
 
 proof Isa  divE_equals_divF_on_naturals
@@ -1284,8 +1283,8 @@ done
 (******************************************************************************)
 (** Binary logarithm on integers. Actually, the minimal length of TC numbers **)
 
-consts zld :: "int \<Rightarrow> nat"
-defs zld_def: "zld i \<equiv> if i \<ge> 0 then ld (nat i, 2) else ld (nat (-(i+1)), 2)"
+definition zld :: "int \<Rightarrow> nat" where
+  zld_def: "zld i \<equiv> if i \<ge> 0 then ld (nat i, 2) else ld (nat (-(i+1)), 2)"
 
 lemma ld_zero [simp]:   "\<lbrakk>2 \<le> base\<rbrakk> \<Longrightarrow> ld (0,base) = 0"
   by (simp add: ld_def)

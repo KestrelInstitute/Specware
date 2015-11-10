@@ -139,7 +139,7 @@ proof Isa sorted_p_last_is_max
  apply (case_tac "i=0", simp_all)
  apply (case_tac "length l > 1", simp_all)
  apply (rule_tac y="l!0" in less_trans)
- apply (thin_tac "?P", drule_tac x=0 in spec, simp)
+ apply (thin_tac "_", drule_tac x=0 in spec, simp)
  apply (drule_tac x=0 in spec, simp)
  apply (drule_tac x=0 in spec, simp,
         rule_tac t="l" and s="[l!0]" in subst, simp_all, rule sym,
@@ -202,7 +202,7 @@ lemma List__sorted_p_last_is_max:
  apply (case_tac "i=0", simp_all)
  apply (case_tac "length l > 1", simp_all)
  apply (rule_tac y="l!0" in less_trans)
- apply (thin_tac "?P", drule_tac x=0 in spec, simp)
+ apply (thin_tac "_", drule_tac x=0 in spec, simp)
  apply (drule_tac x=0 in spec, simp)
  apply (drule_tac x=0 in spec, simp,
         rule_tac t="l" and s="[l!0]" in subst, simp_all, rule sym,
@@ -247,8 +247,6 @@ lemma List__unzip_Assoc_singleton [simp]:
     List__unzip (List__toAssocList 
            (Abs_Map__FiniteMap (Map__update Map.empty i val)) ord)
     = ([i],[val])"
-sorry
-(*  This broke upon moving to Isabelle2013-2.
   apply (simp add: List__toAssocList_def)
   apply (rule the1I2, cut_tac List__toAssocList_Obligation_the, 
          simp_all, clarify)
@@ -259,13 +257,9 @@ sorry
          simp_all add: member_def dom_if)
   apply (subgoal_tac "dom (Map__update Map.empty i val) = {i}", 
          clarify, simp add: dom_if, simp_all add: Map__update_def dom_if)
-  apply (drule distinct_card, simp del: One_nat_def,
-         simp add: length_1_nth_conv del: One_nat_def)
-  apply (cut_tac n=0 and xs=xa in nth_mem, simp_all, erule ssubst, simp)
-  apply (simp add: fun_eq_iff, drule_tac x=i in spec, simp)
-done
-*)
-
+  apply (drule distinct_card, simp)
+by (metis List__positionOf_singleton insert_absorb insert_not_empty length_0_conv length_Suc_conv
+    list.set(1) nth_Cons_0 option.inject set_ConsD singletonI)
 end-proof
 % ------------------------------------------------------------------------------
 

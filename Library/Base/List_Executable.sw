@@ -163,6 +163,15 @@ refine def [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
 refine def [a] filter (p: a -> Bool) (l: List a): List a =
   reverse (foldl (fn (result, x) -> if p x then x::result else result) [] l)
 
+refine def [a] partition (p: a -> Bool) (l: List a): List a * List a =
+  case l of
+    | [] -> ([], [])
+    | hd::tl ->
+      let (yes, no) = partition p tl in
+      if p hd
+        then (hd::yes, no)
+       else (yes, hd::no)
+
 %%TODO Not tail recursive.
 refine def [a,b] zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
   case (l1,l2) of
@@ -713,7 +722,7 @@ proof isa List__prefix__1__obligation_refine_def
   apply (simp add: List__prefix__1_def)
   apply (induct l arbitrary: n, simp)
   apply (rotate_tac -1, erule rev_mp, induct_tac n, auto)
-  apply (thin_tac ?P)+
+  apply (thin_tac _)+
   apply (subgoal_tac "\<forall>l r. a # rev (List__prefix__1__loop (l, na, r)) =
                                 rev (List__prefix__1__loop (l, na, r @ [a]))",
         simp)
@@ -784,7 +793,7 @@ end-proof
 
 proof isa List__exists1_p__1__obligation_refine_def
   apply (induct l, clarsimp simp add: List__exists1_p_def)
-  apply (drule sym, simp, thin_tac ?P, rule iffI)
+  apply (drule sym, simp, thin_tac _, rule iffI)
   apply (simp add: List__exists1_p_def List__exists_p__def Ex1_def,
          erule exE, case_tac x)
   apply (clarsimp, drule_tac x="Suc i" in spec, clarsimp)
@@ -818,11 +827,17 @@ end-proof
 
 proof isa List__filter__1__obligation_refine_def 
   apply (simp add: List__filter__1_def rev_swap [symmetric])
-  apply (induct l, auto, thin_tac ?P)
+  apply (induct l, auto, thin_tac _)
   apply (subgoal_tac "\<forall>s. foldl (\<lambda>b a. if p a then a # b else b) s l @ [a] =
                           foldl (\<lambda>b a. if p a then a # b else b) (s @ [a]) l",
         simp)
   apply (induct_tac l, auto)
+end-proof
+
+proof isa List__partition__1__obligation_refine_def
+  apply (induction l, auto)
+  apply (metis (mono_tags) old.prod.case)
+  by (metis old.prod.case)
 end-proof
 
 proof isa List__zip__1_Obligation_exhaustive 
@@ -869,7 +884,7 @@ end-proof
 proof isa List__map__1__obligation_refine_def
   (* I had a similar proof before - need lemmas about foldl *)
   apply (simp add: List__map__1_def rev_swap [symmetric])
-  apply (induct l, auto, thin_tac ?P)
+  apply (induct l, auto, thin_tac _)
   apply (subgoal_tac "\<forall>s. foldl (\<lambda>b a. f a # b) s l @ [f a] =
                           foldl (\<lambda>b a. f a # b) (s @ [f a]) l",
         simp)
@@ -916,7 +931,7 @@ proof isa List__matchingOptionLists_p__1__obligation_refine_def
   apply (drule_tac x="list" in spec, drule sym)
   apply (case_tac a, simp_all, case_tac aa)
   (* case 1a: None / None *)
-  apply (clarsimp, thin_tac ?P, rule iffI)
+  apply (clarsimp, thin_tac _, rule iffI)
   apply (clarsimp, drule_tac x="Suc i" in spec, clarsimp)
   apply (clarsimp, case_tac i, clarsimp, clarsimp)
   (* case 1b: None / Some *)
@@ -925,7 +940,7 @@ proof isa List__matchingOptionLists_p__1__obligation_refine_def
   apply (case_tac aa)
   apply (clarsimp, rule_tac x=0 in exI, simp)
   (* case 2b: Some / Some *)
-  apply (clarsimp, thin_tac ?P, rule iffI)
+  apply (clarsimp, thin_tac _, rule iffI)
   apply (clarsimp, drule_tac x="Suc i" in spec, clarsimp)
   apply (clarsimp, case_tac i, clarsimp, clarsimp)
 end-proof
@@ -980,7 +995,7 @@ end-proof
 
 proof isa List__allEqualElements_p__1__obligation_refine_def 
   apply (induct l, simp_all add: list_all_length List__allEqualElements_p_def)
-  apply (thin_tac ?P, auto simp add: list_eq_iff_nth_eq)
+  apply (thin_tac _, auto simp add: list_eq_iff_nth_eq)
 end-proof
 
 
@@ -992,7 +1007,7 @@ proof isa List__extendLeft__1__obligation_refine_def
 end-proof
 
 proof isa List__unflattenL__1_Obligation_subtype1
-  apply (simp, drule sym, simp, thin_tac ?P)
+  apply (simp, drule sym, simp, thin_tac _)
   apply (subgoal_tac "\<forall>k. foldl op + k lens0
                          = foldl op + (len + k) lens0 - len",
          drule_tac x=0 in spec, simp)
@@ -1002,7 +1017,7 @@ proof isa List__unflattenL__1_Obligation_subtype1
 end-proof
 
 proof isa List__unflattenL__1_Obligation_subtype0 
-  apply (simp, drule sym, simp, thin_tac ?P)
+  apply (simp, drule sym, simp, thin_tac _)
   apply (subgoal_tac "\<forall>k. len \<le> foldl op + (len + k) lens0", 
          drule_tac x=0 in spec, simp)
   apply (induct lens0, auto)
@@ -1017,7 +1032,7 @@ end-proof
 proof isa List__unflattenL__1__obligation_refine_def 
   apply (cut_tac l=l in List__unflattenL_Obligation_the, simp,
          simp add:  List__unflattenL_def, rule the1I2, simp)
-  apply (thin_tac "\<exists>!l. ?P l", clarsimp)
+  apply (thin_tac "\<exists>!l. _ l", clarsimp)
   apply (induct lens arbitrary: x l, simp_all, case_tac x, simp_all)
   apply (frule_tac x=0 in spec, simp)  
   apply (subgoal_tac "\<forall>k. foldl op + (a + k) lens
@@ -1026,7 +1041,7 @@ proof isa List__unflattenL__1__obligation_refine_def
   apply (subgoal_tac "\<forall>i<length lens. length (list ! i) = lens ! i",
          simp)
   apply (rule allI, drule_tac x="Suc i" in spec, simp)
-  apply (thin_tac ?P)+ 
+  apply (thin_tac _)+ 
   apply (induct_tac lens, simp, clarify,
          drule_tac x="k+ab" in spec, simp add: algebra_simps)
 end-proof
@@ -1283,7 +1298,7 @@ proof isa List__permutationOf__1__obligation_refine_def
   apply (induct l1)
   apply (clarsimp simp add: List__permutationOf_nil null_def)
   apply (clarsimp simp add: List__permutationOf_cons split: option.split)
-  apply (thin_tac ?P, rule conjI)
+  apply (thin_tac _, rule conjI)
   apply (clarsimp simp add: List__deleteOne_refine1)
   apply (clarsimp, case_tac "a \<in> set l2")
   apply (simp add: List__deleteOne_refine1)

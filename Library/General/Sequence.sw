@@ -371,10 +371,7 @@ lemma Seq__e_pls_pls_fin [simp]:
  apply (simp only:  Seq__e_pls_pls_def)
  apply (rule the1I2, rule Seq__e_pls_pls_Obligation_the, auto)
  apply (case_tac x, simp_all)
- apply (rule_tac t="l1 @ l2" 
-             and s="take (length l1) list @ drop (length l1) list"
-        in subst, 
-        simp, simp (no_asm))
+ apply (metis append_eq_conv_conj)
 done
 
 lemma Seq__e_pls_pls_inf [simp]:
@@ -385,7 +382,7 @@ lemma Seq__e_pls_pls_inf [simp]:
  apply (simp add: Stream__e_pls_pls_def fun_eq_iff not_less, auto)
  apply (simp add: list_eq_iff_nth_eq Stream__subFromLong_def 
                   List__subFromLong_def)
- apply (rotate_tac 1, thin_tac "?P")
+ apply (rotate_tac 1, thin_tac "_")
  apply (drule_tac x=xa in spec, auto)
  apply (rule sym, drule sym, simp)
  apply (rule_tac n="length l" in List__list_nth, 
@@ -1099,13 +1096,11 @@ proof Isa seq_Obligation_subtype
   (** surjectivity **)
   apply (case_tac y, auto)
   (*** ... on lists  **)
-  apply (cut_tac l=list in List__list_1_definedOnInitialSegmentOfLength)
-  apply (rule_tac x="List__list_1 list" in exI)
-  apply (frule List__definedOnInitialSegmentOfLength1_iff)
-  apply (simp add: List__list_apply_List__list_1)
+  apply (metis List__definedOnInitialSegmentOfLength1_iff List__list_1_definedOnInitialSegmentOfLength
+         List__list_apply_List__list_1)
   (*** ... on streams  **)
-  apply (rule_tac x="\<lambda>i. Some (fun i)" in exI, 
-         auto simp add: fun_eq_iff e_at_m_def)
+  apply (rule_tac x="\<lambda>i. Some (x2 i)" in exI) 
+  apply (auto simp add: fun_eq_iff e_at_m_def)
 end-proof
 
 proof Isa seq_Obligation_subtype0
@@ -1242,8 +1237,7 @@ end-proof
 
 proof Isa theElement_Obligation_the
  apply (case_tac s, auto simp add: Seq__single_def)
- apply (rule_tac x="hd list" in exI, 
-        simp add: length_1_hd_conv [symmetric])
+ using length_1_hd_conv by blast
 end-proof
 
 proof Isa theElement_single [simp]
@@ -1315,18 +1309,15 @@ end-proof
 proof Isa e_pls_pls_Obligation_the
   apply (cases s1, simp_all)  
   apply (cases s2)
-  apply (rule_tac a="Seq__fin (list @ lista)" in ex1I, 
+  apply (rule_tac a="Seq__fin (x1 @ x1a)" in ex1I, 
          simp_all, clarify)
   apply (case_tac x, simp_all)
-  apply (rule_tac t="list @ lista" 
-              and s="take (length list) listb @ drop (length list) listb"
-         in subst, 
-         simp, simp (no_asm))
-  apply (thin_tac "?P", thin_tac "?P", 
-         rule_tac a="Seq__inf (list ++ fun)" in ex1I, simp_all)
+  apply (metis append_eq_conv_conj)
+  apply (thin_tac _, thin_tac _, 
+         rule_tac a="Seq__inf (x1 ++ x2)" in ex1I, simp_all)
   apply (simp add: Stream__e_pls_pls_def Seq__infinite_p_def 
                    Stream__removePrefix_def)
-  apply (rule_tac s="List__subFromLong(list, 0, length list)" in HOL.trans)
+  apply (rule_tac s="List__subFromLong(x1, 0, length x1)" in HOL.trans)
   apply (simp add: Stream__subFromLong_def List__subFromLong_def,
          rule_tac f=List__list in arg_cong, simp add: fun_eq_iff)
   apply (rule List__subFromLong_whole)
@@ -1335,17 +1326,7 @@ proof Isa e_pls_pls_Obligation_the
                        Stream__removePrefix_def, 
          clarify)
   apply (simp add: fun_eq_iff not_less, auto)
-  apply (drule_tac t="List__subFromLong(list, 0, length list)" in HOL.trans)
-  apply (rule List__subFromLong_whole [symmetric])
-  apply (cut_tac List__list_subtype_constr, 
-         simp add: bij_ON_def bij_on_def Stream__subFromLong_def List__subFromLong_def,
-         clarify, thin_tac "surj_on ?f ?A ?B")
-  apply (drule inj_onD, erule sym)
-  apply (thin_tac "?P", thin_tac "?P", simp add: ,
-         rule_tac x="length list" in exI, 
-         simp add: List__definedOnInitialSegmentOfLength_def)+
-  apply (rotate_tac 1, thin_tac "?P", simp add: fun_eq_iff,
-         drule_tac x=x in spec, auto)
+  by (metis Stream__prefix_alt_def Stream__prefix_elements)
 end-proof
 
 proof Isa e_bar_gt_Obligation_subtype
@@ -1457,14 +1438,14 @@ proof Isa unzip_Obligation_subtype
   apply (case_tac x)
   apply (cut_tac List__unzip_Obligation_subtype, 
          simp add: bij_ON_def bij_on_def surj_on_def  Ball_def Bex_def, 
-         clarify, thin_tac "?P")
-  apply (drule_tac x=list in spec, clarify)
+         clarify, thin_tac _)
+  apply (drule_tac x=x1 in spec, clarify)
   apply (rule_tac x="Seq__fin a" in exI, 
          rule_tac x="Seq__fin b" in exI, simp)
   apply (cut_tac Stream__unzip_Obligation_subtype, 
          simp add: bij_def surj_def, 
-         clarify, thin_tac "?P")
-  apply (drule_tac x="fun" in spec, clarify)
+         clarify, thin_tac _)
+  apply (drule_tac x="x2" in spec, clarify)
   apply (rule_tac x="Seq__inf a" in exI, 
          rule_tac x="Seq__inf b" in exI, simp)
 end-proof
@@ -1474,7 +1455,7 @@ proof Isa unzip3_Obligation_subtype
  apply (simp add: Seq__zip3_alt inj_on_def  Ball_def, clarify)
  apply (cut_tac Seq__unzip_Obligation_subtype,
         simp add: bij_ON_def bij_on_def Seq__zip3_alt inj_on_def  Ball_def, 
-        clarify, rotate_tac -1, thin_tac "?P")
+        clarify, rotate_tac -1, thin_tac "_")
  apply (drule_tac x=a in spec, drule_tac x="Seq__zip (aa, b)" in spec, 
         drule mp, simp add: Seq__zip_equilong_left)
  apply (drule_tac x=ab in spec, drule_tac x="Seq__zip (ac, ba)" in spec, 
@@ -1482,7 +1463,7 @@ proof Isa unzip3_Obligation_subtype
  apply (drule mp, simp_all, clarify)
  apply (cut_tac Seq__unzip_Obligation_subtype,
         simp add: bij_ON_def bij_on_def Seq__zip3_alt inj_on_def  Ball_def, 
-        clarify, rotate_tac -1, thin_tac "?P")
+        clarify, rotate_tac -1, thin_tac "_")
  apply (drule_tac x=aa in spec, drule_tac x=b in spec, 
         drule mp, simp)
  apply (drule_tac x=ac in spec, drule_tac x=ba in spec, 
@@ -1490,11 +1471,11 @@ proof Isa unzip3_Obligation_subtype
  apply (drule mp, simp_all)
  apply (cut_tac Seq__unzip_Obligation_subtype,
         simp add: bij_ON_def bij_on_def surj_on_def  Ball_def Bex_def, 
-        clarify, thin_tac "?P",
+        clarify, thin_tac "_",
         drule_tac x=x in spec, clarify)
  apply (cut_tac Seq__unzip_Obligation_subtype,
         simp add: bij_ON_def bij_on_def surj_on_def  Ball_def Bex_def, 
-        clarify, rotate_tac 1, thin_tac "?P",
+        clarify, rotate_tac 1, thin_tac "_",
         drule_tac x=b in spec, clarify)
  apply (rule_tac x=a in exI, rule_tac x=aa in exI, 
         auto simp add: Seq__zip_equilong_left)
@@ -1505,26 +1486,26 @@ end-proof
 proof Isa removeNones_Obligation_the
   apply (case_tac s, simp)
   (* Case 1: Lists *)
-  apply (cut_tac l=list in List__removeNones_Obligation_the, clarify)
+  apply (cut_tac l=x1 in List__removeNones_Obligation_the, clarify)
   apply (rule_tac a="Seq__fin l'" in ex1I, simp)
   apply (case_tac x, simp, simp)
-  apply (case_tac "finite {i. case fun i of None \<Rightarrow> False
+  apply (case_tac "finite {i. case x2 i of None \<Rightarrow> False
                                                   | Some x \<Rightarrow> True}")
   (* Case 2: Finite streams, same proof *)
-  apply (cut_tac s="fun" in Stream__removeNonesF_Obligation_the)
-  apply (rule_tac s="{i. case fun i of None \<Rightarrow> False 
+  apply (cut_tac s="x2" in Stream__removeNonesF_Obligation_the)
+  apply (rule_tac s="{i. case x2 i of None \<Rightarrow> False 
                                              | Some x \<Rightarrow> True}"
-              and t="{i. fun i \<noteq> None}" in subst,
+              and t="{i. x2 i \<noteq> None}" in subst,
          simp add: fun_eq_iff split: option.split, simp)
   apply (clarify, rule_tac a="Seq__fin l" in ex1I, simp)
   apply (case_tac x, simp, simp) 
   (* Case 2: Infinite streams, same proof *)
-  apply (cut_tac s="fun" in Stream__removeNonesI_Obligation_the)
+  apply (cut_tac s="x2" in Stream__removeNonesI_Obligation_the)
   apply (simp only: Set__infinite_p_def bool_Compl_def fun_Compl_def not_not
                     setToPred_def)
-  apply (rule_tac s="{i. case fun i of None \<Rightarrow> False 
+  apply (rule_tac s="{i. case x2 i of None \<Rightarrow> False 
                                              | Some x \<Rightarrow> True}"
-              and t="{i. fun i \<noteq> None}" in subst,
+              and t="{i. x2 i \<noteq> None}" in subst,
          simp add: fun_eq_iff split: option.split, simp)
   apply (clarify, rule_tac a="Seq__inf s'" in ex1I, simp)
   apply (case_tac x, simp, simp)
@@ -1611,8 +1592,7 @@ end-proof
 
 proof Isa rotateRight_Obligation_subtype3
  apply (case_tac s, auto simp add: Seq__suffix_def)
- apply (subgoal_tac "0 + n mod length list \<le> length list")
- apply (drule_tac List__length_subFromLong, simp_all)
+ apply (metis List__rotateRight_Obligation_subtype1 List__subFromLong_whole le_antisym)
 end-proof
 
 proof Isa rotateRight_Obligation_subtype4
@@ -1689,14 +1669,14 @@ proof Isa unflatten_Obligation_the
   apply (simp add: list_all_length Seq__lists_eq_iff_concat_and_lengths_eq)
   (* Case 2 *)
   apply (clarsimp)
-  apply (cut_tac  l="butlast lista" and list="butlast list" in 
+  apply (cut_tac  l="butlast x1a" and list="butlast x1" in 
          Seq__lists_eq_iff_concat_and_lengths_eq,
          simp_all add: list_all_length nth_butlast) 
   (* 2a *)
   apply (drule Seq__concat_lists_length)
-  apply (case_tac "last lista", simp_all)
-  apply (case_tac "last list", simp_all)
-  apply (case_tac "last list", simp_all)
+  apply (case_tac "last x1a", simp_all)
+  apply (case_tac "last x1", simp_all)
+  apply (case_tac "last x1", simp_all)
   apply (simp (no_asm_simp) add: list_eq_iff_nth_eq, clarify)
   apply (simp add: Stream__e_pls_pls_def)
   apply (drule_tac x=ib in fun_cong, simp)
@@ -1704,32 +1684,32 @@ proof Isa unflatten_Obligation_the
   apply (rule list_eq_if_butlast_last_eq,
          simp only: length_greater_0_iff,
          simp only: length_greater_0_iff, simp)     
-  apply (case_tac "last lista", simp_all)
-  apply (case_tac "last list", simp_all) 
-  apply (case_tac "last list", simp_all) 
+  apply (case_tac "last x1a", simp_all)
+  apply (case_tac "last x1", simp_all) 
+  apply (case_tac "last x1", simp_all) 
   apply (rule ext, simp add:  Stream__e_pls_pls_def)
-  apply (drule_tac x="x + length (concat (map Seq__list (butlast list)))"
+  apply (drule_tac x="x + length (concat (map Seq__list (butlast x1)))"
                    in fun_cong, simp)
   (* Case 3 *)
   apply (case_tac x, simp_all split: split_if_asm)
-  apply (cut_tac l="Stream__flattenF (Stream__map Seq__list fun)" 
-             and lens = "\<lambda>i. Seq__length (fun i)"
+  apply (cut_tac l="Stream__flattenF (Stream__map Seq__list x2)" 
+             and lens = "\<lambda>i. Seq__length (x2 i)"
          in Stream__unflattenF_Obligation_the, simp)
-  apply (rule_tac s="{i. Seq__nonEmpty_p (fun i)}"
-              and t="{i. 0 < Seq__length (fun i)}"
+  apply (rule_tac s="{i. Seq__nonEmpty_p (x2 i)}"
+              and t="{i. 0 < Seq__length (x2 i)}"
               in subst, simp_all,
          rule Collect_cong, drule_tac x=i in spec,
-         case_tac "fun i", simp_all)
+         case_tac "x2 i", simp_all)
   apply (simp (no_asm_simp) add: Stream__flattenF_def Stream__map_def
                                  Stream__forall_p_def null_def
                                  Stream__removePrefix_def
                                  Seq__length_to_list_length [symmetric])
-  apply (rotate_tac -2, thin_tac ?P, thin_tac ?P, thin_tac ?P, 
-         rotate_tac 1, thin_tac ?P, thin_tac ?P)
+  apply (rotate_tac -2, thin_tac _, thin_tac _, thin_tac _, 
+         rotate_tac 1, thin_tac _, thin_tac _)
   defer (*** too many low level issues with foldl -- later ***)
   apply (erule ex1E, simp add: Stream__map_def )
-  apply (frule_tac x="(\<lambda>i. Seq__list (fun i))" in spec,
-         drule_tac x="(\<lambda>i. Seq__list (funa i))" in spec)
+  apply (frule_tac x="(\<lambda>i. Seq__list (x2 i))" in spec,
+         drule_tac x="(\<lambda>i. Seq__list (x2a i))" in spec)
   apply (clarsimp, drule mp, 
          simp add: Seq__length_to_list_length [symmetric],
          drule mp, rotate_tac 2, erule rev_mp,
@@ -1737,20 +1717,20 @@ proof Isa unflatten_Obligation_the
          rotate_tac -2, drule sym, simp)
   apply (rule ext, drule_tac x=x in fun_cong,
          drule_tac x=x in spec, drule_tac x=x in spec,
-         case_tac "fun x", simp_all, case_tac "funa x", simp_all )
+         case_tac "x2 x", simp_all, case_tac "x2a x", simp_all )
   (* Case 4 is as case 3 execpt for the fold issue *)
   apply (case_tac x, auto split: split_if_asm)
-  apply (cut_tac s="Stream__flattenI (Stream__map Seq__list fun)" 
-             and lens = "\<lambda>i. Seq__length (fun i)"
+  apply (cut_tac s="Stream__flattenI (Stream__map Seq__list x2)" 
+             and lens = "\<lambda>i. Seq__length (x2 i)"
          in Stream__unflattenI_Obligation_the, simp)
-  apply (rule_tac s="{i. Seq__nonEmpty_p (fun i)}"
-              and t="{i. 0 < Seq__length (fun i)}"
+  apply (rule_tac s="{i. Seq__nonEmpty_p (x2 i)}"
+              and t="{i. 0 < Seq__length (x2 i)}"
               in subst, simp_all add: Set__infinite_p_def,
          rule Collect_cong, drule_tac x=i in spec,
-         case_tac "fun i", simp_all)
+         case_tac "x2 i", simp_all)
   apply (erule ex1E, simp add: Stream__map_def )
-  apply (frule_tac x="(\<lambda>i. Seq__list (fun i))" in spec,
-         drule_tac x="(\<lambda>i. Seq__list (funa i))" in spec)
+  apply (frule_tac x="(\<lambda>i. Seq__list (x2 i))" in spec,
+         drule_tac x="(\<lambda>i. Seq__list (x2a i))" in spec)
   apply (clarsimp, drule mp, 
          simp add: Seq__length_to_list_length [symmetric],
          drule mp, rotate_tac 2, erule rev_mp,
@@ -1758,24 +1738,24 @@ proof Isa unflatten_Obligation_the
          rotate_tac -2, drule sym, simp)
   apply (rule ext, drule_tac x=x in fun_cong,
          drule_tac x=x in spec, drule_tac x=x in spec,
-         case_tac "fun x", simp_all, case_tac "funa x", simp_all )
+         case_tac "x2 x", simp_all, case_tac "x2a x", simp_all )
   (*** move this up later ***)
   apply (clarsimp simp add: finite_nat_set_iff_bounded)
-  apply (rule_tac s="LEAST lm0. \<forall>i. Seq__list (fun (i + lm0)) = []"
+  apply (rule_tac s="LEAST lm0. \<forall>i. Seq__list (x2 (i + lm0)) = []"
               and t="nat (LEAST lme. 0 \<le> lme 
-                        \<and> (\<forall>i. Seq__list (fun (i + nat lme)) = []))"
+                        \<and> (\<forall>i. Seq__list (x2 (i + nat lme)) = []))"
               in subst)
   apply (rule_tac a=m in LeastI2_wellorder,
          clarsimp simp add: Seq__nonEmpty_p_def Seq__empty_def,
          drule_tac x="i+m" in spec, drule_tac x="i+m" in spec,
-         case_tac "fun (i+m)", simp_all)
+         case_tac "x2 (i+m)", simp_all)
   apply (rule_tac x="int a" in LeastI2_order, auto)
-  apply (thin_tac ?P, thin_tac ?P, rotate_tac 1)
+  apply (thin_tac _, thin_tac _, rotate_tac 1)
   apply (drule_tac x="nat x" in spec, simp, drule_tac x="int a" in spec, simp)
-  apply (cut_tac P="\<lambda>k. \<forall>i. Seq__list (fun (i + k)) = []" and k=m in Least_le,
+  apply (cut_tac P="\<lambda>k. \<forall>i. Seq__list (x2 (i + k)) = []" and k=m in Least_le,
          clarsimp simp add: Seq__nonEmpty_p_def Seq__empty_def,
          drule_tac x="i+m" in spec, drule_tac x="i+m" in spec,
-         case_tac "fun (i+m)", simp_all add: Stream__prefix_length_to_fold)
+         case_tac "x2 (i+m)", simp_all add: Stream__prefix_length_to_fold)
 end-proof
 
 %% proof Isa unflattenU_Obligation_subtype
@@ -1791,7 +1771,7 @@ proof Isa unflattenU_Obligation_subtype0
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__inf  
                       (\<lambda>i. Seq__fin 
-                           (Stream__unflattenU (fun, n) i))" in exI,
+                           (Stream__unflattenU (x2, n) i))" in exI,
          auto simp add: Seq__SegSeq__subtype_pred_def 
                         Stream__map_def Stream__repeat_def)
 end-proof
@@ -1808,7 +1788,7 @@ proof Isa unflattenU_Obligation_subtype4
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__fin  
-                       (map Seq__fin (List__unflatten (list, n)))" in exI,
+                       (map Seq__fin (List__unflatten (x1, n)))" in exI,
          auto simp add:  Seq__forall_p_def list_all_iff)
   apply (simp add: Seq__SegSeq__subtype_pred_def List__unflatten_length
                    zdvd_int List__e_at_at_def list_1_Isa_nth)
@@ -1831,44 +1811,41 @@ end-proof
 proof Isa positionsSuchThat_Obligation_the
   apply (fold Seq__noRepetitions_p_def, case_tac s)
   (*** Case 1: Lists ***)
-  apply (cut_tac l=list and p=p in  List__positionsSuchThat_Obligation_the)
+  apply (cut_tac l=x1 and p=p in  List__positionsSuchThat_Obligation_the)
   apply (erule ex1E, clarify, rule_tac a="Seq__fin POSs" in ex1I)
-  apply (thin_tac ?P, simp)
-  apply (clarify, case_tac x, drule_tac x=lista in spec, simp)
-  apply (thin_tac ?P, clarsimp simp add: in_strm_p_def)
+  apply (thin_tac _, simp)
+  apply (clarify, case_tac x, drule_tac x=x1a in spec, simp)
+  apply (thin_tac _, clarsimp simp add: in_strm_p_def)
   apply (drule  Stream__increasingNats_p_inf_growth)
-  apply (rotate_tac -1, drule_tac x="length list" in spec, clarify)
-  apply (rotate_tac -2, drule_tac x="fun i" in spec, simp)
-  apply (rotate_tac -1, drule_tac x=i in spec, simp)
-  (*** Case 2: infinite Streams ***)
-  apply (case_tac "Set__infinite_p {i. p (fun i)}")
+  apply (rotate_tac -1, drule_tac x="length x1" in spec, clarify)
+  using List__splitAt_Obligation_subtype not_le apply blast
+   (*** Case 2: infinite Streams ***)
+  apply (case_tac "Set__infinite_p {i. p (x2 i)}")
   apply (frule Set__infinite_nat_growth)
   apply (clarsimp, drule Stream__positionsSuchThatI_Obligation_the)
-  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__inf POSs" in ex1I)
-  apply (rotate_tac 1, thin_tac ?P, simp)
-  apply (clarify, case_tac x, rotate_tac 1, thin_tac "?P", clarsimp)
-  apply (case_tac "list=[]", simp)
-  apply (rotate_tac -2, drule_tac x="last list" in spec, clarify)
+  apply (thin_tac _, erule ex1E, clarify, rule_tac a="Seq__inf POSs" in ex1I)
+  apply (rotate_tac 1, thin_tac _, simp)
+  apply (clarify, case_tac x, rotate_tac 1, thin_tac _, clarsimp)
+  apply (case_tac "x1=[]", simp)
+  apply (rotate_tac -2, drule_tac x="last x1" in spec, clarify)
   apply (rotate_tac -3, drule_tac x=i in spec, simp)
   apply (drule List__increasingNats_p_max, simp)
   apply (rotate_tac -1, drule_tac x=i in spec, simp)
-  apply (drule_tac x=funa in spec, 
+  apply (drule_tac x=x2a in spec, 
          simp add: Seq__noRepetitions_p_inf_aux Stream__noRepetitions_p_def)
   (*** Case 3: finite Streams ***)
   apply (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def 
                    setToPred_def) 
   apply (frule Stream__positionsSuchThatF_Obligation_the)
-  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__fin POSs" in ex1I)
-  apply (rotate_tac 1, thin_tac ?P, simp)
-  apply (clarify, case_tac x, drule_tac x=list in spec, simp)
-  apply (rotate_tac 1, thin_tac ?P, clarsimp simp add: in_strm_p_def)
+  apply (thin_tac _, erule ex1E, clarify, rule_tac a="Seq__fin POSs" in ex1I)
+  apply (rotate_tac 1, thin_tac _, simp)
+  apply (clarify, case_tac x, drule_tac x=x1 in spec, simp)
+  apply (rotate_tac 1, thin_tac _, clarsimp simp add: in_strm_p_def)
   apply (simp add: finite_nat_set_iff_bounded Ball_def , 
-         clarify, thin_tac ?P)
+         clarify, thin_tac _)
   apply (drule  Stream__increasingNats_p_inf_growth)
   apply (rotate_tac -1, drule_tac x="m" in spec, clarify)
-  apply (rotate_tac -2, drule_tac x="funa i" in spec, simp)
-  apply (rotate_tac -2, drule_tac x="funa i" in spec, simp)
-  apply (rotate_tac -1, drule_tac x=i in spec, simp)
+  using not_less_iff_gr_or_eq by blast
 end-proof
 
 proof Isa leftmostPositionSuchThat_Obligation_subtype
@@ -1912,7 +1889,7 @@ lemma Seq__positionsSuchThat_fin:
      = Seq__fin (List__positionsSuchThat (l,p))"
    apply (cut_tac s="Seq__fin l" in Seq__positionsSuchThat_Obligation_the,
           simp add: Seq__positionsSuchThat_def, rule the1I2, simp)
-   apply (thin_tac ?P, clarsimp)
+   apply (thin_tac _, clarsimp)
    apply (fold Seq__noRepetitions_p_def)
    apply (case_tac x, simp_all)
    apply (simp add: List__positionsSuchThat_def, rule sym, rule the1_equality)
@@ -1920,9 +1897,7 @@ lemma Seq__positionsSuchThat_fin:
    apply (clarsimp simp add: in_strm_p_def,
           drule  Stream__increasingNats_p_inf_growth)
    apply (rotate_tac -1, drule_tac x="length l" in spec, clarify)
-   apply (drule_tac x="fun i" in spec, simp)
-   apply (drule_tac x=i in spec, simp)
-done
+   using not_less_iff_gr_or_eq by blast
 
 lemma Seq__positionsOf_fin:
   "Seq__positionsOf (Seq__fin l,a) = Seq__fin (List__positionsOf (l,a))"
@@ -1935,14 +1910,10 @@ lemma Seq__positionsSuchThat_inf:
     = Seq__inf (Stream__positionsSuchThatI (s,p))"
    apply (cut_tac s="Seq__inf s" in Seq__positionsSuchThat_Obligation_the,
           simp add: Seq__positionsSuchThat_def, rule the1I2, simp)
-   apply (rotate_tac 1, thin_tac ?P, clarsimp, fold Seq__noRepetitions_p_def)
+   apply (rotate_tac 1, thin_tac _, clarsimp, fold Seq__noRepetitions_p_def)
    apply (case_tac x, simp_all)
    apply (drule Set__infinite_nat_growth)
-   apply (case_tac "list=[]", simp)
-   apply (rotate_tac -2, drule_tac x="last list" in spec, clarify)
-   apply (rotate_tac -3, drule_tac x=i in spec, simp)
-   apply (drule List__increasingNats_p_max, simp)
-   apply (rotate_tac -1, drule_tac x=i in spec, simp)
+   apply (metis List__increasingNats_p_max empty_iff list.set(1) not_le)
    apply (simp add: Stream__positionsSuchThatI_def, rule sym, rule the1_equality)
    apply (erule  Stream__positionsSuchThatI_Obligation_the, simp)
 done
@@ -1953,7 +1924,7 @@ lemma Seq__positionsSuchThat_inf2:
     = Seq__fin (Stream__positionsSuchThatF (s,p))"
    apply (cut_tac s="Seq__inf s" in Seq__positionsSuchThat_Obligation_the,
           simp add: Seq__positionsSuchThat_def, rule the1I2, simp)
-   apply (rotate_tac 1, thin_tac ?P, clarsimp, fold Seq__noRepetitions_p_def)
+   apply (rotate_tac 1, thin_tac _, clarsimp, fold Seq__noRepetitions_p_def)
    apply (case_tac x, simp_all)
    apply (simp add: Stream__positionsSuchThatF_def, rule sym, rule the1_equality)
    apply (erule  Stream__positionsSuchThatF_Obligation_the, simp)
@@ -1961,9 +1932,7 @@ lemma Seq__positionsSuchThat_inf2:
           drule  Stream__increasingNats_p_inf_growth)
    apply (cut_tac finite_nat_set_has_max, auto)
    apply (rotate_tac -2, drule_tac x="n" in spec, clarify)
-   apply (rotate_tac -2, drule_tac x="fun i" in spec, auto)
-done
-
+   using not_less_iff_gr_or_eq by blast
 
 lemma Seq__positionsSuchThat_inf3:
   "\<lbrakk>\<not> Set__infinite_p {i. p (s i)}\<rbrakk> \<Longrightarrow> 
@@ -2030,11 +1999,11 @@ proof Isa leftmostPositionOfSubseqAndFollowing_Obligation_subtype0
          rule the1I2, auto simp add: Seq__positionsOfSubseq_Obligation_the)
   apply (cases POSs, auto simp add: Seq__subseqAt_p_def Seq__empty_def)
   (* case 1: Lists *)  
-  apply (drule_tac x="hd listb" in spec, auto)
+  apply (drule_tac x="hd x1b" in spec, auto)
   apply (case_tac pre, auto)
   apply (case_tac post, auto)
   (* case 2: streams *)
-  apply (drule_tac x="fun 0" in spec, auto simp add: in_strm_p_def)
+  apply (drule_tac x="x2 0" in spec, auto simp add: in_strm_p_def)
   apply (case_tac pre, auto)
   apply (case_tac post, auto)
 end-proof
@@ -2053,7 +2022,7 @@ proof Isa rightmostPositionOfSubseqAndPreceding_Obligation_subtype1
   apply (erule rev_mp, simp add: Seq__positionsOfSubseq_def,
          rule the1I2, auto simp add: Seq__positionsOfSubseq_Obligation_the)
   apply (cases sub__v, auto simp add: Seq__subseqAt_p_def Seq__empty_def)
-  apply (drule_tac x="last list" in spec, auto)
+  apply (drule_tac x="last x1" in spec, auto)
   apply (case_tac pre, auto)
   apply (case_tac post, auto)
 end-proof
@@ -2073,11 +2042,9 @@ proof Isa splitAtLeftmost_Obligation_subtype
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
  apply (rule the1I2, rule Seq__positionsSuchThat_Obligation_the, clarify)
- apply (drule_tac x="hd list" in spec, simp)
- apply (rotate_tac -1, erule rev_mp)
- apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
- apply (rule the1I2, rule Seq__positionsSuchThat_Obligation_the, clarify)
- apply (drule_tac x="fun 0" in spec, auto simp add: in_strm_p_def)
+ using list.set_sel(1) apply auto[1]
+ by (metis Seq__Seq.distinct(1) Seq__e_lt_length_def Seq__finite_inf_simp Seq__infinite_not_finite
+     Seq__list.cases Seq__positionsSuchThat_fin)
 end-proof
 
 proof Isa splitAtRightmost_Obligation_subtype
@@ -2086,7 +2053,7 @@ proof Isa splitAtRightmost_Obligation_subtype
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
  apply (rule the1I2, rule Seq__positionsSuchThat_Obligation_the, clarify)
- apply (drule_tac x="last list" in spec, simp)
+ apply (drule_tac x="last x1" in spec, simp)
 end-proof
 
 proof Isa findLeftmost_Obligation_subtype
@@ -2123,23 +2090,23 @@ proof Isa longestCommonPrefix_Obligation_the
   apply (cases s1, cases s2) prefer 3
   apply (cases s2, simp_all add: Stream__prefix_alt_def [symmetric]) prefer 3
   (* Case 1: List / List *)
-  apply (cut_tac ?l1.0=list and ?l2.0=lista in
+  apply (cut_tac ?l1.0=x1 and ?l2.0=x1a in
          List__longestCommonPrefix_Obligation_the, erule ex1E, clarsimp)
-  apply (rotate_tac 1, thin_tac ?P, thin_tac ?P, rule_tac a=len in ex1I)
-  apply (thin_tac ?P, simp)
+  apply (rotate_tac 1, thin_tac _, thin_tac _, rule_tac a=len in ex1I)
+  apply (thin_tac _, simp)
   apply (drule_tac x=x in spec, erule mp, clarify, simp)
   (* Case 2: Stream / List *)
-  apply (cut_tac ?l1.0=list and ?l2.0="Stream__prefix (fun, length list)" 
+  apply (cut_tac ?l1.0=x1 and ?l2.0="Stream__prefix (x2, length x1)" 
          in List__longestCommonPrefix_Obligation_the, erule ex1E, clarsimp)
-  apply (thin_tac ?P, thin_tac ?P, rule_tac a=len in ex1I, thin_tac ?P, simp)
-  apply (case_tac "length list = len", simp, drule le_neq_trans, simp)
+  apply (thin_tac _, thin_tac _, rule_tac a=len in ex1I, thin_tac _, simp)
+  apply (case_tac "length x1 = len", simp, drule le_neq_trans, simp)
   apply (simp add: Stream__prefix_elements list_eq_iff_nth_eq)
   apply (drule_tac x=x in spec, erule mp, clarify, simp)
-  apply (case_tac "length list = x", simp_all, drule le_neq_trans, simp)
+  apply (case_tac "length x1 = x", simp_all, drule le_neq_trans, simp)
   apply (simp add: Stream__prefix_elements list_eq_iff_nth_eq)
   (* Case 3: Stream / Stream *)
   apply (drule Stream__longestCommonPrefix_Obligation_subtype)
-  apply (thin_tac "?P", thin_tac "?P", 
+  apply (thin_tac _, thin_tac _, 
          simp add: Integer__hasMax_p_def Integer__isMaxIn_def ,
          clarify)
   apply (rule_tac a="nat i" in ex1I, simp)
@@ -2150,13 +2117,13 @@ proof Isa longestCommonPrefix_Obligation_the
   apply (drule_tac x="int x" in spec, simp add: Stream__prefix_conv)
   apply (rule classical, drule_tac x=x in spec, simp)
   (* Case 4: List / Stream <---- TODO *)
-  apply (cut_tac ?l2.0=list and ?l1.0="Stream__prefix (fun, length list)" 
+  apply (cut_tac ?l2.0=x1 and ?l1.0="Stream__prefix (x2, length x1)" 
          in List__longestCommonPrefix_Obligation_the, erule ex1E, clarsimp)
-  apply (thin_tac ?P, thin_tac ?P, rule_tac a=len in ex1I, thin_tac ?P, simp)
-  apply (case_tac "length list = len", simp, drule le_neq_trans, simp)
+  apply (thin_tac _, thin_tac _, rule_tac a=len in ex1I, thin_tac _, simp)
+  apply (case_tac "length x1 = len", simp, drule le_neq_trans, simp)
   apply (simp add: Stream__prefix_elements list_eq_iff_nth_eq)
   apply (drule_tac x=x in spec, erule mp, clarify, simp)
-  apply (case_tac "length list = x", simp_all, drule le_neq_trans, simp)
+  apply (case_tac "length x1 = x", simp_all, drule le_neq_trans, simp)
   apply (simp add: Stream__prefix_elements list_eq_iff_nth_eq)
 end-proof
 
@@ -2175,11 +2142,11 @@ end-proof
 proof Isa permute_Obligation_the
  apply (case_tac prm, case_tac s) prefer 3 apply (case_tac s) prefer 3 
  apply (simp_all, simp_all add: Seq__permutation_p_def)
- apply (cut_tac l=lista and prm=list in List__permute_Obligation_the)
+ apply (cut_tac l=x1a and prm=x1 in List__permute_Obligation_the)
  apply (simp_all add: List__permutation_p_def, erule ex1E, clarify)
  apply (rule_tac a="Seq__fin r" in ex1I, simp_all)
  apply (case_tac x, simp_all)
- apply (drule_tac s=funa in Stream__permute_Obligation_the)
+ apply (drule_tac s=x2a in Stream__permute_Obligation_the)
  apply (erule ex1E)
  apply (rule_tac a="Seq__inf s'" in ex1I, simp_all)
  apply (case_tac x, simp_all)
@@ -2248,11 +2215,11 @@ proof Isa isoSeq_Obligation_subtype
   apply (case_tac y, simp_all)
   apply (drule_tac List__isoList_subtype_constr, 
          simp add: bij_def surj_def List__isoList_def, clarify,
-         drule_tac x=list in spec, clarify,
+         drule_tac x=x1 in spec, clarify,
          rule_tac x= "Seq__fin x" in exI, auto)
   apply (drule_tac Stream__isoStream_Obligation_subtype,
          simp add: bij_def surj_def, clarify,
-         drule_tac x="fun" in spec, clarify,
+         drule_tac x="x2" in spec, clarify,
          rule_tac x= "Seq__inf x" in exI, auto)
 end-proof
 

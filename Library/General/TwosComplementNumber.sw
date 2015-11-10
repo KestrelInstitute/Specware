@@ -309,7 +309,7 @@ lemmas TwosComplement_tcN =
 lemma TwosComplement__toInt_length:
   "\<lbrakk>x \<noteq> []; TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x > zld i"
  apply (case_tac "i = 0 \<or> i = -1", erule disjE, simp_all)
- apply (frule_tac TwosComplement__integer_range, simp,  thin_tac "?a = i")
+ apply (frule_tac TwosComplement__integer_range, simp,  thin_tac "_ = i")
  apply (auto simp add: TwosComplement_tcN)
  apply (subst not_le [symmetric], rule notI)
  apply (drule_tac m="length x" and l=1 in diff_le_mono)
@@ -317,7 +317,7 @@ lemma TwosComplement__toInt_length:
  apply (drule less_le_trans, simp (no_asm_simp))
  apply (drule_tac a="2 ^ (length x - 1)" in le_imp_neg_le)
  apply (drule_tac x="- ((2::int) ^ (zld i - 1))" in order_trans, simp)
- apply (thin_tac ?P, case_tac "0<i")
+ apply (thin_tac _, case_tac "0<i")
  apply (drule zld_at_least_pos, simp)
  apply (subgoal_tac "i < -1", drule zld_at_most_neg, simp, arith)
 done 
@@ -788,7 +788,7 @@ lemma TwosComplement_TC_toBits_pos:
          rule TwosComplement__tcNumber_Obligation_the, simp_all)
   apply (clarsimp simp add: TwosComplement_tcN)
   apply (cut_tac a=x in TwosComplement__toInt_nat, simp, simp)
-  apply (thin_tac "?tc = ?i", rotate_tac -1, drule sym, simp)
+  apply (thin_tac "_ = _", rotate_tac -1, drule sym, simp)
 done
   
 lemma TwosComplement_TC_toBits_pos2:

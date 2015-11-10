@@ -68,7 +68,7 @@ proof isa Nat__natConvertible__1__obligation_refine_def
          frule_tac Nat__digitToString_singleton, clarsimp,
          rotate_tac -1, drule sym)
   apply (subgoal_tac "\<exists>x. Nat__natToString x = Nat__natToString (xa div 10)",
-         simp, thin_tac ?P)
+         simp, thin_tac _)
   apply (frule Nat__natToString_Obligation_subtype,
          drule Nat__digitToString_Obligation_exhaustive)
   apply (erule disjE, simp only: Nat__digitToString.simps, 
@@ -139,24 +139,24 @@ end-proof
 proof isa Nat__stringToNat__1__obligation_refine_def
   apply (simp add: Nat__stringToNat_def,
          rule the1I2, erule Nat__stringToNat_Obligation_the)
-  apply (thin_tac ?P, simp add: Nat__stringToNat__1_def)
+  apply (thin_tac _, simp add: Nat__stringToNat__1_def)
   apply (subgoal_tac "\<forall>x. Nat__natToString x = s \<longrightarrow> x = String__explodedStringToNat s",
-         simp, thin_tac ?P)
+         simp, thin_tac _)
   apply (induct s  rule: rev_induct, auto)
   apply (drule sym, case_tac "xa < 10",
          simp_all add: Nat__natToString_small Nat__natToString_large)
-  apply (thin_tac ?P, thin_tac ?P, drule Nat__digitToString_Obligation_exhaustive)
+  apply (thin_tac _, thin_tac _, drule Nat__digitToString_Obligation_exhaustive)
   apply (erule disjE, simp add: String__explodedStringToNat_def nat_of_char_def)+
   apply (simp add: add: String__explodedStringToNat_def nat_of_char_def)
   apply (drule_tac x="xa div 10" in spec)
   apply (frule Nat__natToString_Obligation_subtype,
          frule_tac Nat__digitToString_singleton, clarsimp)
-  apply (simp add: String__explodedStringToNat_def, thin_tac "?a = ?b")
+  apply (simp add: String__explodedStringToNat_def, thin_tac "_ = _")
   apply (rule_tac t = "nat_of_char a" and s = "xa mod 10 + 48" in subst) 
   apply (drule sym, frule Nat__natToString_Obligation_subtype,
          drule Nat__digitToString_Obligation_exhaustive)
   apply (erule disjE, simp only: Nat__digitToString.simps, 
-         thin_tac "?x mod 10 = ?y", simp add: nat_of_char_def)+
+         thin_tac "_ mod 10 = _", simp add: nat_of_char_def)+
   apply (simp add: nat_of_char_def)
   apply simp
 end-proof

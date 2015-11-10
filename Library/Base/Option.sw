@@ -20,7 +20,7 @@ op [a] some? (x: Option a) : Bool = embed? Some x
 proof Isa -verbatim
 theorem some_old_def [simp]:
   "Option__some_p x = (x \<noteq> None)"
-  apply(case_tac "x", auto simp add: Option__some_p_def)
+  apply(case_tac "x", auto)
 done
 declare Option__some_p_def [simp del]
 end-proof

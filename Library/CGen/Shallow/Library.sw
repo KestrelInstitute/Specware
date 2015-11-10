@@ -604,7 +604,7 @@ theorem arithhack2:
 theorem arithhack3:
   "\<lbrakk> (a::int) < b ; factor >= 0 \<rbrakk> \<Longrightarrow> a * factor + factor \<le> (b * factor)"
   apply(cut_tac a=a and b=b and factor=factor in arithhack2, force, force)
-by (metis comm_monoid_mult_class.mult.left_neutral comm_semiring_class.distrib)
+  by (simp add: distrib_right)
 
 theorem arithhack4:
   "\<lbrakk> (a::int) < b ; factor >= 0 ; term < factor \<rbrakk> \<Longrightarrow> a * factor + term < (b * factor)"
@@ -998,14 +998,14 @@ theorem must_be_high_generic:
          simp)
   (* Goal 1 *)
   apply (rule classical, auto simp add: nat_neq_iff,  erule rev_mp, 
-         simp add: not_le less_eq_Suc_le, thin_tac ?P)
+         simp add: not_le less_eq_Suc_le, thin_tac _)
   apply (simp only: add_Suc [symmetric])
         (*** replace y by upper bound **)
   apply (drule_tac c="x * 2^n + 2^(n - Suc 0)" in add_right_mono,
          erule order_trans)
         (*** replace x by upper bound **)
   apply (rotate_tac -1, frule rev_mp, subst Suc_eq_plus1,
-         subst le_diff_conv2 [symmetric], auto, thin_tac ?P)
+         subst le_diff_conv2 [symmetric], auto, thin_tac _)
   apply (rotate_tac -1, drule_tac c="2^n" in mult_right_mono, simp,
          rotate_tac -1, drule_tac c="2^(n - Suc 0)" in add_right_mono,
          rotate_tac -1, drule_tac c="2^n" in add_left_mono,
@@ -1028,7 +1028,7 @@ theorem toInt_suffix:
                         toNat_suffix  hd_suffix)
   apply(cases "hd bs = B0", simp_all)
   apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
-            in toNat_app, auto, rotate_tac -1, thin_tac ?P)
+            in toNat_app, auto, rotate_tac -1, thin_tac _)
   apply(cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_1, auto)
   apply(cut_tac x="toNat(take (length bs - n) bs)" 
             and y="toNat(drop (length bs - n) bs)" 
@@ -1047,7 +1047,7 @@ theorem toInt_suffix:
   apply(cut_tac x="toNat(take (length bs - n) bs)" 
             and y="toNat(drop (length bs - n) bs)" 
             and n=n and k="length bs" in must_be_high_generic, auto)
-  apply (simp add: algebra_simps,
+  apply (simp add: field_simps,
          simp only: zpower_int convert_to_nat zadd_int int_int_eq 
                     zless_int zle_int)
   apply (simp add: mult_Suc_right [symmetric] power_add [symmetric])

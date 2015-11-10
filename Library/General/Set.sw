@@ -167,8 +167,6 @@ op full : [a] Set a = fn _ -> true
 op [a] full? (s:Set a) : Bool = (s = full)
 
 proof Isa -verbatim
-lemma Set__full_apply[simp]:  "x \<in> UNIV = True"
-  by (simp add: UNIV_I)
 lemma Set__full_stp_apply:    "\_lbrakkP__a x; Set__full_p__stp P__a s\_rbrakk \_Longrightarrow x \_in s"  
   by (auto simp add:Set__full_p__stp_def)
 end-proof
@@ -194,9 +192,9 @@ lemma Set_Pa_Set_P_single:      "P__a (x::'a) \_Longrightarrow Set_P P__a (Set__
 lemma Set_Pa_RSet_single[simp]: "P__a (x::'a)\_Longrightarrow RSet P__a (Set__single x) = Set__single x"
   by(auto simp:Set_P_def)
 lemma Set_single_single_stp:    "\_lbrakk P__a x; x \_in s; Set__single_p s\_rbrakk \_Longrightarrow Set__single_p__stp P__a s"
-  by (auto simp:Set__single_p__stp_def Set__single_p_def)
+  by (auto simp:Set__single_p__stp_def)
 lemma Set_single_stp_single:    "\_lbrakkx \_in s; Set__single_p__stp P__a s\_rbrakk \_Longrightarrow Set__single_p s"
-  by (auto simp:Set__single_p__stp_def Set__single_p_def)
+  by (auto simp:Set__single_p__stp_def)
 end-proof
 
 type Singleton a = (Set a | single?)
@@ -304,7 +302,7 @@ lemma finite_stp_nat_seg:
   proof (simp only:Set__finite_p__stp_def, erule disjE)
    fix s
    assume "Set__empty_p__stp P__a s"
-   from this have "s = {}" by(simp add:Set__empty_p__stp_def)
+   from this have "s = {}" by simp
    obtain f n where "(f::nat\_Rightarrow'a) = (\_lambda i. default_val)" 
                 and "(n::nat)=(0::nat)" by auto
    from `s = {}` show "(\_exists(f::nat \_Rightarrow 'a) (n::nat). 
@@ -361,14 +359,13 @@ proof Isa -verbatim
 lemma Set__finite_p_stp_imp_finite:
 "\_lbrakk Set__finite_p__stp (P__a::'a\_Rightarrow bool) (s::'a set); Set_P P__a s\_rbrakk
  \_Longrightarrow finite s"
-by(auto simp add:Set__finite_p__def Set__empty_p_def
-           Set__finite_p__stp_def Set__empty_p__stp_def Set_P_def,
-           blast)
+by (auto simp add:Set__finite_p__def Set__finite_p__stp_def Set_P_def,
+    blast)
 lemma Set__finite_p_imp_finite_stp:
 "\_lbrakk finite (s::'a set); Set_P (P__a::'a\_Rightarrow bool) s\_rbrakk \_Longrightarrow Set__finite_p__stp P__a s"
 proof(induct s rule: finite.induct)
  show "Set__finite_p__stp P__a {}" 
- by(auto simp:Set__finite_p__stp_def Set__empty_p__stp_def) 
+ by (auto simp:Set__finite_p__stp_def) 
 next
  fix A::"'a set" and a::"'a"
  assume "finite A" "Set_P P__a A \_Longrightarrow Set__finite_p__stp P__a A"
@@ -408,7 +405,7 @@ proof (rule_tac s="s less x" in Set__finite_p_imp_finite_stp)
         "Set_P P__a s"
         "P__a (x::'a)"
  then have "finite s" by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
- thus "finite (s less x)" by(auto simp:less_def)
+ thus "finite (s less x)" by auto
 next
  assume "Set_P P__a s" 
  thus "Set_P P__a (SW_Set.less s x)" 
@@ -447,8 +444,7 @@ theorem Set__Finite_to_list:
   "\<lbrakk>Set__finite_p__stp P S; Set_P P S; Set__nonEmpty_p__stp P S\<rbrakk>
      \<Longrightarrow> \<exists>l. (l \<noteq> [] \<and> S = set l \<and> list_all P l)"
    apply (simp add: Set_P_def Set__finite_p__stp_def 
-                    Set__nonEmpty_p__stp_def Set__empty_p__stp_def
-                    list_all_iff, 
+                    Set__nonEmpty_p__stp_def list_all_iff, 
           clarify)
    apply (rule_tac x="map f [0..<n]" in exI, auto)
 done
@@ -519,8 +515,8 @@ declare
   empty_fold_graphE  [elim!]
   fold_graph.intros [intro!]
 
-consts fun_left_comm_on :: "('a \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> ('a set) \<Rightarrow> bool"
-defs  fun_left_comm_on_def: 
+definition fun_left_comm_on :: "('a \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> ('a set) \<Rightarrow> bool" where
+  fun_left_comm_on_def: 
   "fun_left_comm_on f A 
      \<equiv> \<forall>x y z. x\<in>A \<and> y\<in>A  \<longrightarrow>  f x (f y z) = f y (f x z)"
 
@@ -550,7 +546,7 @@ next
   from aA obtain k where hkeq: "h k = a" and klessn: "k<n" by (blast elim!: equalityE)
   let ?hm = "Fun.swap k m h"
   have inj_hm: "inj_on ?hm {i. i < n}" using klessn mlessn 
-    by (simp add: inj_on_swap_iff inj_on)
+    by (simp add: inj_on)
   show ?thesis
   proof (intro exI conjI)
     show "inj_on ?hm {i. i < m}" using inj_hm
@@ -837,7 +833,7 @@ next
  thus "finite s"
  proof
   assume "Set__empty_p s" thus "finite s" 
-  by(auto simp:Set__empty_p_def)
+  by auto
  next
   assume "\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x)"
   thus ?thesis by(rule nat_seq_finite)
@@ -909,7 +905,7 @@ proof Isa induction
              "finite (s::'a set)"   "p {}" 
              "\_forall(s::'a set) (x::'a). finite s \_and p s \_longrightarrow p (insert x s)"
  thus "p (s::'a Set__FiniteSet)"
- proof (induct_tac s rule:finite_induct)
+ proof (induct_tac s rule: finite_induct)
   assume "finite s" thus "finite s" by assumption
  next
   assume "p {}" thus "p {}" by assumption
@@ -929,7 +925,7 @@ proof Isa size_Obligation_the
  apply (frule_tac x=x in card_insert_if, clarsimp,
         drule_tac x=x in card_Suc_Diff1, simp_all)
  apply (rule ext, clarsimp) 
- apply (thin_tac ?P, induct_tac xa rule: finite_induct)
+ apply (thin_tac _, induct_tac xa rule: finite_induct)
  apply (simp, simp only: card_empty) 
  apply (drule_tac x=F in spec, drule mp, simp)
  apply (drule_tac x=xb in spec, simp)
@@ -1014,8 +1010,7 @@ by (auto simp add: Set__Set_P__stp_def)
 
 lemma Set__infinite_nat_growth:
   "\<lbrakk>Set__infinite_p {i::nat. p i}\<rbrakk>  \<Longrightarrow> \<forall>j. \<exists>i>j. p i"
-  apply (auto simp: Set__infinite_p_def fun_Compl_def bool_Compl_def
-                    setToPred_def 
+  apply (auto simp: Set__infinite_p_def fun_Compl_def setToPred_def 
                     finite_nat_set_iff_bounded Bex_def not_less)
   apply (drule_tac x="Suc j" in spec, clarify)
   apply(rule_tac x=x in exI, auto )

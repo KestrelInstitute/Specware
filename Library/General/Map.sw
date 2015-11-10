@@ -167,7 +167,7 @@ op [a,b] uncountable? (m:Map(a,b)) : Bool = uncountable? (domain m)
 
 type      FiniteMap(a,b) = (Map(a,b) | finite?)
 proof Isa -typedef 
- by (rule_tac x="empty" in exI, simp add:  Map__finite_p_def )
+ by (rule_tac x="empty" in exI, simp)
 end-proof
 
 
@@ -322,10 +322,10 @@ proof Isa inverse_Obligation_subtype
   apply (case_tac "m", 
          auto simp add: Map__injective_p_def Let_def split: split_if_asm)
   apply (simp add: Map__Map__applyi_simp)
-  apply (rotate_tac -2, thin_tac ?P, thin_tac ?P, erule notE)
+  apply (rotate_tac -2, thin_tac _, thin_tac _, erule notE)
   apply (subgoal_tac "the_elem {x \<in> dom y. y x = Some x1} = x
                     \<and> the_elem {x \<in> dom y. y x = Some x2} = xa",
-         clarsimp,  thin_tac "m = ?b", thin_tac "?a = ?b", auto)
+         clarsimp,  thin_tac "m = _", thin_tac "_ = _", auto)
   apply (simp add: the_elem_def set_eq_iff, rule the_equality, auto)
   apply (drule spec, drule spec, erule mp, simp add: Map__domain__def)
   apply (rotate_tac -1, drule_tac x=x in spec, auto)
@@ -345,7 +345,8 @@ end-proof
 proof Isa finite_p [simp] end-proof
 
 proof Isa FiniteMap_finite [simp]
-  by (case_tac "m", simp add: Abs_Map__FiniteMap_inverse)
+  apply (case_tac "m", simp)
+  using Rep_Map__FiniteMap by auto
 
 (******************************************************************************)
 declare Rep_Map__FiniteMap_inverse [simp add]
@@ -356,12 +357,11 @@ declare Abs_Map__FiniteMap_inverse [simp add]
 
 lemma Map__FiniteMap_has_finite_domain [simp]:
   "finite (dom (Rep_Map__FiniteMap m))"
-  by (case_tac "m", simp add: Abs_Map__FiniteMap_inverse)
+  by (case_tac "m", simp)
 
 lemma Rep_Map__FiniteMap_simp [simp]:
   "\<lbrakk>Map__finite_p y\<rbrakk> \<Longrightarrow>  (Rep_Map__FiniteMap x = y) = (x = Abs_Map__FiniteMap y)"
-apply (subst Abs_Map__FiniteMap_inject [symmetric], auto)
-(******************************************************************************)
+  by (subst Abs_Map__FiniteMap_inject [symmetric], auto)
 
 end-proof
 

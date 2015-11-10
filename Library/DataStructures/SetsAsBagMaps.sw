@@ -5,6 +5,7 @@
 %% add JIRA issue
 SetsAsBagMaps = SetsAsBags[BagsAsMaps#M]
 
+(*
 %% NOTE: These pragmas overwrite the pragmas with the same names in SetsAsBags:
 
 %% Translated version of the proof in SetsAsBags.sw:
@@ -49,6 +50,7 @@ proof Isa SetsAsBags__e_bsl_fsl_Obligation_subtype
   apply(simp add: SetsAsBags__set_insert_def BagsAsMaps__bag_insertion)
   apply(auto simp add: BagsAsMaps__bagin_of_insert SetsAsBags__in_p_def BagsAsMaps__Map_P_of_insert SetsAsBags__set_insert_def BagsAsMaps__bag_insertion)
 end-proof
+*)
 
 proof Isa Bag__in_bag_union
   apply(metis Bag__occs_bag_union BagsAsMaps__bagin_p_def add_is_0)

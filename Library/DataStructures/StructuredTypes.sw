@@ -1748,8 +1748,7 @@ end-proof
 
 
 proof Isa ndL2S_Equal_Nil
-  apply(auto)
-  by (metis Set__empty_set list.sel_set(1) ndL2S_Obligation_subtype0_helper)
+  by (metis distinct_singleton hd_in_set ndL2S_Nil ndL2S_Obligation_subtype0 ndL2S_Obligation_subtype0_helper)
 end-proof
 
 proof Isa ndL2S_Cons

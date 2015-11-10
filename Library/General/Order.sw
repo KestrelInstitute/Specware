@@ -106,10 +106,10 @@ proof Isa unstrictify_Obligation_subtype
   apply (simp add: bij_ON_def inj_on_def surj_on_def Ball_def 
                     Order__strictify_def, safe)
   apply (thin_tac "refl x", simp add: refl_on_def, case_tac "a=b", simp)
-  apply (thin_tac "?P", simp add: set_eq_iff, 
+  apply (thin_tac "_", simp add: set_eq_iff, 
          drule_tac x=a in spec, drule_tac x=b in  spec, simp)
   apply (thin_tac "refl xa", simp add: refl_on_def, case_tac "a=b", simp)
-  apply (thin_tac "?P", simp add: set_eq_iff, 
+  apply (thin_tac "_", simp add: set_eq_iff, 
          drule_tac x=a in spec, drule_tac x=b in  spec, simp)
   apply (rule_tac x="x \<union> Id" in exI, auto simp: irrefl_def)end-proof
 
