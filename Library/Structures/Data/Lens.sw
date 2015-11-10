@@ -37,11 +37,6 @@ Lens qualifying spec
     (fa (a,b1,b2)
      l2.lens_set (l1.lens_set a b1) b2 = l1.lens_set (l2.lens_set a b2) b1)
 
-proof Isa lens_compose_Obligation_subtype
-  by (auto simp add: Lens__Lens__subtype_pred_def Lens__satisfies_get_put_def
-                     Lens__satisfies_put_get_def Lens__satisfies_put_put_def)
-end-proof
-
   (* The identity lens *)
   op [a] id_lens : Lens (a,a) =
     {lens_get = fn a -> a, lens_set = fn a -> fn a' -> a'}
@@ -55,10 +50,14 @@ end-proof
     fa (lens:Lens (a,b))
       lens_compose (lens, unit_lens) = unit_lens
 
+  (* The lens of a function *)
+  op [a,b] fnLens(x: a): Lens(a -> b, b) = {lens_get = fn f -> f x,
+                                            lens_set = fn f -> fnUpdate f x}
+
   (* The lens of an isomorphism *)
-  op [a,b] iso_lens (iso: Bijection (a,b)) : Lens (a,b) =
-    {lens_get = iso,
-     lens_set = fn a -> fn b -> inverse iso b}
+  op [a,b] iso_lens (iso_l: Bijection (a,b)) : Lens (a,b) =
+    {lens_get = iso_l,
+     lens_set = fn a -> fn b -> inverse iso_l b}
 
   (* Tensor two lenses to get a lens on a pair type *)
   op [a,b,c,d] lens_tensor (l1: Lens (a,b), l2: Lens (c,d)) : Lens (a*c, b*d) =
@@ -120,5 +119,18 @@ end-proof
   op [a,b,c,d,e] subtuple_lens_5 : Lens (a*b*c*d*e, a*b*c*d) =
     {lens_get = fn (a,b,c,d,e) -> (a,b,c,d),
      lens_set = fn (a,b,c,d,e) -> fn (a',b',c',d') -> (a',b',c',d',e)}
+
+proof Isa Lens__subtype_pred [simp] end-proof
+proof Isa satisfies_get_put [simp] end-proof
+proof Isa satisfies_put_get [simp] end-proof
+proof Isa satisfies_put_put [simp] end-proof
+
+proof Isa compose_unit_lens
+  by (auto simp add: Lens__lens_compose_def Lens__unit_lens_def)
+end-proof
+
+proof Isa iso_lens_Obligation_subtype
+  by (auto simp add: Function__inverse_f_apply Function__f_inverse_apply)
+end-proof
 
 end-spec

@@ -147,12 +147,18 @@ ISet qualifying spec
     case l of
       | [] -> true
       | [_] -> true
-      | x::y::l' -> R (x,y) && is_r_chain? R (y::l)
+      | x::y::l' -> R (x,y) && is_r_chain? R (y::l')
 
-  theorem r_chain_append is [a]
+  theorem r_chain_append1 is [a]
     fa (R,l1,l2:List a)
-      is_r_chain? R l1 && is_r_chain? R l2 =>
+      is_r_chain? R l1 && is_r_chain? R l2
+        && (l1 = [] || l2 = [] || R(last l1, head l2)) =>
       is_r_chain? R (l1++l2)
+
+  theorem r_chain_append2 is [a]
+    fa (R,l1,l2:List a)
+      is_r_chain? R (l1++l2) =>
+      is_r_chain? R l1 && is_r_chain? R l2
 
   % Take the reflexive-transitive closure of a relation
   op [a] rt_closure (R: EndoRelation a) : PreOrder a =
@@ -232,5 +238,59 @@ ISet qualifying spec
     ISet.transitive?         -> trans
     ISet.equivalence?        -> equivalence
   end-proof
+
+proof Isa relCompose [simp] end-proof
+
+proof Isa is_r_chain_p_Obligation_exhaustive
+  by (metis list.exhaust)
+end-proof
+
+proof Isa r_chain_append1
+   apply(induction l1, auto)
+   apply(cases l2, auto)
+   by (smt ISet__is_r_chain_p.elims(2) ISet__is_r_chain_p.elims(3) append.simps(1) append.simps(2) list.inject)
+end-proof
+
+proof Isa r_chain_append2
+   apply(induction l1, auto)
+   apply (metis ISet__is_r_chain_p.simps(2) ISet__is_r_chain_p.simps(3) append_Cons list.exhaust)
+   by (metis ISet__is_r_chain_p.elims(3) ISet__is_r_chain_p.simps(3))
+end-proof
+
+proof Isa rt_closure_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa rst_closure_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa equivalence_rst_closure
+  sorry
+end-proof
+
+proof Isa relations_commute_p [simp] end-proof
+
+proof Isa compose_commuting_preorders
+  sorry
+end-proof
+
+proof Isa compose_commuting_equivalences
+  sorry
+end-proof
+
+proof Isa map_endo [simp] end-proof
+
+proof Isa map_endo_reflexivity
+  by (simp add: ISet__reflexive_p__def)
+end-proof
+
+proof Isa map_endo_symmetry
+  by (metis ISet__map_endo_def inv_image_def sym_inv_image)
+end-proof
+
+proof Isa map_endo_transitivity
+  by (metis ISet__map_endo_def inv_image_def trans_inv_image)
+end-proof
 
 end-spec
