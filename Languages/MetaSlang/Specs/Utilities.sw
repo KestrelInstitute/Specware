@@ -1661,6 +1661,12 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
   op projectionFun?(f: MSFun, spc: Spec): Bool =
     some?(projectionFun(f, spc))
 
+  op projection?(e: MSTerm, spc: Spec): Bool =
+    case e 
+      | Apply(Fun(f,_,_), _, _) -> projectionFun?(f, spc)
+      | _ -> false
+
+
 %%  moved to RecordMerge.sw
 %%
 %% op  translateRecordMergeInSpec : Spec -> Spec
@@ -3000,7 +3006,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                 | Some info ->
                   knownNonEmpty?(info.dfn, spc)
                 | _ ->
-                  let _ = writeLine("Warning: knownNonEmpty? saw ref to undefined type: " ^ show qid) in
+                  % let _ = writeLine("Warning: knownNonEmpty? saw ref to undefined type: " ^ show qid) in
                   false)
           || existsOpWithType?(ty, spc)
          %% Leave out for now as it messes up emptyTypesToSubtypes

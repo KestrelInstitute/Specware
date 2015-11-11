@@ -638,7 +638,7 @@ SpecNorm qualifying spec
   op hasDefiningConjunctImplyingSubtype(v as (vn,v_ty): MSVar, binding_cjs: MSTerms, spc: Spec): Bool =
    exists? (fn cj ->
                case bindingEquality? (v, cj) of
-                 | Some(e1, e2) | ~(embed? Var e2) ->
+                 | Some(e1, e2) | ~(embed? Var e2) && ~(projection?(e2, spc)) ->
                    let e2_ty = inferType(spc, e2) in
                    let def implied_by_assigned_val(e1, e2_ty) =
                          % let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
@@ -653,7 +653,7 @@ SpecNorm qualifying spec
                      | _ -> false
                    in
                    implied_by_assigned_val(e1, e2_ty)
-                     | _ -> false)
+                 | _ -> false)
       binding_cjs
 
   op getNonImpliedTypePredicates(bndVars: MSVars, binding_cjs: MSTerms, spc: Spec): MSTerms =
@@ -909,6 +909,7 @@ SpecNorm qualifying spec
   op setType?(spc: Spec, ty: MSType): Bool =
     case ty of
      | Base(Qualified("Set", "Set"), _, _) -> true
+     | Base(Qualified("ISet", "ISet"), _, _) -> true
      | Base _ ->
        (case tryUnfoldBase spc ty of
           | Some uf_ty -> setType?(spc, uf_ty)

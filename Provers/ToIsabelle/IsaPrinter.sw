@@ -1029,8 +1029,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
       % NOTE: the reason we do not simply use OF to do cut-elimination
       % with the subtype_preds is that we do not know how many subtype
       % predicates have been simplified by relativizeQuantifiers
-      let def helper (p: ProofInternal, i: Nat, args: MSTerms, pf_names: List String)
-      : IsaProof StateMode =
+      let def helper (p: ProofInternal, i: Nat, args: MSTerms, pf_names: List String): IsaProof StateMode =
         case p of
           | Proof_ForallE (x,T,_,N,body_pf,N_pf) ->
             addForwardStep
@@ -3593,15 +3592,25 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | None ->
    let def prApply(term1, term2) =
       case (term1, term2) of
-        | (Apply(Fun(Op(qid, _), _, _), t1, _), _) | reversedNonfixOp? c qid ->
-          %% Reversed curried op, not infix
-          let Some(isa_id,_,_,reversed,_) = specialOpInfo c qid in
-          enclose?(parentTerm ~= TmTop,
-                   prBreak 2 [prSymString isa_id,
-                              prSpace,
-                              ppTermEncloseComplex? c Nonfix term2,
-                              prSpace,
-                              ppTermEncloseComplex? c Nonfix t1])
+        | (Fun(Op(constr_id, Constructor1), ty, _), Record (("1",_)::_,_)) ->
+          let spc = getSpec c in
+          let constr_ty = range(spc,ty) in
+          if multiArgConstructor?(constr_id,constr_ty,spc) then
+          %% Treat as curried
+             prBreak 2 [ppConstructorTyped(c, constr_id, constr_ty, spc),
+                        prSpace,
+                        prPostSep 2 blockFill prSpace
+                          (map (ppTermEncloseComplex? c Nonfix)
+                             (MS.termToList term2))]
+          else prConcat [ppConstructorTyped(c, constr_id, constr_ty, spc),
+                         prSpace,
+                         ppTerm c Nonfix term2]
+        | (Fun(Op(constr_id, Constructor1), ty, _), _) ->
+          let spc = getSpec c in
+          let constr_ty = range(spc,ty) in
+          prConcat [ppConstructorTyped(c, constr_id, constr_ty, spc),
+                    prSpace,
+                    ppTerm c Nonfix term2]
         | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_)) ->
           let spc = getSpec c in
           let constr_ty = range(spc,ty) in
@@ -3615,6 +3624,15 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
           else prConcat [ppConstructorTyped(c, constr_id, constr_ty, spc),
                          prSpace,
                          ppTerm c Nonfix term2]
+        | (Apply(Fun(Op(qid, _), _, _), t1, _), _) | reversedNonfixOp? c qid ->
+          %% Reversed curried op, not infix
+          let Some(isa_id,_,_,reversed,_) = specialOpInfo c qid in
+          enclose?(parentTerm ~= TmTop,
+                   prBreak 2 [prSymString isa_id,
+                              prSpace,
+                              ppTermEncloseComplex? c Nonfix term2,
+                              prSpace,
+                              ppTermEncloseComplex? c Nonfix t1])
         | (Lambda (match, _),_) ->
           if nonCaseMatch? match
             then ppTerm c parentTerm (caseToIf(c, match, term2))
