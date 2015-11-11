@@ -8,6 +8,7 @@ fi
 SPECWARE4=$1
 echo "Testing Library/CGen/Monadic:"
 
+#TODO: Add CGen.sw?
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/C_DSL.sw
 #run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/C_Permissions.sw  #Eddy says this is in flux.  It currently doesn't proc.
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/CGen/Monadic/C_Predicates.sw
