@@ -235,8 +235,8 @@ proof isa pop_def
   apply(auto simp add: listToStack_def)
   apply(cut_tac f="\<lambda> x . stackToList x" and x="Stack" in Function__inverse_f_apply)
   defer
-  apply(force)
-  by(rule stackToList_bijective)
+  apply (simp add: stackToList_injective2_lemma)
+  by (rule stackToList_bijective)
 end-proof
 
 proof isa push_def
