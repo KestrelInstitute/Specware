@@ -688,7 +688,7 @@ uindent ^ "qed\n"
      let defns = (map (fn (vars, defn) ->
                          mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
      let defn_conj = mkAnd defns in
-     let stpreds = mkAnd (getNonImpliedTypePredicates(evars,defns, spc)) in
+     let stpreds = mkAnd (getNonImpliedTypePredicates(evars, defns, false, spc)) in
      let inner = case res of
                    | Bind(Exists, vs, bod, _) -> bod
                    | _ -> res

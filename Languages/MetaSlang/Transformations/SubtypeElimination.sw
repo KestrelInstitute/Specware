@@ -635,10 +635,11 @@ SpecNorm qualifying spec
               equalTermAlpha?(p1, p2)
             | _ -> false)
 
-  op hasDefiningConjunctImplyingSubtype(v as (vn,v_ty): MSVar, binding_cjs: MSTerms, spc: Spec): Bool =
+  op hasDefiningConjunctImplyingSubtype(v as (vn,v_ty): MSVar, binding_cjs: MSTerms, ignore_projections?: Bool, spc: Spec): Bool =
    exists? (fn cj ->
-               case bindingEquality? (v, cj) of
-                 | Some(e1, e2) | ~(embed? Var e2) && ~(projection?(e2, spc)) ->
+               case bindingEquality? (v, cj) 
+                   %% The projection exception is necessary because we don't have theorems about the values of record fields
+                 | Some(e1, e2) | ~(embed? Var e2) && (ignore_projections? => ~(projection?(e2, spc))) ->
                    let e2_ty = inferType(spc, e2) in
                    let def implied_by_assigned_val(e1, e2_ty) =
                          % let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
@@ -656,7 +657,7 @@ SpecNorm qualifying spec
                  | _ -> false)
       binding_cjs
 
-  op getNonImpliedTypePredicates(bndVars: MSVars, binding_cjs: MSTerms, spc: Spec): MSTerms =
+  op getNonImpliedTypePredicates(bndVars: MSVars, binding_cjs: MSTerms, ignore_projections?: Bool, spc: Spec): MSTerms =
     %% For bndVars with subtypes return the subtype predicate applied to the var except when
     %% when the subtype is implied by a binding conjunct.
     %% Could add more cases the implication
@@ -665,12 +666,13 @@ SpecNorm qualifying spec
                     | None -> None
                     | Some pred_tm ->
                       % let _ = writeLine("Considering "^printTerm pred_tm) in
-                      if hasDefiningConjunctImplyingSubtype(v, binding_cjs, spc)
+                      if hasDefiningConjunctImplyingSubtype(v, binding_cjs, ignore_projections?, spc)
                         || (case binding_cjs of
                               | [cj1 as Apply(Fun(Or,_,_), _, _)]->
                                 forall? (fn disj ->
                                            (~(hasRefTo?(disj, [v])) && knownNonEmptyType?(v_ty, spc))
-                                           || hasDefiningConjunctImplyingSubtype(v, conjunctTerms(disj, Exists), spc))
+                                           || hasDefiningConjunctImplyingSubtype(v, conjunctTerms(disj, Exists),
+                                                                                 ignore_projections?, spc))
                                 (getDisjuncts cj1)
                               | _ -> false)
                      then
@@ -707,7 +709,7 @@ SpecNorm qualifying spec
     case t of
       | Bind(bndr,bndVars,bod,a) ->
         let binding_cjs = getBindingConjuncts t in
-        let preds = getNonImpliedTypePredicates(bndVars, binding_cjs, spc) in
+        let preds = getNonImpliedTypePredicates(bndVars, binding_cjs, bndr = Forall, spc) in
         let preds = map (mapTerm (relativizeQuantifiersSimpOption simplify? spc,id,id)) preds in
         (if empty? preds
           then t
