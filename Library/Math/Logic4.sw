@@ -11,10 +11,10 @@ where Bot has the intended meaning of an undefined or unknown value,
 and Top has the intended meaning of an overdefined or inconsistent
 value.  Interestingly, the Meet, Join, and Complement of this Boolean
 Algebra are different from the And, Or, and Not that we define below
-to serve as interpretations of the symbols of Propositional Logic.
+to serve as interpretations of Propositional Logic.
 
 *)
-
+Logic4 = Logic4 qualifying
 spec
   type Logic4 = |Bot |False |True |Top
 
@@ -118,3 +118,13 @@ spec
 
 end-spec
 
+M = morphism Semilattice#JoinSemilattice -> Logic4
+      { A +-> Logic4,
+        <= +-> Logic4Le,
+        join +-> Join4}
+
+ExLat = spec
+import Semilattice#JoinSemilattice
+end-spec
+
+ExLat1 = ExLat[M]
