@@ -310,7 +310,3 @@ end-proof
 proof Isa Set__size_def_Obligation_subtype
   sorry
 end-proof
-
-proof Isa Set__Set_non_empty_p
-  by (metis SetsAsBags__empty_set_Obligation_subtype)
-end-proof
