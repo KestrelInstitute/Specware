@@ -286,7 +286,7 @@ Specware qualifying spec
        let context = initialize (asciiPrinter, false) in
        blockAll(0, map (fn opinfo ->
                           let num_defs = length (unpackTypedTerms opinfo.dfn) in
-                          (0, blockAll(0, (ppOpDeclAux context (num_defs = 0, num_defs > 0, true, num_defs) false (opinfo, (0, []))).2)))
+                          (0, blockAll(0, (ppOpDeclAux context (num_defs = 1, num_defs > 1, true, num_defs) false (opinfo, (0, []))).2)))
                      opinfos)
 
  op printTypeInSpec (spc: Spec) (qid: QualifiedId): String =
