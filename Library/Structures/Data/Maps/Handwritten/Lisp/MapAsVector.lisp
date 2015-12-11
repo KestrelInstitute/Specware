@@ -1,7 +1,3 @@
-;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2007 by Kestrel Technology
-;;;                          All Rights Reserved
-;;;-------------------------------------------------------------------------
 ;;; Implements a Map with domain Nat as a vector.
 ;;; Only works if access is single-threaded!
 

@@ -1,7 +1,3 @@
-;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2007 by Kestrel Technology
-;;;                          All Rights Reserved
-;;;-------------------------------------------------------------------------
 ;;; Modified from MapAsSTHarray.lisp which is modified from Marcel's HArrayAsStringMap.lisp
 ;;; Modified for backtracking usage, where only one version is used at any time,
 ;;; but once a version is backtracked from, it is is likely never to be referenced again.

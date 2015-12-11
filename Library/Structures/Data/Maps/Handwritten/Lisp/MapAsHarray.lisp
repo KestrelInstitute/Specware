@@ -1,7 +1,3 @@
-;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2002 by Kestrel Technology
-;;;                          All Rights Reserved
-;;;-------------------------------------------------------------------------
 ;;; Modified from Marcel's HArrayAsStringMap.lisp
 
 
