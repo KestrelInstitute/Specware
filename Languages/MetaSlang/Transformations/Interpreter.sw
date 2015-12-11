@@ -43,6 +43,8 @@ spec
       | (Constructor(id1,v1,_), Constructor(id2,v2,_)) ->
         if id1 = id2 then equalValue?(v1,v2) else None
       | (Constant(id1,_), Constant(id2,_)) -> Some(id1 = id2)
+      | (Constructor _, Constant _) -> Some false
+      | (Constant _, Constructor _) -> Some false
       | (Unevaluated(t1),Unevaluated(t2)) -> if equalTermAlpha?(t1,t2) then Some true else None
       | (Closure(match1, sb1),  Closure(match2, sb2)) ->
         if equalMatch_alpha? [] (match1, match2) true && sb1 = sb2
@@ -987,7 +989,6 @@ spec
       | RecordVal   rm -> mkRecord(map (fn (id,x) -> (id,valueToTerm x)) rm)
       | Constructor (id,arg,ty) -> mkApply(mkFun(Op(id, Constructor1), ty), valueToTerm arg)
       | Constant    (id,ty) -> mkFun(Op(id, Constructor0), ty)
-% TODO: restore these
       | QuotientVal (f,arg,srt_qid)  ->
         let argtm = valueToTerm arg in
 	mkQuotient(argtm,srt_qid,termType argtm)
