@@ -178,7 +178,8 @@ GC_to_PV = morphism GS_Galois_Connection -> PartialValuation
                RhatBot      +-> PVbot,
                RhatJoin     +-> PVjoin,
                concretize   +-> PVgamma,
-               abstract     +-> PValpha
+               abstract     +-> PValpha,
+               beta         +-> PVbeta
                } 
 
 (* ------ OverApproximating Valuations via Value sets for each variable ------- 
@@ -238,5 +239,6 @@ GC_to_VM = morphism GS_Galois_Connection -> VarMap
                RhatBot      +-> VMbot,
                RhatJoin     +-> VMjoin,
                concretize   +-> VMgamma,
-               abstract     +-> VMalpha
+               abstract     +-> VMalpha,
+               beta         +-> VMbeta
                } 
