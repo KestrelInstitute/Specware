@@ -178,7 +178,7 @@ op findSmallestObjContaining(spc: Spec, pos: Nat, uidStr: String): Option(Nat * 
               Some(begp, endp)
 
 op findSmallestObjInTerm(tm: MSTerm, pos: Nat, uidStr: String): Option(Nat * Nat) =
-  if ~(inPosition?(pos, termAnn tm, uidStr)) then None
+  if ~(embed? Internal (termAnn tm)) && ~(inPosition?(pos, termAnn tm, uidStr)) then None
   else
   let reg_in =
         case tm of
@@ -258,8 +258,11 @@ op findSmallestObjInTerm(tm: MSTerm, pos: Nat, uidStr: String): Option(Nat * Nat
   in
   case reg_in of
     | Some _ -> reg_in
-    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = termAnn tm in
-              Some(begp, endp)
+    | None ->
+  case termAnn tm of
+    |  File(fl_nm1, (_,_,begp), (_,_,endp)) ->
+       Some(begp, endp)
+    | _ -> None
 
 op findSmallestObjInType(ty: MSType, pos: Nat, uidStr: String): Option(Nat * Nat) =
   if ~(inPosition? (pos, typeAnn ty, uidStr)) then None
@@ -270,8 +273,11 @@ op findSmallestObjInType(ty: MSType, pos: Nat, uidStr: String): Option(Nat * Nat
   in
   case reg_in of
     | Some _ -> reg_in
-    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = typeAnn ty in
-              Some(begp, endp)
+    | None ->
+  case typeAnn ty of
+    |  File(fl_nm1, (_,_,begp), (_,_,endp)) ->
+       Some(begp, endp)
+    | _ -> None
 
 op findSmallestObjInPattern(pat: MSPattern, pos: Nat, uidStr: String): Option(Nat * Nat) =
   if ~(inPosition?(pos, patAnn pat, uidStr)) then None
@@ -282,9 +288,11 @@ op findSmallestObjInPattern(pat: MSPattern, pos: Nat, uidStr: String): Option(Na
   in
   case reg_in of
     | Some _ -> reg_in
-    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = patAnn pat in
-              Some(begp, endp)
-
+    | None ->
+  case patAnn pat of
+    |  File(fl_nm1, (_,_,begp), (_,_,endp)) ->
+       Some(begp, endp)
+    | _ -> None
 
 op Specware.evaluateUnitId: String -> Option Value
 
