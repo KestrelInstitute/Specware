@@ -257,6 +257,7 @@ op extract_setf_entry (element : SpecElement) : Option SetfEntry =
        | Pi   (_, fm,    _) -> aux fm
        | And  (fm :: _,  _) -> aux fm
        | Bind (_, _, fm, _) -> aux fm
+       | Apply(Fun (Implies, _, _), Record ([(_, lhs), (_, rhs)], _), _) -> aux rhs
 
        | Apply (Fun (Equals, _, _), 
                 Record ([(_, lhs), 
