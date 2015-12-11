@@ -1,7 +1,3 @@
-;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2004 by Kestrel Technology
-;;;                          All Rights Reserved
-;;;-------------------------------------------------------------------------
 ;;; Modified from MapAsSTHarray which was based on Marcel's HArrayAsStringMap.lisp
 ;;; Designed for near single-threaded use.
 ;;; Only keep forward links to allow for garbage collection of unused nodes and undolist
