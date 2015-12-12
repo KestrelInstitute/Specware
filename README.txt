@@ -2,8 +2,7 @@ Specware README.txt file (updated January, 2015).
 
 Welcome to Specware!
 
-(NOTE: By using Specware, you agree to the license in
-SpecwareLicense.txt.)
+(NOTE: By using Specware, you agree to the license in LICENSE.txt.)
 
 Specware runs on Linux and Mac OS X. (It may be possible to run
 Specware on Windows, but this is not being actively supported.  These
@@ -38,7 +37,7 @@ Specware, first install SBCL (available from http://www.sbcl.org/).
 Specware has been tested using SBCL version 1.2.2 on Linux.
 
 2. Set your SPECWARE4 environment variable to point to your Specware
-directory. TODO: Is this still needed?
+directory.
 
 3.  Run the script ./bin/bootstrap.
 
@@ -48,9 +47,7 @@ work.
 Notes:
 
 You may need to set an Isabelle environment variable so that Isabelle
-understands references to $SPECWARE4 (TODO: Under what circumstances
-is this needed?  Maybe on Mac but not on Linux?).  You can put
-something like this line:
+understands references to $SPECWARE4.  You can put something like this line:
 export SPECWARE4=$HOME/Specware 
 into the file:
 ~/.isabelle/Isabelle2015/etc/settings

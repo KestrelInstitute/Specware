@@ -56,7 +56,7 @@
     dir                               ; e.g. "C:/Progra~1/Specware4-0-7/Specware4/distribution/Specware4/"
 
     ;; list of files to load
-    files-to-load                     ; e.g. '("BuildPreamble.lisp" "Specware4.lisp" "license.lisp")
+    files-to-load                     ; e.g. '("BuildPreamble.lisp" "Specware4.lisp")
 
     ;; list of files to copy to the distribution directory
     :application-files  files-to-copy ; e.g. (list (in-specware-dir "Release/Windows/Specware4.cmd"))

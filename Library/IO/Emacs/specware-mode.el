@@ -2609,68 +2609,6 @@ With an argument, it doesn't convert imports."
   (unless nil; (boundp 'haskell-program-name)
     (setq haskell-program-name (concat "ghci " path))))
 
-;; License display and acceptance
-(defvar sw:license-accepted nil)
-(defvar *license-frame*)
-
-(defun display-license-and-accept (license-file)
-  (setq sw:license-accepted nil)
-  (unless (and (boundp '*license-frame*) *license-frame* (frame-live-p *license-frame*))
-    (setq *license-frame* (make-frame '((name . "Specware License")
-                                        (minibuffer . nil)
-                                        (menu-bar-lines . 0)
-                                        (left . 100)
-                                        (top . 10)
-                                        (width . 75)
-                                        (height . 75)))))
-  (select-frame *license-frame*)
-  (view-file license-file)
-  (make-frame-visible *license-frame*)
-  (if (fboundp 'make-dialog-box)
-      ;; xemacs -- non-modal
-      (make-dialog-box 
-       'general
-       :parent *license-frame*
-       :title "Accept License? "
-       :autosize t
-       :spec (make-glyph
-              `[layout 
-                :orientation horizontal 
-                :items 
-                ([button :width 10 :descriptor "Accept"
-                         :face gui-button-face
-                         :callback-ex
-                         (lambda (image-instance event)
-                           (setq sw:license-accepted t)
-                           (sw:eval-in-lisp "(Specware::license-accepted)")
-                           (delete-frame 
-                            (event-channel event))
-                           (make-frame-invisible *license-frame*)
-                           (sw:switch-to-lisp)
-                           (let ((sp-frame (car (frames-of-buffer *specware-buffer-name*))))
-                             (when sp-frame
-                               (raise-frame sp-frame))))]
-                 [button :width 10 :descriptor "Reject"
-                         :face gui-button-face
-                         :callback-ex
-                         (lambda (image-instance event)
-                           (sw:exit-lisp)                             
-                           (delete-frame 
-                            (event-channel event)))])])
-       :properties `(height ,(widget-logical-to-character-height 12)
-                            width ,(widget-logical-to-character-width 39)))
-    ;; Gnu Emacs
-    (let ((last-nonmenu-event nil)      ; gnu emacs
-          (use-dialog-box t)            ; gnu emacs
-          (force-dialog-box-use t)      ; xemacs
-          )
-      (sit-for 0.1)
-      (setq sw:license-accepted (yes-or-no-p "Accept License? "))
-      (if sw:license-accepted
-          (make-frame-invisible *license-frame*)
-        (sw:exit-lisp))))
-  sw:license-accepted)
-
 (defun sw:specware-mode-folding ()
   (folding-add-to-marks-list 'specware-mode "%{{{" "%}}}" nil t))
 

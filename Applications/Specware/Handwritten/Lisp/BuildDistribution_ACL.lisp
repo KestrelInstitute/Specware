@@ -116,7 +116,7 @@
 
  ;; a list of files to load 
  ;; [current directory is Specware4/Applications/Specware/Handwritten/Lisp/]
- '("BuildPreamble.lisp" "Specware4.lisp" "license.lisp")
+ '("BuildPreamble.lisp" "Specware4.lisp")
 
  ;; a list of files to copy to the distribution directory
  :application-files

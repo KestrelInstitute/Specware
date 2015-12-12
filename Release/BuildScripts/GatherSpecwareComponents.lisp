@@ -744,19 +744,6 @@
   (let* ((source-dir  (ensure-subdirs-exist specware-dir))
          (generic-dir (ensure-subdirs-exist source-dir  "Release" "Generic"))
          (target-dir  (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Generic"))))
-
-    ;; License file (InstallShield looks for this)
-    (copy-dist-file (make-pathname :name (if cl-user::*government-rights?*
-                                             "SpecwareClickThruLicenseGov"
-                                             "SpecwareClickThruLicense")
-                                   :type "txt" :defaults generic-dir)
-                    (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults target-dir))
-    (copy-dist-file (make-pathname :name (if cl-user::*government-rights?*
-                                             "SpecwareClickThruLicenseGovForm"
-                                             "SpecwareClickThruLicenseForm")
-                                   :type "txt" :defaults generic-dir)
-                    (make-pathname :name "SpecwareLicense" :type "txt" :defaults target-dir))
-
     ;; Icons
     #-darwin
     (copy-dist-file (make-pathname :name "S" :type "ico" :defaults (extend-directory specware-dir "Icons"))
@@ -846,8 +833,7 @@
                                         (merge-pathnames lisp-utilities-dir      "MemoryManagement")
                                         (merge-pathnames lisp-utilities-dir      "CompactMemory")
                                         (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble")
-                                        (merge-pathnames source-buildscripts-dir "LoadSpecware")
-                                        (merge-pathnames source-buildscripts-dir "SpecwareLicense")))
+                                        (merge-pathnames source-buildscripts-dir "LoadSpecware")))
 
          ;; a list of files put on the distribution directory
          (files-to-copy           (append
@@ -916,8 +902,7 @@
                               (merge-pathnames lisp-utilities-dir      "MemoryManagement")
                               (merge-pathnames lisp-utilities-dir      "CompactMemory")
                               (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble")
-                              (merge-pathnames source-buildscripts-dir "LoadSpecware")
-                              (merge-pathnames source-buildscripts-dir "SpecwareLicense")))
+                              (merge-pathnames source-buildscripts-dir "LoadSpecware")))
 
          ;; a list of files put on the distribution directory
          (files-to-copy (append
@@ -987,8 +972,7 @@
                                            (merge-pathnames lisp-utilities-dir       "MemoryManagement")
                                            (merge-pathnames lisp-utilities-dir       "CompactMemory")
                                            (merge-pathnames source-buildscripts-dir  "BuildSpecwarePreamble")
-                                           (merge-pathnames source-buildscripts-dir  "LoadSpecware")
-                                           (merge-pathnames source-buildscripts-dir  "SpecwareLicense")))
+                                           (merge-pathnames source-buildscripts-dir  "LoadSpecware")))
 
          ;; a list of files to copy to the distribution directory
          (files-to-copy              (list (merge-pathnames source-windows-allegro-dir "Specware.cmd")
@@ -1087,8 +1071,7 @@
                                         (merge-pathnames lisp-utilities-dir      "MemoryManagement")
                                         (merge-pathnames lisp-utilities-dir      "CompactMemory")
                                         (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble")
-                                        (merge-pathnames source-buildscripts-dir "LoadSpecware")
-                                        (merge-pathnames source-buildscripts-dir "SpecwareLicense")))
+                                        (merge-pathnames source-buildscripts-dir "LoadSpecware")))
 
          ;; a list of files put on the distribution directory
          (files-to-copy           (append

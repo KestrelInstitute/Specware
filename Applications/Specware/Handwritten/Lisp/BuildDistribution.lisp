@@ -39,7 +39,7 @@
  distribution-directory
 
  ;; a list of files to load
- '("BuildPreamble.lisp" "Specware4.lisp" "license.lisp")
+ '("BuildPreamble.lisp" "Specware4.lisp")
 
  ;; a list of files to copy to the distribution directory
  :application-files

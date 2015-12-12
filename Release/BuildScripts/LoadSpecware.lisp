@@ -210,7 +210,6 @@
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
     "Provers/DP/Handwritten/Lisp/Rational.lisp"
-    "Release/Generic/CheckLicense.lisp"          ; license checking code
     )
   )
 

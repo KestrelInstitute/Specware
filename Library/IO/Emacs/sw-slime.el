@@ -189,17 +189,7 @@ If NEWLINE is true then add a newline at the end of the input."
     (slime-mark-output-start)
     (if (eq input :exit)
 	(slime-quit-specware)
-      (if (and (null sw:license-accepted)
-               (if (equal sw:system-name "Specware")
-                   t
-                 (progn (setq sw:license-accepted t)
-                        nil))
-               (null (setq sw:license-accepted (sw:eval-in-lisp "Specware::*license-accepted?*"))))
-          (progn (beep)
-                 (message "Need to accept license to use Specware!")
-                 (display-license-and-accept (concat (getenv "SPECWARE4") "/SpecwareLicense.txt")))
-        (slime-repl-send-string input)))))
-
+      (slime-repl-send-string input))))
 
 (defun slime-quit-specware (&optional keep-buffers) ; Still needed??
   "Quit lisp, kill the inferior process and associated buffers."
@@ -281,8 +271,6 @@ If NEWLINE is true then add a newline at the end of the input."
   (run-hooks 'slime-repl-mode-hook)
   (run-mode-hooks 'specware-listener-mode-hook))
 
-(defvar sw:license-displayed-p nil)
-
 ;;; Redefining slime functions and variables
 (defun* slime-start (&key (program inferior-lisp-program) program-args
                           directory
@@ -309,7 +297,6 @@ BUFFER the name of the buffer to use for the subprocess.
 NAME a symbol to describe the Lisp implementation
 DIRECTORY change to this directory before starting the process.
 "
-  (setq sw:license-displayed-p nil)
   (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
       (slime-allegro-windows program program-args)
     (let ((args (list :program program :program-args program-args :buffer buffer 
@@ -419,10 +406,6 @@ to end."
               ;; whereby deleting a prior " in the file makes the insertion point read-only!
               (insert-before-markers " ")
               (set-marker slime-repl-prompt-start-mark prompt-start)
-              (unless sw:license-displayed-p
-                (when (equal sw:system-name "Specware")
-                  (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
-                (setq sw:license-displayed-p t))
               (setq buffer-undo-list nil)
               prompt-start)))))))
 
