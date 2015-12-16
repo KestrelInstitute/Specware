@@ -1,9 +1,7 @@
 
-SPECWARE4=`dirname $0`
-
 #Applications/Specware/bin/linux/Specware4.sbclexe:
 bootstrap:
-	SPECWARE4=${SPECWARE4} Applications/Specware/bin/linux/bootstrap
+	bin/bootstrap
 
 clean:
 	rm -f Applications/Specware/lisp/*.lisp
@@ -11,4 +9,3 @@ clean:
 
 realclean: clean
 	rm -f Applications/Specware/bin/linux/Specware4.sbclexe
-	rm -f Applications/Specware/bin/linux/Bootstrap.sbclimage
