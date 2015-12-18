@@ -26,7 +26,7 @@ fi
 export LISP_VERSION="CMUCL"
 export BATCH_LISP="$LISP -batch"
 # -dynamic-space-size should be at least about 530 for Accord
-export BATCH_SPECWARE="$LISP -core $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch -dynamic-space-size 1000"
+export BATCH_SPECWARE="$LISP -core $SPECWARE4/Applications/Specware/bin/unix/Specware4.${IMAGE_EXTENSION} -batch -dynamic-space-size 1000"
 
 echo "  Verify_CMUCL:  LISP_MODE            = [$LISP_MODE]"
 echo "  Verify_CMUCL:  LISP                 = [$LISP]"

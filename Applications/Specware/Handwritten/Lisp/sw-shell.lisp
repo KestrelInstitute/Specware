@@ -598,7 +598,7 @@
          (format t "Unknown command `~S'. Type `help' to see available commands."
                  command))))
 
-;; This is currently a top-level entry point (called from Applications/Specware/bin/linux/specware-batch.sh):
+;; This is currently a top-level entry point (called from Applications/Specware/bin/unix/specware-batch.sh):
 ;; Process a sequence of Specware commends in batch mode.  Commands come in separated by newlines.
 ;; Maybe this function, in its current form, isn't really needed (you
 ;; can just pipe a bunch of commands into Specware? but I may have

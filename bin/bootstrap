@@ -25,7 +25,7 @@ export SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  T
 #echo "(Setting SPECWARE4 to [$SPECWARE4].)"
 
 #FIXME Change the .exe location in the Emacs scripts, specware-emacs, etc. (where else?):
-SPECWARE_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+SPECWARE_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/unix/Specware4.sbclexe
 
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
 SBCL_SIZE="${SBCL_SIZE:=2400}"
@@ -35,7 +35,7 @@ build_executable_from_lisp_files () {
     EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
     cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp #yuck
     #FIXME handle the call to SBCL better here:
-    #FIXME why were we using the bootstrap image to compile?  --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION}
+    #FIXME why were we using the bootstrap image to compile?  --core $SPECWARE4/Applications/Specware/bin/unix/Bootstrap.${IMAGE_EXTENSION}
 
     # Note: The file being loaded here is
     # $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp,
@@ -90,7 +90,7 @@ LOG="$SPECWARE4/Applications/Specware/lisp/Specware4.lisp.log"
 echo "Generating Lisp files from the .sw files (see $LOG):"
 cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp #yuck
 
-${SPECWARE4}/Applications/Specware/bin/linux/specware-batch.sh <<EOF > $LOG 2>&1
+${SPECWARE4}/Applications/Specware/bin/unix/specware-batch.sh <<EOF > $LOG 2>&1
 gen-lisp /Applications/Specware/Specware4
 EOF
 

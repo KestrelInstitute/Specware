@@ -15,7 +15,7 @@ export SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  T
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
 SBCL_SIZE="${SBCL_SIZE:=2000}"
 
-LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/unix/Specware4.sbclexe
 
 # FIXME Think about how to set SWPATH (if at all):
 #echo "(In specware-shell, SWPATH is [$SWPATH].)"

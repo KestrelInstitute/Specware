@@ -36,7 +36,7 @@ case "$SPECWARE4" in
 esac
 
 export SPECWARE4
-export BIN_DIR="$SPECWARE4/Applications/Specware/bin/linux"
+export BIN_DIR="$SPECWARE4/Applications/Specware/bin/unix"
 export GEN_DIR="$SPECWARE4/Applications/Specware/lisp"
 
 echo "  Verify_Specware_Variables:  SPECWARE4  = [$SPECWARE4]"

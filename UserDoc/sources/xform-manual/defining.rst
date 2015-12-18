@@ -123,7 +123,7 @@ that spec and add the following to the list of imports::
 
 Then rebuild specware::
 
-    $SPECWARE4> Applications/Specware/bin/linux/bootstrap
+    $SPECWARE4> make
 
 After the Specware build finishes, the new transform is available for
 manipulating specs::

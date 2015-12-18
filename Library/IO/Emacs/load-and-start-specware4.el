@@ -80,8 +80,8 @@
   (unless (equal (substring (getenv "SPECWARE4") 0 1) "/")
     (setenv "SPECWARE4" (concat (getenv "PWD") "/" (getenv "SPECWARE4"))))
 
-  ;;; SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/linux
-  (setenv "SPECWARE_BIN" (concat (getenv "SPECWARE4") "/Applications/Specware/bin/linux"))
+  ;;; SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/unix
+  (setenv "SPECWARE_BIN" (concat (getenv "SPECWARE4") "/Applications/Specware/bin/unix"))
 
   ;;; # Ensure SWPATH is set
   ;;; Emacs setenv does not require a separate export command.

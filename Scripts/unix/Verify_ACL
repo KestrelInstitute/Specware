@@ -37,8 +37,8 @@ LISP_DIR=`/usr/bin/dirname $LISP`
 export LISP_VERSION=`/bin/basename ${LISP_DIR}`
 export BIG_LISP="${BIN_DIR}/big-alisp-${LISP_VERSION}.${IMAGE_EXTENSION}"
 export BATCH_LISP="$LISP -I ${BIG_LISP} -batch"
-export BATCH_SPECWARE=${BATCH_SPECWARE:-"$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch"}
-export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} -batch"}
+export BATCH_SPECWARE=${BATCH_SPECWARE:-"$LISP -I $SPECWARE4/Applications/Specware/bin/unix/Specware4.${IMAGE_EXTENSION} -batch"}
+export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP -I $SPECWARE4/Applications/Specware/bin/unix/Bootstrap.${IMAGE_EXTENSION} -batch"}
 
 echo " "
 echo "  Verify_ACL:  LISP_MODE            = [$LISP_MODE]"

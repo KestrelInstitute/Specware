@@ -79,8 +79,8 @@ fi
 #      Print SBCL's version information, then exit. 
 #================================================================================  
 
-export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size $SBCL_SIZE --end-runtime-options"}
-export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size $SBCL_SIZE --end-runtime-options"}
+export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/unix/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size $SBCL_SIZE --end-runtime-options"}
+export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/unix/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size $SBCL_SIZE --end-runtime-options"}
 
 echo " "
 echo "  Verify_SBCL:  LISP_MODE            = [$LISP_MODE]"

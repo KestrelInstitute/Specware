@@ -22,7 +22,7 @@ cd $SPECWARE4
 SBCL_SIZE="${SBCL_SIZE:=2000}"
 
 # TODO: rename this var to SPECWARE_EXECUTABLE, or would that break things?
-LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/unix/Specware4.sbclexe
 
 # FIXME Think about how to set SWPATH (if at all):
 #echo "(In specware-shell, SWPATH is [$SWPATH].)"

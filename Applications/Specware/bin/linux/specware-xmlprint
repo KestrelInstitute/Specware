@@ -3,7 +3,7 @@ source ~/.bashrc
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
 SBCL_SIZE="${SBCL_SIZE:=4000}"
 
-LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/unix/Specware4.sbclexe
 export SWPATH="$1":/
 echo SWPATH="$SWPATH"
 

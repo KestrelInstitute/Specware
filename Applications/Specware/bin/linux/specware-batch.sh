@@ -26,4 +26,4 @@ export SWPATH
 SBCL_SIZE="${SBCL_SIZE:=2000}"
 
 
-"$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe --dynamic-space-size $SBCL_SIZE --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::process-batch-commands) (sb-unix:unix-exit 0))"
+"$SPECWARE4"/Applications/Specware/bin/unix/Specware4.sbclexe --dynamic-space-size $SBCL_SIZE --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::process-batch-commands) (sb-unix:unix-exit 0))"

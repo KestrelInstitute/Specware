@@ -1,5 +1,5 @@
 
-#Applications/Specware/bin/linux/Specware4.sbclexe:
+#Applications/Specware/bin/unix/Specware4.sbclexe:
 bootstrap:
 	bin/bootstrap
 
@@ -8,4 +8,4 @@ clean:
 	find . -name \*.sfsl -print | xargs rm -f
 
 realclean: clean
-	rm -f Applications/Specware/bin/linux/Specware4.sbclexe
+	rm -f Applications/Specware/bin/unix/Specware4.sbclexe

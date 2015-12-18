@@ -72,7 +72,7 @@ esac
 # ------------------------------------------------------------------------
 
 # echo "  Ensure Specware image exists."
-# echo "  Testing $SPECWARE4/Applications/Specware/bin/linux/Specware4.$IMAGE_EXTENSION"
+# echo "  Testing $SPECWARE4/Applications/Specware/bin/unix/Specware4.$IMAGE_EXTENSION"
 # echo "  "
 
 if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
@@ -81,9 +81,9 @@ if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
    exit 1
 fi
 
-if [ ! -f "$SPECWARE4"/Applications/Specware/bin/linux/Specware4."$IMAGE_EXTENSION" ]; then
+if [ ! -f "$SPECWARE4"/Applications/Specware/bin/unix/Specware4."$IMAGE_EXTENSION" ]; then
    echo "Failed to $act: could not find specware image
-   $SPECWARE4/Applications/Specware/bin/linux/Specware4.$IMAGE_EXTENSION" 2>&1
+   $SPECWARE4/Applications/Specware/bin/unix/Specware4.$IMAGE_EXTENSION" 2>&1
    exit 1
 fi
 

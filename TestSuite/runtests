@@ -24,7 +24,7 @@ case "$SPECWARE4" in
     *)  SPECWARE="`pwd`/$SPECWARE4";;
 esac
 
-SpecwareText="$SPECWARE4"/Applications/Specware/bin/linux/Specware4-text
+SpecwareText="$SPECWARE4"/Applications/Specware/bin/unix/Specware4-text
 
 if [ ! -x "$SpecwareText" ]; then
    echo "Failed to $act: could not find executable $SpecwareText" 2>&1

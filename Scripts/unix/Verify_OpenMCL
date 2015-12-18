@@ -25,7 +25,7 @@ fi
 
 export LISP_VERSION="openmcl"
 export BATCH_LISP="$LISP --batch"
-export BATCH_SPECWARE="$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} --batch"
+export BATCH_SPECWARE="$LISP -I $SPECWARE4/Applications/Specware/bin/unix/Specware4.${IMAGE_EXTENSION} --batch"
 
 echo "  Verify_OpenMCL:  LISP_MODE            = [$LISP_MODE]"
 echo "  Verify_OpenMCL:  LISP                 = [$LISP]"

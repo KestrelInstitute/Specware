@@ -44,7 +44,7 @@ if [ -z $LISP_MODE ]; then
   exit -1
 fi
 
-. "$SPECWARE4"/Applications/Specware/bin/linux/Verify_Specware_Variables
+. "$SPECWARE4"/Applications/Specware/bin/unix/Verify_Specware_Variables
 . "$SPECWARE4"/Scripts/unix/Verify_$LISP_MODE
 
 BOOTSTRAP_IMAGE="$BIN_DIR"/Bootstrap.$IMAGE_EXTENSION

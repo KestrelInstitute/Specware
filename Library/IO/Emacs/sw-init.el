@@ -164,8 +164,8 @@
 	  (if *windows-system-p*
 	      "windows"
 	    (case system-type
-	      (darwin "linux")
-              (gnu/linux "linux")
+	      (darwin "unix")
+              (gnu/linux "unix")
 	      (t (symbol-name system-type))))))
 
 (defvar comint-status)
