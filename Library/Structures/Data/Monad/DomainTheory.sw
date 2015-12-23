@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 % Some useful definitions and theorems for approximation orderings,
 % from domain theory. Intuitively, these are preorders that capture

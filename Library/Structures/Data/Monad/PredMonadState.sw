@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (* This file defines predicate monads for reasoning about stateful monadic
 computations. To make Monad represent stateful computations, Monad must be a

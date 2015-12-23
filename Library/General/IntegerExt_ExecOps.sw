@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (* We refine the ops in spec IntegerExt to be executable. We refine all the ops
 that can be made executable. Of course, we cannot refine the others (e.g. minIn,

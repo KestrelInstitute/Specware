@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (*
  * A spec for a monad transformer. Since Specware only allows

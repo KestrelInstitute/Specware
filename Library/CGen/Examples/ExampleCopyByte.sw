@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (* In this example,
 we want to derive from requirements a C function that copies

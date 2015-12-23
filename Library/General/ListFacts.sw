@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 %% This file is intended to hold a variety of theorems about Lists.
 %% We could put it in the Base library, but I'd like to restrict that

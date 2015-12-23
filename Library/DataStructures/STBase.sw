@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (*  Spec to hold theorems about the builtin structure of MetaSlang  *)
 %TODO This should probably be moved to somewhere other than this (DataStructures) library.

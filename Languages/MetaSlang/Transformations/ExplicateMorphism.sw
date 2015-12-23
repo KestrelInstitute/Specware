@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (* When a spec has a TypeDef for a type that has a declaration in an imported spec this is like an implicit morphism
    which systems such as Isabelle cannot handle, so sometimes it needs to be explicated *)

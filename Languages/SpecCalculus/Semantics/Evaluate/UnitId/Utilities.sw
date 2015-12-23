@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 (*
 Derived from r1.5 SW4/Languages/SpecCalculus/Semantics/UnitId.sl

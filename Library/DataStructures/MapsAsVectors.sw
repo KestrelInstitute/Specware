@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 % TODO Does the code for the MapVec functions come from:
 % Specware/Library/Structures/Data/Maps/Handwritten/Lisp/MapAsVector.lisp?

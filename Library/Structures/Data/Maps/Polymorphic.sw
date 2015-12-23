@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 \section{Polymorphic Maps}
 This to be deprecated in favour of Maps/Polymorphic/Finite.sw %TODO That file doesn't exist?
