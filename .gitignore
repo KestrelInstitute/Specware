@@ -4,3 +4,4 @@
 *.status
 *.elc
 *.fasl
+*~
