@@ -12,10 +12,9 @@ Specware requires a machine with about 2800MB of memory or more. (If
 using a virtual machine, be sure to provision the machine with enough
 memory.)
 
-Specware also requires GNU Emacs (we no longer support XEmacs, which
-seems defunct).  GNU Emacs 23.1.1 on Linux is known to work, and later
-versions should also work.  (Note: Emacs may be already installed on
-your system.)
+Specware also requires GNU Emacs.  GNU Emacs 23.1.1 on Linux is known
+to work, and later versions should also work.  (Note: Emacs may be
+already installed on your system.)
 
 Optional: For proof support, install the Isabelle/HOL theorem prover
 (available from http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  The
@@ -24,25 +23,18 @@ Isabelle will not work.
 
 If this is a pre-built (binary) copy of Specware, you can just run
 Specware by executing the script bin/specware-emacs.  This will start
-a new Emacs with Specware running in it.  (This requires the Specware
-Emacs interface files, which you may have received separately from
-your copy of Specware.  You can always just use bin/specware-shell to
-run Specware without the Emacs support.)
+a new Emacs with Specware running in it.  Alternatively, on Mac OS X
+you can double click on bin/Specware.app. You can drag this to the
+dock or create an alias to it, to make it more accessible.  You can
+use bin/specware-shell to run Specware without the Emacs support.
 
-If this is a source code vesion of Specware, you will need to build
+If this is a source code version of Specware, you will need to build
 Specware before running it.  To do so, follow these steps:
 
 1. Specware runs on top of SBCL (Steel Bank Common Lisp).  To build
 Specware, first install SBCL (available from http://www.sbcl.org/).
-Specware has been tested using SBCL version 1.2.2 on Linux.
 
-2. Set your SPECWARE4 environment variable to point to your Specware
-directory.
-
-3.  Run the script ./bin/bootstrap.
-
-TODO: Add instructions for building on Windows, if we can make it
-work.
+2. Run make in the Specware directory
 
 Notes:
 
