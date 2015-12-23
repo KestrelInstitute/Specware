@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 RelLens qualifying spec
   import /Library/General/OptionExt
 

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
   type Seq a = List a
   type ProperSeq a = {x : Seq a | length x > 0}

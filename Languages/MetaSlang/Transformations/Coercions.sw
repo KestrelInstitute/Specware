@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %%% Adds coercion functions between subtype and supertype so they can have
 %%% different implementations
 

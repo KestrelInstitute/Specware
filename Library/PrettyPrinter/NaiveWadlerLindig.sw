@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* The Wadler / Lindig pretty printer combinators}
 
 This one just does indentation with not attempt to fit to some width. Most

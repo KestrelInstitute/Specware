@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %%% This adds definitions to some ops in the Base that have handwritten lisp definitions
 
 ExecutableList    = morphism Base/List    -> Base/List_Executable    {}

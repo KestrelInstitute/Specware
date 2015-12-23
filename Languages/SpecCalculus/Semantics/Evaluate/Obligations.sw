@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
 The spec calculus Obligations construct takes a spec or a a morphism and 
 returns a spec including the proof obligations as conjectures.

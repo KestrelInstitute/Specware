@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
    This specification introduces notation for fixpoints of a (monotone) endofunction.
 

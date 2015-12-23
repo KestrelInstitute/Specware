@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*   
 
      Algorithm Theory for Indexed Workset-Based Chaotic Fixpoint Iteration Theory

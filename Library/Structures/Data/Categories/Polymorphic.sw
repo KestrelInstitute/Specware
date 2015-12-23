@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Polymorphic Categories}
 
 The spec below defines a type for representing categories.  See also the

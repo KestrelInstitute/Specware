@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 SpecCalc qualifying spec
   %% Value.sw indirectly imports Types.sw
   import /Languages/MetaSlang/Specs/Categories/AsRecord  % Morphism

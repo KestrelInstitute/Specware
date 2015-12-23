@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* {The Specware Environment}
 
 The environment is the monadic context for the spec calculus interpreter. 

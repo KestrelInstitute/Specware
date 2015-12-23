@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 % Defines the standard error monad for computing with the possibility
 % of failure, where failures are given as a string

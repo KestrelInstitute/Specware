@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Domain of a Monomorphic Map
 
 %% This spec is the ``parameter'' to monomorphic maps defining the

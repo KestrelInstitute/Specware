@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Simple Polymorphic Maps as Lists}
 
 This should come about by composition of polymorphic collections etc.

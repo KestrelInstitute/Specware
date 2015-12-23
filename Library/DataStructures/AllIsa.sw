@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% This spec imports all the specs that get through Isabelle.  They may
 %% contain sorrys but at least give legal Isabelle files.  (Actually,
 %% this doesn't bother to import any morphisms, because their

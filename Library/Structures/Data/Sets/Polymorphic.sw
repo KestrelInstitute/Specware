@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Basic spec for polymorphic sets}
 
 Basic spec for polymorphic sets. Again, there are no axioms at this point.

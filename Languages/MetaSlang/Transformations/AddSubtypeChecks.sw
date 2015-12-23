@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 AddChecks qualifying
 spec
 import Simplify, SubtypeElimination, RuntimeSemanticError

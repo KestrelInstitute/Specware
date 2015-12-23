@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %%% Functions for use with editing specs from Emacs
 EditFn qualifying
 spec

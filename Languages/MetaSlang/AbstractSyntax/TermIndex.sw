@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Term indexing
 
  Implementation of path indexing, as described in Stickel's report,

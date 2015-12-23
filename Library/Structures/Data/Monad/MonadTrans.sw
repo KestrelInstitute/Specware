@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
  * A spec for a monad transformer. Since Specware only allows
  * predicative 1st-order polymorphism, we model transformers as specs

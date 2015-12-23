@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* 
  * This is the signature for a collection of primitive IO functions implemented
  * in Lisp. See Handwritten/Impure.lisp. Each of the functions here has

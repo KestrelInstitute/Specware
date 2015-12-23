@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Assert qualifying spec
 
 (* This spec defines a useful tool to "insert" proof obligations into arbitrary

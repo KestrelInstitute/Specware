@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 StandardSpec qualifying spec
  import AnnSpec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars - should be abstracted

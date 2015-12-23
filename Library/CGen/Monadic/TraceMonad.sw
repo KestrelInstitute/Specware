@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 (* A trace-monad-based semantics of a typed subset of C *)
 

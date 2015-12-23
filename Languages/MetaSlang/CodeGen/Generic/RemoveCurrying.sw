@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Replace all curried functions by functions that take products
 %%  op f: A -> B -> C
 %% -->

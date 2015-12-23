@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{A simple specification for Graphs}
 
 This is to be deprecated. See Graphs/Finite.sw for the new version.

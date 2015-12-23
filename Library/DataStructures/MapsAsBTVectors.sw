@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% The code for this may be in:
 %% Specware\Library\Structures\Data\Maps\Handwritten\Lisp\MapAsBTVector.lisp
 

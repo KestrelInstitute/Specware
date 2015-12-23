@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %%TODO Does this only work for maps whose domain is Nat?
 
 SimpleAsBTVector = BTVMap qualifying

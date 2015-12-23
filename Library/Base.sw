@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This spec is implicitly imported by any spec S that does not explicitly
 import any other spec. Unless S resides under the Specware4/Library/Base/
 directory, in which case it has no implicit imports. The latter exception

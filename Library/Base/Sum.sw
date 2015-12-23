@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Sum qualifying spec
 
   type Sum (a,b) = | Left a | Right b

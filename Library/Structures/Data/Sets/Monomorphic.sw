@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Monomorphic Sets}
 
 This is in use but to be deprecated. Use ../Sets.sw instead

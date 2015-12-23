@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
  * An example of applying an isomorphic type refinement to a type
  * that is part of a mutually recursive set of types.

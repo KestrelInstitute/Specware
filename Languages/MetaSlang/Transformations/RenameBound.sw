@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 %% Rename bound variables so they're all unique.
 RenameBound qualifying

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Utilities qualifying spec  
  import MSTerm    % defines types Spec, Term, etc.
  import /Library/Legacy/DataStructures/IntSetSplay

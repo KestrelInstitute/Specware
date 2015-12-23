@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
 
  % A generalization of Option, in which the failed case carries

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
  *  This specification defines an abstract syntax for Java programs, based on
  *  "The Java Language Specification, Java SE 7 Edition", by James Gosling,

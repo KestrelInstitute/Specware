@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 %% Beginning to factor MetaSlang bootstrap engine out from general Specware product
 %% Specware   = Bootstrap + OtherStuff

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Mono Maps as Instances of Poly Maps}
 
 This is a naive implementation of monomorphic Maps using polymorphic maps

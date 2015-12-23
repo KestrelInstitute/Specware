@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 List qualifying spec
 
 (* This spec is an extension of the base spec for lists. *)

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This file contains a model of C features in the logic of Specware.
 This model is used to specify requirements (in Specware) on C programs,
 for the purpose of deriving programs from specification via stepwise refinement.

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 morphism Spec -> Implementation  
   %% use same mappings as in /Library/General/FiniteSequencesAsListsMorphism
   {FSeq.++      +-> List.++,

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % refinement of (finite) bags in terms of (finite) lists
 
 %% TODO We can't do the Isabelle proofs for this spec, because the

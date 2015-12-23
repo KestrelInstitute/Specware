@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 IO qualifying spec
   import Exception
   import ImpureIO

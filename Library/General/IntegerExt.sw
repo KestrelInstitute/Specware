@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Integer qualifying spec
 
 (* This spec is an extension of the base spec for integers. *)

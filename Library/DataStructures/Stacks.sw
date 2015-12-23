@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% A specification for (finite) stacks.  For refinements of this spec,
 %% see BasicStacks.sw and StacksAsLists.sw and StacksAsVectors.sw.
 

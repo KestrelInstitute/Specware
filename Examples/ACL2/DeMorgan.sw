@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 DeMorgan = spec
 
   op bnot (x:Bool) : Bool = if x then false else true

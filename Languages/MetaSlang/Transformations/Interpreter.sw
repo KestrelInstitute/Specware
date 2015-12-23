@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %%% Simple interpreter for MetaSlang. Assume type-correct term. If it evaluate a term
 %%% it just returns the term.
 

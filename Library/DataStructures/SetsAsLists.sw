@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % we compose the refinement of sets as bags with the refinement of
 % bags as lists, thus obtaining a refinement of sets as lists: a set
 % is represented by an equivalence class of repetition-free lists

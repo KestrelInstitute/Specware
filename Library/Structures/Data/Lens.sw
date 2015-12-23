@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* The getter/setter form of lenses *)
 
 Lens qualifying spec

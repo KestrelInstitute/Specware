@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Diagrams in a Polymorphic Category}
 
 A category of diagrams has a fixed universe of shapes (ie sketches)

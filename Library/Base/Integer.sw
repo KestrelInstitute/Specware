@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Integer qualifying spec
 
 % (Note that the generated proofs for this spec go into SW_Integer.thy

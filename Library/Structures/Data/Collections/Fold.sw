@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Commutative Fold}
 
 This is a variation but weaker characterization of fold taught to me by Alessandro.

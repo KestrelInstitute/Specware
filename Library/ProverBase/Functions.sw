@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 PrFunctions qualifying spec
   axiom id_def is [a] fa (x:a) id x = x
 

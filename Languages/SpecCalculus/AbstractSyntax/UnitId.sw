@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 SpecCalc qualifying spec {
 
  %% The support for UnitId's is somewhat simplistic but hopefully sufficient

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 %% TODO: This has file suffers greatly from having to accommodate the representation
 %% of specs, ops, types and ids. 

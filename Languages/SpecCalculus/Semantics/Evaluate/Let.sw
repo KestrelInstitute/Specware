@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Evaluation of Let and Where}
 
 Synchronized with from r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl

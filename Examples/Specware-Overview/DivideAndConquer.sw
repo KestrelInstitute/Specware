@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% This file is based on the "relational, binary" version of
 %% divide-and-conquer from Alessandro Coglio's Hyperproperties work.
 

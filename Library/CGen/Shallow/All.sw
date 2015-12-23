@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
 
 % TODO: Maybe deprecate this file and just proc the individual files?

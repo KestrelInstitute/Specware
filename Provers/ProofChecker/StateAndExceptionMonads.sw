@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This spec is copied from Specware4/Library/Unvetted. It is copied, as
 opposed to just referenced, for stability: specs under Unvetted may change at
 any time (see README under that directory). Eventually, when this spec becomes

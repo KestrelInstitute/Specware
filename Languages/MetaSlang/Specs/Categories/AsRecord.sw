@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % Category of Specs
 
 % This will likely move to a new home. This needs to be abstracted factored!

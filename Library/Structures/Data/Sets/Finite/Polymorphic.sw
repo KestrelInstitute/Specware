@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Basic polymorphic sets}
 
 This should be formed by composition of simpler specifications for

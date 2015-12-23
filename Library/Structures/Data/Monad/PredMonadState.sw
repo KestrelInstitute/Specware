@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This file defines predicate monads for reasoning about stateful monadic
 computations. To make Monad represent stateful computations, Monad must be a
 state monad, and to reason about these stateful computations, we add

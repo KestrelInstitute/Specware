@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% TODO: Maybe this file should be called ShowDeps.sw since showdeps is the command to invoke it.
 
 %% This file contains a utility to print the "dependencies" in a spec.  For each

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% This version shows how the morphism mechanism allows different
 %% qualifiers when the meaning is unambiguous.
 

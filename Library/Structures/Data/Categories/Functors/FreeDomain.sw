@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Functors with free domain and fixed (monomorphic) target category
 
 %% This is a spec for mono functors where the domain is the free

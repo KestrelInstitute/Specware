@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Monomorphic Sketches}
 
 A sketch is a finitary presentation of a category. Put another way,

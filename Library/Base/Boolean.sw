@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Bool qualifying spec
 
 (* Make sure that the extensions to standard Isabelle are loaded (this is done

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 S1 = spec
   import /Library/General/TwosComplementNumber
   import /Library/General/SizedNats

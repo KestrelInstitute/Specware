@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Systems in a Polymorphic Category}
 
 This defines a category of systems for a fixed universe of shapes (ie

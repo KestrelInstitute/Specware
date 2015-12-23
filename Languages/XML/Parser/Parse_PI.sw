@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 XML qualifying spec
 
   import Parse_Names              % parse_NmToken    [redundant, given Parse_Character_Strings]

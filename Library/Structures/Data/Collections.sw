@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Collections}
 
 Meant to be an abstraction of Sets, Maps, Bags etc. These are things that

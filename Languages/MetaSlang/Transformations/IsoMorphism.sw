@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* takes isomorphism function iso_qid and its inverse osi_qid,
    Extracts State and State'
    Find all functions f that take State as an argument or returned value and create

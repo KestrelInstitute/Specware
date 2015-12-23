@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Finite Collections}
 
 Any finite collection is enumerable. If it is finite we believe that it can

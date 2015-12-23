@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 DistinctVariable qualifying spec
 
 import /Languages/MetaSlang/Transformations/LiftPattern

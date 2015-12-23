@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 CPrint qualifying spec
 {
  % import System  	% ../utilities/system-base.sl

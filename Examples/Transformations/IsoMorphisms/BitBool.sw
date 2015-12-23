@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Bit = B qualifying spec
  type Bit = | B0 | B1
  op not (b:Bit) : Bit = case b of B0 -> B1 | B1 -> B0

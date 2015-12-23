@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This file introduces notions related to the C model in spec CModel.
 These notions do not contribute to the C formalization
 (i.e. they do not formalize C features not already formalized in spec CModel)

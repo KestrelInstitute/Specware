@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 MetaslangProofChecker qualifying spec
 
   (* This is the top-level spec of the proof checker, the only spec in this

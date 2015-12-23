@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This is an executable version of spec Spec, i.e. an executable proof
 checker. We obtain it by applying (1) the refinement of spec
 OtherAbbreviations, (2) the instantiation of primitive names, and (3) the

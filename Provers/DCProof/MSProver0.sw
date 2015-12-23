@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
   import MS qualifying (ReadEvalPrint[/Library/General/FiniteSequencesAsListsMorphism][GoalsI#GoalExprInterface][ExtExpressionImpl#MSExprInterface])
 

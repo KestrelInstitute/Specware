@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 String qualifying spec
 
 % (Note that the generated proofs for this spec go into SW_String.thy

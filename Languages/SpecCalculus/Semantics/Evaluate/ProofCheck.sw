@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 SpecCalc qualifying spec 
 %  import translate /Languages/SpecCalculus/Semantics/Specware by {Set._ +-> SWSet._} % for the Specware monad
   import /Provers/ProofChecker/TranslateMSToPC[/Provers/ProofChecker/Refinement]

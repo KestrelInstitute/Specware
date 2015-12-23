@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Polymorphic Cocomplete Categories}
 
 This refines the basic type for categories by adding

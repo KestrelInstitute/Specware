@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Position qualifying spec 
 
  % first char is at line 1, column 0, byte 0

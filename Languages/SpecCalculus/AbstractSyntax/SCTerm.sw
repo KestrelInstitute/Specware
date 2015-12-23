@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Abstraction of Spec Calculus
 
 This is an unfortunate (and perhaps unnecessary) mutual dependency

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % Complete partial orders, useful for defining non-termination. A CPO
 % is a partial order (reflexive, transitive, and antisymmetric) such
 % that any non-empty directed set S has a supremum, written sup S. A

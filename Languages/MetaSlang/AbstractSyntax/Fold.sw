@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % Functions for folding functions over a term, type and patten.
 
 Utilities qualifying

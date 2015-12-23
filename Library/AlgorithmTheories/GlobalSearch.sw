@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*  New formulation of GS theory to clarify/simplify
     pruning, propagation (both necessary and consistency-preserving)
 *)

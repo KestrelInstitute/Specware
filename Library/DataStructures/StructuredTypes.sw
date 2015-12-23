@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*  
 
     This spec serves as one-stop shopping for polymorphic finite sets,

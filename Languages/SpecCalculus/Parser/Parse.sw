@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* MetaSlang Wrapper for the parser *)
 
 (* Synchronized with r1.1.1.1 SW4/Languages/SpecCalculus/Parser/Parse.sl *)

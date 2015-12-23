@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
   %% Note that EquivalenceClass, QuotientSet, and equiv are all 
   %% parameterized in unison on the same element type.  We currently 

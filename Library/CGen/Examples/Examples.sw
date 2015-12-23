@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* This file contains some example Specware derivations of C programs
 from specifications via stepwise refinement,
 using the model of C features in spec CModel.

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Enumerable Collections}
 
 An enumeration on a collection is characterized by a refinement of

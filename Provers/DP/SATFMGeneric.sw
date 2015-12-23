@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 SATFMI = SATFM qualifying spec
   import SATDPSig
   import DPGen/FourierMotzkinGeneric

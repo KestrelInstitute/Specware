@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Simple transformations written by Eric starting in March, 2013.
 %% Ground rules:
 %%   * Transformations should be amenable to proof.

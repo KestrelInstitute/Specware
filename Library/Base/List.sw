@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 List qualifying spec
 
 % This is the main spec for Lists.

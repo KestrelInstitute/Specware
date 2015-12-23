@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 ShowUtils qualifying spec
 
 %% This file contains utility functions that are used in ShowData,

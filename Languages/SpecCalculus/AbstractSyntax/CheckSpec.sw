@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% This utility checks a spec for well-formedness.  It is available as
 %% the Specware shell command 'checkspec' or as the spec
 %% transformation CheckSpec (which is logically the identity

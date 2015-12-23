@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 morphism FiniteSet -> FiniteSetAsList {}
 
 proof Isa FSet__fromFSet_def

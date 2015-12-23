@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 PredMonad qualifying spec
   import ../Monad
   import CPO % Defines relations in a way that works with most other libs...

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Haskell qualifying spec
 
  import /Languages/MetaSlang/CodeGen/Generic/CodeGenTransforms

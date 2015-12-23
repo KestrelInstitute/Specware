@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
 
 (* This spec collects deprecated types and ops of the Specware base library. It

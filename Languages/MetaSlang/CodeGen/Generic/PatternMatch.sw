@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % Synchronized with version 1.3 of SW4/Languages/MetaSlang/Transformations/Match.sl
 
 (*

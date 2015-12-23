@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Map with Nat domain implemented as vector
    Note that it assumes the usage is single-threaded! *)
 

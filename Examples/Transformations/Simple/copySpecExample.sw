@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Example application of a trivial identity transformation on specs.
 
 A = spec

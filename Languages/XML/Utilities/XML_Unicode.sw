@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 XML qualifying spec
 
   import /Library/IO/Unicode/UnicodeSig

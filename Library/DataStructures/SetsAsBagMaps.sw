@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %%% Should directly go to sets as characteristic Maps, i.e. Set a = Map(a, Bool)
 
 %% FIXME: Figure out the story with the proof obligations of this.

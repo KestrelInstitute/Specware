@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 SpecCalc qualifying
 spec 
  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic % /AsRecord

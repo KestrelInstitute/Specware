@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* The Wadler / Lindig pretty printer combinators
 
 sjw 4/15/11: Written to match Lindig's algorithm (with a few extensions)

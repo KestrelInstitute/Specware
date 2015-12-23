@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 I = spec
   import /Provers/ProofDebugger/Spec
   import /Provers/ProofDebugger/ExtPrinter

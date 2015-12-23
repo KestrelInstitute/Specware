@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Definition of the exception type
 
 These are the exceptions that one might raise. This refines the abstract

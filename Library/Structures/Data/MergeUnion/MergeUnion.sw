@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Merge Union -- Functional}
 
 The performance of this merge union should be O(inverse_ackerman * size Map * access Map), where:

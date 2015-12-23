@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 spec
 
 %% Some of the ...Ref specs below broke when I uncommented the remove,

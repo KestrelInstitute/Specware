@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \subsection{Evalution of extension-specific terms in the Spec Calculus}
 
 This is the default version, to be used in Specware itself and in any

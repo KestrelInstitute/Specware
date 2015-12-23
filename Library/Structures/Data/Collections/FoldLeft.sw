@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Fold Left over an Enumerable Collection}
 
 For an enumeration characterized by \Op{takeOne}, we define

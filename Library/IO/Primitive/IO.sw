@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Low Level Impure IO operations
 
 This is a poorly named file in a poorly named directory. The idea,

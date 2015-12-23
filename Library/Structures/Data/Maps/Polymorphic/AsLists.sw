@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Naive Polymorphic Maps as Lists 
 
 This is a hopelessly naive implementation of Maps as association Lists.

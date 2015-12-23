@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % The resumption-powerset transformer, used for implementing threads
 %
 % NOTE: this spec cannot be translated to Isabelle as-is, because

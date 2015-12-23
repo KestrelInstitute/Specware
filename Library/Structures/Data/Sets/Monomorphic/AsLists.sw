@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Mono Sets as instances of Poly Lists}
 
 This is a hopelessly naive implementation of monomorphic Sets as instances

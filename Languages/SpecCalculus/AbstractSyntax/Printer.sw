@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* SpecCalc pretty printer
 
 This is a pretty printer for the spec calculus. This is almost but

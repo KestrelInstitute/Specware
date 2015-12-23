@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Merge/Find Sets -- Functional}
 
 For a description of the MFSet ADT (merge/find sets), see

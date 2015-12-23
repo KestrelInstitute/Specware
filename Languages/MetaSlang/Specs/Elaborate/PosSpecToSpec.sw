@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 PosSpecToSpec qualifying spec
  %%  convert pos terms to standard terms
 

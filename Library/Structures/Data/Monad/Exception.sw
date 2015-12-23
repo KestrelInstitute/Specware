@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Exception monad
 
 An abstract specification for an exception monad. Needs work.

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Polymorphic Natural Transformations}
 
 Polymorphic natural transformations where the domains of the functors are

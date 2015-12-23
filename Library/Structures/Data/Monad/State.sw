@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Operations in the State Monad
 
 We define here a family of functions for allocating, reading and writing

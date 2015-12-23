@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Set qualifying spec
 
 (* In higher-order logic, it is customary to define a set as a predicate: the

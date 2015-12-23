@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{A simple specification for Graphs}
 
 This should be an extension of the spec appearing in ../Graphs. Perhaps later.

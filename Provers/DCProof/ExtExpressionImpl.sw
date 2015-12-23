@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 ExpressionI = spec
   import /Languages/MetaSlang/Specs/MSTerm
   import ExtTypesAPI

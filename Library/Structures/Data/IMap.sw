@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Maps as functions to option types, in the same manner as
 /Library/General/Map, except that here we use "IMap" (for "Isabelle map") in
 place of "Map" so that it is compatible with /Library/DataStructures/Maps.sw. *)

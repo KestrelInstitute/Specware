@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* In Specware, any spec S that does not import any other spec explicitly,
 imports spec /Library/Base implicitly. Unless S resides under the
 Specware4/Library/Base/ directory, in which case it has no implicit imports. The

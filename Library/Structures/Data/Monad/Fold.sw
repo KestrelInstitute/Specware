@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Iteration within a monad}
 
 The first function a \verb+fold+ over any finite and enumerable

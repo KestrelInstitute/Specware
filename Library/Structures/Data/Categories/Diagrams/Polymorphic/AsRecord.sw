@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Polymorphic Diagrams Implemented as Records}
 
 This is a naive transcription of the definition of a diagram into a product type.

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % Spec for writing and proving properties of computations in the C monad, using
 % predicate monads
 

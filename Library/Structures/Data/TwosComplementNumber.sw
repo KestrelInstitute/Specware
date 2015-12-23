@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 (* A copy of the parts of /Library/General/TwosComplementNumber needed for C
 generation (in /Library/CGen/Monadic) that removes any dependencies on

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
 
    Fixpoints of an Indexed Family of Monotone Endofunctions.

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Carrier = spec type A end-spec
 
 PartialOrder = spec

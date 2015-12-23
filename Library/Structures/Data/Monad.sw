@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Basic Monad Specification
 
 All monad specs refine or extend this specification.

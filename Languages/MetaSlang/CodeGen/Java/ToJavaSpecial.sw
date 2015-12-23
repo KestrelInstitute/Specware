@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (**
  * this spec contains special translation rules for Java, e.g., translation from predefined MetaSlang ops
  * to java.lang method (String utilities)

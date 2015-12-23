@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % specification of (finite) bags
 
 % TODO The qualifier (Bag) differs from the name of this spec (Bags).

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Search for types with no definition that may be empty and define them to be sutypes of an inhabited type.
   E.g. type T is replaced by 
   type T__NonEmpty 

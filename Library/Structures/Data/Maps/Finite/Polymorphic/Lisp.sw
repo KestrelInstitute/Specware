@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 MonadicMapsInternal qualifying spec
   type Lisp.HashTable (a,b)
   op makeHashEqual : fa (a,b) (Nat * Nat) -> Lisp.HashTable (a,b)

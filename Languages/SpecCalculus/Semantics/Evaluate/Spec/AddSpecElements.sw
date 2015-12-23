@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 SpecCalc qualifying spec 
  import /Languages/SpecCalculus/Semantics/Environment
  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm

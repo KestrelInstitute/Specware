@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* MergeSort
 
 List sorting routines using a smooth applicative merge type

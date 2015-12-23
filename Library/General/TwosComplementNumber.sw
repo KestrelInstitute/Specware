@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 TwosComplement qualifying spec
 
 %% A two's complement number ("TC number") is a (finite) list of bits,

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*    Term reduction
 
 Given a spec and a meta-slang term, we construct rewrite rules from the spec

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% This file contains a utility to generate a graph of the
 %% (transitive) imports of a Spec.  The output goes to a file in the
 %% deps/ subdirectory of the directory that contains the spec as a graphviz 'dot' file.

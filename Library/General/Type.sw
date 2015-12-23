@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* The following specs are useful to introduce named types and constrain their
 cardinalities (more precisely, constrain the cardinalities of the sets denoted
 by the named types). Typical usage is e.g.

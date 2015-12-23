@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Set Parameter}
 
 This spec to be deprecated. See ../Elem.sw instead.

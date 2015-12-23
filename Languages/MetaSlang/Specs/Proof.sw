@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 % Defines a proof language for Specware. This language is not meant to
 % be complete for everything it needs to do, but instead can include

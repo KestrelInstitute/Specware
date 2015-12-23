@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 
 (* FIXME HERE: document this! It is somewhat like Oleg's finally tagless
 interpreters *)

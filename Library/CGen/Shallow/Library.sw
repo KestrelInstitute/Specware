@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 Library qualifying spec
 
 %% This file contains lemmas that could eventually be pushed into a library somewhere.

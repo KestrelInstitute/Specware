@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Simple Polymorphic Maps as Association Lists (Alists).
 %TODO Do simple maps have the property that two maps are equal if they agree on every key?
 %TODO Do the Alists have that property?  What about the order of entries in the alist?

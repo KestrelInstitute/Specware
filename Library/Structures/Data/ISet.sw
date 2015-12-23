@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (* Sets as functions to Bool, in a manner similar to /Library/General/Set,
 except that here we use "ISet" (for "Isabelle set") in place of "Set" so that it
 is compatible with /Library/DataStructs/Sets.sw. *)

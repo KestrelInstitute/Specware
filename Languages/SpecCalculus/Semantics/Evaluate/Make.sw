@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 %% Experimental file -- not accessed directly by SpecCalculus terms
 
 Specware qualifying

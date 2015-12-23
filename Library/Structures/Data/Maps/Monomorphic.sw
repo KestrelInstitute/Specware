@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Monomorphic Maps}
 
 A rather inflated signature for maps. This was distilled from the

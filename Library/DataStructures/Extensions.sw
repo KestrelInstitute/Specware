@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 % Status: I changed some things in this file to get it to proc.  Not
 % sure if it is correct or needed.  -Eric, 10/11/12
 

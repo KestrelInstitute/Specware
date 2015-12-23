@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 (*
 
    Algorithm Theory for Global Search with Conflict-Directed Backjumping and

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Finite Maps}
 
 We include a copy of finite collections. This is the collection (set)

@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Naive Monomorphic Sketches as a Record}
 
 \begin{spec}

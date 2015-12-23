@@ -1,3 +1,5 @@
+(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+
 \section{Abstract Pretty Printer}
 
 We want to postpone committing to one pretty printer or the other. The
