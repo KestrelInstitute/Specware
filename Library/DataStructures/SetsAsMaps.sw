@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 % refinement of (finite) sets in terms of (finite) characteristic maps. In fact we maintain the invariant that
 % the map is undefined where the element is not in the set. I.e. the set is the domain of the map.  TODO: Why not just use a Map from a to unit, if we don't really ever look at the Bool?

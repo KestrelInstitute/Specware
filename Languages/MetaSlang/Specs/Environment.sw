@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 % derived from SW4/Languages/MetaSlang/ADT/Specs/Environment.sl v1.4
 % Some names have had to be introduced qualified with SpecEnvironment

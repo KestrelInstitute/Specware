@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 %% Simple Polymorphic Maps as Association Lists (Alists).
 %TODO Do simple maps have the property that two maps are equal if they agree on every key?

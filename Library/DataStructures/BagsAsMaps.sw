@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 % Refinement of (finite) bags in terms of (finite) maps: A bag can be
 % represented by a map from elements to their occurrence count in the

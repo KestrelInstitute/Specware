@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 spec
   import (ReadEvalPrint[GoalsI#GoalExprInterface][ExtAC1Expr#ACExprInterface][/Provers/ProofDebugger/ProofChecker#Refinement])%[/Library/General/FiniteSequencesAsListsMorphism]

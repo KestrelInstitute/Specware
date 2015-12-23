@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 %% Note that there are two ops in spec A with the simple name "double"
 %% but different qualifiers.  The morphism will map both of them to

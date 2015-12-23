@@ -1,4 +1,4 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE.text for license details *)
+(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 SpecCalc qualifying spec
  %def specwareWizard? : Bool = false  % doing this makes CMUCL compiler treat as a constant!
