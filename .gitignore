@@ -5,3 +5,4 @@
 *.elc
 *.fasl
 *~
+.DS_Store
