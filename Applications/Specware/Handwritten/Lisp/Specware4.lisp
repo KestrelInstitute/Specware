@@ -59,7 +59,23 @@
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
 					       sb-int:package-at-variance))
-            (setq sb-ext:*muffled-warnings* 'sb-int:package-at-variance)
+            (defun lgen-lisp-redefinition-warning (warning)
+              (and (typep warning 'sb-kernel::redefinition-with-defun)
+                   (let* ((new-location (sb-kernel::redefinition-warning-new-location warning))
+                          (new-namestring (and new-location
+                                               (sb-c:definition-source-location-namestring new-location))))
+                     (string= new-namestring "lgen_lisp_tmp.lisp"
+                              :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
+                     )))
+            (deftype sw-uninteresting-redefinition ()
+              '(or (satisfies sb-kernel::uninteresting-ordinary-function-redefinition-p)
+                (satisfies sb-kernel::uninteresting-macro-redefinition-p)
+                (satisfies sb-kernel::uninteresting-generic-function-redefinition-p)
+                (satisfies sb-kernel::uninteresting-method-redefinition-p)
+                (satisfies lgen-lisp-redefinition-warning)
+                sb-int:package-at-variance))
+
+            (setq sb-ext:*muffled-warnings* 'sw-uninteresting-redefinition)
 	    (setq sb-ext::*compile-print* nil)
 	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
 	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro

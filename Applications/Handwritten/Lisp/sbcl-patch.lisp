@@ -7,12 +7,13 @@
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-ext:unlock-package "CL")
-  (defparameter *default-package-use-list* '("CL")))
+  ;(sb-ext:unlock-package "CL")
+  (defparameter sb-impl::*default-package-use-list* '("CL")))
 
 (sb-ext:without-package-locks
 
 (if (find-symbol "USE-LIST-PACKAGES" "SB-IMPL")
+;;; sjw: Copy of sbcl source but repeat because sb-impl::*default-package-use-list* is put in at read time
 (defun use-list-packages (package package-designators)
   (cond ((listp package-designators)
          (mapcar #'find-undeleted-package-or-lose package-designators))
@@ -24,99 +25,19 @@
          ;; :default for a new package is the *default-package-use-list*
          '#.*default-package-use-list*)))
 
-(defun %defpackage (name nicknames size shadows shadowing-imports
-                    use imports interns exports implement lock doc-string
-                    source-location)
-  (declare (type simple-string name)
-           (type list nicknames shadows shadowing-imports
-                 imports interns exports)
-           (type (or list (member :default)) use)
-           (type (or simple-string null) doc-string)
-           ;; #!-sb-package-locks
-           ;; (ignore implement lock)
-           )
-  (with-package-graph ()
-    (let* ((existing-package (find-package name))
-           (use (use-list-packages existing-package use))
-           (shadowing-imports (import-list-symbols shadowing-imports))
-           (imports (import-list-symbols imports)))
-      (if existing-package
-          (update-package-with-variance existing-package name
-                                        nicknames source-location
-                                        shadows shadowing-imports
-                                        use imports interns exports
-                                        implement lock doc-string)
-          (let ((package (make-package name
-                                       :use nil
-                                       :internal-symbols (or size 10)
-                                       :external-symbols (length exports))))
-            (update-package package
-                            nicknames source-location
-                            shadows shadowing-imports
-                            use imports interns exports
-                            implement lock doc-string))))))
-)
-
-#-sb-xc-host
-(defun %defun (name def doc inline-lambda source-location)
-  (declare (ignore source-location))
-  (declare (type function def))
-  (declare (type (or null simple-string) doc))
-  (aver (legal-fun-name-p name)) ; should've been checked by DEFMACRO DEFUN
-  (sb-c:%compiler-defun name inline-lambda nil)
-;;; Heavy-handed way to get rid of spurious warnings
-;  (when (fboundp name)
-;    (/show0 "redefining NAME in %DEFUN")
-;    (style-warn "redefining ~S in DEFUN" name))
-  (setf (fdefinition name) def)
-
-   ;; %COMPILER-DEFUN doesn't do this except at compile-time, when it
-  ;; also checks package locks. By doing this here we let (SETF
-  ;; FDEFINITION) do the load-time package lock checking before
-  ;; we frob any existing inline expansions.
-  (sb-c::%set-inline-expansion name nil inline-lambda)
-
-  (sb-c::note-name-defined name :function)
-
-  (when doc
-    (setf (fdocumentation name 'function) doc))
-  name)
-
-(defun interactive-eval (form &key (eval #'eval))
-  "Evaluate FORM, returning whatever it returns and adjusting ***, **, *,
-   +++, ++, +, ///, //, /, and -."
-  (setf - form)
-  (unwind-protect
-       (let ((results (multiple-value-list (funcall eval form))))
-         (setf /// //
-               // /
-               / results
-               *** **
-               ** *
-               * (car results)))
-    (setf +++ ++
-          ++ +
-          + -))
-  (unless (boundp '*)
-    ;; The bogon returned an unbound marker.
-    ;; FIXME: It would be safer to check every one of the values in RESULTS,
-    ;; instead of just the first one.
-    (setf * nil)
-    (cerror "Go on with * set to NIL."
-            "EVAL returned an unbound marker."))
-  (values-list /))
-
+)  ;; if
 
 ;;; Rename on windows doesn't allow overwrite of file
 #+win32
 (defun sb-unix:unix-rename (name1 name2)
   (declare (type sb-unix:unix-pathname name1 name2))
-  (when (sb-unix:unix-stat name2)
+  (when (sb-unix:unix-stat name2)       ; sjw: (when ...) added
     (sb-unix:unix-unlink name2))
-  (sb-win32::void-syscall* (("MoveFile" 8 t) sb-win32::system-string sb-win32::system-string)
-                           name1 name2))
+  (syscall (("MoveFile" t) lispbool system-string system-string)
+           (values result (if result 0 (get-last-error)))
+           name1 name2))
 
-)
+) ;; sb-ext:without-package-locks
 
 ;; #+win32
 ;; (let ((proto-db '(("ip" . 0) ("icmp" . 1) ("tcp" . 6) ("udp" . 17))))
@@ -124,6 +45,7 @@
 ;;     (declare (string proto))
 ;;     (cdr (assoc (string-downcase proto) proto-db :test #'equal))))
 
+#| sjw: 1/17/1916 Not sure if this is needed any more
 ;; read-line in windows includes \Return (^M) at end
 (defun ansi-stream-read-line-from-frc-buffer (stream eof-error-p eof-value)
   (prepare-for-fast-read-char stream
@@ -191,7 +113,7 @@
              (if pos
                  (make-and-return-result-string pos)
                  (add-chunk))))))))
-
+|#
 
 (in-package :cl-user)
 
