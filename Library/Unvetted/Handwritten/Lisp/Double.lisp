@@ -86,6 +86,13 @@
 (defmacro the-double (x)
   `(the double-float ,x))
 
+(defun Integer-Spec::toDouble (x)
+  (declare (integer x))
+  (the-double (coerce x 'double-float)))
+
+(define-compiler-macro Integer-Spec::toDouble (x)
+  `(the-double (coerce ,x 'double-float)))
+
 (define-symbol-macro zero (Integer-Spec::toDouble 0))
 
 (define-symbol-macro |!Pi| pi)
@@ -309,13 +316,6 @@
   (let ((*read-default-float-format* 'double-float))
     (let ((dbl (read-from-string str)))
       (the-double (coerce dbl 'double-float)))))
-
-(defun Integer-Spec::toDouble (x)
-  (declare (integer x))
-  (the-double (coerce x 'double-float)))
-
-(define-compiler-macro Integer-Spec::toDouble (x)
-  `(the-double (coerce ,x 'double-float)))
 
 (defun show (x) 
   (format nil "~s" x))

@@ -1380,10 +1380,12 @@
 (defun help (&optional command)
   (sw-help command))
 
+#|
 #+(or sbcl cmu)
 (Specware::without-package-locks
  (defun cl::commandp (form)
   (keywordp form)))
+|#
 
 (defun invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
@@ -1407,11 +1409,12 @@
 	(progn (read-line)
 	       (warn "Unknown command ~s" command)
 	       (values))))))
-
+#|
 #+(or cmu mcl sbcl)
 (Specware::without-package-locks
  (defun cl::invoke-command-interactive (command)
    (invoke-command-interactive command)))
+|#
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))
