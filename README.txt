@@ -1,4 +1,4 @@
-Specware README.txt file (updated December, 2015).
+Specware README.txt file (updated January, 2016).
 
 Welcome to Specware!
 
