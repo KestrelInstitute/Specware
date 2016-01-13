@@ -2,7 +2,7 @@ Specware README.txt file (updated January, 2016).
 
 Welcome to Specware!
 
-(NOTE: By using Specware, you agree to the license in LICENSE.)
+(NOTE: By using Specware, you agree to the license in the file LICENSE.)
 
 Specware runs on Linux and Mac OS X. (It is possible to run Specware
 on Windows, but this is not being actively supported.  These
@@ -14,7 +14,8 @@ memory.)
 
 Specware also requires GNU Emacs.  GNU Emacs 23.1.1 on Linux is known
 to work, and later versions should also work.  (Note: Emacs may be
-already installed on your system.)
+already installed on your system. On MAC OS X it can be easily installed 
+from http://emacsformacosx.com)
 
 Optional: For proof support, install the Isabelle/HOL theorem prover
 (available from http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  The
@@ -43,6 +44,10 @@ export SPECWARE4=$HOME/Specware
 into the file:
 ~/.isabelle/Isabelle2015/etc/settings
 in your home directory.
+
+Aquamacs can also be used by setting the environment variable SPECWARE_EMACS. 
+E.g. using the shell command 
+export SPECWARE_EMACS=/Applications/Aquamacs.app
 
 Errors in launching Specware may be displayed in the "mini-buffer" in
 Emacs.
