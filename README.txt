@@ -60,4 +60,3 @@ To learn about Specware, see the documentation in UserDoc/.
 To see a list of available commands, type "help" at the Specware shell.
 
 Questions about Specware can be emailed to support@specware.org.
-
