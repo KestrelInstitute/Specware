@@ -26,9 +26,10 @@ SpecCalc qualifying spec
     | Value.Diag        SpecDiagram       
     | Value.Colimit     SpecInitialCocone 
     | Value.Proof       SCProof
-    | Value.InProcess	  Mutex		  % Used for catching circular definitions
+    | Value.InProcess   Mutex		  % Used for catching circular definitions
     | Value.UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
    %| Value.DiagMorph
+    | Value.Values      List (String * Value)
     | Value.Other       OtherValue      % Used for extensions to Specware
 
   type OtherValue                % Used for extensions to Specware

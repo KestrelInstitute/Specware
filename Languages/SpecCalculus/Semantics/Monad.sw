@@ -161,8 +161,8 @@ probably isn't tractable anyway.
   def SpecCalc.catch f handler =
     fn state ->
       (case (f state) of
-        | (Ok x, newState) -> (Ok x, newState)
-        | (Exception except, newState) -> handler except newState)
+        | (Exception except, newState) -> handler except newState
+        | new_state -> new_state)
 (*
 Some basic operations for debugging. There should be a proper IO monad.
 *)
@@ -234,8 +234,21 @@ rely on the overloading?
       | x::xs -> {
             xNew <- f x;
             xsNew <- mapM f xs;
-            return (Cons (xNew,xsNew))
+            return (xNew::xsNew)
           }
+
+  op mapPartialM : [a,b] (a -> Env(Option b)) -> (List a) -> Env (List b)
+  def mapPartialM f l =
+    case l of
+      | [] -> return []
+      | x::xs -> {
+            o_xNew <- f x;
+            xsNew <- mapPartialM f xs;
+            return (case o_xNew
+                      | None -> xsNew
+                      | Some xNew -> xNew::xsNew)
+          }
+
 
   %%  doList
   % Variation on foldM when the list is inside a product.

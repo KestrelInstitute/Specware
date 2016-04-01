@@ -1,6 +1,6 @@
 (* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import Signature 
   import UnitId/Utilities
  %import /Languages/MetaSlang/Specs/SubtractSpec
@@ -37,39 +37,50 @@ SpecCalc qualifying spec {
  def printSpecExpanded? = false
 
  % from show, showx:
- def SpecCalc.evaluatePrint (term,useXSymbol?) = {
-   (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
-   (optBaseUnitId,base_spec)     <- getBase;
-   global_context                <- getGlobalContext;   
-   currentUnitId                 <- getCurrentUnitId;
-   reverse_context <- return (foldr (fn (unitId, value_to_uid_map) -> 
-				     update value_to_uid_map
-                                            ((eval global_context unitId).1) 
-				            (relativizeUID currentUnitId unitId))
-			            emptyMap
-				    depUnitIds);
-   SpecCalc.print "\n";
-   (case value of
-      | Spec    spc ->
-        SpecCalc.print (if printSpecExpanded?
-			  then printSpecExpanded base_spec spc
-			  else
-			    if useXSymbol?
-			      then printSpecXSymbol base_spec reverse_context spc
-			      else printSpec base_spec reverse_context spc)
-      | Morph      sm    -> SpecCalc.print (printMorphism base_spec reverse_context sm)
-      | Diag       dg    -> SpecCalc.print (printDiagram  base_spec reverse_context dg)
-      | Colimit    col   -> SpecCalc.print (printColimit  base_spec reverse_context col)
-      | Proof _          -> SpecCalc.print ""
-      | SpecPrism  sp    -> SpecCalc.print (printPrism  base_spec reverse_context sp)  % tentative
-      | SpecInterp si    -> SpecCalc.print (printInterp base_spec reverse_context si)  % tentative
-      | Other      other -> evaluateOtherPrint other (positionOf term)
-      | InProcess  _     -> SpecCalc.print "No value!");
-   SpecCalc.print "\n";
-   return (value, time_stamp, depUnitIds)
+ def SpecCalc.evaluatePrint (term,useXSymbol?) =
+   {(value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
+    (optBaseUnitId,base_spec)       <- getBase;
+    global_context                  <- getGlobalContext;   
+    currentUnitId                   <- getCurrentUnitId;
+    SpecCalc.print "\n";
+    let
+      def reverse_context() =
+        foldr (fn (unitId, value_to_uid_map) ->
+                 update value_to_uid_map
+                   ((eval global_context unitId).1) 
+                   (relativizeUID currentUnitId unitId))
+          emptyMap
+          depUnitIds
+      def printValue(value: Value): Env () =
+          {case value
+            | Spec    spc ->
+              SpecCalc.print (if printSpecExpanded?
+                                then printSpecExpanded base_spec spc
+                              else
+                                if useXSymbol?
+                                  then printSpecXSymbol base_spec spc
+                                else printSpec base_spec spc)
+            | Morph      sm    -> SpecCalc.print (printMorphism base_spec (reverse_context()) sm)
+            | Diag       dg    -> SpecCalc.print (printDiagram  base_spec (reverse_context()) dg)
+            | Colimit    col   -> SpecCalc.print (printColimit  base_spec (reverse_context()) col)
+            | Proof _          -> SpecCalc.print ""
+            | SpecPrism  sp    -> SpecCalc.print (printPrism  base_spec (reverse_context()) sp)  % tentative
+            | SpecInterp si    -> SpecCalc.print (printInterp base_spec  (reverse_context()) si)  % tentative
+            | Values vals      -> {mapM (fn (name, val) -> {SpecCalc.print name;
+                                                            SpecCalc.print " =\n";
+                                                            printValue val})
+                                     vals;
+                                   return ()}
+            | Other      other -> evaluateOtherPrint other (positionOf term)
+            | InProcess  _     -> SpecCalc.print "No value!";
+          SpecCalc.print "\n"}
+    in
+    printValue(value);
+    return (value, time_stamp, depUnitIds)
    }
 
- op printSpec     : Spec -> ReverseContext -> Spec              -> String
+
+ op printSpec     : Spec -> Spec              -> String
  op printMorphism : Spec -> ReverseContext -> Morphism          -> String
  op printDiagram  : Spec -> ReverseContext -> SpecDiagram       -> String
  op printColimit  : Spec -> ReverseContext -> SpecInitialCocone -> String
@@ -83,7 +94,7 @@ SpecCalc qualifying spec {
   op printWidth: Nat = 110
 
   %The following loses too much information
-  def printSpec base_spec _(*reverse_context*) spc =
+  def printSpec base_spec spc =
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     %% TODO: use reverse_context ?
@@ -93,7 +104,7 @@ SpecCalc qualifying spec {
                                    base_spec
                                    spc))
 
-  def printSpecXSymbol base_spec _(*reverse_context*) spc =
+  def printSpecXSymbol base_spec spc =
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     %% TODO: use reverse_context ?
@@ -105,7 +116,7 @@ SpecCalc qualifying spec {
 
 
  % from show, showx:
- def AnnSpecPrinter.printSpecExpanded base_spec (*reverse_context*) spc =
+ def AnnSpecPrinter.printSpecExpanded base_spec spc =
    %% TODO: use reverse_context for imports ?
    AnnSpecPrinter.printSpecFlat spc
 
@@ -172,13 +183,13 @@ SpecCalc qualifying spec {
 			    [ppBreak, 
 			     ppString (case evalPartial reverse_context (Spec dom_spec) of
 					 | Some rel_uid -> relativeUID_ToString rel_uid  
-					 | None         -> printSpec base_spec reverse_context dom_spec),
+					 | None         -> printSpec base_spec dom_spec),
 			     % ppBreak, % too many newlines!
 			     ppString " -> ",
 			     % ppBreak, % too many newlines!
 			     ppString (case evalPartial reverse_context (Spec cod_spec) of
 					 | Some rel_uid -> relativeUID_ToString rel_uid  
-					 | None         -> printSpec base_spec reverse_context cod_spec)
+					 | None         -> printSpec base_spec cod_spec)
 			    ]))
 	      ]))
    in
@@ -285,7 +296,7 @@ SpecCalc qualifying spec {
 		      let spc = eval vertex_map vertex in
 		      ppString (case evalPartial reverse_context (Spec spc) of
 				  | Some rel_uid -> relativeUID_ToString rel_uid  
-				  | None         -> printSpec base_spec reverse_context spc)]),
+				  | None         -> printSpec base_spec spc)]),
 		    pp_entries))
              []
 	     isolated_vertices
@@ -333,7 +344,7 @@ SpecCalc qualifying spec {
 
  def printColimit base_spec reverse_context col =
    %% Just print the spec at the apex of the colimit.
-   printSpec base_spec reverse_context (Cat.apex (Cat.cocone col))
+   printSpec base_spec (Cat.apex (Cat.cocone col))
 
    %%% was:
    %%%  %% ppColimit uses /Languages/MetaSlang/Specs/Categories/AsRecord
@@ -371,7 +382,7 @@ SpecCalc qualifying spec {
 			    [ppBreak, 
 			     ppString (case evalPartial reverse_context (Spec dom_spec) of
 					 | Some rel_uid -> relativeUID_ToString rel_uid  
-					 | None         -> printSpec base_spec reverse_context dom_spec),
+					 | None         -> printSpec base_spec dom_spec),
 			     % ppBreak, % too many newlines!
 			     ppString " -> "
 			    ]))
@@ -403,7 +414,7 @@ SpecCalc qualifying spec {
      def pp_spec sp =
        case evalPartial reverse_context (Spec sp) of
 	 | Some rel_uid -> relativeUID_ToString rel_uid  
-	 | None         -> printSpec base_spec reverse_context sp
+	 | None         -> printSpec base_spec sp
    in
    let dom_str = pp_spec si.dom in
    let med_str = pp_spec si.med in
@@ -422,4 +433,4 @@ SpecCalc qualifying spec {
 	       ppMorphismX base_spec reverse_context si.c2m,
 	       ppString "} "]))
 
-}
+end-spec

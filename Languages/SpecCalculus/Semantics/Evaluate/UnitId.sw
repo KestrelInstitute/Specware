@@ -115,7 +115,7 @@ These are called only from evaluateReturnUID
               subUnitNames <- loadFile unitId fileName;
               % The desired side effect of loadFile is that
               % the UnitId is now bound in the global context.
-	      let def lookup unitId =
+	      let def lookup (unitId: UnitId): Env (Option(ValueInfo * UnitId)) =
 	            {optValue <- lookupInGlobalContext unitId;
 		     % Either return found value or keep looking:
 		     case optValue of
@@ -150,9 +150,17 @@ These are called only from evaluateReturnUID
 			 return val}
 		      | None ->
 			%% :sw .../foo processes all subunits but doesn't return any
-		        {mapM (fn name -> lookup {path = path, hashSuffix = Some name})
-			   subUnitNames;
-			 raise (UIDNotFound (position,relUID))}}
+		        {valprs <- mapPartialM (fn name ->
+                                                  {optValue <- lookup {path = path, hashSuffix = Some name};
+                                                   case optValue
+                                                     | Some (val_info_unitid) -> return(Some (name, val_info_unitid))
+                                                     | None -> return None})
+			             subUnitNames;
+			 case valprs
+                           | [] -> raise (UIDNotFound (position,relUID))
+                           | (_, ((_, ts, _), unitId0)) :: _ ->
+                             let val_prs: List(String * Value) = map (fn (nm, ((val, _, _), _)) -> (nm, val)) valprs in
+                             return ((Values val_prs, ts, [unitId]), unitId0)}}
 		 | _ -> raise (UIDNotFound (position,relUID))}
             } else
               searchFileSystemForUID (position, relUID, rest, currentUID)
