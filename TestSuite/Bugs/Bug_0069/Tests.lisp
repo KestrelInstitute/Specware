@@ -6,16 +6,16 @@
   :show   "TranslateFromBase#M" 
   :output '(";;; Elaborating spec-translation at $TESTDIR/TranslateFromBase#M"
 	    ";;; Elaborating spec at $TESTDIR/TranslateFromBase#S"
-	    "Errors in $TESTDIR/TranslateFromBase.sw"
-	    "3.21-3.37	: Error in translation: Illegal to translate from base type : Integer"
+	    "ERROR: Errors in $TESTDIR/TranslateFromBase.sw"
+	    "3.21-3.33	: in translation: Illegal to translate from base type : Int"
 	    ""))
 
  ("Bug 0069 : Translate into base"
   :show   "TranslateIntoBase#M" 
   :output '(";;; Elaborating spec-translation at $TESTDIR/TranslateIntoBase#M"
 	    ";;; Elaborating spec at $TESTDIR/TranslateIntoBase#S"
-	    "Errors in $TESTDIR/TranslateIntoBase.sw"
-	    "7.19-7.40	: Error in translation: Illegal to translate type MyChar into pre-existing, non-alias, untranslated Char.Char"
+	    "ERROR: Errors in $TESTDIR/TranslateIntoBase.sw"
+	    "7.19-7.40	: in translation: Illegal to translate type MyChar into pre-existing, non-alias, untranslated Char.Char"
 	    ""))
 
  ("Bug 0069 : Morphism from base"
@@ -23,8 +23,8 @@
   :output '(";;; Elaborating spec-morphism at $TESTDIR/MorphismFromBase#M"
 	    ";;; Elaborating spec at $TESTDIR/MorphismFromBase#S"
 	    ";;; Elaborating spec at $TESTDIR/MorphismFromBase#T"
-	    "Errors in $TESTDIR/MorphismFromBase.sw"
-	    "6.21-6.42	: Error in morphism: Illegal to translate from base type: Integer.Integer"
+	    "ERROR: Errors in $TESTDIR/MorphismFromBase.sw"
+	    "6.21-6.38	: in morphism: Illegal to translate from base type: Integer.Int"
 	    ""))
 
  ("Bug 0069 : Morphism to base"

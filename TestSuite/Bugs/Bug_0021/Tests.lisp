@@ -12,7 +12,7 @@
 	    ";;; Elaborating spec at $TESTDIR/AmbiguousOp#A"
 	    ";;; Elaborating spec-morphism at $TESTDIR/AmbiguousOp#D"
 	    ";;; Elaborating spec at $TESTDIR/AmbiguousOp#C"
-	    "Errors in $TESTDIR/AmbiguousOp.sw"
+	    "ERROR: Errors in $TESTDIR/AmbiguousOp.sw"
 	    (:alternatives
 	     "24.7-24.7	: Type reference a is ambiguous among C.a, {C.b, A.a, e}"
 	     "24.7-24.7	: Type reference a is ambiguous among {C.b, A.a, e}, C.a")

@@ -8,7 +8,7 @@ endspec
 
 %% Error...
 B = spec
- op f infixl 22 : [a] List a * a -> Intr
+ op f infixl 22 : [a] List a * a -> Int
  def i = 123
  axiom A is [i] f 3 = 0
 endspec
