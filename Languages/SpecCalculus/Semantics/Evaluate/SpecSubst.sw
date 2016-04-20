@@ -264,12 +264,12 @@ op replaceImportStub (elements   : SpecElements,
                                                 | _ -> false)
 		                           (if top? then spc.elements else import_elts) 
                        then
-                         let new_elts = revise_elements import_elts top? in
-                         let new_elts = if top? then
-                                          revise_elements spc.elements false
-                                        else 
-                                          new_elts
-                         in
+                         let new_elts = revise_elements import_elts false in
+                         % let new_elts = if top? then
+                         %                  revise_elements spc.elements false
+                         %                else 
+                         %                  new_elts
+                         % in
                          Import (tm,
                                  spc << {elements = new_elts},
                                  new_elts, pos)
