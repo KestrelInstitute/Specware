@@ -865,7 +865,7 @@ spec
       | Last -> moveToLast path_term
       | Next -> moveToNext path_term
       | Prev -> moveToPrev path_term
-      | Widen -> parentTerm path_term
+      | Widen -> moveToParent path_term
       | All -> Some(top_term, case top_term of
                                 | TypedTerm _ -> [0]
                                 | _ -> [])

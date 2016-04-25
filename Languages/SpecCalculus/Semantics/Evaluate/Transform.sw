@@ -200,10 +200,13 @@ spec
            | "s" -> return(Search target_str)
            | "search" -> return(Search target_str)
            | "r" -> return(ReverseSearch target_str)
+           | "rsearch" -> return(ReverseSearch target_str)
            | "rev-search" -> return(ReverseSearch target_str)
            | "sp" -> return(SearchPred(searchPredFn target_str))
+           | "searchp" -> return(SearchPred(searchPredFn target_str))
            | "search-predicate" -> return(SearchPred(searchPredFn target_str))
            | "rp" -> return(ReverseSearchPred(searchPredFn target_str))
+           | "rsearchp" -> return(ReverseSearchPred(searchPredFn target_str))
            | "rev-search-predicate" -> return(ReverseSearchPred(searchPredFn target_str))
            | _ -> raise (TransformError (pos, "Unrecognized move command: "^search_type))}
       | _ -> raise (TransformError (posOf mv_tm, "Unrecognized move command: "^show mv_tm))

@@ -263,6 +263,18 @@ type PathTerm = APathTerm Position.Position
       | _ :: _ :: gpar_path -> Some (top_term, gpar_path)
       | _ -> None
 
+  op [a] moveToParent(ptm: APathTerm a): Option (APathTerm a) =
+    case parentTerm ptm 
+      | None -> None
+      | Some par_ptm -> 
+    case parentTerm par_ptm
+      | None -> Some par_ptm
+      | Some gpar_ptm -> 
+    case fromPathTerm gpar_ptm
+      | Apply(f, Record _, _) | infixFnTm? f -> % infix application
+        Some gpar_ptm
+      | _ -> Some par_ptm
+
   op [a] moveToFirst((top_term, path): APathTerm a): Option (APathTerm a) =
     if immediateSubTerms(fromPathTerm(top_term, path)) = [] then None
     else

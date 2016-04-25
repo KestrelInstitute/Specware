@@ -126,18 +126,18 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
 
 op moveString(m: Movement): String =
   case m of
-    | First -> "f"
-    | Last -> "l"
-    | Next -> "n"
-    | Prev -> "p"
-    | Widen -> "w"
-    | All -> "a"
-    | Search s -> "s \"" ^ s ^ "\""
-    | ReverseSearch s -> "r \"" ^ s ^ "\""
-    | SearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "s" ss
-    | ReverseSearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "r" ss
-    | SearchPred f -> "sp "^anyToString f
-    | ReverseSearchPred f -> "rp "^anyToString f
+    | First -> "first"
+    | Last -> "last"
+    | Next -> "next"
+    | Prev -> "previous"
+    | Widen -> "widen"
+    | All -> "all"
+    | Search s -> "search \"" ^ s ^ "\""
+    | ReverseSearch s -> "rsearch \"" ^ s ^ "\""
+    | SearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "search" ss
+    | ReverseSearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "rsearch" ss
+    | SearchPred f -> "searchp "^anyToString f
+    | ReverseSearchPred f -> "rsearchp "^anyToString f
     | Post -> "post"
 
 op ppBool(b: Bool): WLPretty =
