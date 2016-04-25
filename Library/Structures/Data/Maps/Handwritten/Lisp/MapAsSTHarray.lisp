@@ -71,6 +71,8 @@
 (defparameter *map-as-undo-harray-alist-elt-ref-count* 0)
 (defparameter *map-as-undo-harray-set-count* 0)
 
+;;; (list MapSTHashtable::*map-as-undo-harray-undo-count* MapSTHashtable::*map-as-undo-harray-copy-count*)
+
 (defvar *undefined* '(:|None|))
 (defun defined? (val) 
   (not (eq val *undefined*)))
@@ -98,8 +100,8 @@
       m
     (let ((undo-list (nreverse (map-as-undo-harray--undo-list m)))
 	  (table (map-as-undo-harray--harray m)))
-      ;(incf *map-as-undo-harray-undo-count* (length undo-list))
-      ;(incf *map-as-undo-harray-copy-count*)
+      ; (incf *map-as-undo-harray-undo-count* (length undo-list))
+      ; (incf *map-as-undo-harray-copy-count*)
       (when *break-on-non-single-threaded-updates?*
 	(break "Non-single-threaded update!"))
       (let ((new-table (copy-hash-table table)))
@@ -127,7 +129,7 @@
       ;(incf *map-as-undo-harray-set-count*)
       (let* ((last-undo-list (map-as-undo-harray--undo-list m))
 	     (old-val (gethash x table *undefined*)))
-	(if (eq y old-val)
+	(if (Slang-Built-In::slang-term-equals-2 y old-val)
 	    m				; Optimize special case
 	  (progn
             (when (member table *maphash-htables* :test 'eq)
