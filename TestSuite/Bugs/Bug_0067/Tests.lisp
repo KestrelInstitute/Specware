@@ -8,7 +8,7 @@
             ";;; Elaborating spec-morphism at $TESTDIR/CheckSignature#M"
             ";;; Elaborating spec at $TESTDIR/CheckSignature#S1"
             ";;; Elaborating spec at $TESTDIR/CheckSignature#S2"
-            "Error in morphism: Inconsistent op type mapping for f +-> g"
+            "ERROR: in morphism: Inconsistent op type mapping for f +-> g"
             "The domain type A"
             "  translates to B"
             "   which is not C"

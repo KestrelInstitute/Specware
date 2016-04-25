@@ -9,7 +9,7 @@
             ";;; Elaborating spec-morphism at $TESTDIR/EvenToOdd#M"
             ";;; Elaborating spec at $TESTDIR/EvenToOdd#S1"
             ";;; Elaborating spec at $TESTDIR/EvenToOdd#S2"
-            "Error in morphism: Inconsistent type def mapping for Even +-> Odd"
+            "ERROR: in morphism: Inconsistent type def mapping for Even +-> Odd"
             "The domain type {n : Nat | ex(m : Int) n = 2 * m}"
             "  translates to {n : Nat | ex(m : Int) n = 2 * m}"
             "   which is not {n : Nat | ex(m : Int) n = 2 * m + 1}"

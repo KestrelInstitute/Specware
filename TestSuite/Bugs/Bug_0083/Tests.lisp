@@ -8,7 +8,7 @@
             ";;; Elaborating spec at $TESTDIR/Ambop#C"
             ";;; Elaborating spec at $TESTDIR/Ambop#A"
             ";;; Elaborating spec at $TESTDIR/Ambop#B"
-            "Error in specification: "
+            "ERROR: in specification: "
             ""
             "Ambiguous ops:"
             ""

@@ -8,85 +8,85 @@
   :show   "Collision#Bad1"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad1"
 	    ";;; Elaborating spec at $TESTDIR/Collision#S"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "23.22-23.35	: Error in translation: Illegal to translate type X into pre-existing, non-alias, untranslated Y"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "23.22-23.35	: in translation: Illegal to translate type X into pre-existing, non-alias, untranslated Y"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad2: {X +-> Y}"
   :show   "Collision#Bad2"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad2"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "24.22-24.30	: Error in translation: Illegal to translate type X into pre-existing, non-alias, untranslated Y"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "24.22-24.30	: in translation: Illegal to translate type X into pre-existing, non-alias, untranslated Y"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad3: {type X +-> Z, type Y +-> Z}"
   :show   "Collision#Bad3"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad3"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "27.37-27.48	: Error in translation: Illegal to translate both type Y and type X into Z"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "27.37-27.48	: in translation: Illegal to translate both type Y and type X into Z"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad4: {X +-> Z, Y +-> Z}"
   :show   "Collision#Bad4"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad4"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "28.32-28.38	: Error in translation: Illegal to translate both type Y and type X into Z"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "28.32-28.38	: in translation: Illegal to translate both type Y and type X into Z"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad5: {op f +-> g}"
   :show   "Collision#Bad5"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad5"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "32.22-32.33	: Error in translation: Illegal to translate op f into pre-existing, non-alias, untranslated g"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "32.22-32.33	: in translation: Illegal to translate op f into pre-existing, non-alias, untranslated g"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad6: {f +-> g}"
   :show   "Collision#Bad6"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad6"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "33.22-33.30	: Error in translation: Illegal to translate op f into pre-existing, non-alias, untranslated g"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "33.22-33.30	: in translation: Illegal to translate op f into pre-existing, non-alias, untranslated g"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad7: {op f +-> h, op g +-> h}"
   :show   "Collision#Bad7"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad7"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "36.35-36.44	: Error in translation: Illegal to translate both op g and op f into h"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "36.35-36.44	: in translation: Illegal to translate both op g and op f into h"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad8: {f +-> h, g +-> h}"
   :show   "Collision#Bad8"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad8"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "37.32-37.38	: Error in translation: Illegal to translate both op g and op f into h"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "37.32-37.38	: in translation: Illegal to translate both op g and op f into h"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad9: {A._ +-> B._}"
   :show   "Collision#Bad9"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad9"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "41.22-41.34	: Error in translation: Illegal to translate type A.T into pre-existing, non-alias, untranslated B.T"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "41.22-41.34	: in translation: Illegal to translate type A.T into pre-existing, non-alias, untranslated B.T"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad10: {A._ +-> C._, B._ +-> C._}"
   :show   "Collision#Bad10"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad10"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "45.37-45.47	: Error in translation: Illegal to translate both type B.T and type A.T into C.T"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "45.37-45.47	: in translation: Illegal to translate both type B.T and type A.T into C.T"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad11: {D._ +-> E._}"
   :show   "Collision#Bad11"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad11"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "49.23-49.35	: Error in translation: Illegal to translate op D.m into pre-existing, non-alias, untranslated E.m"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "49.23-49.35	: in translation: Illegal to translate op D.m into pre-existing, non-alias, untranslated E.m"
 	    ""))
 
  ("Bug 0113 : Translate should be monic: Bad12: {D._ +-> F._, E._ +-> F._}"
   :show   "Collision#Bad12"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Bad12"
-	    "Errors in $TESTDIR/Collision.sw"
-	    "53.37-53.47	: Error in translation: Illegal to translate both op E.m and op D.m into F.m"
+	    "ERROR: Errors in $TESTDIR/Collision.sw"
+	    "53.37-53.47	: in translation: Illegal to translate both op E.m and op D.m into F.m"
 	    ""))
 
  ;; good, but tricky, translations...

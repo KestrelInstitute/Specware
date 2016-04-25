@@ -25,8 +25,8 @@
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Dom")
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Cod_2_1")
 	     (:alternatives 
-	      "Error in morphism: No unique mapping for type T -- found 2 candidates: {Q.T, Z.T}"
-	      "Error in morphism: No unique mapping for type T -- found 2 candidates: {Z.T, Q.T}")
+	      "ERROR: in morphism: No unique mapping for type T -- found 2 candidates: {Q.T, Z.T}"
+	      "ERROR: in morphism: No unique mapping for type T -- found 2 candidates: {Z.T, Q.T}")
 	     " found in no position"
 	     (:optional "")
 	     (:optional "")
@@ -39,8 +39,8 @@
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Dom")
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Cod_1_2")
 	     (:alternatives 
-	      "Error in morphism: No unique mapping for op f -- found 2 candidates: {Q.f, Z.f}"
-	      "Error in morphism: No unique mapping for op f -- found 2 candidates: {Z.f, Q.f}")
+	      "ERROR: in morphism: No unique mapping for op f -- found 2 candidates: {Q.f, Z.f}"
+	      "ERROR: in morphism: No unique mapping for op f -- found 2 candidates: {Z.f, Q.f}")
 	     " found in no position"
 	     (:optional "")
 	     (:optional "")
@@ -53,18 +53,18 @@
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Dom")
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Cod_2_2")
 	     (:alternatives 
-	      "Error in morphism: No unique mapping for type T -- found 2 candidates: {Q.T, Z.T}"
-	      "Error in morphism: No unique mapping for type T -- found 2 candidates: {Z.T, Q.T}"
-	      "Error in morphism: No unique mapping for op f -- found 2 candidates: {Q.f, Z.f}"
-	      "Error in morphism: No unique mapping for op f -- found 2 candidates: {Z.f, Q.f}")
+	      "ERROR: in morphism: No unique mapping for type T -- found 2 candidates: {Q.T, Z.T}"
+	      "ERROR: in morphism: No unique mapping for type T -- found 2 candidates: {Z.T, Q.T}"
+	      "ERROR: in morphism: No unique mapping for op f -- found 2 candidates: {Q.f, Z.f}"
+	      "ERROR: in morphism: No unique mapping for op f -- found 2 candidates: {Z.f, Q.f}")
 	     " found in no position"
 	     ;;
 	     (:optional 
 	      (:alternatives 
-	       "Error in morphism: No unique mapping for type T -- found 2 candidates: {Q.T, Z.T}"
-	       "Error in morphism: No unique mapping for type T -- found 2 candidates: {Z.T, Q.T}"
-	       "Error in morphism: No unique mapping for op f -- found 2 candidates: {Q.f, Z.f}"
-	       "Error in morphism: No unique mapping for op f -- found 2 candidates: {Z.f, Q.f}")
+	       "ERROR: in morphism: No unique mapping for type T -- found 2 candidates: {Q.T, Z.T}"
+	       "ERROR: in morphism: No unique mapping for type T -- found 2 candidates: {Z.T, Q.T}"
+	       "ERROR: in morphism: No unique mapping for op f -- found 2 candidates: {Q.f, Z.f}"
+	       "ERROR: in morphism: No unique mapping for op f -- found 2 candidates: {Z.f, Q.f}")
 	      " found in no position")
 	     ;;
 	     (:optional "")

@@ -10,7 +10,7 @@
 	    ";;; Elaborating spec at $TESTDIR/STO#S"
 	    ";;; Elaborating spec at $TESTDIR/STO#T"
 	    ;; new...
-	    "Error in morphism: Inconsistent op def mapping for c +-> c"
+	    "ERROR: in morphism: Inconsistent op def mapping for c +-> c"
 	    "The domain op     c has a definition: c"
 	    "but translates to c, which does not."
 	    " found in $TESTDIR/STO.sw"

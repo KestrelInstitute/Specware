@@ -26,7 +26,7 @@
   :sw "RedefinedOp#DefOp"
   :output '((:optional "")
             ";;; Elaborating spec at $TESTDIR/RedefinedOp#DefOp"
-            "Error in specification: Operator f has been redeclared"
+            "ERROR: in specification: Operator f has been redeclared"
             " from 3"
             "   to <anyterm>: Nat"
             " found in $TESTDIR/RedefinedOp.sw"
@@ -38,7 +38,7 @@
   :sw "RedefinedOp#DefDef"
   :output '((:optional "")
             ";;; Elaborating spec at $TESTDIR/RedefinedOp#DefDef"
-            "Error in specification: Operator f has been redefined"
+            "ERROR: in specification: Operator f has been redefined"
             " from 3"
             "   to 3"
             " found in $TESTDIR/RedefinedOp.sw"
@@ -50,7 +50,7 @@
   :sw "RedefinedOp#OpOp"
   :output '((:optional "")
             ";;; Elaborating spec at $TESTDIR/RedefinedOp#OpOp"
-            "Error in specification: Operator f has been redeclared"
+            "ERROR: in specification: Operator f has been redeclared"
             " from Nat"
             "   to Nat"
             " found in $TESTDIR/RedefinedOp.sw"
@@ -62,7 +62,7 @@
   :sw "RedefinedOp#OpDefOp"
   :output '((:optional "")
             ";;; Elaborating spec at $TESTDIR/RedefinedOp#OpDefOp"
-            "Error in specification: Operator f has been redeclared"
+            "ERROR: in specification: Operator f has been redeclared"
             " from 3: Nat"
             "   to <anyterm>: Nat"
             " found in $TESTDIR/RedefinedOp.sw"
@@ -74,7 +74,7 @@
   :sw "RedefinedOp#OpDefDef"
   :output '((:optional "")
             ";;; Elaborating spec at $TESTDIR/RedefinedOp#OpDefDef"
-            "Error in specification: Operator f has been redefined"
+            "ERROR: in specification: Operator f has been redefined"
             " from 3: Nat"
             "   to 3"
             " found in $TESTDIR/RedefinedOp.sw"

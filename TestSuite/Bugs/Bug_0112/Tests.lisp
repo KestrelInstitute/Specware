@@ -42,8 +42,8 @@
  ("Bug 0112 : Failure to translate when rule uses unqualified ref [Loser]"
   :show   "Capture#Loser"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Capture#Loser"
-	    "Errors in $TESTDIR/Capture.sw"
-	    "26.24-26.31	: Error in translation: Ambiguous source type D"
+	    "ERROR: Errors in $TESTDIR/Capture.sw"
+	    "26.24-26.31	: in translation: Ambiguous source type D"
 	    ""))
  
  )

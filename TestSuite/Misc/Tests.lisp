@@ -31,7 +31,7 @@
  ("twk message 1/10/03 Reused name leading to circularity."
   :sw "players#twoPlayersLisp"
   :file-goto-error '("$TESTDIR/players.sw" 43 13)
-  :output '("Error in specification: Name \"twoPlayers\" defined twice in file."
+  :output '("ERROR: in specification: Name \"twoPlayers\" defined twice in file."
 	    " found in $TESTDIR/players.sw"
 	    "43.*-44.*"))
 
@@ -52,7 +52,7 @@
 
  ("Circular sub-unit"
   :sw "genC"
-  :output "Circular definition: $TESTDIR/genC#GCD")
+  :output "ERROR: Circular definition: $TESTDIR/genC#GCD")
 
  ("Implicit polymorphic op defined inferred"
   :sw "ImplPoly"

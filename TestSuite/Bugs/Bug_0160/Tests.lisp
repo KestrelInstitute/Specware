@@ -10,7 +10,7 @@
 	    ";;; Elaborating spec at $TESTDIR/subst_spec#A"
 	    ";;; Elaborating spec-morphism at $TESTDIR/subst_spec#M"
 	    ";;; Elaborating spec at $TESTDIR/subst_spec#B"
-	    "Error in specification: "
+	    "ERROR: in specification: "
 	    ""
 	    "Ambiguous ops:"
 	    ""

@@ -220,7 +220,7 @@ spec
     tester ("(compare ( 5, 4 )) = Greater", (compare ( 5, 4 )) = Greater);
     tester ("let A = id ( 5, 4 ) in (compare A) = Greater", let A = id ( 5, 4 ) in (compare A) = Greater);
 % Int [132]:  op show : Int -> String
-    tester ("(Int.show ( 123 )) = \"123\"", (Int.show ( 123 )) = "123");
+    tester ("(show ( 123 )) = \"123\"", (show ( 123 )) = "123");
 % Int [124]:  op intToString    : Int -> String
     tester ("(intToString ( 123 )) = \"123\"", (intToString ( 123 )) = "123");
 % Int [124.5]:  op intConvertible : String -> Bool
@@ -331,14 +331,14 @@ spec
     tester ("(leftmostPositionOfSublistAndFollowing ( [1,3], [3,1,4,1,5] )) = None", (leftmostPositionOfSublistAndFollowing ( [1,3], [3,1,4,1,5] )) = None);
     tester ("let A = id ( [1,3], [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = None", let A = id ( [1,3], [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = None);
 % List [ 81]:  op compare         : fa(a)  (a * a -> Comparison) -> List a * List a -> Comparison
-    tester ("(compare ( Int.compare ) ( [], [1] )) = Less", (compare ( Int.compare ) ( [], [1] )) = Less);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( [], [1] )) = Less", let F = id ( compare ( Int.compare )) in (F ( [], [1] )) = Less);
-    tester ("(compare ( Int.compare ) ( [0,9], [1] )) = Less", (compare ( Int.compare ) ( [0,9], [1] )) = Less);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( [0,9], [1] )) = Less", let F = id ( compare ( Int.compare )) in (F ( [0,9], [1] )) = Less);
-    tester ("(compare ( Int.compare ) ( [1], [1] )) = Equal", (compare ( Int.compare ) ( [1], [1] )) = Equal);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( [1], [1] )) = Equal", let F = id ( compare ( Int.compare )) in (F ( [1], [1] )) = Equal);
-    tester ("(compare ( Int.compare ) ( [1,0], [1] )) = Greater", (compare ( Int.compare ) ( [1,0], [1] )) = Greater);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( [1,0], [1] )) = Greater", let F = id ( compare ( Int.compare )) in (F ( [1,0], [1] )) = Greater);
+    tester ("(compare ( compare ) ( [], [1] )) = Less", (compare ( compare ) ( [], [1] )) = Less);
+    tester ("let F = id ( compare ( compare )) in (F ( [], [1] )) = Less", let F = id ( compare ( compare )) in (F ( [], [1] )) = Less);
+    tester ("(compare ( compare ) ( [0,9], [1] )) = Less", (compare ( compare ) ( [0,9], [1] )) = Less);
+    tester ("let F = id ( compare ( compare )) in (F ( [0,9], [1] )) = Less", let F = id ( compare ( compare )) in (F ( [0,9], [1] )) = Less);
+    tester ("(compare ( compare ) ( [1], [1] )) = Equal", (compare ( compare ) ( [1], [1] )) = Equal);
+    tester ("let F = id ( compare ( compare )) in (F ( [1], [1] )) = Equal", let F = id ( compare ( compare )) in (F ( [1], [1] )) = Equal);
+    tester ("(compare ( compare ) ( [1,0], [1] )) = Greater", (compare ( compare ) ( [1,0], [1] )) = Greater);
+    tester ("let F = id ( compare ( compare )) in (F ( [1,0], [1] )) = Greater", let F = id ( compare ( compare )) in (F ( [1,0], [1] )) = Greater);
 % List [134]:  op show    : String -> List String -> String
     tester ("(show ( \"ns\" ) ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", (show ( "ns" ) ( ["no","e","e"] )) = "nonsense");
     tester ("let F = id ( show ( \"ns\" )) in (F ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", let F = id ( show ( "ns" )) in (F ( ["no","e","e"] )) = "nonsense");
@@ -375,18 +375,18 @@ spec
     tester ("(none? ( None )) = true", (none? ( None )) = true);
     tester ("(none? ( Some(1) )) = false", (none? ( Some(1) )) = false);
 % Option [ 98]:  op compare   : fa(a) (a * a -> Comparison) -> Option a * Option a -> Comparison
-    tester ("(compare ( Int.compare ) ( None, None )) = Equal", (compare ( Int.compare ) ( None, None )) = Equal);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( None, None )) = Equal", let F = id ( compare ( Int.compare )) in (F ( None, None )) = Equal);
-    tester ("(compare ( Int.compare ) ( None, Some(1) )) = Less", (compare ( Int.compare ) ( None, Some(1) )) = Less);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( None, Some(1) )) = Less", let F = id ( compare ( Int.compare )) in (F ( None, Some(1) )) = Less);
-    tester ("(compare ( Int.compare ) ( Some(1), None )) = Greater", (compare ( Int.compare ) ( Some(1), None )) = Greater);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( Some(1), None )) = Greater", let F = id ( compare ( Int.compare )) in (F ( Some(1), None )) = Greater);
-    tester ("(compare ( Int.compare ) ( Some(0), Some(1) )) = Less", (compare ( Int.compare ) ( Some(0), Some(1) )) = Less);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( Some(0), Some(1) )) = Less", let F = id ( compare ( Int.compare )) in (F ( Some(0), Some(1) )) = Less);
-    tester ("(compare ( Int.compare ) ( Some(1), Some(1) )) = Equal", (compare ( Int.compare ) ( Some(1), Some(1) )) = Equal);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( Some(1), Some(1) )) = Equal", let F = id ( compare ( Int.compare )) in (F ( Some(1), Some(1) )) = Equal);
-    tester ("(compare ( Int.compare ) ( Some(2), Some(1) )) = Greater", (compare ( Int.compare ) ( Some(2), Some(1) )) = Greater);
-    tester ("let F = id ( compare ( Int.compare )) in (F ( Some(2), Some(1) )) = Greater", let F = id ( compare ( Int.compare )) in (F ( Some(2), Some(1) )) = Greater);
+    tester ("(compare ( compare ) ( None, None )) = Equal", (compare ( Integer.compare ) ( None, None )) = Equal);
+    tester ("let F = id ( compare ( compare )) in (F ( None, None )) = Equal", let F = id ( compare ( Integer.compare )) in (F ( None, None )) = Equal);
+    tester ("(compare ( compare ) ( None, Some(1) )) = Less", (compare ( compare ) ( None, Some(1) )) = Less);
+    tester ("let F = id ( compare ( compare )) in (F ( None, Some(1) )) = Less", let F = id ( compare ( compare )) in (F ( None, Some(1) )) = Less);
+    tester ("(compare ( compare ) ( Some(1), None )) = Greater", (compare ( compare ) ( Some(1), None )) = Greater);
+    tester ("let F = id ( compare ( compare )) in (F ( Some(1), None )) = Greater", let F = id ( compare ( compare )) in (F ( Some(1), None )) = Greater);
+    tester ("(compare ( compare ) ( Some(0), Some(1) )) = Less", (compare ( compare ) ( Some(0), Some(1) )) = Less);
+    tester ("let F = id ( compare ( compare )) in (F ( Some(0), Some(1) )) = Less", let F = id ( compare ( compare )) in (F ( Some(0), Some(1) )) = Less);
+    tester ("(compare ( compare ) ( Some(1), Some(1) )) = Equal", (compare ( compare ) ( Some(1), Some(1) )) = Equal);
+    tester ("let F = id ( compare ( compare )) in (F ( Some(1), Some(1) )) = Equal", let F = id ( compare ( compare )) in (F ( Some(1), Some(1) )) = Equal);
+    tester ("(compare ( compare ) ( Some(2), Some(1) )) = Greater", (compare ( compare ) ( Some(2), Some(1) )) = Greater);
+    tester ("let F = id ( compare ( compare )) in (F ( Some(2), Some(1) )) = Greater", let F = id ( compare ( compare )) in (F ( Some(2), Some(1) )) = Greater);
 % Option [ 99]:  op mapOption : fa(a,b) (a -> b) -> Option a -> Option b
     tester ("(mapOption ( succ ) ( None )) = None", (mapOption ( succ ) ( None )) = None);
     tester ("let F = id ( mapOption ( succ )) in (F ( None )) = None", let F = id ( mapOption ( succ )) in (F ( None )) = None);

@@ -7,7 +7,7 @@
 ";;; Elaborating spec at $TESTDIR/Bug_0083#C
 ;;; Elaborating spec at $TESTDIR/Bug_0083#A
 ;;; Elaborating spec at $TESTDIR/Bug_0083#B
-Error in specification: 
+ERROR: in specification: 
 
 Ambiguous ops: 
  (* Warning: Multiple definitions for following op *) 

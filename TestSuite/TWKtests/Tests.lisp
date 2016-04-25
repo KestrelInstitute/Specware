@@ -20,10 +20,10 @@
   :output '(";;; Elaborating spec at $TESTDIR/t0103_1#player"
 	    ";;; Elaborating spec at $TESTDIR/t0103_1#position"
 	    ";;; Elaborating spec at $TESTDIR/t0103_1#move"
-	    "Errors in $TESTDIR/t0103_1.sw"
-	    "40.33-40.38	: Could not match type constraint"
-	    "              legal? of type move -> Bool"
-	    "          with expected type Bool"
+	    "ERROR: Errors in $TESTDIR/t0103_1.sw"
+	    "40.33-40.38	: ERROR: Could not match type constraint for"
+	    "              legal?: move -> Bool"
+	    "          in context: Bool"
 	    (:optional ""))
   )
 

@@ -11,9 +11,9 @@
   :sw "BogusNil#Loser"
   :output '(";;; Elaborating spec at $TESTDIR/BogusNil#Loser"
 	    "ERROR: Errors in $TESTDIR/BogusNil.sw"
-	    "14.21-14.22	: Could not match type constraint"
-	    "                  [] of type List(mtv*)"
-	    "          with expected type Bogus"
+	    "14.21-14.22	: ERROR: Could not match type constraint for"
+	    "                  []: List(mtv*)"
+	    "          in context: Bogus"
 	    (:optional "")))
 	    
 
