@@ -27,7 +27,7 @@ spec
             | None -> false
             | Some info ->
           let (tvs, dfn) = unpackFirstTypeDef info in
-          ~(tvs = [] && embed? Any dfn)
+          ~(tvs = [] && anyType? dfn)
             || specConstrainsTypeInhabited?(mkBase(qid,[]), spc)
             || knownNonEmptyType?(dfn, spc))
 

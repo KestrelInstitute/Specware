@@ -22,7 +22,7 @@ apply (case_tac m, auto)
 proof
  assume "prime n"
  hence "n > 1" and FA: "\<forall>m. m dvd n \<longrightarrow> m = 1 \<or> m = n"
-  by (auto simp: prime_nat_def)
+  by (auto simp: prime_g_zero)
  have "\<forall>d. d > 0 \<and> int d zdvd int n \<longrightarrow>
                    d = n \<or> d = 1"
  proof (rule allI, rule impI)
@@ -62,7 +62,7 @@ next
                     \<longrightarrow> d = n \<or> d = 1"
   by auto
  show "prime n"
- proof (unfold prime_nat_def, rule conjI)
+ proof (unfold prime_g_zero, rule conjI)
   from `n > 1` show "n > 1" by auto
  next
   show "\<forall>d. d dvd n \<longrightarrow> d = 1 \<or> d = n"
@@ -277,15 +277,15 @@ op legendreSymbol (a:PosNat, p:PrimeNat | odd? p)
   else -1
 
 proof Isa legendreSymbol_Obligation_subtype
- by (auto simp: prime_nat_def)
+ by (auto simp: prime_g_zero)
 end-proof
 
 proof Isa legendreSymbol_Obligation_subtype1
- by (auto simp: prime_nat_def)
+ by (auto simp: prime_g_zero)
 end-proof
 
 proof Isa legendreSymbol_Obligation_subtype2
- by (auto simp: prime_nat_def)
+ by (auto simp: prime_g_zero)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -470,7 +470,7 @@ lemma Integer__legendreSymbol_as_Legendre:
  apply (drule_tac x="zabs z" in spec, erule notE)
  apply (rule_tac t="(zabs z)\<^sup>2" and s="nat (z\<^sup>2)" in subst, 
         simp_all add: power2_eq_square nat_abs_mult_distrib [symmetric] abs_mult)
- apply (drule_tac x="int y" in spec, simp add: int_mult [symmetric])
+ apply (metis nat_int of_nat_mult)
 done
 
 
@@ -479,7 +479,7 @@ lemma Legendre_unique:
          (x = 0 \<or> x = 1 \<or> x = - 1) \<and> (\<exists>(k::int). a ^ ((p - 1) div 2) - x = k * p)\<rbrakk>
         \<Longrightarrow> Legendre a p = x"
   apply (clarify, subgoal_tac "a ^ ((p - 1) div 2) mod p = x mod int p")
-  defer apply (simp add: zmod_int zmod_eq_dvd_iff dvd_def int_power)
+  defer apply (simp add: zmod_int zmod_eq_dvd_iff dvd_def)
   apply (thin_tac "_=_", unfold Legendre_def, rotate_tac 4, split split_if)    
   (** Case 1: [a = 0] (mod p) **)
   apply (rule conjI, rule impI, erule rev_mp, subst Euler_part1, simp+)
@@ -516,7 +516,7 @@ proof Isa legendreSymbol_alt_def_Obligation_the
   apply (rule_tac a="Legendre a p" in ex1I, rule conjI)      
   apply (simp add: Legendre_def)
   apply (drule_tac a="a" in Euler_Criterion, simp,
-         simp add: zmod_int int_power zmod_eq_dvd_iff dvd_def algebra_simps, 
+         simp add: zmod_int zmod_eq_dvd_iff dvd_def algebra_simps, 
          clarify, rule_tac x="-k" in exI, simp)
   apply (simp add: Legendre_unique [symmetric])
 end-proof
@@ -782,7 +782,7 @@ op gcdOf (numbers: Set1 PosNat | finite? numbers) : PosNat =
 proof Isa lcmOf_Obligation_subtype 
    apply (simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_lambda_int)
    apply (subgoal_tac
-          "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
+          "(\<lambda>x::nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p")
      apply(thin_tac "_=_")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
@@ -814,7 +814,7 @@ end-proof
 proof Isa gcdOf_Obligation_subtype
    apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_lambda_int)
    apply (subgoal_tac
-          "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
+          "(\<lambda>x::nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p")
      apply(thin_tac "_=_")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
@@ -897,13 +897,10 @@ lemma Integer__littleEndian_p_bound:
   apply (case_tac "xs = []", simp_all)
   apply (simp add: Integer__littleEndian_p_def List__map2_def List__tabulate_singleton)
   apply (simp add: Integer__littleEndian_p_def List__map2_def Let_def 
-                  List__tabulate_snoc List__length_tabulate member_def zpower_int,
+                   List__tabulate_snoc List__length_tabulate member_def,
          clarify)
   apply (drule mp, clarify, drule_tac x=d in spec, clarify)
-  apply (rule_tac y="base ^ length xs + x * base ^ length xs" in less_le_trans, simp)
-  apply (drule_tac x=x in spec, clarsimp)
-  apply (simp only: mult_Suc [symmetric] mult_le_mono1)
-done
+  by (metis (no_types, lifting) Integer__e_ast_ast_ast__def add.commute mult.commute mult_add_mono)
 
 lemma Integer__littleEndian_p_nil:
   "\<lbrakk>base \<ge> 2\<rbrakk> \<Longrightarrow> Integer__littleEndian_p ([], base, x) = False"
@@ -917,14 +914,14 @@ lemma Integer__littleEndian_p_snoc:
                  \<and> d < base \<and> d = x div weight))"
  apply (case_tac "d < base")
  apply (simp add: Integer__littleEndian_p_def List__map2_def Let_def 
-                  List__tabulate_snoc List__length_tabulate member_def zpower_int)
+                  List__tabulate_snoc List__length_tabulate member_def of_nat_power[symmetric]
+             del: of_nat_power)
  apply (rule conj_cong, simp)
  apply (rule div_mod_split)
  apply (simp only: member_def [symmetric], drule Integer__littleEndian_p_bound, auto )
- apply (simp add: Integer__littleEndian_p_def List__map2_def Let_def zpower_int)
+ apply (simp add: Integer__littleEndian_p_def List__map2_def Let_def)
  apply (auto simp add: Integer__littleEndian_p_def List__map2_def member_def Let_def)
-done
-
+using Integer__e_ast_ast_ast__def by presburger
 
 lemma Integer__littleEndian_p_snoc2:
   "\<lbrakk>base \<ge> 2;  d < base ; digits \<noteq> []\<rbrakk>
@@ -962,7 +959,7 @@ op toBigEndian
 proof Isa toLittleEndian_Obligation_the
   apply (subgoal_tac "\<forall>x < base ^ len.  (\<exists>!digits. digits \<noteq> [] \<and>
               length digits = len \<and> Integer__littleEndian_p (digits, base, x))",
-         drule_tac x=x in spec, erule mp, simp add: zpower_int, thin_tac "int x < int base ** len")
+         drule_tac x=x in spec, erule mp, simp, thin_tac "int x < int base ** len")
   apply (erule rev_mp, induct len, simp, clarsimp)
  apply (case_tac "0=len", simp_all)
   apply (rule_tac a="[x]" in ex1I, simp_all) 
@@ -1109,35 +1106,35 @@ proof Isa toMinLittleEndian_Obligation_subtype
           simp_all)
    (** Otherwise x>0 and we use Integer__toLittleEndian with minimal length **)
    apply (rule_tac x="Integer__toLittleEndian (x, base, ld (x,base))" in exI,
-          auto simp add:  ld_positive zpower_int ld_mono)
+          auto simp add:  ld_positive ld_mono)
    defer (*** subgoal 1 later ***)
    apply (rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_members,
-          simp_all add: zpower_int ld_mono ld_positive )
+          simp_all add: ld_mono ld_positive )
    apply (rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_endian,
-          simp_all add: zpower_int ld_mono ld_positive)
+          simp_all add: ld_mono ld_positive)
    apply (subst Integer__toLittleEndian_length,
-          simp_all add: zpower_int ld_mono ld_positive)
+          simp_all add: ld_mono ld_positive)
    apply (rule  Integer__littleEndian_p_min_length, simp_all,
           rule classical, simp add: Integer__littleEndian_p_nil)
    (********)  
    apply (rule_tac base=base and x=x in Integer__toLittleEndian_p_equality,
           simp_all)
    apply (subst Integer__toLittleEndian_length,
-          simp_all add: zpower_int ld_mono ld_positive)
+          simp_all add: ld_mono ld_positive)
    apply (frule_tac Integer__littleEndian_p_min_length, 
           auto simp add: Integer__littleEndian_p_nil)
    defer
    apply (rule Integer__toLittleEndian_endian,
-          simp_all add: zpower_int ld_mono ld_positive) 
+          simp_all add: ld_mono ld_positive) 
    apply (drule_tac x="Integer__toLittleEndian (x, base, ld (x, base))" in spec)
    apply (cut_tac x=x and len="ld (x, base)" and base=base in Integer__toLittleEndian_length,
-          simp_all add: zpower_int ld_mono ld_positive)
+          simp_all add: ld_mono ld_positive)
    apply (drule mp)
    apply (safe, 
           rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_members,
-                   simp_all add: zpower_int ld_mono ld_positive ,
+                   simp_all add: ld_mono ld_positive ,
           rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_endian,
-                   simp_all add: zpower_int ld_mono ld_positive)
+                   simp_all add: ld_mono ld_positive)
 
 end-proof
 
@@ -1316,8 +1313,7 @@ lemma Integer__fromBigEndian_induct:
                     @ [base ^ (length digits)]" in subst,
         simp_all add: List__length_tabulate)
  apply (rule nth_equalityI, simp add: List__length_tabulate)
- apply (auto simp add: List__length_tabulate List__element_of_tabulate nth_append
-                       zpower_int)
+ apply (simp add: Integer__e_ast_ast_ast__def List__tabulate_snoc)
 done
 
 
@@ -1433,7 +1429,7 @@ lemma Integer__to_fromBigEndian_inv:
     = digits"
   apply (simp add: Integer__toBigEndian_def)
   apply (rule the1I2, cut_tac Integer__toBigEndian_Obligation_the, auto)
-  apply (simp add: zless_int zpower_int Integer__fromBigEndian_bound)
+  apply (simp add: zless_int Integer__fromBigEndian_bound)
   apply (rotate_tac -1, erule rev_mp)
   apply (simp_all add: Integer__fromBigEndian_def)
   apply (rule the1I2, rule Integer__fromBigEndian_Obligation_the1, auto)

@@ -246,8 +246,8 @@ proof Isa Thy_Morphism Map
   type Map.Map       -> map
   Map.domain         -> dom
   Map.range          -> ran
-  Map.:>             -> o_m                 Left  55 reversed
-  Map.o              -> o_m                 Left  55
+  Map.:>             -> \<circ>\<^sub>m   Left  55 reversed
+  Map.o              -> \<circ>\<^sub>m   Left  55
   Map.<=             -> \<subseteq>\<^sub>m Left  50
   Map.empty          -> empty
   Map.<<<            -> ++                  Left 100

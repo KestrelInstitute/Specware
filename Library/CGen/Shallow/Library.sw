@@ -250,7 +250,7 @@ theorem mod_lt_chained:
 
 theorem int_expt [simp]:
   "int (2 ^ (n::nat)) = 2 ^ n"
-  apply(simp add: Int.int_power)
+  apply(simp)
   done
 
 theorem mod_lower_bound_chained:
@@ -267,7 +267,7 @@ theorem mod_minus_dividend [simp]:
   done
 
 theorem not_negative_from_bound:
-  "\<lbrakk>length bs = (8\<Colon>nat); toNat bs \<le> (127\<Colon>nat)\<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p bs"
+  "\<lbrakk>length bs = (8::nat); toNat bs \<le> (127::nat)\<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p bs"
   apply(cut_tac b = "(hd bs)" and bs = "(tl bs)" in Bits__toNat_induct, force)
   apply(case_tac "(hd bs)")
   apply(cut_tac x = bs in TwosComplement__nonNegative_p_alt_def, force)
@@ -320,13 +320,13 @@ theorem length_signExtend [simp]:
 
 theorem mod_of_toInt65536 [simp]:
   "\<lbrakk> length bs = 16 \<rbrakk> \<Longrightarrow> 
-   (TwosComplement__toInt bs) mod (65536\<Colon>int) = int (toNat bs)"
+   (TwosComplement__toInt bs) mod (65536::int) = int (toNat bs)"
   apply(simp add: TwosComplement__toInt_def)
   done
 
 theorem mod_of_toInt4294967296 [simp]:
   "\<lbrakk> length bs = 32 \<rbrakk> \<Longrightarrow> 
-   (TwosComplement__toInt bs) mod (4294967296\<Colon>int) = int (toNat bs)"
+   (TwosComplement__toInt bs) mod (4294967296::int) = int (toNat bs)"
   apply(simp add: TwosComplement__toInt_def)
   done
 
@@ -561,7 +561,6 @@ theorem fromBigEndian_intro is
 %%   "all_less_than(lst, val) = (\<forall>d\<in>set(lst). d<val)"
 
 proof isa -verbatim
-declare List.length_map [simp add]
 declare Library__fromBigEndian_rec.simps [simp del] (* for speed *)
 end-proof
 
@@ -575,7 +574,7 @@ theorem Library__fromBigEndian_rec_app:
 
 theorem Library__mod_does_nothing_fw:
   "\<lbrakk> x \<ge> 0 ; y > 0 ; x < y\<rbrakk> \<Longrightarrow> ((x::int) mod y = x)"
-  apply(simp add: mod_does_nothing_rewrite)
+  apply(simp)
   done
 
 
@@ -593,7 +592,7 @@ theorem Library__nmod_does_nothing_rewrite_alt [simp]:
 
 theorem Library__nmod_does_nothing_fw:
   "\<lbrakk> x \<ge> 0 ; y > 0 ; x < y\<rbrakk> \<Longrightarrow> ((x::nat) mod y = x)"
-  apply(simp add: Library__nmod_does_nothing_rewrite)
+  apply(simp)
   done
 
 
@@ -665,7 +664,7 @@ theorem Library__fromBigEndian_rec_drop:
      Library__fromBigEndian_rec (digits, base) mod base ^ (length digits - n)"
   apply(cut_tac base="base" and moredigits="take n digits" and digits="drop n digits" in Library__fromBigEndian_rec_app_mod)
   apply(force, force)
-apply(simp add: List.append_take_drop_id)
+apply(simp)
 done
 
 
@@ -697,7 +696,7 @@ theorem fromBigEndian_suffix:
   done
 
 theorem all_less_map_toNat2 [simp]:
-  "Library__all_less (2\<Colon>nat) (map toNat2 bs)"
+  "Library__all_less (2::nat) (map toNat2 bs)"
   apply(induct bs)
   apply(auto)
 done
@@ -735,7 +734,7 @@ theorem toInt_mod [simp]:
  "\<lbrakk>length bs \<ge> n\<rbrakk> \<Longrightarrow> TwosComplement__toInt bs mod 2^n = int (toNat bs mod 2^n)"
   apply(simp add: TwosComplement__toInt_def Divides.zmod_int, auto)
   apply(rule mod_diff_drop_right)
-  apply(cut_tac i="(2\<Colon>int) ^ length bs" and j="(2\<Colon>int) ^ n" in SW_Integer.Integer__divides_iff_modF_0, force)
+  apply(cut_tac i="(2::int) ^ length bs" and j="(2::int) ^ n" in SW_Integer.Integer__divides_iff_modF_0, force)
   apply(auto simp add: Power.power_dvd_imp_le)
   done
 
@@ -769,23 +768,23 @@ declare BitList.Bits__inverse_toNat_bits [simp add]
 
 (* todo think about n=0. tonat not defined? *)
 theorem toNat_suffix:
-  "\<lbrakk>n > 0 ; n \<le> length bs\<rbrakk> \<Longrightarrow> toNat (List__suffix (bs, n\<Colon>nat)) = toNat bs mod 2 ^ n"
+  "\<lbrakk>n > 0 ; n \<le> length bs\<rbrakk> \<Longrightarrow> toNat (List__suffix (bs, n::nat)) = toNat bs mod 2 ^ n"
   apply(case_tac "n=0")
   apply(simp)
   apply(simp add: toNat_def Library__map_suffix fromBigEndian_suffix)
 done
 
 theorem toNat_mod:
-  "\<lbrakk>n > 0 ; n <= length bs\<rbrakk> \<Longrightarrow> toNat bs mod 2 ^ n = toNat (List__suffix (bs, n\<Colon>nat))"
+  "\<lbrakk>n > 0 ; n <= length bs\<rbrakk> \<Longrightarrow> toNat bs mod 2 ^ n = toNat (List__suffix (bs, n::nat))"
   apply(cut_tac toNat_suffix, auto)
 done
 
 
 (* TODO see toBits_mod in BitList *)
 theorem toBits_mod_toNat:
-  "\<lbrakk> n > 0 ; length bs \<ge> n \<rbrakk> \<Longrightarrow> toBits ((toNat bs) mod 2^n, n\<Colon>nat) = List__suffix(bs, n) "
+  "\<lbrakk> n > 0 ; length bs \<ge> n \<rbrakk> \<Longrightarrow> toBits ((toNat bs) mod 2^n, n::nat) = List__suffix(bs, n) "
   apply(rule Bits__toNat_inject_rule)
-  apply(simp add: toNat_suffix BitList.Bits__bits_length)
+  apply(simp add: toNat_suffix)
   apply(simp)
   apply(simp)
   done
@@ -977,7 +976,7 @@ theorem must_be_high_generic:
    \<Longrightarrow>   (- (2^(n - 1)) \<le> int (x * 2^n) + int y - 2^k)
       = (x = 2^(k - n) - 1 \<and> y \<ge> 2^(n - 1))"
   apply (simp add: algebra_simps, 
-         simp only: zpower_int convert_to_nat zadd_int int_int_eq 
+         simp only: of_nat_power[symmetric] int_mult[symmetric] convert_to_nat zadd_int int_int_eq 
                     zless_int zle_int)
   apply (rule iffI, rotate_tac -1, rule context_conjI, auto)
   defer
@@ -1036,13 +1035,13 @@ theorem toInt_suffix:
             and y="toNat(drop (length bs - n) bs)" 
             and n=n and k="length bs" in must_be_high_generic, auto)
   apply(rotate_tac -1, erule rev_mp, simp,
-        subst hd_conv_nth, simp, simp add: nth_drop)
+        subst hd_conv_nth, simp, simp)
   (**** now the same argument again ****)
   apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
             in toNat_app, auto)
   apply (cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_0,
          simp, simp, simp)
-  apply(rotate_tac -1, erule rev_mp, subst hd_conv_nth, simp, simp add: nth_drop)
+  apply(rotate_tac -1, erule rev_mp, subst hd_conv_nth, simp, simp)
   (**** and again ****)
   apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
             in toNat_app, auto)
@@ -1050,7 +1049,7 @@ theorem toInt_suffix:
             and y="toNat(drop (length bs - n) bs)" 
             and n=n and k="length bs" in must_be_high_generic, auto)
   apply (simp add: field_simps,
-         simp only: zpower_int convert_to_nat zadd_int int_int_eq 
+         simp only: of_nat_power[symmetric] int_mult[symmetric] convert_to_nat zadd_int int_int_eq 
                     zless_int zle_int)
   apply (simp add: mult_Suc_right [symmetric] power_add [symmetric])
 done
@@ -1064,7 +1063,7 @@ theorem div_le_dividend_rule:
   done
 
 theorem zdiv_le_dividend:
-  "\<lbrakk> m \<ge> 0 ; n > 0\<rbrakk> \<Longrightarrow> (m\<Colon>int) div n \<le> m"
+  "\<lbrakk> m \<ge> 0 ; n > 0\<rbrakk> \<Longrightarrow> (m::int) div n \<le> m"
   apply(cut_tac a=m and b'=1 and b=n in Divides.zdiv_mono2)
   apply(force, force, force)
   apply(simp)
@@ -1077,25 +1076,19 @@ theorem zdiv_le_dividend_rule:
   apply(arith)
   done
 
-
 theorem div_ge_0_chained [simp]:
   "\<lbrakk> (k::int) \<le> 0 ; x \<ge> 0 ; y\<ge>0\<rbrakk> \<Longrightarrow> k \<le> (x div y)"
   apply(cut_tac x=x and y=y in Divides.transfer_nat_int_function_closures(1))
   apply(simp_all)
   done
 
-
 theorem divT_is_div_if_non_neg:
   "\<lbrakk>(j::int) > 0; i \<ge> 0\<rbrakk> \<Longrightarrow> i divT j = i div j"
   by (auto simp add: divT_def abs_if not_less_iff_gr_or_eq)
 
-
-
 end-proof
   
   
-
-
 
 (***************************** Proofs start here ******************************)
 

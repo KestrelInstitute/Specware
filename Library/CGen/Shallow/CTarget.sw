@@ -2814,7 +2814,7 @@ theorem sint1_not_sint0 [simp]:
   "\<not> C__sint1 = C__sint0"
 apply(simp add: C__sintOfBool_def C__boolOfSint_def C__sint1_def C__sint0_def)
   apply(auto)
-  apply(cut_tac x="C__sintOfMathInt (1\<Colon>int)" and y="C__sintOfMathInt (0\<Colon>int)" in C__mathIntOfSint_injective)
+  apply(cut_tac x="C__sintOfMathInt (1::int)" and y="C__sintOfMathInt (0::int)" in C__mathIntOfSint_injective)
   apply(force)
   apply(force)
   apply(cut_tac i=1 in C__mathIntOfSint_sintOfMathInt, force)
@@ -4474,28 +4474,28 @@ end-proof
 proof isa C__scharOfSshort_bit
   apply(simp add: Conversions2 Conversions3)
   apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
-  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+  apply(cut_tac x="List__suffix (bs, 8::nat)" 
         in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__scharOfSint_bit
   apply(simp add: Conversions2 Conversions3)
   apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
-  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+  apply(cut_tac x="List__suffix (bs, 8::nat)" 
         in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__scharOfSlong_bit
   apply(simp add: Conversions2 Conversions3)
   apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
-  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+  apply(cut_tac x="List__suffix (bs, 8::nat)" 
         in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__scharOfSllong_bit
   apply(simp add: Conversions2 Conversions3)
   apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
-  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+  apply(cut_tac x="List__suffix (bs, 8::nat)" 
         in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
@@ -4916,7 +4916,7 @@ end-proof
 proof isa C__boolOfSint_sintOfBool
   apply(simp add: C__sintOfBool_def C__boolOfSint_def C__sint1_def C__sint0_def)
   apply(auto)
-  apply(cut_tac x="C__sintOfMathInt (1\<Colon>int)" and y="C__sintOfMathInt (0\<Colon>int)" in C__mathIntOfSint_injective)
+  apply(cut_tac x="C__sintOfMathInt (1::int)" and y="C__sintOfMathInt (0::int)" in C__mathIntOfSint_injective)
   apply(force)
   apply(force)
   apply(cut_tac i=1 in C__mathIntOfSint_sintOfMathInt, force)

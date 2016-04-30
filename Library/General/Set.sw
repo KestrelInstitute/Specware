@@ -314,12 +314,12 @@ lemma finite_stp_nat_seg:
    fix P__a s
    assume " \_exists(f::nat \_Rightarrow 'a) n::nat.
          Fun_PR P__a f \_and
-         ( \_forall  x\_Colon'a.
+         ( \_forall  x::'a.
              P__a x \_longrightarrow
              (x \_in s) =
              (\_exists i<n. f i = x))"
    thus "\_exists(f::nat \_Rightarrow 'a) n::nat.
-          \_forall x\_Colon'a.
+          \_forall x::'a.
             P__a x \_longrightarrow
             (x \_in s) = (\_exists i<n. f i = x)" by auto
   qed
@@ -784,7 +784,7 @@ proof Isa Thy_Morphism Set
   Set.\/ -> \<union> Left 65 
   Set.\\// -> \<Union>
   Set.-- -> - Left 65
-  Set.* -> <*> Left 67
+  Set.* -> \<times> Left 67
   Set.map   -> image
   Set.power -> Pow
   Set.empty -> {}

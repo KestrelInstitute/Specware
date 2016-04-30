@@ -73,7 +73,7 @@ axiomatization where TwosComplement__toInt_subtype_constr:
 lemma TwosComplement__negative_p_iff_less_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
   \<Longrightarrow> TwosComplement__negative_p bs = (TwosComplement__toInt bs < 0)"
-  by (auto simp add: TwosComplement__toInt_def fun_Compl_def bool_Compl_def
+  by (auto simp add: TwosComplement__toInt_def fun_Compl_def
                    TwosComplement__nonNegative_p_def setToPred_def) 
 
 lemma TwosComplement__nonNegative_p_iff_ge_0:
@@ -81,28 +81,28 @@ lemma TwosComplement__nonNegative_p_iff_ge_0:
   \<Longrightarrow> 
   TwosComplement__nonNegative_p bs = (TwosComplement__toInt bs \<ge> 0)"
  by (simp add: TwosComplement__nonNegative_p_def fun_Compl_def setToPred_def
-               TwosComplement__negative_p_iff_less_0 bool_Compl_def not_less)
+               TwosComplement__negative_p_iff_less_0 not_less)
 
 lemma TwosComplement__zero_p_iff_eq_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
   \<Longrightarrow>  
   TwosComplement__zero_p bs = (TwosComplement__toInt bs = 0)"
-  apply (auto simp add: TwosComplement__toInt_def fun_Compl_def 
-                        TwosComplement__nonNegative_p_def bool_Compl_def 
+  apply (auto simp add: TwosComplement__toInt_def
+                        TwosComplement__nonNegative_p_def
                         TwosComplement__negative_p_def TwosComplement__sign_def
                         TwosComplement__zero_p_def 
                         Bits__toNat_zero [symmetric]
                         list_all_iff member_def setToPred_def)
   apply (drule_tac x="hd bs" in bspec, erule hd_in_set, simp)
-  apply (cut_tac bs=bs in Bits__toNat_bound, 
-         simp_all add: zless_power_convert_1 [symmetric])
+  apply (cut_tac bs=bs in Bits__toNat_bound, blast)
+  apply (metis Integer__e_ast_ast_ast__def convert_to_nat_2 nat_int nat_neq_iff)
 done
 
 lemma TwosComplement__nonZero_p_iff_neq_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
   \<Longrightarrow> 
   TwosComplement__nonZero_p bs = (TwosComplement__toInt bs \<noteq> 0)"
-  by (simp add: TwosComplement__nonZero_p_def fun_Compl_def bool_Compl_def
+  by (simp add: TwosComplement__nonZero_p_def fun_Compl_def
                 TwosComplement__zero_p_iff_eq_0 setToPred_def)  
 
 lemma TwosComplement__positive_p_alt_def: 
@@ -126,15 +126,15 @@ lemma TwosComplement__nonPositive_p_iff_le_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
   \<Longrightarrow> 
   TwosComplement__nonPositive_p bs = (TwosComplement__toInt bs \<le> 0)" 
-  by (simp add: TwosComplement__nonPositive_p_def fun_Compl_def bool_Compl_def
+  by (simp add: TwosComplement__nonPositive_p_def fun_Compl_def
                 TwosComplement__positive_p_iff_greater_0 not_less setToPred_def)
 
 lemma TwosComplement__toInt_inject [simp]:
  "\<lbrakk>x\<noteq>[]; length x = length y\<rbrakk>
   \<Longrightarrow> (TwosComplement__toInt x = TwosComplement__toInt y) = (x = y)"
  apply (subgoal_tac "y\<noteq>[]", auto simp add: TwosComplement__toInt_def)
- apply (simp_all only: convert_to_nat_2 zpower_int zadd_int int_int_eq)
- apply (cut_tac bs=x in Bits__toNat_bound, simp_all)
+ apply (simp_all only: convert_to_nat_2 zadd_int int_int_eq)
+ apply (metis Bits_bound_neg convert_to_nat_2 length_greater_0_conv of_nat_less_0_iff)
 done
 
 lemma TwosComplement__toInt_inject_rule:
@@ -155,7 +155,7 @@ lemma TwosComplement__sign_extension_aux:
                          List__extendLeft_def
                          Bits__extendLeft_toNat_B0
                          algebra_simps)
-   apply (simp only: convert_to_nat_2 zpower_int zadd_int int_int_eq,
+   apply (simp only: convert_to_nat_2 zadd_int int_int_eq of_nat_power[symmetric],
           simp add: Bits__extendLeft_toNat_B1 [symmetric])
 done
 (*************************************************************************)
@@ -297,11 +297,10 @@ lemmas TwosComplementInt =
                    TwosComplement__toInt_def 
                    TwosComplement__nonNegative_p_def 
                    TwosComplement__negative_p_def 
-                   fun_Compl_def bool_Compl_def 
+                   fun_Compl_def
                    TwosComplement__sign_def
                  
-lemmas TwosComplement_tcN =  
-                   TwosComplement__toInt_tcNumber_reduce 
+lemmas TwosComplement_tcN =
                    TwosComplement__rangeForLength_def 
                    TwosComplement__minForLength_def 
                    TwosComplement__maxForLength_def
@@ -332,9 +331,7 @@ lemma TwosComplement__minTCNumber_exists_orig:
   "\<exists>a.  a \<noteq> [] \<and> TwosComplement__toInt a = i \<and>
                (\<forall>y. (y \<noteq> [] \<and> TwosComplement__toInt y = i) \<longrightarrow> length a \<le> length y)"
    by (rule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in exI,
-       clarsimp simp add: TwosComplement__toInt_tcNumber_reduce 
-                          TwosComplement_tcN zld_props
-                          TwosComplement__toInt_length1)
+       clarsimp simp add: TwosComplement_tcN zld_props TwosComplement__toInt_length1)
 
 (******************************************************************************
 The translation of TwosComplement__minTCNumber misses the critical information
@@ -486,7 +483,7 @@ op shiftRightUnsigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
 
 proof Isa nonNegative_p_alt_def
  by (auto simp add: TwosComplement__nonNegative_p_def fun_Compl_def 
-                  TwosComplement__negative_p_def bool_Compl_def
+                  TwosComplement__negative_p_def
                   TwosComplement__sign_def  setToPred_def)
 end-proof
 
@@ -496,10 +493,9 @@ end-proof
 
 proof Isa twos_complement_of_negative
   apply (simp add: TwosComplement__toInt_def fun_Compl_def
-                   TwosComplement__nonNegative_p_def bool_Compl_def
+                   TwosComplement__nonNegative_p_def
                    algebra_simps setToPred_def)
-  apply (drule Bits__toNat_complement_sum, simp, 
-         simp only: convert_to_nat zpower_int)
+using Bits__toNat_complement_sum by auto
 end-proof
 
 
@@ -511,9 +507,9 @@ proof Isa integer_range [simp]
                        TwosComplement__nonNegative_p_alt_def 
                        TwosComplement__sign_def neq_Nil_conv)
  apply (case_tac "ys = []", simp_all)
- apply (case_tac "ys = []", simp_all, simp only: convert_to_nat zpower_int)
+ apply (case_tac "ys = []", simp_all, simp only: convert_to_nat of_nat_power[symmetric])
  apply (case_tac "ys = []", simp_all, 
-        frule Bits__toNat_bound2, simp only: convert_to_nat zpower_int)
+        frule Bits__toNat_bound2, simp only: convert_to_nat of_nat_power[symmetric])
 end-proof
 
 proof Isa zero_is_zero
@@ -541,7 +537,7 @@ proof Isa tcNumber_Obligation_the
                   TwosComplement__minForLength_def 
                   TwosComplement__maxForLength_def
                   TwosComplement__nonNegative_p_def fun_Compl_def 
-                  TwosComplement__negative_p_def    bool_Compl_def
+                  TwosComplement__negative_p_def
                   TwosComplement__sign_def setToPred_def,
         clarify)
  apply (cases "len = 1", simp_all)
@@ -571,7 +567,6 @@ proof Isa tcNumber_Obligation_the
  apply (simp add:  power2_nat One_nat_def power_sub_1_eq_int)
  (* 4b *)
  apply (case_tac "hd x", simp_all, clarsimp, simp add: neq_Nil_conv, clarsimp)
- apply (simp only: convert_to_nat zpower_int, simp)
 end-proof
 
 proof Isa minTCNumber_Obligation_subtype
@@ -580,18 +575,14 @@ proof Isa minTCNumber_Obligation_subtype
                     Integer__minimizes_p__stp_def  conj_imp,
           auto simp add: set_eq_iff)
    apply (rule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in exI,
-          clarsimp simp add: TwosComplement__toInt_tcNumber_reduce 
-                             TwosComplement_tcN zld_props            )
+          clarsimp simp add: TwosComplement_tcN zld_props            )
    apply (rule iffI, erule conjE, erule conjE)
    apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
-          simp add: TwosComplement__toInt_tcNumber_reduce 
-                    TwosComplement_tcN zld_props)
+          simp add: TwosComplement_tcN zld_props)
    apply (simp add: TwosComplement__tcNumber_inverse_fwd 
                     TwosComplement__toInt_length1 eq_iff)
-   apply (auto simp add: TwosComplement__toInt_tcNumber_reduce 
-                    TwosComplement__tcNumber_length
-                    TwosComplement_tcN zld_props 
-                    TwosComplement__toInt_length1)
+   apply (auto simp add: TwosComplement_tcN zld_props 
+                         TwosComplement__toInt_length1)
 end-proof
 
 proof Isa length_of_minTCNumber
@@ -616,8 +607,7 @@ lemma TwosComplement__length_of_minTCNumber_is_zld:
   apply (frule_tac i=i in  TwosComplement__toInt_length1, auto)
   apply (drule_tac x=x in spec, simp)
   apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
-         simp add: TwosComplement__toInt_tcNumber_reduce 
-                   TwosComplement_tcN zld_props)
+         simp add: TwosComplement_tcN zld_props)
 end-proof
 
 proof Isa divT_Obligation_subtype
@@ -701,8 +691,8 @@ lemma TwosComplement__rangeForLength_1 [simp]:
 
 lemma TwosComplement__toInt_nat:
   "\<lbrakk>0 < length a; TwosComplement__toInt a = int i\<rbrakk>  \<Longrightarrow> toNat a = i"
-   by (simp add: TwosComplementInt algebra_simps split: split_if_asm,
-       cut_tac bs=a in Bits__toNat_bound, simp_all add: int_power_simp)
+   by (metis Bits__inverse_bits_toNat_Obligation_subtype0 TwosComplement__toInt_def int_less_not_pos_pow
+             length_greater_0_conv transfer_int_nat_relations(1))
 
 lemma TwosComplement__toInt_pos:
   "\<lbrakk>0 < length a; TwosComplement__toInt a = i; i \<ge> 0\<rbrakk> 
@@ -717,9 +707,7 @@ lemma TwosComplement__toInt_neg:
 
 lemma TwosComplement__toInt_hd_0:
   "\<lbrakk>0 < length a; TwosComplement__toInt a \<ge> 0\<rbrakk> \<Longrightarrow> hd a = B0"
-   by (simp add: TwosComplementInt setToPred_def 
-                 power2_int algebra_simps not_less [symmetric]
-          split: split_if_asm)
+   using TwosComplement__nonNegative_p_alt_def TwosComplement__nonNegative_p_iff_ge_0 TwosComplement__sign_def by auto
 
 lemma TwosComplement__toInt_hd_1:
   "\<lbrakk>0 < length a; TwosComplement__toInt a < 0\<rbrakk> \<Longrightarrow> hd a = B1"
@@ -739,8 +727,9 @@ lemma TwosComplement__toInt_induct_pos [simp]:
 lemma TwosComplement__toInt_induct_neg [simp]:
   "\<lbrakk>bs\<noteq>[]; TwosComplement__toInt bs < 0\<rbrakk> \<Longrightarrow>
     TwosComplement__toInt (B1 # bs) = TwosComplement__toInt bs"
-  by (simp add: TwosComplementInt not_less [symmetric] power2_int setToPred_def 
-          split: split_if_asm )
+  by (metis List__length_empty TwosComplement__minTCNumber_exists diff_zero int_le_0_conv int_nat_eq
+            length_greater_0_conv less_eq_int_code(1) not_gr0 not_less not_less_iff_gr_or_eq of_nat_less_0_iff
+            of_nat_less_iff zero_less_diff)
 
 lemma TwosComplement__toInt_neg_range:
   "\<lbrakk>bs\<noteq>[]; 
@@ -859,7 +848,7 @@ lemma TwosComplement_extendLeft_tcInt_neg_aux:
     \<Longrightarrow> \<forall>bs2. length bs2 = length bs1 + k \<and> TwosComplement__toInt bs2 = i \<longrightarrow> 
               bs2 =  replicate k B1 @ bs1"
    apply (induct k, clarsimp simp add: Bits__nonempty_eqlength,  
-          clarsimp simp add: add_Suc_right length_Suc_conv)
+          clarsimp simp add: length_Suc_conv)
    apply (cut_tac a="y#ys" in TwosComplement__toInt_hd_1, simp_all)
    apply (drule_tac x=ys in spec, simp, erule mp)
    apply (cut_tac bs=ys and len ="length bs1" in 
@@ -887,7 +876,7 @@ lemma TwosComplement__extendLeft_to_len_neg_aux:
               \<longrightarrow> bs = replicate k B1 @ toBits (i, len)"
    apply (induct k,
           clarsimp, simp only: length_greater_0_iff Bits__inverse_bits_toNat,
-          clarsimp simp add: add_Suc_right length_Suc_conv)
+          clarsimp simp add: length_Suc_conv)
    apply (cut_tac bs="y#ys" in Bits__toNat_hd_1, simp_all)
    apply (simp add: mult_2 add.assoc [symmetric],
           rule le_add_diff, rule_tac j="2 ^ (len + k)" in le_trans, simp_all)   
@@ -949,9 +938,7 @@ done
 lemma TwosComplement_mod_pos:
   "\<lbrakk>0<len; len\<le> length bits; TwosComplement__toInt bits = i; 0 \<le> i\<rbrakk>
    \<Longrightarrow> toBits (nat (i mod 2^len), len) = List__suffix (bits, len)"
-  apply (cut_tac TwosComplement__toInt_pos, simp_all)
-  apply (frule_tac toBits_mod, simp_all add: nat_mod_distrib power2_int)
-done
+  using TwosComplement__toInt_pos nat_mod_distrib power2_nat toBits_mod by auto
 
 lemma TwosComplement_mod_neg:
   "\<lbrakk>0<len; len\<le> length bits; TwosComplement__toInt bits = i; i < 0\<rbrakk>

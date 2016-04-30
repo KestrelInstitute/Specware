@@ -386,7 +386,7 @@ proof isa -verbatim
 theorem pair_lemma:
   "(fst p, snd p) = p"
   apply(auto simp add: fst_def snd_def)
-  by (metis PairE Product_Type.prod.simps(2))
+  by (metis fst_def prod.collapse snd_def)
 end-proof
 
   theorem Pair2S_delete is
@@ -1222,7 +1222,7 @@ end-proof
 
 proof isa L2B_delete1
   apply(induct lst arbitrary: y)
-  apply(simp add: delete1_of_empty Bag__delete_of_empty L2B_Nil_alt)
+  apply(simp add: Bag__delete_of_empty L2B_Nil_alt)
   apply(auto simp add: L2B_Cons)
   (* TODO: prove rule about delete of insert *)
   apply(rule Bag__occurrences)
@@ -1453,7 +1453,7 @@ proof isa Pair2S_delete
   apply(simp only: upto_def)
   apply(simp del: upto_loop.simps)
   apply(case_tac "(fst p) \<ge> (snd p)")
-  apply (metis Pair2S_def Pair2S_empty Set__empty_set  Set__set_delete_no_op  StructuredTypes.upto_def internal_split_def le_SucI not_less_eq_eq order_refl order_trans split_eta surjective_pairing upto_loop_base_case)
+  apply (simp add: Set__delete_of_empty prod.case_eq_if)
   apply(case_tac p)
   apply(simp del: upto_loop.simps add: upto_loop_opener delete_of_upto_loop_smaller Set__distribute_set_delete_over_set_insert Set__delete_of_empty)
 end-proof
@@ -1519,9 +1519,9 @@ end-proof
 
 proof Isa e_at_at_of_empty
 proof -
- have "\<not> i < length ([]\<Colon>'a list)"
+ have "\<not> i < length ([]::'a list)"
    by auto
- thus "([]\<Colon>'a list) @@ i = None"
+ thus "([]::'a list) @@ i = None"
    by (metis (full_types) List__e_at_at_def list_1_Isa_nth)
 qed
 end-proof
@@ -1605,7 +1605,7 @@ theorem uptoL_loop_move_accumulator_helper:
   "\<forall> ns . uptoL_loop(i, j, ns) = uptoL_loop(i, j, []) @ ns"
   apply(cut_tac P="\<lambda> (i, j, ns) . \<forall> ns . uptoL_loop(i, j, ns) = uptoL_loop(i, j, []) @ ns" and x="(i,j,[])" in uptoL_loop_induct_good)
   defer
-  apply (metis (lifting, mono_tags) splitD)
+  apply blast
   apply(auto simp  del: uptoL_loop.simps)
   apply(case_tac " i < j")
   defer
@@ -1621,7 +1621,7 @@ theorem upto_loop_move_accumulator_helper:
   thm upto_loop_induct_good
   apply(cut_tac P="\<lambda> (i, j, ns) . \<forall> ns . upto_loop(i, j, ns) = (upto_loop(i, j, Set__empty_set) \\/ ns)" and x="(i,j,Set__empty_set)" in upto_loop_induct_good)
   defer
-  apply (metis (lifting, mono_tags) splitD)
+  apply blast
   apply(auto simp  del: upto_loop.simps)
   apply(case_tac " i < j")
   defer

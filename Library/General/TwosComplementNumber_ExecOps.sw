@@ -43,7 +43,7 @@ proof Isa minTCNumber__1_Obligation_subtype2
                     int_1 [symmetric] nat_int,
          auto simp add: Bits__minBits_def)
   apply (thin_tac _, thin_tac _)
-  apply (simp only: convert_to_nat_2 zpower_int int_1 [symmetric]
+  apply (simp only: convert_to_nat_2 int_1 [symmetric]
                     algebra_simps zadd_int zle_int add_0 
                     semiring_numeral_div_class.discrete [symmetric])
   (** we lack a few lemmas about Integer__toMinBigEndian ***)  
@@ -64,7 +64,7 @@ proof Isa minTCNumber__1__obligation_refine_def
   (***** 2.1 ***)
   apply (cut_tac k=i in zero_le_imp_eq_int, auto)
   apply (simp add: TwosComplementInt Bits__minBits_def)
-  apply (simp add: Bits__toNat_induct Integer__toMinBigEndian_nonnil)
+  apply (simp add: Integer__toMinBigEndian_nonnil)
   apply (simp add: Integer__toMinBigEndian_def LeastM_def,
          rule someI2_ex, auto simp add: Integer__toMinBigEndian_exists)
   apply (simp add: toNat_def)
@@ -98,8 +98,7 @@ proof Isa tcNumber__1__obligation_refine_def
                    TwosComplement__signExtend_def
                    TwosComplement__sign_def)
   apply (case_tac "len = length (TwosComplement__minTCNumber i)", simp)
-  apply (subst TwosComplement__minTCNumber_toInt [symmetric],
-         simp add: TwosComplement__tcNumber_toInt_reduce)
+  apply (subst TwosComplement__minTCNumber_toInt [symmetric], simp)
   apply (rule TwosComplement__tcN_TC_extend, simp_all)
   apply (simp add: TwosComplement__minTCNumber_nonEmpty)
   apply (frule TwosComplement__length_of_minTCNumber, simp, arith)

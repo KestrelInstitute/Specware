@@ -19,7 +19,7 @@ from http://emacsformacosx.com)
 
 Optional: For proof support, install the Isabelle/HOL theorem prover
 (available from http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  The
-required version of Isabelle is Isabelle2015.  Older versions of
+required version of Isabelle is Isabelle2016.  Older versions of
 Isabelle will not work.
 
 If this is a source code version of Specware, you will need to build
@@ -42,7 +42,7 @@ You may need to set an Isabelle environment variable so that Isabelle
 understands references to $SPECWARE4.  You can put something like this line:
 export SPECWARE4=$HOME/Specware 
 into the file:
-~/.isabelle/Isabelle2015/etc/settings
+~/.isabelle/Isabelle2016/etc/settings
 in your home directory.
 
 Aquamacs can also be used by setting the environment variable SPECWARE_EMACS. 

@@ -747,8 +747,8 @@ op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)
    let fun_defs = flatten (intersperse " " []) in
    let unfold_ids = flatten (intersperse " " (map (fn q -> mainId q ^ "_def") unfolds)) in
    let smtcall = case smtArgs of
-                  | [] -> "fastforce"  % "smt2"
-                  | _ -> "fastforce"   % "(smt2 " ^ flatten (intersperse " " (map (fn q -> mainId q) smtArgs)) ^ ")"
+                  | [] -> "smt"  % "smt2"
+                  | _ -> "(smt " ^ flatten (intersperse " " (map (fn q -> mainId q) smtArgs)) ^ ")"
    in
    
 % indent ^ "proof -\n" ^

@@ -374,8 +374,8 @@ proof Isa foldable_p_Obligation_subtype2
  ** that will be defined later.
  ******************************************************************************)
 
-consts FMap__fromSet :: "('a \<times> 'b) Set__FiniteSet \<Rightarrow>  ('a, 'b)FMap__FMap"
-defs FMap__fromSet_def: 
+definition FMap__fromSet :: "('a \<times> 'b) Set__FiniteSet \<Rightarrow>  ('a, 'b)FMap__FMap"
+ where FMap__fromSet_def: 
   "FMap__fromSet s
      \<equiv> FMap__toFMap
           (Abs_Map__FiniteMap
@@ -387,8 +387,8 @@ defs FMap__fromSet_def:
                  else 
                    Some (the_elem yS)))"
 
-consts FMap__toSet :: " ('a, 'b)FMap__FMap \<Rightarrow> ('a \<times> 'b) Set__FiniteSet"
-defs FMap__toSet_def: 
+definition FMap__toSet :: " ('a, 'b)FMap__FMap \<Rightarrow> ('a \<times> 'b) Set__FiniteSet"
+ where FMap__toSet_def: 
   "FMap__toSet m
      \<equiv> Collect (\<lambda> ((x::'a), (y::'b)). 
              Map__maps_p (Rep_Map__FiniteMap (FMap__fromFMap m)) x y)"
@@ -567,9 +567,9 @@ done
      the real def via a small verbatim lemma
 ******************************************************************************)
 
-consts FMap__foldable_aux :: "'c \<times> ('c \<times> ('a \<times> 'b) \<Rightarrow> 'c) \<times>  ('a, 'b)FMap__FMap
+definition FMap__foldable_aux :: "'c \<times> ('c \<times> ('a \<times> 'b) \<Rightarrow> 'c) \<times>  ('a, 'b)FMap__FMap
                              \<Rightarrow> bool"
-defs FMap__foldable_aux_def: 
+ where FMap__foldable_aux_def: 
   "FMap__foldable_aux
      \<equiv> (\<lambda> ((c::'c), (f::'c \<times> ('a \<times> 'b) \<Rightarrow> 'c), (m:: ('a, 'b)FMap__FMap)). 
           \<forall>(x1::'a) (x2::'a) (z::'c). 

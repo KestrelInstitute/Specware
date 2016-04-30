@@ -989,7 +989,7 @@ theorem Map__TMApply_of_mapUpdateSet_helper:
   apply(auto)
   apply(cut_tac m=m and s=s and f=f in Map__domain_of_mapUpdateSet)
   apply(simp add: Map__mapUpdateSet_def)
-  apply (metis (lifting, no_types) Map__TMApply_over_update_2 Set__commutativity_of_union Set__distribute_union_over_right_insert Set__set_insert_does_nothing Set__set_insertion)
+  apply (metis (lifting, no_types) Map__TMApply_over_update_2 Set__distribute_union_over_right_insert Set__set_insert_does_nothing Set__set_insertion)
 done
 end-proof
 
@@ -1007,7 +1007,7 @@ theorem Map__mapFrom_TMApply_helper:
   apply(metis Map__foldable_p_of_update_3)
   apply(simp)
   apply(simp)
-  apply(metis Map__TMApply_of_update_same Map__TMApply_over_update2 Map__domain_of_mapFrom Map__mapFrom_def Set__set_insert_new_def Set__set_insertion internal_split_def prod.inject split_eta)
+  apply(metis Map__TMApply_of_update_same Map__TMApply_over_update_2 Map__domain_of_mapFrom Map__mapFrom_def Set__set_insertion)
 done
 end-proof
 
@@ -1042,7 +1042,7 @@ proof isa domain_of_mapFrom
   apply(case_tac "x in? s")
   apply(simp add: Set__set_insert_does_nothing)
   apply(cut_tac c="Map__empty_map" and f="(\<lambda>a. case a of (m, x) \<Rightarrow> Map__update m x (g x))" and x=x and s=s in Set__set_fold2)
-  apply (metis (no_types) Map__domain_of_empty Map__foldable_p_of_update_3 Set__set_fold1)
+  apply (metis (no_types) Map__foldable_p_of_update_3)
   apply(simp)
   apply(simp add: Map__domain_update2)
 end-proof

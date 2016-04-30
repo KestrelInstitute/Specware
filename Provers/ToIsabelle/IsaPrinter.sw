@@ -1465,7 +1465,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = addRefineObligations c spc in
     % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
-    % let _ = writeLine("2:\n"^printSpec spc) in
+    % let _ = writeLine("2:\n"^printSpecFlat spc) in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
@@ -1480,12 +1480,13 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                 c.thy_name)
 	       else spc
     in
-    % let _ = writeLine("4:\n"^printSpec spc) in
+    % let _ = writeLine("4:\n"^printSpecFlat spc) in
     let spc = explicateEmbeds spc in
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
+    % let _ = writeLine("9:\n"^printSpecFlat spc) in
     let spc = emptyTypesToSubtypes spc in
-    % GK: There is a problem using relativizeQuantifiers when printing
+     % GK: There is a problem using relativizeQuantifiers when printing
     % proofs in 'addRefinementProofs'. Apparently something between
     % 'addRefineObligations' and 'addRefinementProofs' is added to the
     % spec, and  is needed. So, we update the context with the spec after
@@ -2836,32 +2837,36 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
     then
       ppFunctionDef c aliases term ty opt_prag fixity
   else
-  let decl_list = 
-        if decl?
-          then [[prString(if def? then "definition " else "consts "),
-                %ppTyVars tvs,
-                ppIdInfo aliases,
-                prString " :: \"",
-                (case fixity of
-                  | Infix(assoc, prec) -> ppInfixType c ty   % Infix operators are curried in Isa
-                  | _ -> ppType c TyTop true ty),
-                prString "\""]
-             ++ (case fixity of
-                   | Infix(assoc,prec) ->
-                     [prString "\t(",
-                      case assoc of
-                        | Left  -> prString "infixl \""
-                        | Right -> prString "infixr \"",
-                      ppInfixDefId (mainId),
-                      prString "\" ",
-                      prString (show prec),
-                      prString ")"]
-                   | _ -> [])]
-           else []
+  let decl = 
+        [prString(if def? then "definition " else "consts "),
+          %ppTyVars tvs,
+          ppIdInfo aliases,
+          prString " :: \"",
+          (case fixity of
+             | Infix(assoc, prec) -> ppInfixType c ty   % Infix operators are curried in Isa
+             | _ -> ppType c TyTop true ty),
+          prString "\""]
+         ++ (case fixity of
+               | Infix(assoc,prec) ->
+                 [prString "\t(",
+                  case assoc of
+                    | Left  -> prString "infixl \""
+                    | Right -> prString "infixr \"",
+                  ppInfixDefId (mainId),
+                  prString "\" ",
+                  prString (show prec),
+                  prString ")"]
+               | _ -> [])
   in
   let infix? = case fixity of Infix _ -> true | _ -> false in
-  let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity decl?]] else []
-  in prLinesCat 0 (decl_list ++ def_list)
+  let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity]] else [] in
+  let decl_def = decl :: def_list in
+  prLinesCat 0 (if decl? then decl_def
+                 else [[],
+                       [prString "overloading ", ppQualifiedId mainId, lengthString(3," \\<equiv> "), ppQualifiedId mainId],
+                       [prString "begin"]]
+                     ++ decl_def
+                     ++ [[prString "end"], []])
 
  op ensureNotCurried(lhs: MSTerm, rhs: MSTerm): MSTerm * MSTerm =
    case lhs of
@@ -2870,7 +2875,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
      | _ -> (lhs, rhs)
 
  def ppDef (c: Context) (op_nm: QualifiedId) (ty: MSType) (opt_prag: Option Pragma) (body: MSTerm)
-           (fixity: Fixity) (decl?: Bool): Pretty =
+           (fixity: Fixity): Pretty =
    let recursive? = containsRefToOp?(body, op_nm) in
    let op_tm = mkFun (Op (op_nm, fixity), ty) in
    let infix? = case fixity of Infix _ -> true | _ -> false in
@@ -2902,28 +2907,15 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            let (lhs,rhs) = if tuple? then addExplicitTyping2(c,op_tm,body)
                             else (lhs,rhs)
            in
-           if decl?
-             then
-               prBreakCat 2 [[prString "where"]
-                               ++(case findBracketAnnotation opt_prag of
-                                    | Some anot -> [prConcat[prSpace,prString(specwareToIsaString anot), prString ": "]]
-                                    | None -> [prSpace]),
-                             [%prString "   ",
-                              prBreakCat 2 [[prString "\"",
-                                             ppTerm c (Infix(Left,20)) lhs],
-                                            [lengthString(3," \\<equiv> "),
-                                             ppTerm c (Infix(Right,20)) rhs,
-                                             prString "\""]]]]
-           else
-             prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
-                          case findBracketAnnotation opt_prag of
-                            | Some anot -> prConcat[prSpace,prString(specwareToIsaString anot)]
-                            | None -> prEmpty,
-                          prString ": "],
-                         [prBreakCat 2 [[prString "\"",
-                                         ppTerm c (Infix(Left,200)) lhs],
+           prBreakCat 2 [[prString "where"]
+                           ++(case findBracketAnnotation opt_prag of
+                                | Some anot -> [prConcat[prSpace,prString(specwareToIsaString anot), prString ": "]]
+                                | None -> [prSpace]),
+                         [%prString "   ",
+                          prBreakCat 2 [[prString "\"",
+                                         ppTerm c (Infix(Left,20)) lhs],
                                         [lengthString(3," \\<equiv> "),
-                                         ppTerm c (Infix(Right,200)) rhs,
+                                         ppTerm c (Infix(Right,20)) rhs,
                                          prString "\""]]]]
      | (cases,false) ->
        prBreak 2 [prString "primrec ",

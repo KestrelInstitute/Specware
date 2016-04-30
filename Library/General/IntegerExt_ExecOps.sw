@@ -284,7 +284,7 @@ proof Isa primeFactorsOf__1__loop ()
   by auto
 termination
  by (relation "measure (\<lambda>(pf,n,af). n + size pf)", auto,
-     rule div_less_dividend, auto simp add: list_all_iff)
+     rule div_less_dividend, auto simp add: list_all_iff prime_gt_1_nat)
 end-proof
 
 proof Isa primeFactorsOf__1__obligation_refine_def

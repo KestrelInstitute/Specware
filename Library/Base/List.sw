@@ -3423,7 +3423,7 @@ proof -
  with int_eq_iff `zk \<ge> 0` have "int k = zk" by auto
  with MUL have "int (length l) = int k * int n" by auto
  hence "int (length l) = int (k * n)" by (auto simp: int_mult)
- hence "length l = k * n" by auto
+ hence "length l = k * n" using int_int_eq by blast
  with `n > 0` have "length l div n = k" by auto
  with LEM
   have "foldl' (\<lambda>(x,y). x + y) 0 (replicate (length l div n) n) = k * n"
@@ -5538,12 +5538,12 @@ done
 lemma List__unzip_as_zip [simp]:
   "\<lbrakk>List__unzip l = (l1,l2)\<rbrakk> \<Longrightarrow>  l = (zip l1 l2)"
   apply (simp add: List__unzip_def del: List__equiLong_def)
-  apply (rule_tac t="zip l1 l2" and s="split zip (l1,l2)" in subst, simp)
+  apply (rule subst[of "case_prod zip (l1,l2)" "zip l1 l2"], simp)
   apply (drule sym, erule ssubst)
   apply (cut_tac List__unzip_Obligation_subtype,
          simp only: TRUE_def Function__bijective_p__stp_univ)
   apply (subst Function__inverse__stp_simp, auto)
-  apply (cut_tac y=l and f="split zip" and A="{(x, y). x equiLong y}" 
+  apply (cut_tac y=l and f="case_prod zip" and A="{(x, y). x equiLong y}" 
              and B=UNIV in surj_on_f_inv_on_f)
   apply (simp_all add: bij_on_def del: List__equiLong_def)
 done

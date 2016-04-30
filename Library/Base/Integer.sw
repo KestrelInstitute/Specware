@@ -764,8 +764,8 @@ op mod (i:Nat, j:PosNat) infixl 26 : Nat = i modE j
 
 % ---------------------- we need exponentiation specifically on Nat ----------
 proof Isa -verbatim
-consts npower :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "\<up>" 80)
-defs   npower_def [simp]: "x \<up> y \<equiv> x ^ y"
+definition npower :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "\<up>" 80)
+  where  npower_def [simp]: "x \<up> y \<equiv> x ^ y"
 end-proof
 % ----------------------------------------------------------------------------
 
@@ -1211,7 +1211,7 @@ proof Isa divides_iff_modE_0
 end-proof
 
 proof Isa divE_equals_divT_on_naturals
-  by (simp add: divE_def divT_def sign_def int_mult [symmetric])
+  by (simp add: divT_pos)
 end-proof
 
 proof Isa  divE_equals_divF_on_naturals
@@ -1235,7 +1235,7 @@ proof Isa e_ast_ast__def1
 end-proof
 
 proof Isa e_ast_ast_ast__def
-  by (simp add: zpower_int)
+  by (simp add: nat_power_eq)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -1261,8 +1261,8 @@ theorem ld_Obligation_the:
  apply (metis Suc_leI Suc_lessD le_neq_implies_less)
  by (metis One_nat_def Suc_leI antisym lessI less_le_trans numeral_2_eq_2 order.not_eq_order_implies_strict power_strict_increasing_iff)
 
-consts ld :: "nat \<times> Nat__PosNat \<Rightarrow> nat"
-defs ld_def: "ld \<equiv> (\<lambda> ((x::nat), (base::Nat__PosNat)). Least (\<lambda>n. x< base ^ n))"
+definition ld :: "nat \<times> Nat__PosNat \<Rightarrow> nat"
+  where ld_def: "ld \<equiv> (\<lambda> ((x::nat), (base::Nat__PosNat)). Least (\<lambda>n. x< base ^ n))"
 
 theorem ld_positive:
   "\<lbrakk>2 \<le> base; 0 < x\<rbrakk> \<Longrightarrow> 0 < ld (x, base)"
@@ -1303,16 +1303,14 @@ lemma zld_pos2:          "\<lbrakk>i < -1\<rbrakk> \<Longrightarrow> 0 < zld i"
 lemma zld_positive:  "\<lbrakk>0 \<noteq> i;-1\<noteq>i\<rbrakk> \<Longrightarrow> 0 < zld i"
   by (auto simp add:  zld_def ld_positive)
 
-lemma zld_power_pos [simp]: "0 < (2::int) ^ zld i"
-  by (auto simp add:  zld_def ld_positive)
-
 lemma zld_upper:    "i < 2 ^ zld i"
   by (cases "i \<ge> 0", auto simp add:  not_le less_trans,
       cut_tac x="nat i" and base=2 in ld_mono, simp, simp add: zld_def)
 
 lemma zld_at_least_pos:   "\<lbrakk>0 < i\<rbrakk> \<Longrightarrow> i \<ge> 2 ^ (zld i - 1)"
   by (cut_tac x="nat i" and base=2 in ld_mono2, auto simp add: zld_def,
-      simp only: convert_to_nat_2 zpower_int)
+      simp only: convert_to_nat_2 nat_power_eq,
+      simp add: le_nat_iff)
 
 lemma zld_lower:   "i \<ge> - (2 ^ zld i)"
   by (cases "i \<ge> 0", rule order_trans, auto,
@@ -1320,9 +1318,10 @@ lemma zld_lower:   "i \<ge> - (2 ^ zld i)"
 
 lemma zld_at_most_neg:   "\<lbrakk>i < -1\<rbrakk> \<Longrightarrow> i < -(2 ^ (zld i - 1))"
   by (cut_tac x="nat (-(i+1))" and base=2 in ld_mono2, auto simp add: zld_def,
-      simp only: convert_to_nat_2 zpower_int)
-          
-lemmas zld_props = zld_positive zld_power_pos
+      simp only: convert_to_nat_2 nat_power_eq,
+      simp add: le_nat_iff)
+
+lemmas zld_props = zld_positive
                    zld_upper zld_at_least_pos
                    zld_lower zld_at_most_neg
 end-proof

@@ -1043,7 +1043,7 @@ spec
                                            path_term, Eval, pf, autoTactic, spc))
                 | AbstractCommonExpressions ->
                   return (replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                           path_term, AbstractCommonExpressions, pf, StringTactic "smt2", spc))
+                                           path_term, AbstractCommonExpressions, pf, StringTactic "smt", spc))
                 | Simplify(rules, n) ->
                   let context = makeContext spc in
                   return (replaceSubTermH(rewritePT(spc, path_term, context, qid, rules),

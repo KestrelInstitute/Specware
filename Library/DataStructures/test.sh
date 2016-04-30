@@ -1,13 +1,13 @@
 #Check the number of arguments supplied:
 if [ $# -ne 2 ]
 then
-    echo "Library/DataStructures/test.sh: Error: Arguments must be the Specware installation to test and ISABELLE_2015_ROOT."
+    echo "Library/DataStructures/test.sh: Error: Arguments must be the Specware installation to test and ISABELLE_ROOT."
     exit 1
 fi
 
 export SPECWARE4=$1 #do we need the export?
 #echo "Library/DataStructures/test.sh: SPECWARE4 is ${SPECWARE4}."
-ISABELLE_2015_ROOT=$2
+ISABELLE_ROOT=$2
 
 echo "  Testing Library/DataStructures:"
 
@@ -70,4 +70,4 @@ run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsSTHTabl
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsVectors#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/AllIsa
 echo "  Checking Isabelle proofs:"
-run-isabelle2015-build.sh ${SPECWARE4}/Library/DataStructures/Isa ${ISABELLE_2015_ROOT}
+run-isabelle-build.sh ${SPECWARE4}/Library/DataStructures/Isa ${ISABELLE_ROOT}
