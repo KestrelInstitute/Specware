@@ -1611,6 +1611,13 @@ removeSubTypes can introduce subtype conditions that require addCoercions
         mapPartial (fn el ->
 		     case el of
 		       | Import(imp_sc_tm, im_sp, _, _) -> Some (ppImport c imp_sc_tm im_sp)
+(* Experimental:
+		       | Import(imp_sc_tm, im_sp, _, _) -> Some (ppImport c imp_sc_tm
+                                                                   (if embed? Subst (imp_sc_tm.1)
+                                                                      then let spc = getSpec c in
+                                                                           im_sp << {ops = spc.ops, types = spc.types}
+                                                                      else im_sp))
+*)
 		       | _ -> None)
            elems
     in case explicit_imports ++ imports_from_thy_morphism of
