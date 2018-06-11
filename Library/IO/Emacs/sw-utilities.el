@@ -5,8 +5,8 @@
 ;;; when the user wishes to load a file from a menu, the starting
 ;;; path is current directory. The function (default-directory) is part
 ;;; of emacs. This begs the question of what should be done if the user
-;;; changes directory. 
-;;; (defvar default-directory-name (concatenate 'string *specware* "/"))
+;;; changes directory.
+;;; (defvar default-directory-name (concat *specware* "/"))
 
 (require 'dired)			; For (default-directory)
 (defvar default-directory-name default-directory) ; moved to top of file to avoid warning msg
@@ -17,12 +17,12 @@
 
 (defun parse-specware-file (file-name)
   "Send a .sl file to LISP for parsing."
-  (interactive (list 
+  (interactive (list
 		(read-file-name-for-lisp-command "Parse specware-file")))
   (query-about-saving-file file-name)
-  (send-preemptive-message-to-lisp 
+  (send-preemptive-message-to-lisp
    (format "(sp::meta-slang-parse %S )" file-name)))
-		
+
 (defun read-file-name-for-lisp-command (type-string &optional default)
   "Prompt for an existing file name with prompt
   \"TYPE-STRING file: file-name\" .  If optional DEFAULT present, use it as
@@ -52,9 +52,9 @@
 
 
 (require 'widget)
-(require 'wid-edit)       
+(require 'wid-edit)
 (eval-when-compile
- (require 'wid-edit))       
+ (require 'wid-edit))
 
 
 (defun insert-mouse-sensitive-spec (specAndMarking)
@@ -182,7 +182,7 @@
      ["Load and execute Module"
       load-execute-specware-module
       t]
-     
+
      "-------------------------"
      ["Compile and save in LISP"
       compile-and-save-in-lisp
@@ -191,7 +191,7 @@
      ["Compile and save in C"
       compile-and-save-in-c
       t]
-     
+
 ;;; These features are now working on Unix but undocumented and not fully
 ;;; tested.  Have decided to make them unavailable in the current realeas
 ;;;     ["Save and view as pdf"
@@ -226,9 +226,9 @@
       t]
      )
 
-    ("Transformation"      
+    ("Transformation"
       ["Simplify"
-       (sw:eval-interruptable-in-lisp 
+       (sw:eval-interruptable-in-lisp
 	"(SpecwareUI::doAction \"Simplify\")")
        t]
       ["One step Simplify"
@@ -280,7 +280,7 @@
      cancel-action
      t]
 ))
-      
+
 
 (defun exit-action ()
   (interactive)
@@ -293,19 +293,19 @@
    "(SpecwareUI::doAction \"Help\")"))
 
 (defun load-specware-module (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name-for-lisp-command "Parse specware")))
   (send-message-to-lisp
    (format "(SpecwareUI::doAction2 \"Load\" %S)" file-name)))
 
 (defun load-execute-specware-module (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name-for-lisp-command "Specware")))
   (send-message-to-lisp
    (format "(SpecwareUI::doAction2 \"Load-Execute\" %S)" file-name)))
 
 (defun save-specware-module (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name "Save module in file: "
 				(or buffer-file-name default-directory-name))))
   (query-about-saving-file file-name)
@@ -313,24 +313,24 @@
    (format "(SpecwareUI::doAction2 \"Save\" %S)" file-name)))
 
 (defun save-tactic-file (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name "Save session as tactic in file: "
-				(concatenate 'string *specware* "/tactics/"))))
+				(concat *specware* "/tactics/"))))
   (query-about-saving-file file-name)
   (send-message-to-lisp
    (format "(SpecwareUI::doAction2  \"Save Tactic\" %S)" file-name)))
 
 (defun load-tactic-file (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name-for-lisp-command
 		 "Load and apply session tactic"
-		 (concatenate 'string *specware* "/tactics/"))))
+		 (concat *specware* "/tactics/"))))
   (send-message-to-lisp
    (format "(SpecwareUI::doAction2  \"Load Tactic\" %S)" file-name)))
 
 
 (defun compile-and-save-in-c (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name "File for C code: "
 				(or buffer-file-name default-directory-name))))
   (query-about-saving-file file-name)
@@ -338,7 +338,7 @@
    (format "(SpecwareUI::doAction2  \"C\" %S)" file-name)))
 
 (defun compile-and-save-in-lisp (file-name)
-  (interactive (list 
+  (interactive (list
 		(read-file-name "File for Lisp code: "
 				(or buffer-file-name default-directory-name))))
     (query-about-saving-file file-name)
@@ -407,7 +407,7 @@
       ()
     (progn
       (sw:eval-in-lisp
-       (format 
+       (format
 	"(mp::process-kill (MP:PROCESS-NAME-TO-PROCESS \"%s\"))"
 	sw:*current-specware-process*))
       (setq sw:*current-specware-process* nil))))
@@ -428,7 +428,7 @@
   (setq frame-title-format "%S")
   (set-buffer-menubar *specware-ui-foci-menubar*)
   ;; make default file names reasonable
-  ;; (setq default-directory-name (concatenate 'string *specware* "/"))
+  ;; (setq default-directory-name (concat *specware* "/"))
   (setq default-directory-name default-directory)
 ;;  (make-local-variable 'save-buffers-skip)
 ;;  (setq save-buffers-skip t)
@@ -506,7 +506,7 @@
 			       (height (,@ 8))))))
   (switch-to-buffer (generate-new-buffer "Input Window"))
   (make-local-variable 'frame-title-format)
-  (setq frame-title-format "Input")  
+  (setq frame-title-format "Input")
   (hacked-set-buffer-menubar '(nil ["Done Editing" return-string-from-buffer t]
 			       ["Cancel" cancel-string-from-buffer t])))
 
@@ -536,38 +536,38 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defun open-choice-window (choices) 
-  (interactive) 
-  (select-frame (make-frame (`((left (,@ 400)) 
-                               (top (,@ 400)) 
-                               (width (,@ 80)) 
+(defun open-choice-window (choices)
+  (interactive)
+  (select-frame (make-frame (`((left (,@ 400))
+                               (top (,@ 400))
+                               (width (,@ 80))
                                (height (,@ 8))
 			       (has-modeline-p nil)
-			       (minibuffer . none))))) 
-  (switch-to-buffer (get-buffer-create "*Choose an alternative*")) 
-  (setq buffer-read-only nil) 
+			       (minibuffer . none)))))
+  (switch-to-buffer (get-buffer-create "*Choose an alternative*"))
+  (setq buffer-read-only nil)
   (erase-buffer)
   (make-local-variable 'frame-title-format)
-  (setq frame-title-format "Choose among alternatives")   
-  (setq buffer-read-only t) 
+  (setq frame-title-format "Choose among alternatives")
+  (setq buffer-read-only t)
   (hacked-set-buffer-menubar '(["Cancel" cancel-choice-from-buffer]))
   (add-choices choices)
-) 
- 
-(defun return-choice-from-buffer (choice event) 
-  (interactive) 
-  (send-preemptive-message-to-lisp (format "(Emacs::choiceItem %S)" choice)) 
-  (delete-frame (event-frame event))) 
- 
-(defun cancel-choice-from-buffer (event) 
-  (interactive "e") 
-  (send-preemptive-message-to-lisp "(Emacs::choiceItem -1)") 
-  (delete-frame (event-frame event))) 
+)
+
+(defun return-choice-from-buffer (choice event)
+  (interactive)
+  (send-preemptive-message-to-lisp (format "(Emacs::choiceItem %S)" choice))
+  (delete-frame (event-frame event)))
+
+(defun cancel-choice-from-buffer (event)
+  (interactive "e")
+  (send-preemptive-message-to-lisp "(Emacs::choiceItem -1)")
+  (delete-frame (event-frame event)))
 
 (defvar *numbered-choices*)
 
-(defun add-choices (choices) 
-  (interactive) 
+(defun add-choices (choices)
+  (interactive)
   (let* (
 	 (counter 0)
 	 (numbered-choices (mapcar (lambda (ch) (progn (setq counter (1+ counter))
@@ -579,9 +579,9 @@
     (setq *numbered-choices* numbered-choices)
     (apply 'widget-create
 	   (list*
-	    'radio-button-choice  
-	    :value nil 
-	    :notify 'choice-notify		      
+	    'radio-button-choice
+	    :value nil
+	    :notify 'choice-notify
 	    item-choices))
     (message "Choose an entry")))
 
@@ -594,7 +594,7 @@
     (return-choice-from-buffer int-value event)))
 
 
-(defun testchoices() 
+(defun testchoices()
    (open-choice-window '("Choice 1" "Choice 2" "Choice 3")))
 
 (defun theorem-widget (thm-number enabled sos?)
@@ -620,4 +620,3 @@
     w))
 
 (provide 'sw-utilities)
-

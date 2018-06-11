@@ -21,7 +21,7 @@
 (defvar sw::lisp-host)
 
 
-;; This is called to start Specware. 
+;; This is called to start Specware.
 ;; It is invoked by a command-line argument to Xemacs, and spawns a Lisp process.
 
 (defun run-specware4 (&optional in-current-dir?)
@@ -30,12 +30,12 @@
       (sw:switch-to-lisp t)
     (let* ((*specware4-dir (strip-final-slash
 			    (sw::normalize-filename ; may rename "Program Files" to "Progra~1" etc.
-			     (expand-file-name 
+			     (expand-file-name
 			      (if in-current-dir?
 				  (if (stringp in-current-dir?)
 				      in-current-dir?
 				    default-directory)
-				(concat (or (getenv "LISP_DIRECTORY") 
+				(concat (or (getenv "LISP_DIRECTORY")
 					    (getenv "SPECWARE4"))))))))
 	   (bin-dir               (binary-directory *specware4-dir))
 	   (default-sw-executable (sw::normalize-filename (expand-file-name (concat bin-dir "/Specware4." *lisp-executable-extension*))))
@@ -45,15 +45,15 @@
 
       ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
       ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
-      ;; This seems to work fine under Unix/Linux but under Windows there is 
+      ;; This seems to work fine under Unix/Linux but under Windows there is
       ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
 
       (setq sw:common-lisp-directory (concat *specware4-dir "/"))
 
-      ;; Specware can be started in two ways. 
+      ;; Specware can be started in two ways.
       ;;
-      ;; One way is to start a generic Lisp augmented with a Specware image. 
-      ;; The term "image" comes from Franz Allegro. 
+      ;; One way is to start a generic Lisp augmented with a Specware image.
+      ;; The term "image" comes from Franz Allegro.
       ;; (At Kestrel, an image is called a "world".)
       ;;
       ;; The other way is to create a new standalone executable application.
@@ -71,10 +71,10 @@
       ;;
       ;; The suffix for image names is .exe, .sbclexe, etc.
 
-      (setq sw:common-lisp-image-name 
+      (setq sw:common-lisp-image-name
 	    ;; executable: either generic lisp or standalone specware
-	    (sw::normalize-filename 
-	     (expand-file-name 
+	    (sw::normalize-filename
+	     (expand-file-name
 	      (or (getenv "SPECWARE_EXECUTABLE")
 		  (getenv "LISP_EXECUTABLE")
 		  default-sw-executable))))
@@ -83,12 +83,12 @@
       ;; (Franz calls this an image.)
       ;; The suffix on such files is .dxl or .sbclimage, etc.
 
-      (setq sw:common-lisp-image-file 
+      (setq sw:common-lisp-image-file
 	    (if (equal sw:common-lisp-image-name default-sw-executable)
 		nil
 	      (if (equal (getenv "LISP_HEAP_IMAGE") "NONE")
 		  nil
-		(sw::normalize-filename (expand-file-name 
+		(sw::normalize-filename (expand-file-name
 					 (or (getenv "LISP_HEAP_IMAGE")
 					     default-sw-image))))))
 
@@ -96,17 +96,17 @@
 
 	;; From http://www.franz.com/support/documentation/7.0/doc/startup.htm#command-line-args-1
         ;;
-	;; +c   Start Allegro CL without a console window. 
-	;;      (Normally, there is a console window to read/write standard I/O. 
-	;;      If you close the console window, the Lisp will be killed.) 
+	;; +c   Start Allegro CL without a console window.
+	;;      (Normally, there is a console window to read/write standard I/O.
+	;;      If you close the console window, the Lisp will be killed.)
 	;;      Note that there will not be an icon in the system tray regardless
-	;;      of whether +R or +RR are specified when there is no console. 
+	;;      of whether +R or +RR are specified when there is no console.
 	;;      (Having the console minimized with +cm, non-activated with +cn, or
 	;;      hidden with +cx does not affect whether there is a system tray icon.)
 	;; +cm  Start the console window in a minimized state.
-	;; +cn 	Start the console window, but don't activate the console window. 
+	;; +cn 	Start the console window, but don't activate the console window.
 	;;      This allows Lisp to be started so as to not interfere with the currently selected window.
-	;; +cx 	Start the console in a hidden state. 
+	;; +cx 	Start the console in a hidden state.
         ;;      Double-clicking on the tray icon will make the console visible.
 	;;      See also the right-click menu on the tray icon.
 	;;
@@ -116,9 +116,9 @@
 	;;  +cn leaves the Allegro window open, but behind other windows
 	;;  +cm minimizes the Allegro window
         ;;  +cx minimizes the Allegro window down to a tiny icon in the tray
-        ;;	    
-	;; We use +cm (+cn and +cx would also be ok), because +c makes it too easy 
-        ;; to leave Specware zombies behind if the user just exists from XEmacs 
+        ;;
+	;; We use +cm (+cn and +cx would also be ok), because +c makes it too easy
+        ;; to leave Specware zombies behind if the user just exists from XEmacs
 	;; (which runs as a separate proccess communicating with Specware).
 
 	(if (and *windows-system-p* (eq *specware-lisp* 'allegro))
@@ -185,7 +185,7 @@
     (list "-L" (getenv "SOCKET_INIT_FILE"))))
 
 (defun run-lisp-application (&optional lisp-executable image-file)
-  (interactive "sExecutable Lisp Program: 
+  (interactive "sExecutable Lisp Program:
 sLisp Heap Image File: ")
   (when (equal lisp-executable "") (setq lisp-executable nil))
   (when (equal image-file      "") (setq image-file      nil))
@@ -195,18 +195,18 @@ sLisp Heap Image File: ")
 
   ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
   ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
-  ;; This seems to work fine under Unix/Linux but under Windows there is 
+  ;; This seems to work fine under Unix/Linux but under Windows there is
   ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
 
   (setq sw:common-lisp-directory (getenv "LISP_DIRECTORY"))
 
-  ;; Below we set a parameter sw:common-lisp-image-name. This is the name 
+  ;; Below we set a parameter sw:common-lisp-image-name. This is the name
   ;; used by eli/fi-subproc.el for the Lisp executable. This is the application
-  ;; we want to run.  The image file (in the ACL sense) or world, is bound 
+  ;; we want to run.  The image file (in the ACL sense) or world, is bound
   ;; to common-lisp-image-file. If the executable is produced by
   ;; generate-application, then typically, there will not be an image file.
 
-  (setq sw:common-lisp-image-name 
+  (setq sw:common-lisp-image-name
 	(or lisp-executable
 	    (and (boundp 'sw:common-lisp-image-name) sw:common-lisp-image-name)
 	    (getenv "SPECWARE_EXECUTABLE")
@@ -217,11 +217,11 @@ sLisp Heap Image File: ")
 	    (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
 	    (getenv "LISP_HEAP_IMAGE")))
 
-  (setq sw:common-lisp-image-name 
+  (setq sw:common-lisp-image-name
 	(if (equal sw:common-lisp-image-name "NONE")
 	    nil
 	  (sw::normalize-filename (expand-file-name sw:common-lisp-image-name))))
-	 
+
   (setq sw:common-lisp-image-file
 	(if (equal sw:common-lisp-image-file "NONE")
 	    nil
@@ -248,18 +248,18 @@ sLisp Heap Image File: ")
 
   ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
   ;; be executed. It is defined in eli/fi-subproc.el with a default value nil
-  ;; This seems to work fine under Unix/Linux but under Windows there is 
+  ;; This seems to work fine under Unix/Linux but under Windows there is
   ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
 
   (setq sw:common-lisp-directory (getenv "LISP_DIRECTORY"))
 
-  ;; Below we set a parameter sw:common-lisp-image-name. This is the name 
+  ;; Below we set a parameter sw:common-lisp-image-name. This is the name
   ;; used by eli/fi-subproc.el for the Lisp executable. This is the application
-  ;; we want to run.  The image file (in the ACL sense) or world, is bound 
+  ;; we want to run.  The image file (in the ACL sense) or world, is bound
   ;; to common-lisp-image-file. If the executable is produced by
   ;; generate-application, then typically, there will not be an ACL image file.
 
-  (setq sw:common-lisp-image-name (or (getenv "LISP") 
+  (setq sw:common-lisp-image-name (or (getenv "LISP")
                                       (getenv "LISP_EXECUTABLE")))
   (setq sw:common-lisp-image-file nil)
   (setq sw:common-lisp-image-arguments
@@ -289,7 +289,7 @@ sLisp Heap Image File: ")
 	()   ;; (message "Specware is running..")
       ;; timed out -- see if we should and can start lisp
       (if *specware-auto-start*
-	  (progn     
+	  (progn
 	    (run-specware4)
 	    ;; similar wait for up to 10 seconds
 	    (if (dotimes (i 100)
@@ -334,10 +334,10 @@ sLisp Heap Image File: ")
 
 (defun continue-emacs-computation (process event)
   ;; for debugging continue-form-when-ready...
-;  (setq *sentinel-data* 
+;  (setq *sentinel-data*
 ;	;; use format to capture current descriptions
 ;	(cons (list (current-time-string)
-;		    (format "%S" process) 
+;		    (format "%S" process)
 ;		    (list 'event (format "%S" event)))
 ;	      *sentinel-data*))
   (let ((fm *specware-continue-form*))
@@ -349,7 +349,7 @@ sLisp Heap Image File: ")
   (setq *specware-continue-form* form)
   (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
     ;; for debugging continue-form-when-ready...
-;    (setq *sentinel-data* 
+;    (setq *sentinel-data*
 ;	  ;; use format to capture current descriptions...
 ;	  (cons (list (current-time-string)
 ;		      (format "%S" sw-proc)
@@ -377,18 +377,18 @@ sLisp Heap Image File: ")
   (message "Will automatically exit in %S seconds..." delay)
   (sit-for delay)
   (continue-form-when-ready
-   ;; continue-form-when-ready kills the sublisp process, 
+   ;; continue-form-when-ready kills the sublisp process,
    ;; then waits for a status change signal on that process
    ;; before processing the given command
    `(kill-emacs t)))
-  
+
 (defun delete-continuation ()
   (interactive)
   (let ((sw-proc (get-buffer-process *specware-buffer-name*)))
     ;; for debugging continue-form-when-ready...
-    (setq *sentinel-data* 
+    (setq *sentinel-data*
 	  ;; use format to capture current descriptions...
-	  (cons (list (current-time-string) 
+	  (cons (list (current-time-string)
 		      (format "%S" sw-proc)
 		      (list 'delete-continuation))
 		*sentinel-data*))
@@ -418,7 +418,7 @@ sLisp Heap Image File: ")
 
 (defun generate-specware4-aux (in-current-dir? also-compile-and-build? regenerating?)
   (let* ((*specware4-dir      (sw::normalize-filename
-                               (if in-current-dir? 
+                               (if in-current-dir?
                                    (strip-final-slash default-directory)
                                  (concat (getenv "SPECWARE4")))))
          (bin-dir             (binary-directory *specware4-dir))
@@ -431,18 +431,18 @@ sLisp Heap Image File: ")
 
     (cond ((not (file-exists-p specware-executable))
            ;; can't process Specware4.sw without a running specware, so compile, build, and come back here
-           (progn (message "No specware executable, so will first build one, then try again.") 
+           (progn (message "No specware executable, so will first build one, then try again.")
                   (sit-for 1))
            (specware-build-command "### No specware executable, so will first build one, then try again.")
            (compile-specware4-aux in-current-dir? t t))
           ((file-newer-than-file-p specware4-base-lisp specware-executable)
            ;; specware executable is not up to date with current sources, so compile, build, and come back here
-           (progn (message "Previously generated specware lisp files are newer than specware executable.") 
+           (progn (message "Previously generated specware lisp files are newer than specware executable.")
                   (sit-for 1)
-                  (message "So will recompile them, rebuild specware, and then try again here.") 
+                  (message "So will recompile them, rebuild specware, and then try again here.")
                   (sit-for 1))
-           (specware-build-command "### Previously generated specware lisp files are newer than specware executable,") 
-           (specware-build-command "### so will recompile them, rebuild specware, and then try again here.") 
+           (specware-build-command "### Previously generated specware lisp files are newer than specware executable,")
+           (specware-build-command "### so will recompile them, rebuild specware, and then try again here.")
            (compile-specware4-aux in-current-dir? t t))
           (t
            ;; we have an up-to-date specware, so generate new lisp files
@@ -450,10 +450,10 @@ sLisp Heap Image File: ")
 
            (progn (message "Generating Specware lisp files from specs, via (cl-user::boot) ...")
                   (sit-for 1))
-           
+
            (sit-for (if regenerating? 10 1)) ; avoid race with prior build process
            (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*)
-           (sit-for 1)  
+           (sit-for 1)
            (let ((print-progress-message
 		  (if also-compile-and-build?
 		      '(format t "Call back to emacs to tell it to compile and build Specware.~%")
@@ -464,11 +464,11 @@ sLisp Heap Image File: ")
                   (if also-compile-and-build?
                       ;; First time through, make the third arg true to cause a replay after oompile and build.
                       ;; Second time through, make it false so we don't replay yet again.
-                      (specware-build-eval-emacs-str "(progn (sit-for 1) (compile-specware4-aux %s t %s))" 
+                      (specware-build-eval-emacs-str "(progn (sit-for 1) (compile-specware4-aux %s t %s))"
                                                      in-current-dir?
                                                      (not regenerating?))
                     "")))
-             (specware-build-command "(progn (cl:time (cl-user::boot)) %S %s (cl-user::finish-output t) (sb-ext:exit))" 
+             (specware-build-command "(progn (cl:time (cl-user::boot)) %S %s (cl-user::finish-output t) (sb-ext:exit))"
 				     print-progress-message
 				     callback-to-emacs))))))
 
@@ -525,12 +525,12 @@ sLisp Heap Image File: ")
            ;; If we are doing more after we compile, then prepare a form for the lisp image
            ;; to pass back to emacs for invocation just before that lisp image dies.
            (if also-build?
-               (specware-build-eval-emacs-str "(progn (sit-for 1) (new-build-specware4 %s %s))" 
-                                              in-current-dir? 
+               (specware-build-eval-emacs-str "(progn (sit-for 1) (new-build-specware4 %s %s))"
+                                              in-current-dir?
                                               also-regenerate?)
              "")))
-      (specware-build-command "(progn (cl:load %S) %S %s (terpri) (cl-user::finish-output t) (sb-ext:exit))" 
-                              specware4-loader 
+      (specware-build-command "(progn (cl:load %S) %S %s (terpri) (cl-user::finish-output t) (sb-ext:exit))"
+                              specware4-loader
 			      print-progress-message
                               callback-to-emacs))))
 
@@ -576,15 +576,15 @@ sLisp Heap Image File: ")
            )
           (t
            (let ((print-progress-message
-		  (if regenerate? 
+		  (if regenerate?
 		      '(format t "Call back to emacs to tell it to generate Specware again.~%")
 		    ""))
 		 (callback-to-emacs
-                  ;; If we are regenerating, have the lisp image tell emacs to invoke generate-compile-build-specware4 
+                  ;; If we are regenerating, have the lisp image tell emacs to invoke generate-compile-build-specware4
                   ;; just before that lisp image saved itself and dies.
                   ;; To avoid races, have the form sent back to emacs delay for 5 seconds before proceeding,
                   ;; to give the lisp image time to save itself before it will be invoked.
-                  (if regenerate? 
+                  (if regenerate?
                       (specware-build-eval-emacs-str "(progn (sit-for 3) (generate-specware4-aux %s t t))" in-current-dir?)
                     "")))
              (specware-build-command "(progn (cl:load %S) %S %s (force-output t) (sb-ext:save-lisp-and-die %S :executable t))"
@@ -598,7 +598,7 @@ sLisp Heap Image File: ")
 (defun build-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")
   (build-specware4 in-current-dir? t))
-  
+
 (defun build-specware4 (&optional in-current-dir? auto-exit?)
   (interactive "P")
   (if (and (eq *specware-lisp* 'sbcl) (eq lisp-emacs-interface-type 'slime))
@@ -646,7 +646,7 @@ sLisp Heap Image File: ")
        (format "(cl:namestring (Specware::change-directory %S))" build-dir))
       (eval-in-lisp-in-order "(cl:time (cl:load \"Specware4.lisp\"))")
       (continue-form-when-ready
-       ;; continue-form-when-ready kills the sublisp process, 
+       ;; continue-form-when-ready kills the sublisp process,
        ;; then waits for a status change signal on that process
        ;; before processing the given command
        `(build-specware4-continue ,*specware4-dir ,build-dir ,bin-dir
@@ -697,14 +697,14 @@ sLisp Heap Image File: ")
 				 (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
   (eval-in-lisp-in-order (format "(cl:load %S)"
 				 (concat *specware4-dir "/Applications/Handwritten/Lisp/memory-management")))
-  (eval-in-lisp-in-order (format "(cl:namestring (Specware::change-directory %S))" 
+  (eval-in-lisp-in-order (format "(cl:namestring (Specware::change-directory %S))"
 				 build-dir))
   (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-build nil)")
   (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
   (eval-in-lisp-in-order "(cl-user::compact-memory t)")
   (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-use nil)")
   (when (file-exists-p world-name)
-    (rename-file world-name 
+    (rename-file world-name
 		 (concat bin-dir "/Specware4-saved." *lisp-image-extension*)
 		 t))
   (sit-for 1)
@@ -767,7 +767,7 @@ sLisp Heap Image File: ")
 					   slash-dir)))
     (eval-in-lisp-in-order (format "(Specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename *specware4-dir)))
-        
+
     (when (file-exists-p specware4-lisp)
       (copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
     (when (file-exists-p specware4-base-lisp)
@@ -775,7 +775,7 @@ sLisp Heap Image File: ")
     (eval-in-lisp-in-order (format "(cl:namestring (Specware::change-directory %S))" dir))
     (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
     (continue-form-when-ready
-     ;; continue-form-when-ready kills the sublisp process, 
+     ;; continue-form-when-ready kills the sublisp process,
      ;; then waits for a status change signal on that process
      ;; before processing the given command
      `(build-specware4-continue ,*specware4-dir ,dir ,bin-dir
@@ -986,7 +986,7 @@ sLisp Heap Image File: ")
                                                               *lisp-executable-extension*)))
          (specware4-base-lisp (concat *specware4-dir
                                       "/Applications/Specware/Specware4-base.lisp")))
-    (when continuation? 
+    (when continuation?
       ;; warning: race condition, previous lisp might still be running (e.g. to save itself)
       ;; so give it time to complete
       (sit-for 1))
@@ -994,7 +994,7 @@ sLisp Heap Image File: ")
     (if (or (not (file-exists-p specware-executable))
             (file-newer-than-file-p specware4-base-lisp specware-executable))
         (specware-build in-current-dir? nil 'boot)
-      (progn (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*) 
+      (progn (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*)
              (sit-for 0.5)
              (specware-build-command "(progn (cl:time (cl-user::boot)) %s (cl-user::finish-output t) (sb-ext:exit))"
                                      (specware-build-eval-emacs-str "(specware-build %s nil t)"
@@ -1029,7 +1029,7 @@ sLisp Heap Image File: ")
       (copy-file specware4-base-lisp specware4-lisp t))
 
     (prepare-specware-build-buffer *specware-build-buffer-name* build-dir)
-    
+
     (when (or (not (file-exists-p specware4-lisp))
               (and (file-exists-p specware-tgz)
                    (file-newer-than-file-p specware-tgz specware4-lisp)))
@@ -1094,8 +1094,8 @@ sLisp Heap Image File: ")
                                    #-allegro())")
     (eval-in-lisp-in-order "(cl:time (cl-user::boot))")
     (sit-for 1)
-    (continue-form-when-ready 
-     ;; continue-form-when-ready kills the sublisp process, 
+    (continue-form-when-ready
+     ;; continue-form-when-ready kills the sublisp process,
      ;; then waits for a status change signal on that process
      ;; before processing the given command
      `(build-specware4 ,*specware4-dir ,auto-exit?)))))
@@ -1106,10 +1106,10 @@ sLisp Heap Image File: ")
   (let ((current-dir default-directory))
     (if (not (inferior-lisp-running-p))
 	(message "Do M-x bootstrap-specware first")
-      (progn (shell-command (concatenate 'string "cd "
-					 (if in-current-dir? current-dir
-					   *specware-home-directory*)
-					 "; /bin/rm */sig/*.sig"))
+      (progn (shell-command (concat "cd "
+                                    (if in-current-dir? current-dir
+                                      *specware-home-directory*)
+                                    "; /bin/rm */sig/*.sig"))
 	     (sit-for 1)		; Necessary? Enough?
 	     (eval-in-lisp-in-order "(Bootstrap-Spec::compileBootstrap)")
 	     (eval-in-lisp-in-order ":exit")

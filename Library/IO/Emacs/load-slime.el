@@ -6,7 +6,7 @@
 (defconst *specware* (or (getenv "SPECWARE4") (concat (getenv "HOME") "/Specware")))
 (defconst *specware-home-directory* *specware*)
 
-(defvar cygwin? 
+(defvar cygwin?
   (let ((test1 (eq system-type 'cygwin32))
         (test2 (string= "/cygdrive/" (substring *specware* 0 10))))
     ;; following messages commented out by default...
@@ -18,7 +18,7 @@
             (message "*specware* doesn't start with \"/cygdrive/\": %s" *specware*)
             (sit-for 2))
            ((and test2 (not test1))
-            (message "Will assume cygwin32 environment, since *specware* starts with \"/cygdrive/\": %s, but ..." 
+            (message "Will assume cygwin32 environment, since *specware* starts with \"/cygdrive/\": %s, but ..."
                      *specware*)
             (sit-for 2)
             (message "system-type is not 'cgywin: %s" system-type)))
@@ -57,8 +57,8 @@
 ;(setq x-symbol-data-directory "/usr/local/ProofGeneral/x-symbol/etc/")
 
 (defun sw:load-specware-emacs-file (name)
-  (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
-	(elc-file  (concatenate 'string *specware-emacs* name ".elc")))
+  (let ((el-file   (concat *specware-emacs* name ".el"))
+	(elc-file  (concat *specware-emacs* name ".elc")))
     (unless (and (file-exists-p elc-file)
 		 (file-newer-than-file-p elc-file el-file))
       (byte-compile-file el-file))
@@ -87,8 +87,8 @@
 
 (require 'slime)
 ;; something about recursive (eval-when (comile) ...) causes error "reading from killed buffer"
-;; so moved following out from under eval-when compile in slime -- 
-;(require 'compile) 
+;; so moved following out from under eval-when compile in slime --
+;(require 'compile)
 
 (let* ((libfile (locate-library "slime")))
   ;; Is it byte-compiled?
@@ -147,7 +147,7 @@ See list-motion-handlers for more details."
   (set-mode-motion-handler 'dired-mode 'highlight-vline)
   (global-set-key '(control shift button2) 'mode-motion-copy))
 
-;; a hack to simplify writing scripts (e.g. for testing) 
+;; a hack to simplify writing scripts (e.g. for testing)
 ;; that run lisp under emacs and then exit
 (defun sw:kill-emacs-and-then-lisp ()
   (simulate-input-expression "(Emacs::kill-emacs-and-then-lisp)"))

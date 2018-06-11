@@ -1,11 +1,12 @@
+(require 'cl)
 
 ;; Load everything
-(pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") load-path)
+(cl-pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") load-path)
 
 (defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* (getenv "SPECWARE4"))
 
-(defconst *specware-emacs* (concatenate 'string *specware* "/Library/IO/Emacs/"))
+(defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
 (defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
 					       ms-windows)))
@@ -18,8 +19,8 @@
 (defvar lisp-emacs-interface-type 'franz)
 
 (defun sw:load-specware-emacs-file (name)
-  (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
-	(elc-file  (concatenate 'string *specware-emacs* name ".elc")))
+  (let ((el-file   (concat *specware-emacs* name ".el"))
+	(elc-file  (concat *specware-emacs* name ".elc")))
     (unless (and (file-exists-p elc-file)
 		 (file-newer-than-file-p elc-file el-file))
       (byte-compile-file el-file))

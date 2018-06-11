@@ -28,6 +28,8 @@
 ;; Finally, there is also an inferior-specware-mode-hook -- see
 ;; sl-proc.el. For more information consult the mode's *info* tree.
 
+(require 'cl)
+
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
@@ -474,7 +476,8 @@ Full documentation will be available after autoloading the function."
                      (progn (beginning-of-line))
                    (goto-char (point-max)))
                  (forward-comment -100)) ; Go backward until non-comment found
-        (if (and (looking-at "\\<def\\>") (not (looking-back "\\<refine\\s-*" nil)))
+        (if (and (looking-at "\\<def\\>")
+                 (not (looking-back "\\<refine\\s-*" nil)))
             (let ((beg-indentation (1+ (current-column))) ; 1+ just in case user indent by 1
                   (found-end nil))
               (while (not found-end)
@@ -911,7 +914,8 @@ If anyone has a good algorithm for this..."
                 ((looking-at "handle") (+ (current-indentation) 5))
                 ((looking-at "->")
                  (sw:block-back)
-                 (while (not (or (looking-at "of\\b\\|fn\\b") (looking-back "|\\s-*" nil)) )
+                 (while (not (or (looking-at "of\\b\\|fn\\b")
+                                 (looking-back "|\\s-*" nil)))
                    (sw:block-back))
                  (if (looking-at "of\\b\\|fn\\b")
                      (+ (current-column) 1)
@@ -1487,7 +1491,7 @@ STRING should be given if the last search was by `string-match' on STRING."
              (dir (replace-in-string dir "\\\\" "/")))
         (if (and (> (length dir) 8) (string= "/cygwin/" (cl-subseq dir 0 8)))
             (cl-subseq dir 7)
-          (concatenate 'string "/cygdrive/" (downcase dev) dir))))))
+          (concat "/cygdrive/" (downcase dev) dir))))))
 
 (defun to-cygwin-name (pname)
   (if cygwin?
@@ -1800,7 +1804,7 @@ STRING should be given if the last search was by `string-match' on STRING."
     (if (equal file "")
         (message "Definition of %s not found!" sym)
       (unless (string-equal (substring file -3) ".sw")
-        (setq file (concatenate 'string (strip-hash-suffix file) ".sw")))
+        (setq file (concat (strip-hash-suffix file) ".sw")))
       (push-mark (point))
       (let ((buf
              (or (get-file-buffer file)

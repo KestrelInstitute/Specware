@@ -18,7 +18,7 @@
 (require 'ilisp)
 
 (defun sw:load-specware-emacs-file (name)
-  (load (concatenate 'string *specware-emacs* name)))
+  (load (concat *specware-emacs* name)))
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
@@ -32,4 +32,3 @@
 	 '("\\.spec$" . specware-mode)
 	 '("\\.sw$" . specware-mode)
 	 auto-mode-alist))
-

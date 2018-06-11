@@ -5,11 +5,11 @@
 (defvar sw:common-lisp-buffer-name "*Specware Shell*")
 (defvar sw:common-lisp-image-arguments nil)
 
-(pushnew ".fasl" completion-ignored-extensions)
-(pushnew ".x86f" completion-ignored-extensions)	; cmulisp
-(pushnew ".dfsl" completion-ignored-extensions)	; openmcl
-(pushnew ".sfsl" completion-ignored-extensions)	; sbcl
-(pushnew ".fas"  completion-ignored-extensions)	; clisp
+(cl-pushnew ".fasl" completion-ignored-extensions)
+(cl-pushnew ".x86f" completion-ignored-extensions)	; cmulisp
+(cl-pushnew ".dfsl" completion-ignored-extensions)	; openmcl
+(cl-pushnew ".sfsl" completion-ignored-extensions)	; sbcl
+(cl-pushnew ".fas"  completion-ignored-extensions)	; clisp
 
 (defvar *lisp-prompt-regexp*)
 (defvar lisp-prev-l/c-dir/file)
@@ -60,7 +60,7 @@
 
 (defvar *macos-p* (= (shell-command "ls /mach_kernel") 0))  ; or any other test that tells us we're on a Mac
 
-(defvar *sbcl-size* 
+(defvar *sbcl-size*
   (let ((given (getenv "SBCL_SIZE")))
     (if (null given)
         (if *windows-system-p* 1000 (if *macos-p* 4000 2400))
@@ -70,7 +70,7 @@
 (defvar *sbcl-stack-size*
   (let ((given (getenv "SBCL_STACK_SIZE")))
     (if (null given) 4 (read given))) ; Default is 2 (megabytes)
-  "Size of --control-stack-size for sbcl") 
+  "Size of --control-stack-size for sbcl")
 
 (defun ensure-list (fm-str)
   (if (equal (elt fm-str 0) (elt "(" 0))
@@ -154,7 +154,7 @@
       (delete-region start (point))
       (insert mine)
       (backward-sexp)))
-  
+
   (defun previous-input-line ()
     (slime-repl-previous-input))
 
@@ -204,7 +204,7 @@
     (check-parens))
 
   (defvar *specware-buffer-name* "*Specware Shell*")
-  
+
   ;(setq slime-find-buffer-package-function 'slime-lisp-package)
   (setq slime-enable-evaluate-in-emacs t)
 
@@ -227,5 +227,3 @@
   (let ((face (or (get-char-property (point) 'read-face-name)
                   (get-char-property (point) 'face))))
     (member face '(font-lock-comment-face font-lock-string-face))))
-
-
