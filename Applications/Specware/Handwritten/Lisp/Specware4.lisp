@@ -59,6 +59,7 @@
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
 					       sb-int:package-at-variance))
+<<<<<<< HEAD
             (defun lgen-lisp-redefinition-warning (warning)
               (and (typep warning 'sb-kernel::redefinition-with-defun)
                    (let* ((new-location (sb-kernel::redefinition-warning-new-location warning))
@@ -67,13 +68,29 @@
                      (string= new-namestring "lgen_lisp_tmp.lisp"
                               :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
                      )))
+=======
+            ;; (defun lgen-lisp-redefinition-warning (warning)
+            ;;   (and (typep warning 'sb-kernel::redefinition-with-defun)
+            ;;        (let* ((new-location (sb-kernel::redefinition-warning-new-location warning))
+            ;;               (new-namestring (and new-location
+            ;;                                    (sb-c:definition-source-location-namestring new-location))))
+            ;;          (string= new-namestring "lgen_lisp_tmp.lisp"
+            ;;                   :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
+            ;;          )))
+>>>>>>> Install latest verions of slime
             (deftype sw-uninteresting-redefinition ()
               '(or (satisfies sb-kernel::uninteresting-ordinary-function-redefinition-p)
                 (satisfies sb-kernel::uninteresting-macro-redefinition-p)
                 (satisfies sb-kernel::uninteresting-generic-function-redefinition-p)
                 (satisfies sb-kernel::uninteresting-method-redefinition-p)
+<<<<<<< HEAD
                 (satisfies lgen-lisp-redefinition-warning)
                 sb-int:package-at-variance))
+=======
+                ;;(satisfies lgen-lisp-redefinition-warning)
+                sb-int:package-at-variance
+                ))
+>>>>>>> Install latest verions of slime
 
             (setq sb-ext:*muffled-warnings* 'sw-uninteresting-redefinition)
 	    (setq sb-ext::*compile-print* nil)
@@ -180,9 +197,9 @@
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
 (make-system (in-specware-dir "Applications/Specware/UI/Emacs/Handwritten/Lisp"))
 
-;; We need to preload the (artificial to Allegro) :emacs-mule external 
+;; We need to preload the (artificial to Allegro) :emacs-mule external
 ;; character format.
-;; Otherwise, Specware distribution images created by generate-application 
+;; Otherwise, Specware distribution images created by generate-application
 ;; (see BuildDistribution_ACL.lisp) will complain at startup that :emacs-mule
 ;; cannot be found.
 #+Allegro (excl::find-external-format :emacs-mule)
@@ -268,7 +285,7 @@
     ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
     ;; "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
 
-    ;; Preface.lisp defines misc things called by Specware4.lisp code, 
+    ;; Preface.lisp defines misc things called by Specware4.lisp code,
     ;; so that compiling Specware4.lisp won't genereate compiler warnings.
     "Applications/Specware/Handwritten/Lisp/Preface.lisp"
 
@@ -280,7 +297,7 @@
     ;; maybe interface would be a better name
     ;; "Languages/XML/Handwritten/Lisp/Support.lisp"
 
-    ;; Toplevel commands 
+    ;; Toplevel commands
     "Applications/Specware/Handwritten/Lisp/toplevel"
 
     ;; Debugging utilities
@@ -348,14 +365,14 @@
 
 
 #+case-sensitive
-(push  'set-readtable-invert 
+(push  'set-readtable-invert
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
        #+sbcl    sb-ext:*init-hooks*)
 
 ;;; Load base in correct location at startup
-(push  'Specware::initializeSpecware-0 
+(push  'Specware::initializeSpecware-0
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
@@ -375,21 +392,21 @@
 ;; "/usr/local/lib/sbcl", and requires will work.
 ;;
 ;; But if you are running a saved image, it will refer to some random directory
-;; where that image was saved, and all requires will fail. 
+;; where that image was saved, and all requires will fail.
 ;;
 ;; So we cache *sbcl-home* here to a reasonable value and restore SBCL_HOME to
-;; that after sbcl has begun running again. 
+;; that after sbcl has begun running again.
 
-;; Unfortunately, this introduces a new problem: it assumes the build-time sbcl 
-;; dir is the same as the run-time sbcl dir, but there is no guarantee of that.  
-;; In fact, if the run-time sbcl dir differs from the build-time sbcl dir, 
-;; and the executed sbcl image is not on either such directory, it is not clear 
+;; Unfortunately, this introduces a new problem: it assumes the build-time sbcl
+;; dir is the same as the run-time sbcl dir, but there is no guarantee of that.
+;; In fact, if the run-time sbcl dir differs from the build-time sbcl dir,
+;; and the executed sbcl image is not on either such directory, it is not clear
 ;; if there is any way at all to find the sbcl modules!  Bletch.
 ;;================================================================================
 
 #+sbcl (progn
 	 (defvar *sbcl-home* (Specware::getenv "SBCL_HOME")) ; see note above
-	 (push  #'(lambda () 
+	 (push  #'(lambda ()
 		    (setq sb-debug:*debug-beginner-help-p* nil)
 	            ;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
 		    (Specware::setenv "SBCL_HOME" *sbcl-home*) ; see note above
@@ -398,7 +415,7 @@
 	 )
 
 ;;; Set temporaryDirectory at startup
-(push 'setTemporaryDirectory 
+(push 'setTemporaryDirectory
       #+allegro cl-user::*restart-actions*
       #+cmu     ext:*after-save-initializations*
       #+mcl     ccl:*lisp-startup-functions*
@@ -426,11 +443,11 @@
   ;; per instructions in swank-loader.lisp
   (cl:defpackage :swank-loader
 		 (:use :cl)
-		 (:export :load-swank 
+		 (:export :load-swank
 			  :*source-directory*
 			  :*fasl-directory*))
   )
-;; Repeat the when test so the defparameter below can 
+;; Repeat the when test so the defparameter below can
 ;; be read after the defpackage above has been evaluted.
 (when *using-slime-interface?*
   (eval

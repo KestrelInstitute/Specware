@@ -74,12 +74,12 @@
                   (concat slime-path slime-backend))))
     (setq *sw-slime-prompt* "*")
     (format "(progn %S\n%S\n%S\n%S\n%S)\n\n"
-            `(unless (and (find-package "SWANK") 
+            `(unless (and (find-package "SWANK")
 			  (fboundp (intern "START-SERVER" "SWANK")))
-	       (load 
+	       (load
                 ,(sw::normalize-filename  ; was slime-to-lisp-filename
                   (expand-file-name loader)) :verbose t))
-	    `(unless (find-package :Specware) 
+	    `(unless (find-package :Specware)
 	       (defpackage :Specware (:use "CL")))
 	    `(set (intern "*USING-SLIME-INTERFACE?*" :Specware) t)
             `(funcall (read-from-string "swank-loader:init"))
@@ -90,9 +90,9 @@
 
 ;;; based on slime-repl-return
 (defun sw-return (&optional end-of-input)
-  "Evaluate the current input string, or insert a newline.  
+  "Evaluate the current input string, or insert a newline.
 Send the current input ony if a whole expression has been entered,
-i.e. the parenthesis are matched. 
+i.e. the parenthesis are matched.
 
 With prefix argument send the input even if the parenthesis are not
 balanced."
@@ -109,14 +109,14 @@ balanced."
         ((run-hook-with-args-until-success 'slime-repl-return-hooks end-of-input))
         ((slime-input-complete-p slime-repl-input-start-mark (point-max))
          (sw-send-input t))
-        (t 
+        (t
          (slime-repl-newline-and-indent)
          (message "[input not complete]"))))
 
 (defun slime-repl-return (&optional end-of-input)
-  "Evaluate the current input string, or insert a newline.  
+  "Evaluate the current input string, or insert a newline.
 Send the current input only if a whole expression has been entered,
-i.e. the parenthesis are matched. 
+i.e. the parenthesis are matched.
 
 With prefix argument send the input even if the parenthesis are not
 balanced."
@@ -135,14 +135,14 @@ balanced."
                  ((run-hook-with-args-until-success 'slime-repl-return-hooks end-of-input))
                  ((slime-input-complete-p slime-repl-input-start-mark (point-max))
                   (slime-repl-send-input t))
-                 (t 
+                 (t
                   (slime-repl-newline-and-indent)
                   (message "[input not complete]"))))))
 
 (defun slime-repl-find-prompt (&optional backward)
   (let ((origin (point))
         (prop 'slime-repl-prompt))
-    (while (progn 
+    (while (progn
              (slime-search-property-change prop backward)
              (or (= (1+ (point)) origin)
                  (not (or (slime-end-of-proprange-p prop) (bobp) (eobp))))))
@@ -163,13 +163,13 @@ If NEWLINE is true then add a newline at the end of the input."
     (error "No input at point."))
   (goto-char (point-max))
   (let ((end (point))) ; end of input, without the newline
-    (slime-repl-add-to-input-history 
+    (slime-repl-add-to-input-history
      (buffer-substring slime-repl-input-start-mark end))
-    (when newline 
+    (when newline
       (insert "\n")
       (slime-repl-show-maximum-output))
     (let ((inhibit-modification-hooks t))
-      (add-text-properties slime-repl-input-start-mark 
+      (add-text-properties slime-repl-input-start-mark
                            (point)
                            `(slime-repl-old-input
                              ,(incf slime-repl-old-input-counter))))
@@ -242,7 +242,7 @@ If NEWLINE is true then add a newline at the end of the input."
 (add-hook 'specware-listener-mode-hook
 	  'specware-listener-mode-init)
 
-(defun specware-listener-mode () 
+(defun specware-listener-mode ()
   "Major mode for Specware Shell."
   (interactive)
   (kill-all-local-variables)
@@ -264,7 +264,7 @@ If NEWLINE is true then add a newline at the end of the input."
     (make-local-hook 'kill-buffer-hook))
   (add-hook 'kill-buffer-hook 'slime-repl-safe-save-merged-history nil t)
   (add-hook 'kill-emacs-hook 'slime-repl-save-all-histories)
-  (slime-setup-command-hooks)
+  ;(slime-setup-command-hooks)
   (when (and (boundp 'slime-use-autodoc-mode) slime-use-autodoc-mode)
     (slime-autodoc-mode 1))
   (setq default-directory (concat *specware* "/"))
@@ -272,14 +272,14 @@ If NEWLINE is true then add a newline at the end of the input."
   (run-mode-hooks 'specware-listener-mode-hook))
 
 ;;; Redefining slime functions and variables
-(defun* slime-start (&key (program inferior-lisp-program) program-args
-                          directory
-                          (coding-system slime-net-coding-system)
-                          (init 'slime-cond-init-command)
-                          name
-                          (buffer "*inferior-lisp*")
-                          init-function
-                          env)
+(cl-defun slime-start (&key (program inferior-lisp-program) program-args
+                         directory
+                         (coding-system slime-net-coding-system)
+                         (init 'slime-cond-init-command)
+                         name
+                         (buffer "*inferior-lisp*")
+                         init-function
+                         env)
   "Start a Lisp process and connect to it.
 This function is intended for programmatic use if `slime' is not
 flexible enough.
@@ -299,7 +299,7 @@ DIRECTORY change to this directory before starting the process.
 "
   (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
       (slime-allegro-windows program program-args)
-    (let ((args (list :program program :program-args program-args :buffer buffer 
+    (let ((args (list :program program :program-args program-args :buffer buffer
                       :coding-system coding-system :init init :name name
                       :init-function init-function :env env)))
       (slime-check-coding-system coding-system)
@@ -343,7 +343,7 @@ DIRECTORY change to this directory before starting the process.
 ;;   (let ((coding-system (or coding-system slime-net-coding-system)))
 ;;     (slime-check-coding-system coding-system)
 ;;     (message "Connecting to Swank on port %S.." port)
-;;     (let* ((port 
+;;     (let* ((port
 ;;             ;; deal with apparent bug in some xemacs versions
 ;;             ;; that seem unprepared for ports as numbers
 ;;             ;; e.g. 21.4.15
@@ -365,11 +365,11 @@ DIRECTORY change to this directory before starting the process.
 	  (setf (slime-connection-output-buffer)
 		(let ((connection (slime-connection)))
 		  (with-current-buffer (sw-slime-repl-buffer t connection)
-		    (unless (eq major-mode 'specware-listener-mode) 
+		    (unless (eq major-mode 'specware-listener-mode)
 		      (specware-listener-mode))
 		    (setq slime-buffer-connection connection)
 		    (slime-reset-repl-markers)
-		    (unless noprompt 
+		    (unless noprompt
 		      (slime-repl-insert-prompt))
 		    (current-buffer))))))))
 
@@ -387,7 +387,7 @@ DIRECTORY change to this directory before starting the process.
 Set slime-output-end to start of the inserted text slime-input-start
 to end."
   (if (not specware-listener-p)
-      (funcall old-slime-repl-insert-prompt)  
+      (funcall old-slime-repl-insert-prompt)
     (progn
       (goto-char slime-repl-input-start-mark)
       (unless slime-repl-suppress-prompt
@@ -413,7 +413,7 @@ to end."
   (with-current-buffer (slime-output-buffer)
     (save-excursion
       (when result
-        (destructure-case result
+        (slime-dcase result
           ((:values &rest strings)
            (cond ((null strings)
                   (slime-repl-emit-result "; No value\n" t))
@@ -449,15 +449,15 @@ to end."
     (slime-repl-show-maximum-output)))
 
 
-(defface slime-repl-output-face
-  (if (slime-face-inheritance-possible-p)
-      '((t (:inherit font-lock-string-face)))
-  ;; sjw: RosyBrown --> DarkBrown as was too light
-    '((((class color) (background light)) (:foreground "DarkBrown"))
-      (((class color) (background dark)) (:foreground "LightSalmon"))
-      (t (:slant italic))))
-  "Face for Lisp output in the SLIME REPL."
-  :group 'slime-repl)
+;; (defface slime-repl-output-face
+;;   (if (slime-face-inheritance-possible-p)
+;;       '((t (:inherit font-lock-string-face)))
+;;   ;; sjw: RosyBrown --> DarkBrown as was too light
+;;     '((((class color) (background light)) (:foreground "DarkBrown"))
+;;       (((class color) (background dark)) (:foreground "LightSalmon"))
+;;       (t (:slant italic))))
+;;   "Face for Lisp output in the SLIME REPL."
+;;   :group 'slime-repl)
 
 ;; Mod to use new slime-repl-update-banner hooks?
 (setq slime-repl-banner-function 'sw-slime-repl-insert-banner)

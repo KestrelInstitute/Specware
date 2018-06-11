@@ -36,10 +36,7 @@ Fontify CHECK-FOO like CHECK-TYPE."
     'lisp-mode slime-additional-font-lock-keywords)))
 
 (defface slime-reader-conditional-face
-  (if (slime-face-inheritance-possible-p)
     '((t (:inherit font-lock-comment-face)))
-  '((((background light)) (:foreground "DimGray" :bold t))
-    (((background dark)) (:foreground "LightGray" :bold t))))
   "Face for compiler notes while selected."
   :group 'slime-mode-faces)
 
@@ -111,25 +108,30 @@ position, or nil."
   ;;; no other intervening sexp, and we check that the reader
   ;;; conditional is at the same nesting level.
   (condition-case nil
-      (let* ((orig-pt (point)))
-        (when-let (reader-conditional-pt
-                   (search-backward-regexp slime-reader-conditionals-regexp
-                                           ;; We restrict the search to the
-                                           ;; beginning of the /previous/ defun.
-                                           (save-excursion (beginning-of-defun) (point))
-                                           t))
+      (let* ((orig-pt (point))
+	     (reader-conditional-pt
+	      (search-backward-regexp slime-reader-conditionals-regexp
+				      ;; We restrict the search to the
+				      ;; beginning of the /previous/ defun.
+				      (save-excursion
+					(beginning-of-defun)
+					(point))
+				      t)))
+	(when reader-conditional-pt
           (let* ((parser-state
-                  (parse-partial-sexp (progn (goto-char (+ reader-conditional-pt 2))
-                                             (forward-sexp) ; skip feature expr.
-                                             (point))
-                                      orig-pt))
+                  (parse-partial-sexp
+		   (progn (goto-char (+ reader-conditional-pt 2))
+			  (forward-sexp) ; skip feature expr.
+			  (point))
+		   orig-pt))
                  (paren-depth  (car  parser-state))
                  (last-sexp-pt (cl-caddr  parser-state)))
-            (if (and paren-depth (not (cl-plusp paren-depth)) ; no opening parenthesis in between?
-                     (not last-sexp-pt))                   ; no complete sexp in between?
+            (if (and paren-depth
+		     (not (cl-plusp paren-depth)) ; no '(' in between?
+                     (not last-sexp-pt)) ; no complete sexp in between?
                 reader-conditional-pt
               nil))))
-    (scan-error nil)))                                     ; improper feature expression
+    (scan-error nil)))			; improper feature expression
 
 
 ;;; We'll push this onto `font-lock-extend-region-functions'. In past,
@@ -160,8 +162,8 @@ position, or nil."
         c font-lock-beg font-lock-end)))))
 
 (defun slime-beginning-of-tlf ()
-  (when-let (pos (syntax-ppss-toplevel-pos (slime-current-parser-state)))
-    (goto-char pos)))
+  (let ((pos (syntax-ppss-toplevel-pos (slime-current-parser-state))))
+    (if pos (goto-char pos))))
 
 (defun slime-compute-region-for-font-lock (orig-beg orig-end)
   (let ((beg orig-beg)
@@ -199,7 +201,11 @@ position, or nil."
                               'slime-extend-region-for-font-lock t t)))))
 
 (let ((byte-compile-warnings '()))
-  (mapc #'byte-compile
+  (mapc (lambda (sym)
+          (cond ((fboundp sym)
+                 (unless (byte-code-function-p (symbol-function sym))
+                   (byte-compile sym)))
+                (t (error "%S is not fbound" sym))))
         '(slime-extend-region-for-font-lock
           slime-compute-region-for-font-lock
           slime-search-directly-preceding-reader-conditional

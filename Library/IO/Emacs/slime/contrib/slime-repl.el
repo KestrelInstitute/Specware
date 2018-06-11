@@ -64,21 +64,12 @@ current repl's (as per slime-output-buffer) window."
   :group 'slime-repl)
 
 (defface slime-repl-prompt-face
-  (if (slime-face-inheritance-possible-p)
-      '((t (:inherit font-lock-keyword-face)))
-    '((((class color) (background light)) (:foreground "Purple"))
-      (((class color) (background dark)) (:foreground "Cyan"))
-      (t (:weight bold))))
+    '((t (:inherit font-lock-keyword-face)))
   "Face for the prompt in the SLIME REPL."
   :group 'slime-repl)
 
 (defface slime-repl-output-face
-  (if (slime-face-inheritance-possible-p)
-      '((t (:inherit font-lock-string-face)))
-    ;; sjw: RosyBrown --> DarkBrown as was too light
-    '((((class color) (background light)) (:foreground "DarkBrown"))
-      (((class color) (background dark)) (:foreground "LightSalmon"))
-      (t (:slant italic))))
+    '((t (:inherit font-lock-string-face)))
   "Face for Lisp output in the SLIME REPL."
   :group 'slime-repl)
 
@@ -165,8 +156,7 @@ current repl's (as per slime-output-buffer) window."
 
 (defun slime-repl-insert-banner ()
   (when (zerop (buffer-size))
-    (let ((welcome (concat "; SLIME " (or (slime-changelog-date)
-                                          "- ChangeLog file not found"))))
+    (let ((welcome (concat "; SLIME " slime-version)))
       (insert welcome))))
 
 (defun slime-init-output-buffer (connection)
@@ -204,8 +194,9 @@ current repl's (as per slime-output-buffer) window."
     (slime-set-query-on-exit-flag stream)
     (set-process-filter stream 'slime-output-filter)
     (set-process-coding-system stream emacs-coding-system emacs-coding-system)
-    (when-let (secret (slime-secret))
-      (slime-net-send secret stream))
+    (let ((secret (slime-secret)))
+      (when secret
+	(slime-net-send secret stream)))
     (run-hook-with-args 'slime-open-stream-hooks stream)
     stream))
 
@@ -453,8 +444,6 @@ joined together."))
   ("\M-r" 'slime-repl-previous-matching-input)
   ("\M-s" 'slime-repl-next-matching-input)
   ("\C-c\C-c" 'slime-interrupt)
-  ("\t" 'slime-indent-and-complete-symbol)
-  ("\M-\t" 'slime-complete-symbol)
   (" " 'slime-space)
   ((string slime-repl-shortcut-dispatch-char) 'slime-handle-repl-shortcut)
   ("\C-c\C-o" 'slime-repl-clear-output)
@@ -494,6 +483,8 @@ joined together."))
   (lisp-mode-variables t)
   (set (make-local-variable 'lisp-indent-function)
        'common-lisp-indent-function)
+  (slime-setup-completion)
+  (set (make-local-variable 'tab-always-indent) 'complete)
   (setq font-lock-defaults nil)
   (setq mode-name "REPL")
   (setq slime-current-thread :repl-thread)
@@ -505,7 +496,6 @@ joined together."))
               'slime-repl-safe-save-merged-history
               'append t))
   (add-hook 'kill-emacs-hook 'slime-repl-save-all-histories)
-  (slime-setup-command-hooks)
   ;; At the REPL, we define beginning-of-defun and end-of-defun to be
   ;; the start of the previous prompt or next prompt respectively.
   ;; Notice the interplay with SLIME-REPL-BEGINNING-OF-DEFUN.
@@ -522,7 +512,8 @@ joined together."))
 
 (defun slime-repl ()
   (interactive)
-  (slime-switch-to-output-buffer))
+  (slime-switch-to-output-buffer)
+  (current-buffer))
 
 (defun slime-repl-mode-beginning-of-defun (&optional arg)
   (if (and arg (< arg 0))
@@ -544,11 +535,12 @@ joined together."))
 (defun slime-repl-eval-string (string)
   (slime-rex ()
       ((if slime-repl-auto-right-margin
-           `(swank:listener-eval ,string
-                                 :window-width
-                                 ,(with-current-buffer (slime-output-buffer)
-                                    (window-width)))
-         `(swank:listener-eval ,string))
+           `(swank-repl:listener-eval
+	     ,string
+	     :window-width
+	     ,(with-current-buffer (slime-output-buffer)
+		(window-width)))
+         `(swank-repl:listener-eval ,string))
        (slime-lisp-package))
     ((:ok result)
      (slime-repl-insert-result result))
@@ -559,7 +551,7 @@ joined together."))
   (with-current-buffer (slime-output-buffer)
     (save-excursion
       (when result
-        (destructure-case result
+        (slime-dcase result
           ((:values &rest strings)
            (cond ((null strings)
                   (slime-repl-emit-result "; No value\n" t))
@@ -878,11 +870,12 @@ used with a prefix argument (C-u), doesn't switch back afterwards."
 (defun slime-repl-input-line-beginning-position ()
   (save-excursion
     (goto-char slime-repl-input-start-mark)
-    (line-beginning-position)))
+    (let ((inhibit-field-text-motion t))
+      (line-beginning-position))))
 
 (defun slime-clear-repl-variables ()
   (interactive)
-  (slime-eval-async `(swank:clear-repl-variables)))
+  (slime-eval-async `(swank-repl:clear-repl-variables)))
 
 (defvar slime-repl-clear-buffer-hook)
 
@@ -962,9 +955,7 @@ used with a prefix argument (C-u), doesn't switch back afterwards."
   "Add STRING to the input history.
 Empty strings and duplicates are ignored."
   (when slime-repl-history-trim-whitespaces
-    (setq string (replace-regexp-in-string "[\t\n\s]*\\(.*?\\)[\t\n\s]*"
-                                           "\\1"
-                                           string)))
+    (setq string (slime-trim-whitespace string)))
   (unless (equal string "")
     (when slime-repl-history-remove-duplicates
       (setq slime-repl-input-history
@@ -1205,6 +1196,7 @@ The handler will use qeuery to ask the use if the error should be ingored."
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-m" 'slime-repl-return)
     (define-key map [return] 'slime-repl-return)
+    (define-key map (kbd "TAB") 'self-insert-command)
     (define-key map "\C-c\C-b" 'slime-repl-read-break)
     (define-key map "\C-c\C-c" 'slime-repl-read-break)
     (define-key map [remap slime-indent-and-complete-symbol] 'ignore)
@@ -1508,7 +1500,7 @@ expansion will be added to the REPL's history.)"
       (let ((marker (copy-marker (buffer-size)))
             (target (incf slime-last-output-target-id)))
         (puthash target marker slime-output-target-to-marker)
-        (slime-eval `(swank:redirect-trace-output ,target))))
+        (slime-eval `(swank-repl:redirect-trace-output ,target))))
     ;; Note: We would like the entries in
     ;; slime-output-target-to-marker to disappear when the buffers are
     ;; killed.  We cannot just make the hash-table ":weakness 'value"
@@ -1560,7 +1552,7 @@ expansion will be added to the REPL's history.)"
     (let ((toplevel (slime-parse-toplevel-form)))
       (if (symbolp toplevel)
           (error "Not in a function definition")
-        (destructure-case toplevel
+        (slime-dcase toplevel
           (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
            (insert-call symbol))
           ((:defmethod symbol &rest args)
@@ -1573,28 +1565,29 @@ expansion will be added to the REPL's history.)"
           (t
            (error "Not in a function definition")))))))
 
+(defun slime-repl-copy-down-to-repl (slimefun &rest args)
+  (slime-eval-async `(swank-repl:listener-save-value ',slimefun ,@args)
+    #'(lambda (_ignored)
+        (with-current-buffer (slime-repl)
+          (slime-eval-async '(swank-repl:listener-get-value)
+            #'(lambda (_ignored)
+                (slime-repl-insert-prompt)))))))
+
 (defun slime-inspector-copy-down-to-repl (number)
   "Evaluate the inspector slot at point via the REPL (to set `*')."
   (interactive (list (or (get-text-property (point) 'slime-part-number)
                          (error "No part at point"))))
-  (slime-repl-send-string
-   (format "%s" `(cl:nth-value 0 (swank:inspector-nth-part ,number))))
-  (slime-repl))
+  (slime-repl-copy-down-to-repl 'swank:inspector-nth-part number))
 
 (defun sldb-copy-down-to-repl (frame-id var-id)
   "Evaluate the frame var at point via the REPL (to set `*')."
   (interactive (list (sldb-frame-number-at-point) (sldb-var-number-at-point)))
-  (slime-repl-send-string
-   (format "%s"
-           `(cl:prog1 (swank-backend:frame-var-value
-                       ,frame-id ,var-id)
-                      (swank:set-repl-variables))))
-  (slime-repl))
+  (slime-repl-copy-down-to-repl 'swank/backend:frame-var-value frame-id var-id))
 
 (defun sldb-insert-frame-call-to-repl ()
   "Insert a call to a frame at point."
   (interactive)
-  (let ((call (slime-eval `(swank-backend::frame-call
+  (let ((call (slime-eval `(swank/backend::frame-call
                             ,(sldb-frame-number-at-point)))))
     (slime-switch-to-output-buffer)
     (if (>= (point) slime-repl-prompt-start-mark)
@@ -1708,14 +1701,14 @@ expansion will be added to the REPL's history.)"
   (destructuring-bind (package prompt)
       (let ((slime-current-thread t)
 	    (cs (slime-repl-choose-coding-system)))
-	(slime-eval `(swank:create-repl nil :coding-system ,cs)))
+	(slime-eval `(swank-repl:create-repl nil :coding-system ,cs)))
     (setf (slime-lisp-package) package)
     (setf (slime-lisp-package-prompt-string) prompt))
   (slime-hide-inferior-lisp-buffer)
   (slime-init-output-buffer (slime-connection)))
 
 (defun slime-repl-event-hook-function (event)
-  (destructure-case event
+  (slime-dcase event
     ((:write-string output &optional target)
      (slime-write-string output target)
      t)

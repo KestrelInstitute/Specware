@@ -163,7 +163,7 @@ Otherwise NIL is returned."
 		   finally
                    (return (values initial main final)))))
 	 (generate-main-clause (clause arglist)
-	   (destructure-case clause
+	   (dcase clause
              ((&provided (&optional arg) . body)
               (let ((gensym (gensym "PROVIDED-ARG+")))
 		`(dolist (,gensym (arglist.provided-args ,arglist))
@@ -673,7 +673,7 @@ whether &allow-other-keys appears somewhere."
          amuc
          (compute-applicable-methods generic-function arguments)))))
 
-(defgeneric extra-keywords (operator &rest args)
+(defgeneric extra-keywords (operator args)
    (:documentation "Return a list of extra keywords of OPERATOR (a
 symbol) when applied to the (unevaluated) ARGS.
 As a secondary value, return whether other keys are allowed.
@@ -693,7 +693,7 @@ to determine the extra keywords."))
 ;;; obfuscating the arglist of MAKE-INSTANCE.
 ;;;
 
-(defmethod extra-keywords :around (op &rest args)
+(defmethod extra-keywords :around (op args)
   (declare (ignorable op args))
   (multiple-value-bind (keywords aok enrichments) (call-next-method)
     (values (sort-extra-keywords keywords) aok enrichments)))
@@ -734,7 +734,7 @@ forward keywords to OPERATOR."
     (values (arglist.keyword-args arglist)
             (arglist.allow-other-keys-p arglist))))
 
-(defmethod extra-keywords (operator &rest args)
+(defmethod extra-keywords (operator args)
   ;; default method
   (declare (ignore args))
   (let ((symbol-function (symbol-function operator)))
@@ -752,9 +752,7 @@ forward keywords to OPERATOR."
                  (not (swank-mop:class-finalized-p class)))
         ;; Try to finalize the class, which can fail if
         ;; superclasses are not defined yet
-        (handler-case (swank-mop:finalize-inheritance class)
-          (program-error (c)
-            (declare (ignore c)))))
+        (ignore-errors (swank-mop:finalize-inheritance class)))
       class)))
 
 (defun extra-keywords/slots (class)
@@ -773,7 +771,7 @@ forward keywords to OPERATOR."
                           (swank-mop:slot-definition-initargs slot)))))
       (values slot-init-keywords allow-other-keys-p))))
 
-(defun extra-keywords/make-instance (operator &rest args)
+(defun extra-keywords/make-instance (operator args)
   (declare (ignore operator))
   (unless (null args)
     (let* ((class-name-form (car args))
@@ -801,7 +799,7 @@ forward keywords to OPERATOR."
                         (or class-aokp ai-aokp ii-aokp si-aokp)
                         (list class-name-form))))))))))
 
-(defun extra-keywords/change-class (operator &rest args)
+(defun extra-keywords/change-class (operator args)
   (declare (ignore operator))
   (unless (null args)
     (let* ((class-name-form (car args))
@@ -826,44 +824,43 @@ forward keywords to OPERATOR."
                     (list class-name-form))))))))
 
 (defmethod extra-keywords ((operator (eql 'make-instance))
-                           &rest args)
-  (multiple-value-or (apply #'extra-keywords/make-instance operator args)
+                           args)
+  (multiple-value-or (extra-keywords/make-instance operator args)
                      (call-next-method)))
 
 (defmethod extra-keywords ((operator (eql 'make-condition))
-                           &rest args)
-  (multiple-value-or (apply #'extra-keywords/make-instance operator args)
+                           args)
+  (multiple-value-or (extra-keywords/make-instance operator args)
                      (call-next-method)))
 
 (defmethod extra-keywords ((operator (eql 'error))
-                           &rest args)
-  (multiple-value-or (apply #'extra-keywords/make-instance operator args)
+                           args)
+  (multiple-value-or (extra-keywords/make-instance operator args)
                      (call-next-method)))
 
 (defmethod extra-keywords ((operator (eql 'signal))
-                           &rest args)
-  (multiple-value-or (apply #'extra-keywords/make-instance operator args)
+                           args)
+  (multiple-value-or (extra-keywords/make-instance operator args)
                      (call-next-method)))
 
 (defmethod extra-keywords ((operator (eql 'warn))
-                           &rest args)
-  (multiple-value-or (apply #'extra-keywords/make-instance operator args)
+                           args)
+  (multiple-value-or (extra-keywords/make-instance operator args)
                      (call-next-method)))
 
 (defmethod extra-keywords ((operator (eql 'cerror))
-                           &rest args)
+                           args)
   (multiple-value-bind (keywords aok determiners)
-      (apply #'extra-keywords/make-instance operator
-             (cdr args))
+      (extra-keywords/make-instance operator (cdr args))
     (if keywords
         (values keywords aok
                 (cons (car args) determiners))
         (call-next-method))))
 
 (defmethod extra-keywords ((operator (eql 'change-class))
-                           &rest args)
+                           args)
   (multiple-value-bind (keywords aok determiners)
-      (apply #'extra-keywords/change-class operator (cdr args))
+      (extra-keywords/change-class operator (cdr args))
     (if keywords
         (values keywords aok
                 (cons (car args) determiners))
@@ -890,7 +887,7 @@ the initial sublist of ARGS that was needed to determine the extra
 keywords.  As a tertiary return value, return whether any enrichment
 was done."
   (multiple-value-bind (extra-keywords extra-aok determining-args)
-      (apply #'extra-keywords form)
+      (extra-keywords (car form) (cdr form))
     ;; enrich the list of keywords with the extra keywords
     (enrich-decoded-arglist-with-keywords decoded-arglist
                                           extra-keywords extra-aok)
@@ -1569,17 +1566,22 @@ datum for subsequent logics to rely on."
 	  (make-arglist-dummy string)))))
 
 (defun test-print-arglist ()
-  (flet ((test (arglist string)
+  (flet ((test (arglist &rest strings)
            (let* ((*package* (find-package :swank))
                   (actual (decoded-arglist-to-string
                            (decode-arglist arglist)
                            :print-right-margin 1000)))
-             (unless (string= actual string)
-               (warn "Test failed: ~S => ~S~%  Expected: ~S"
-                     arglist actual string)))))
+             (unless (loop for string in strings
+                           thereis (string= actual string))
+               (warn "Test failed: ~S => ~S~%  Expected: ~A"
+                     arglist actual
+                     (if (cdr strings)
+                         (format nil "One of: ~{~S~^, ~}" strings)
+                         (format nil "~S" (first strings))))))))
     (test '(function cons) "(function cons)")
     (test '(quote cons) "(quote cons)")
-    (test '(&key (function #'+)) "(&key (function #'+))")
+    (test '(&key (function #'+))
+          "(&key (function #'+))" "(&key (function (function +)))")
     (test '(&whole x y z) "(y z)")
     (test '(x &aux y z) "(x)")
     (test '(x &environment env y) "(x y)")

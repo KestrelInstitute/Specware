@@ -29,7 +29,7 @@
     (":sw-help" . "Help for specware commands")
     (":sw-init" . "Clear Spec cache")
 ;;; Comment out undocumented commands
-    (":swc" . "Generate C code for unit") 
+    (":swc" . "Generate C code for unit")
     (":swe" . "Evaluate specware term")
     (":swe-spec" . "Set spec context for :swe command")
     (":swj" . "Generate Java code for unit")
@@ -47,11 +47,11 @@
 
 (defun sw-help (&optional argstr)
   ;; argstr should always be a string now, but test for null anyways
-  (if (or  (null argstr) (equal argstr ""))  
+  (if (or  (null argstr) (equal argstr ""))
       (loop for (com . helpstr) in *sw-help-strings* do
            (print-command-doc com helpstr))
       (let ((pr (assoc argstr *sw-help-strings* :test 'equal)))
-        (if pr 
+        (if pr
             (print-command-doc (car pr) (cdr pr))
             (format t "No documentation for command: ~A." argstr))))
   (values))
@@ -122,9 +122,9 @@
 (defun norm-unitid-str (str)
   (setq *current-temp-file* nil)
   (setq SpecCalc::aliasPaths nil)
-  (if (or (null str) (equal str "")) 
-      nil ; would prefer "", but then need to revise all the callers 
-      (progn 
+  (if (or (null str) (equal str ""))
+      nil ; would prefer "", but then need to revise all the callers
+      (progn
         (setq str (strip-extraneous str))
         (let ((len (length str)))
           (when (and (> len 3)
@@ -136,7 +136,7 @@
             ;; spec calc term. Need to put it in a temporary file
             (let* ((tmp-dir (format nil "~Asw/" Specware::temporaryDirectory))
                    (tmp-name (format nil "sw_tmp_~D_~D"
-                                     (incf *tmp-counter*) 
+                                     (incf *tmp-counter*)
                                      (ymd-hms)))
 ;;;		    (tmp-full-name (format nil "~A~A" tmp-dir tmp-name))
 ;;;		    (tmp-device-uid-pr (split-device tmp-full-name))
@@ -497,7 +497,7 @@
   ;; Splits absolute filename into head suitable for swpath entry and
   ;; tail suitable for a uid. Note that uids cannot contain ~ or spaces
   ;; Assumes sw::normalize-filename has been called
-  (let (head pos) 
+  (let (head pos)
     (if (eq (elt filename 1) #\:)
 	(progn (setq head (subseq filename 0 3))
 	       (setq filename (subseq filename 3)))
@@ -564,7 +564,7 @@
   (values))
 
 #+allegro
-(top-level:alias ("swe-spec" :case-sensitive :string) (x) 
+(top-level:alias ("swe-spec" :case-sensitive :string) (x)
   (swe-spec x))
 
 (defvar *swe-print-as-slang?* nil)
@@ -574,7 +574,7 @@
 (defun ymd-hms ()
   (multiple-value-bind (second minute hour day month year)
       (decode-universal-time (get-universal-time))
-    (format nil "~2,'0D~2,'0D~2,'0D_~2,'0D~2,'0D~2,'0D" 
+    (format nil "~2,'0D~2,'0D~2,'0D_~2,'0D~2,'0D~2,'0D"
 	    (mod year 100) month day
 	    hour minute second)))
 
@@ -592,7 +592,7 @@
 (defun swe (x)
   (let* ((tmp-dir (format nil "~A~A_swe/" Specware::temporaryDirectory (user-name)))
 	 (tmp-name (format nil "swe_tmp_~D_~D"
-			   (incf *tmp-counter*) 
+			   (incf *tmp-counter*)
 			   (ymd-hms)))
 	 (tmp-uid (format nil "/~A"     tmp-name))
 	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
@@ -692,12 +692,12 @@
 (defvar interpreterBaseName "/Library/InterpreterBase")
 (defvar MSInterpreter::interpreterBaseSpec)
 
-;; Specware::initializeInterpreterBaseAux is funcalled from 
+;; Specware::initializeInterpreterBaseAux is funcalled from
 ;; Specware::initializeInterpreterBase-0 in Preface.lisp, which in turn is called from
 ;; intializeSpecware in Specware.sw
 ;; This indirection avoids compiler warnings about Specware::initializeInterpreterBase-0
 ;; being undefined when Specware4.lisp is compiled.
-(defun Specware::initializeInterpreterBaseAux () 
+(defun Specware::initializeInterpreterBaseAux ()
   (unwind-protect
       (progn
 	;; clear base names so adding defs for base ops won't complain
@@ -778,8 +778,8 @@
 (defun swj-internal (x &optional y)
   (let ((Emacs::*goto-file-position-store?* t)
 	(Emacs::*goto-file-position-stored* nil))
-    (Specware::evaluateJavaGen_fromLisp-2 (norm-unitid-str x) 
-					  (if y 
+    (Specware::evaluateJavaGen_fromLisp-2 (norm-unitid-str x)
+					  (if y
 					      (cons :|Some| y)
 					    '(:|None|)))
     (show-error-position Emacs::*goto-file-position-stored* 1)
@@ -916,7 +916,7 @@
   (if val
       (cons :|Some| val)
       '(:|None|)))
-  
+
 ; This is the function invoked by the Specware shell command 'gen-c-thin'.
 ; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
 (defun gen-c-thin (&optional argstring)
@@ -1061,7 +1061,7 @@
 	       (hw-src (if (IO-Spec::fileExistsAndReadable hw-src-1) hw-src-1
 			 (if (IO-Spec::fileExistsAndReadable hw-src-2) hw-src-2 nil)))
 	       )
-	  (when *make-verbose* 
+	  (when *make-verbose*
 	    (progn
 	      (format t ";; using make command:                     ~S~%" make-command)
 	      (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
@@ -1101,7 +1101,7 @@
 	      (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)~%"
 		      cbase cbase)
 	      ))
-	  (when *make-verbose* 
+	  (when *make-verbose*
 	    (format t ";; invoking make command:  ~A -f ~A~%" make-command make-file))
 	  (maybe-restore-swpath)
 	  (run-cmd make-command (list "-f" (format nil "~A" make-file))))
@@ -1115,7 +1115,7 @@
 	      )
 	  (format t " and no previous make-file found; please supply a unit-id as argument.~%")
 	  )))))
- 
+
 
 #+allegro
 (top-level:alias ("make" :case-sensitive :string) (&optional args)
@@ -1281,7 +1281,7 @@
 ;; already declared in ~/Work/Generic/Specware4/Library/Legacy/Utilities/Handwritten/Lisp/System.lisp :
 ;; (defvar System-spec::specwareDebug? nil)
 (defun swdbg (&optional (b nil b?))
-  (if b? 
+  (if b?
       (princ (setq System-Spec::specwareDebug?
 	       (and b (if (member b '("nil" "NIL" "off") :test 'string=)
 			  nil t))))
@@ -1294,7 +1294,7 @@
     (princ System-Spec::specwareDebug?)))
 
 (defun swprb (&optional (b nil b?))
-  (if b? 
+  (if b?
       (princ (setq System-Spec::proverUseBase?
 	       (and b (if (member b '("nil" "NIL" "off") :test 'string=)
 			  nil t))))
@@ -1380,12 +1380,19 @@
 (defun help (&optional command)
   (sw-help command))
 
+<<<<<<< HEAD
 #|
 #+(or sbcl cmu)
 (Specware::without-package-locks
  (defun cl::commandp (form)
   (keywordp form)))
 |#
+=======
+;;#+(or sbcl cmu)
+;; (Specware::without-package-locks
+;;  (defun cl::commandp (form)
+;;   (keywordp form)))
+>>>>>>> Install latest verions of slime
 
 (defun invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
@@ -1399,7 +1406,7 @@
     (when ch
       (unread-char ch))
     (if (or (null ch)			; interactive, end of command
-	    (eq ch #\Newline))		; batch, first char after whitespace is newline      
+	    (eq ch #\Newline))		; batch, first char after whitespace is newline
 	(if (fboundp fn)
 	    (funcall fn)
 	  (progn (warn "Unknown command ~s" command)
@@ -1409,12 +1416,20 @@
 	(progn (read-line)
 	       (warn "Unknown command ~s" command)
 	       (values))))))
+<<<<<<< HEAD
 #|
 #+(or cmu mcl sbcl)
 (Specware::without-package-locks
  (defun cl::invoke-command-interactive (command)
    (invoke-command-interactive command)))
 |#
+=======
+
+;; #+(or cmu mcl sbcl)
+;; (Specware::without-package-locks
+;;  (defun cl::invoke-command-interactive (command)
+;;    (invoke-command-interactive command)))
+>>>>>>> Install latest verions of slime
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))
@@ -1428,7 +1443,7 @@
 			 (format t "~A~%" val))
 		       t))
 	    (when (let* ((pair (assoc cmd (cdr g))))
-		    (if pair 
+		    (if pair
 			(progn (apply (cadr pair) args)
 			       t)))
 	      (return t))))))
@@ -1491,15 +1506,15 @@
 (defun bash (&optional (str ""))
   (block return-from-bash
     (if (and (stringp str) (> (length str) 0))
-	(let* ((fn_and_args 
+	(let* ((fn_and_args
 		;; TODO: not quite right -- shouldn't break on spaces within strings, etc.
-		(String-Spec::splitStringAt-2 str " ")) 
+		(String-Spec::splitStringAt-2 str " "))
 	       (fn   (car fn_and_args))
 	       (args (cdr fn_and_args)))
-	  (handler-bind ((error 
+	  (handler-bind ((error
 			  #'(lambda (x)
 			      (declare (ignore x))
-			      (handler-bind ((error 
+			      (handler-bind ((error
 					      #'(lambda (x)
 						  (format t "~%~A~%" x)
 						  (format t "~%~A doesn't seem to be accessible.~%" fn)
@@ -1513,14 +1528,14 @@
 				    #-ALLEGRO-V7.0 (finish-output)
 				    (Specware::run_cmd-2 "bash" (list "-c" str))))))))
 	    (Specware::run_cmd-2 fn args)))
-      (handler-bind ((error 
+      (handler-bind ((error
 		      #'(lambda (x)
 			  (declare (ignore x))
 			  (format t "~%The bash shell doesn't seem to be available.~%")
 			  #+(or mswindows win32) (format t "~&(It is installed as part of the Cygwin installation.)~%")
 			  (return-from bash nil))))
 	;; ACCORD feature is set by $ACCORD/Scripts/Lisp/BuildPreamble.lisp at build time
-	(format t 
+	(format t
 		(if (member :ACCORD cl::*features*)
 		     "~&Interactive bash shell:~%Type exit to return to Accord Shell.~2%"
 		  "~&Interactive bash shell:~%Type exit to return to Specware Shell.~2%"))
@@ -1533,4 +1548,3 @@
 			"~2&Back in Accord Shell.~2%"
 		      "~2&Back in Specware Shell.~2%"))
 	  )))))
-

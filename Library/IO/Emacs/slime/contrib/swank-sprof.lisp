@@ -10,7 +10,7 @@
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (let ((sb-fasl:*fasl-file-type* "fasl")) ; sjw
-    (require :sb-sprof)))
+     (require :sb-sprof)))
 
 #+sbcl(progn
 
@@ -53,8 +53,8 @@
 (defun filter-swank-nodes (nodes)
   (let ((swank-packages (load-time-value
                          (mapcar #'find-package
-                                 '(swank swank-rpc swank-mop
-                                   swank-match swank-backend)))))
+                                 '(swank swank/rpc swank/mop
+                                   swank/match swank/backend)))))
     (remove-if (lambda (node)
                  (let ((name (sb-sprof::node-name node)))
                    (and (symbolp name)

@@ -23,7 +23,7 @@
 ;; highlighting scheme, like this:
 
 ;; Alternatively, you can (require 'sw-font) which uses the font-lock
-;; package instead. 
+;; package instead.
 
 ;; Finally, there is also an inferior-specware-mode-hook -- see
 ;; sl-proc.el. For more information consult the mode's *info* tree.
@@ -119,10 +119,10 @@ This is a good place to put your preferred key bindings."
   :type 'hook
   :group 'specware)
 
-;;; CODE FOR SPECWARE-MODE 
+;;; CODE FOR SPECWARE-MODE
 
 (defun sw:indent-level (&optional indent)
-   "Allow the user to change the block indentation level. Numeric prefix 
+   "Allow the user to change the block indentation level. Numeric prefix
 accepted in lieu of prompting."
    (interactive "NIndentation level: ")
    (setq sw:indent-level indent))
@@ -155,7 +155,7 @@ accepted in lieu of prompting."
   "Toggle sw:electric-semi-mode. Prefix means set it to nil."
   (interactive "P")
   (setq sw:electric-semi-mode (and (not of) (not sw:electric-semi-mode)))
-  (message "%s" (concat "Electric semi mode is " 
+  (message "%s" (concat "Electric semi mode is "
                    (if sw:electric-semi-mode "on" "off"))))
 
 ;(defun insert-circle-s () (interactive) (insert "§"))
@@ -187,9 +187,9 @@ accepted in lieu of prompting."
   (interactive)
   (customize-save-customized))
 
-(require 'easymenu) 
+(require 'easymenu)
 
-(defconst specware-menu 
+(defconst specware-menu
     '("Specware"
       ["Process Current File" sw:process-current-file t]
       ["Process Unit" sw:process-unit t]
@@ -200,7 +200,7 @@ accepted in lieu of prompting."
       ["Generate Local Lisp"  sw:gcl-current-file t]
       ["Evaluate Region" sw:evaluate-region (mark t)]
       ["ctext Spec" sw:set-swe-spec t]
-      ["cd to this directory" cd-current-directory t] 
+      ["cd to this directory" cd-current-directory t]
       ["Generate Isabelle Obligation Theory" sw:convert-spec-to-isa-thy t]
       "-----"
       ["Find Definition" sw:meta-point t]
@@ -229,9 +229,9 @@ accepted in lieu of prompting."
 	:style toggle
 	:selected sw:use-hide-show]
        ["Save Options" (sw:save-options)])
-      ["About Specware" about-specware t])) 
+      ["About Specware" about-specware t]))
 
-(defconst specware-interaction-menu 
+(defconst specware-interaction-menu
     '("Specware"
       ["Find Definition" sw:meta-point t]
       ["Find Theorem" sw:find-theorems t]
@@ -317,7 +317,7 @@ accepted in lieu of prompting."
 ;  (define-key map "\C-cn"    'insert-negation)
 ;  (define-key map "\C-ce"    'insert-emptyset)
 
-  (easy-menu-add specware-mode-menu map) 
+  (easy-menu-add specware-mode-menu map)
   )
 
 (defvar sw:no-doc
@@ -376,7 +376,7 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?}       "){"    specware-mode-syntax-table)
 ;;;  (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table) ;; commented out by MB
   (modify-syntax-entry ?*      ". 23"  specware-mode-syntax-table) ;; added by MB
-  
+
   (modify-syntax-entry ?\"      "\"    " specware-mode-syntax-table)
   (modify-syntax-entry ?\\      "\\   " specware-mode-syntax-table)
   (modify-syntax-entry ?\#      "/"     specware-mode-syntax-table)
@@ -474,7 +474,7 @@ Full documentation will be available after autoloading the function."
                      (progn (beginning-of-line))
                    (goto-char (point-max)))
                  (forward-comment -100)) ; Go backward until non-comment found
-        (if (and (looking-at "\\<def\\>") (not (looking-back "\\<refine\\s-*")))
+        (if (and (looking-at "\\<def\\>") (not (looking-back "\\<refine\\s-*" nil)))
             (let ((beg-indentation (1+ (current-column))) ; 1+ just in case user indent by 1
                   (found-end nil))
               (while (not found-end)
@@ -497,7 +497,7 @@ Full documentation will be available after autoloading the function."
                           (sw:re-search-forward sw:basic-unit-intro-regexp))
                       (progn (forward-sexp -1)
                              (if (and (<= (current-column) beg-indentation)
-                                      (not (looking-back"\\<let\\s-*")))
+                                      (not (looking-back"\\<let\\s-*" nil)))
                                  (setq found-end t)))
                     (goto-char (point-max))))
                 (forward-comment -100))
@@ -567,7 +567,7 @@ sw:electric-semi-mode (default nil)
     If t, a `\;' will reindent line, and perform a newline.
 
 sw:paren-lookback (default 1000)
-    Determines how far back (in chars) the indentation algorithm should 
+    Determines how far back (in chars) the indentation algorithm should
     look to match parenthesis. A value of nil, means do not look at all.
 
 Mode map
@@ -640,7 +640,7 @@ Mode map
   (make-local-variable 'block-comment-end)
   (setq block-comment-end "*)")
   (make-local-variable 'comment-column)
-  (setq comment-column 40)              
+  (setq comment-column 40)
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip "\\((\\*\\|\`\end{spec}\\)+[ \t]?")
   (make-local-variable 'comment-indent-function)
@@ -653,7 +653,7 @@ Mode map
   ;; Adding these will fool the matching of parens. I really don't
   ;; know why. It would be nice to have comments treated as
   ;; white-space.
-  ;; 
+  ;;
   ;;(make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
   )
@@ -697,7 +697,7 @@ Mode map
   "The keywords a `|' can follow.")
 
 (defun sw:electric-pipe ()
-  "Insert a \"|\". 
+  "Insert a \"|\".
 Depending on the context insert the name of function, a \"->\" etc."
   (interactive)
   (let ((case-fold-search nil)          ; Case sensitive
@@ -752,7 +752,7 @@ Depending on the context insert the name of function, a \"->\" etc."
 
 (defun sw:electric-semi ()
   "Inserts a \;.
-If variable sw:electric-semi-mode is t, indent the current line, insert 
+If variable sw:electric-semi-mode is t, indent the current line, insert
 a newline, and indent."
   (interactive)
   (insert "\;")
@@ -911,7 +911,7 @@ If anyone has a good algorithm for this..."
                 ((looking-at "handle") (+ (current-indentation) 5))
                 ((looking-at "->")
                  (sw:block-back)
-                 (while (not (or (looking-at "of\\b\\|fn\\b") (looking-back "|\\s-*")) )
+                 (while (not (or (looking-at "of\\b\\|fn\\b") (looking-back "|\\s-*" nil)) )
                    (sw:block-back))
                  (if (looking-at "of\\b\\|fn\\b")
                      (+ (current-column) 1)
@@ -1036,14 +1036,14 @@ If anyone has a good algorithm for this..."
         (cond ((bobp) 0)
               ((looking-at "in\\b")   (sw:find-match-indent "in" "\\bin\\b" "\\blet\\b"))
               ((looking-at "then\\b") (+ (sw:find-match-indent "then" "\\bthen\\b" "\\bif\\b" t "\\belse if\\b") sw:indent-level))
-              (t 
+              (t
                ;; Go backward by grouped expressions until you are at the beginning of a line or after =
                (let ((backward-sexp-failed nil))
                  (while (not (or backward-sexp-failed
                                  (= (current-column) (current-indentation))
                                  (looking-at sw:indent-starters-reg)
                                  (and (not expr-ended)
-                                      (looking-back "let .* = *\\|-> *"))))
+                                      (looking-back "let .* = *\\|-> *" nil))))
                    (let ((ipos (point)))
                      (when (looking-at "->\\|else\\b\\|else\\b")
                        (setq expr-ended t))
@@ -1193,7 +1193,7 @@ If anyone has a good algorithm for this..."
                 (error (if (and (not (zerop numb))
                                 (not (zerop (% numb 2))))
                            t nil))))))))))
- 
+
 (defun sw:block-back ()
   (let ((case-fold-search nil))
     (skip-chars-backward " \t")
@@ -1349,7 +1349,7 @@ If anyone has a good algorithm for this..."
       (max (1+ (current-column))        ; Else indent at comment column
            comment-column))))           ; except leave at least one space.
 
-;;; INSERTING PROFORMAS (COMMON SW FORMS) 
+;;; INSERTING PROFORMAS (COMMON SW FORMS)
 
 (defconst sw:form-alist
   '(("let") ("datatype")
@@ -1374,12 +1374,12 @@ If anyone has a good algorithm for this..."
         (cond
          ((string= name "let") (sw:let))
          ((string= name "case") (sw:case)))
-      (quit (if newline 
+      (quit (if newline
                 (progn
                   (delete-char -1)
                   (beep)))))))
 
-(defun sw:let () 
+(defun sw:let ()
   "Insert a `let in'."
   (sw:let-local "let"))
 
@@ -1484,7 +1484,7 @@ STRING should be given if the last search was by `string-match' on STRING."
         str
       (let* ((dev (cl-subseq str 0 found-index))
              (dir (cl-subseq str (1+ found-index)))
-             (dir (replace-in-string dir "\\\\" "/"))) 
+             (dir (replace-in-string dir "\\\\" "/")))
         (if (and (> (length dir) 8) (string= "/cygwin/" (cl-subseq dir 0 8)))
             (cl-subseq dir 7)
           (concatenate 'string "/cygdrive/" (downcase dev) dir))))))
@@ -1542,7 +1542,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   ;; Splits absolute filename into head suitable for swpath entry and
   ;; tail suitable for a uid. Note that uids cannot contain ~ or spaces
   ;; Assumes sw::normalize-filename has been called
-  (let (head pos) 
+  (let (head pos)
     (if (eq (elt filename 1) ?:)
 	(progn (setq head (cl-subseq filename 0 3))
 	       (setq filename (cl-subseq filename 3)))
@@ -1636,7 +1636,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name t))
 	(text (buffer-substring-no-properties beg end)))
     (when (or (buffer-modified-p)
-	      (let ((result 
+	      (let ((result
 		     (sw:eval-in-lisp "(Specware::unitIDCurrentInCache? %S)"
 				      buffer-file-name)))
 		(member result '(nil NIL))))
@@ -1657,7 +1657,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (interactive (list (read-from-minibuffer "Compile and Load Unit: "
 					   (sw:containing-specware-unit-id t))))
   (save-buffer)
-  (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
+  (let ((temp-file-name (concat (slime-temp-directory) "-cl-current-file")))
     (if (member (sw:eval-in-lisp
 		 "(Specware::evaluateLispCompileLocal_fromLisp-2 %S '(:|Some| . %S))"
 		 unitid temp-file-name)
@@ -2330,7 +2330,7 @@ qualifier: }")
 (defun forward-chars-counting-x-symbols (i)
   (if (or (not sw:use-x-symbol) (not x-symbol-mode) (< i 1))
       (forward-char i)
-    (while (> i 0) 
+    (while (> i 0)
       (let ((x-symbol-char (cdr (x-symbol-charsym-after (point)))))
 	(decf i (if (null x-symbol-char)
 		    1
@@ -2376,7 +2376,7 @@ qualifier: }")
   :group 'specware)
 
 ;; Derived from about.el functions
-;; I don't use the about functions because they are different in different 
+;; I don't use the about functions because they are different in different
 ;; versions of xemacs
 (defvar about-left-margin 3)
 (defvar widget-button-face)
@@ -2462,12 +2462,12 @@ qualifier: }")
                    'face 'about-specware-link-face
                    'action 'goto-specware-web-page
                    'follow-link t)
-    (insert " is a leading-edge automated software development system 
-that allows users to precisely specify the desired functionality of 
-their applications and to generate provably correct code based on 
-these requirements. At the core of the design process in Specware 
-lies stepwise refinement, in which users begin with a simple, abstract 
-model of their problem and iteratively refine this model until it 
+    (insert " is a leading-edge automated software development system
+that allows users to precisely specify the desired functionality of
+their applications and to generate provably correct code based on
+these requirements. At the core of the design process in Specware
+lies stepwise refinement, in which users begin with a simple, abstract
+model of their problem and iteratively refine this model until it
 uniquely and concretely describes their application.")
     (center-line -7)
     (insert "\n")
@@ -2623,4 +2623,3 @@ With an argument, it doesn't convert imports."
 (run-hooks 'sw:specware-load-hook)
 
 ;;; specware-mode.el has just finished.
-

@@ -1,4 +1,280 @@
 * SLIME News                                -*- mode: outline; coding: utf-8 -*-
+* 2.21 (June 2018)
+*** Improved compatiblity with Emacs 26
+*** Mezzano support
+
+* 2.20 (August 2017)
+** Core
+*** More secure handling of ~/.slime-secret
+** SBCL backend
+*** Compatiblity with the latest SBCL and older SBCL.
+** ECL backend
+*** Numerous enhancements
+
+* 2.19 (February 2017)
+** Core
+*** Function `create-server` now accepts optional `interface` argument.
+Swank will bind the PORT on this interface. By default, interface is 127.0.0.1.
+This argument can be used, for example, to bind swank on IPv6 interface "::1".
+** SBCL backend
+*** Now swank can be bound to IPv6 interface and can work on IPv6-only machines.
+*** Compatiblity with the latest SBCL
+
+* 2.18 (May 2016)
+*** Mostly bug fixes and compatibility with newer implementations
+
+* 2.17 (February 2016)
+** Contribs
+*** New contrib, slime-macrostep, for more advanced in-place macroexpansion.
+*** New contrib, slime-quicklisp.
+
+* 2.16 (January 2016)
+*** Auto-completion now supports package-local nicknames on SBCL and ABCL.
+*** Bug fixes and updates for newer implementations.
+
+* 2.15 (August 2015)
+** Core
+*** Completions are now displayed with `completion-at-point'.
+The new variable `slime-completion-at-point-functions' should now be
+used to customize completion.  The old variable
+`slime-complete-symbol-function' still works, but it is considered
+obsolete and will be removed eventually.
+
+** SBCL backend
+*** M-. can locate forms within PROGN/MACROLET/etc. Needs SBCL 1.2.15 
+
+* 2.14 (June 2015)
+** Core
+*** Rationals are displayed in the echo area as floats too
+*** Some of SLDB's faces now have MORE COLOR
+*** Clicking with mouse-1 within inspector does things
+As do mouse-6 and mouse-7. (Thanks to Attila Lendvai.)
+
+** slime-c-p-c (Compound Prefix Completion)
+*** Now takes a better guess at symbol case (issue #233)
+
+** slime-fancy
+*** slime-mdot-fu is now enabled by default
+
+** SBCL backend
+*** Now able to jump to ir1-translators, declaims and alien types
+*** Various updates supporting SBCL 1.2.12
+
+** ABCL backend
+*** Fixed inspection of frame-locals in the debugger
+(Thanks to Mark Evenson.)
+
+* 2.13 (March 2015)
+
+** Core
+*** slime-cycle-connections has been deprecated
+It has been replaced by slime-next-connection and
+slime-prev-connection. A shortcut for the latter has been added to
+slime-selector.
+
+** slime-mdot-fu
+The slime-mdot-fu contrib has been brought back to life. (Thanks to Charles
+Zhang. Issues #8, #231 and #232.)
+
+** slime-typeout-frame
+The slime-typeout-frame contrib has been restored. (Issue #221.)
+
+** SBCL backend
+*** Fixed xrefs coming from C-c C-c
+Issue #227.
+
+** CMUCL, SBCL and SCL backends
+*** Better support for custom readtables
+Functionality that depends on SWANK's source-path-parser, such as
+`slime-find-definition', now works properly in face of custom
+readtables by honoring SWANK:*READTABLE-ALIST*. (Thanks to Gábor
+Melis. PR #244.)
+
+** Kawa backend
+*** Updated for Kawa version 2.0
+
+* 2.12 (January 2015)
+
+** Core
+A couple of regressions introduced in version 2.10 were fixed.
+
+*** slime-compile-buffer (C-c C-k) no longer tries to save every buffer
+*** slime-autodoc-mode doesn't spam the minibuffer anymore
+
+** SWANK
+*** CREATE-SERVER provides interactive restarts when port is taken
+Thanks to Adlai Chandrasekhar. (PR #204.)
+
+** slime-fuzzy
+New variable *FUZZY-DUPLICATE-SYMBOL-FILTER* allows customization of
+how symbols accessible from multiple packages should be
+canonicalized. Defaults to :NEAREST-PACKAGE, a departure from the
+previous default behaviour which is still available using
+:HOME-PACKAGE. The new behaviour expands "ui:e-l" to
+"uiop:ensure-list" rather than "uiop/utility:ensure-list". Consult the
+manual for other options and other details.
+
+Thanks to Ivan Shvedunov. (PR #205.)
+
+* 2.11 (December 2014)
+
+** MELPA is now an officially supported installation method
+Various bugs involving installation and upgrading via package.el were
+fixed. See the README for more details. (Issues #125, #195, #208.)
+
+** Core
+*** Compilation via the xref buffer now works again
+
+** slime-repl / slime-presentations
+Only text to the left of the cursor should limit the scope of history
+navigation. Fixed a long-standing bug that violated this when
+slime-presentations was enabled. (Thanks to Ivan Shvedunov. PR #207.)
+
+** slime-package-fu
+Now handles strings as symbol designators, is mindful of trailing
+whitespace and properly handles an :export clause immediately
+following the package name. (Thanks to Leo Liu. PR #145.)
+
+** slime-indentation
+The edge case handling described in slime-cl-indent.el:958 have been
+has been restored.
+
+** Allegro CL backend
+Support for mlisp was restored. It had been broken by the previous
+release. (Reported by Alexandre Rademaker. Issue #209.)
+
+** New experimental SWANK backend for MLWorks
+
+** SWANK
+swank-listener-hooks was restored. (Thanks to Ivan Shvedunov. PR #210.)
+
+* 2.10.1 (October 2014)
+
+*** The SWANK-BACKEND nickname has been added to the SWANK/BACKEND package
+This should ease the migration of external projects that depend on the
+SWANK-BACKEND package. However, note that SWANK/BACKEND (as well as
+the other SWANK/* packages) are internal packages. Please refer to
+Conium <http://www.cliki.net/conium> for a project that purports to
+offer a stable API for debugger- and compiler-related tasks in Common
+Lisp.
+
+* 2.10 (October 2014)
+
+** Core
+*** The SWANK-BACKEND package has been renamed to SWANK/BACKEND
+Furthermore, implementations of the SWANK-BACKEND interface have
+individual packages such as SWANK/SBCL, SWANK/CCL, etc. Other packages
+such as SWANK-RPC, SWANK-GRAY have likewise had their hyphens turned
+into slashes.
+
+*** slime-compile-file is now aware of compilation-ask-about-save
+When set to nil, SLIME will save modified buffers without asking.
+compilation-save-buffers-predicate can be used to customize which
+buffers should be automatically saved.
+
+** slime-repl
+*** Clearing REPL output no longer deletes the prompt (issue #183)
+
+** slime-autodoc
+This contrib has been rewritten. Please report any regressions you may
+find.
+
+** ABCL backend
+*** Inspecting CLOS objects works properly again
+*** SLDB frame arguments have become inspectable
+
+** SBCL backend
+*** Source locations involving the #. reader macro
+The aforementioned mechanism was adapted to recent changes in the
+internals of the SBCL reader.
+
+*** Breakage involving recent versions of SBCL on Windows was fixed (issue #192)
+We no longer assume SB-SYS:ENABLE-INTERRUPT exists on Windows SBCL.
+
+** MKCL backend
+New backend for ManKai Common Lisp.
+
+** CMUCL backend
+*** Support for versions prior to 20c has been removed
+
+** MIT Scheme backend
+*** Updated and now requires MIT Scheme 9.2
+
+* 2.9 (August 2014)
+
+** Core
+*** Various display-related bugfixes
+
+** CMUCL
+*** M-. now works on condition classes
+
+* 2.8 (July 2014)
+
+** Core
+
+*** Inspector fixes and improvements for SBCL.
+
+** Contribs
+*** Kawa backend supports Kawa 1.14.
+
+* 2.7 (June 2014)
+
+** Core
+*** SWANK now tries harder to send double-floats to Emacs
+
+** Allegro CL Backend
+*** Added implementation for FUNCTION-NAME and FIND-SOURCE-LOCATION interfaces
+Notably, this means that pressing "." in the SLIME inspector now works
+on Allegro CL. (Thanks to Gábor Melis.)
+
+* 2.6 (May 2014)
+
+** Core
+
+*** *print-readably* bound to nil when displaying condition messages
+
+*** Issue #144: Removed nicknames and short package names
+The STD nickname for SWANK-TRACE-DIALOG was removed. MONITOR was
+renamed to SWANK-MONITOR and its nickname MON removed.
+
+*** Issues #135, #154: slime-to-lisp-filename used more pervasively
+Now used for the both the port-file and loader file when announced
+from Emacs to the lisp backend. Allows a user-written
+`slime-to-lisp-filename-function' that supports Cygwin lisps with
+non-Cygwin Emacsen or vice-versa. See #135 for an example of such a
+function.
+
+*** Issue #155: Stale SLDB buffers are now properly removed
+Indirect exits from an SLDB buffer that was not selected in a window
+would leave a stale buffer behind, leading to an inconsistent state
+and unexpected errors.
+
+** Contribs
+
+*** Issue #139: Restored "copy to REPL" for slime-presentations
+`slime-copy-presentation-at-point-to-repl' will copy a presentation to
+the REPL, place it at point, and _not_ set *, ** and ***. This
+behaviour restored after refactorings of "copy to REPL" behaviour of
+previous versions.
+
+*** Issue #140: Improvements in the "copy to REPL" behaviour
+With or without the slime-presentations contrib, M-RET will
+copy/return values to REPL from both Inspector and SLDB buffers,
+setting *, ** and *** . If the slime-presentations contrib is enabled,
+the returned part will be an interactive presentation. The protocol
+for copying down parts to REPL has been reworked to not assume a CL
+backend .
+
+*** Now supports more CLHS references: :type, :system-class, :ansi-cl
+
+*** Issue #133: Fixed links to the SBCL manual
+
+** Backend improvements
+
+*** SBCL
+
+**** `slime-set-default-directory' now calls chdir
+This propagates its effects to subprocesses.
 
 * 2.5 (April 2014)
 
