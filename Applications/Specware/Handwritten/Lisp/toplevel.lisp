@@ -1380,19 +1380,10 @@
 (defun help (&optional command)
   (sw-help command))
 
-<<<<<<< HEAD
-#|
-#+(or sbcl cmu)
-(Specware::without-package-locks
- (defun cl::commandp (form)
-  (keywordp form)))
-|#
-=======
 ;;#+(or sbcl cmu)
 ;; (Specware::without-package-locks
 ;;  (defun cl::commandp (form)
 ;;   (keywordp form)))
->>>>>>> Install latest verions of slime
 
 (defun invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
@@ -1416,20 +1407,11 @@
 	(progn (read-line)
 	       (warn "Unknown command ~s" command)
 	       (values))))))
-<<<<<<< HEAD
-#|
-#+(or cmu mcl sbcl)
-(Specware::without-package-locks
- (defun cl::invoke-command-interactive (command)
-   (invoke-command-interactive command)))
-|#
-=======
 
 ;; #+(or cmu mcl sbcl)
 ;; (Specware::without-package-locks
 ;;  (defun cl::invoke-command-interactive (command)
 ;;    (invoke-command-interactive command)))
->>>>>>> Install latest verions of slime
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))

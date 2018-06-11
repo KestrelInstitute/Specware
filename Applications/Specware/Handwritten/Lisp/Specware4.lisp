@@ -59,16 +59,6 @@
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
 					       sb-int:package-at-variance))
-<<<<<<< HEAD
-            (defun lgen-lisp-redefinition-warning (warning)
-              (and (typep warning 'sb-kernel::redefinition-with-defun)
-                   (let* ((new-location (sb-kernel::redefinition-warning-new-location warning))
-                          (new-namestring (and new-location
-                                               (sb-c:definition-source-location-namestring new-location))))
-                     (string= new-namestring "lgen_lisp_tmp.lisp"
-                              :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
-                     )))
-=======
             ;; (defun lgen-lisp-redefinition-warning (warning)
             ;;   (and (typep warning 'sb-kernel::redefinition-with-defun)
             ;;        (let* ((new-location (sb-kernel::redefinition-warning-new-location warning))
@@ -77,20 +67,14 @@
             ;;          (string= new-namestring "lgen_lisp_tmp.lisp"
             ;;                   :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
             ;;          )))
->>>>>>> Install latest verions of slime
             (deftype sw-uninteresting-redefinition ()
               '(or (satisfies sb-kernel::uninteresting-ordinary-function-redefinition-p)
                 (satisfies sb-kernel::uninteresting-macro-redefinition-p)
                 (satisfies sb-kernel::uninteresting-generic-function-redefinition-p)
                 (satisfies sb-kernel::uninteresting-method-redefinition-p)
-<<<<<<< HEAD
-                (satisfies lgen-lisp-redefinition-warning)
-                sb-int:package-at-variance))
-=======
                 ;;(satisfies lgen-lisp-redefinition-warning)
                 sb-int:package-at-variance
                 ))
->>>>>>> Install latest verions of slime
 
             (setq sb-ext:*muffled-warnings* 'sw-uninteresting-redefinition)
 	    (setq sb-ext::*compile-print* nil)
@@ -333,7 +317,7 @@
 		 (if (equal file "Applications/Specware/lisp/Specware4.lisp")
                    (progn
                      (format t "~&;;; Possibly running lisp compiler on Specware--<n>.lisp files.~%")
-                     (format t "~&;;; If lisp compilation is needed it takes about 40 seconds...~%")
+                     (format t "~&;;; If lisp compilation is needed it takes about 30 seconds...~%")
                      (finish-output t)
                      (time
                       (progn
