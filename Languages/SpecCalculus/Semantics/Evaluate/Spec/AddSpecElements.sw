@@ -303,7 +303,7 @@ SpecCalc qualifying spec
                                              %  New:  def [a,b,c] foo : T = body
                                              equalTyVarSets? (new_tvs, old_tvs))
                   in
-                  let _ = writeLine("old_tm: "^printTerm old_tm^"\nnew_tm: "^printTerm new_tm) in
+                  %let _ = writeLine("old_tm: "^printTerm old_tm^"\nnew_tm: "^printTerm new_tm) in
                   if consistent_tvs? then
                     let combined_typ  = case (old_typ, new_typ)
                                           | (Any _,       _)           -> new_typ

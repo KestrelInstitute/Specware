@@ -55,7 +55,7 @@ MetaSlang qualifying spec
   | Transform    ATransformExpr b                        * b  % For specifying refinement by script.  Move to Spec?
   | Pi           TyVars * ATerm b                        * b  % for now, used only at top level of defn's
                                                               % Remove
-  | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And 
+  | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And
                                                               % We might want to record a quotient of consistent terms plus a list of inconsistent pairs,
                                                               % but then the various mapping functions become much trickier.
                                                               %Remove
@@ -146,15 +146,15 @@ MetaSlang qualifying spec
   | OneName        Id * Fixity         % Before elaborateSpec
   | TwoNames       Id * Id * Fixity    % Before elaborateSpec
 
- type Fixity        = | Nonfix 
+ type Fixity        = | Nonfix
                       | Constructor0   % Nullary constructor
                       | Constructor1   % Constructor that takes argument
-                      | Infix Associativity * Precedence 
-                      | Unspecified 
+                      | Infix Associativity * Precedence
+                      | Unspecified
                       %% The following is used only when combining specs,
                       %% as within colimit, to allow us to delay the
                       %% raising of errors at inopportune times.
-                      | Error (List Fixity) 
+                      | Error (List Fixity)
 
  %% Currently Specware doesn't allow "NotAssoc" but is there for Haskell translation compatibility
  type Associativity = | Left | Right | NotAssoc
@@ -176,7 +176,7 @@ MetaSlang qualifying spec
     | QuotedTerm (ATerm a)                       * a
     | Item      String * ATransformExpr a        * a  % e.g. unfold map
 
-    | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
+    | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a
 
     | Repeat    Nat * ATransformExpr a           * a
     | Tuple     List (ATransformExpr a)          * a    % (..., ...)
@@ -242,6 +242,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
     | (_, _, tm) :: _ -> And (map (fn (tvs, ty, tm) -> maybePiTerm (tvs, TypedTerm (tm, ty, typeAnn ty)))
                                   triples,
                               termAnn tm)
+
+op [a] notAnyTermTriple? (triples : List(TyVars * AType a * ATerm a)): Boolean =
+  exists? (fn (tvs, ty, tm) -> ~(anyTerm? tm)) triples
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
@@ -518,7 +521,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                                                 then Product([],a)
                                                 else termType(last tms)
      | TypedTerm  (_,   s,  _)              -> s
-     | Pi         (tvs, t,  a)              -> Pi (tvs, termType t, a) 
+     | Pi         (tvs, t,  a)              -> Pi (tvs, termType t, a)
      | And        (tms,     a)              -> maybeAndType (map termType tms,  a)
      | Any                  a               -> Any a
      | mystery -> fail ("\n No match in termType with: " ^ (anyToString mystery) ^ "\n")
@@ -528,7 +531,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | Apply      (t1,t2,   _)  -> (case maybeTermType t1 of
 				     | Some(Arrow(dom,rng,_)) ->
                                        (case rng of
-                                         | MetaTyVar(tv,_) -> 
+                                         | MetaTyVar(tv,_) ->
                                            let {name=_,uniqueId=_,link} = ! tv in
                                            (case link
                                               of None -> (
@@ -541,7 +544,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 				     | Some(Arrow(dom,rng,_)) ->
                                        % let _ = writeLine("tt2*: "^printTerm term^"\n"^anyToString t1) in
                                        (case rng of
-                                         | MetaTyVar(tv,_) -> 
+                                         | MetaTyVar(tv,_) ->
                                            let {name=_,uniqueId=_,link} = ! tv in
                                            (case link
                                               of None -> (writeLine("tt*: "^printTerm term^"\n"^anyToString t2);
@@ -587,7 +590,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | Pi         (tvs, t,  a) ->
        (case maybeTermType t of
           | None -> None
-          | Some t_ty -> Some(Pi (tvs, t_ty, a))) 
+          | Some t_ty -> Some(Pi (tvs, t_ty, a)))
      | And        (tms,     a) ->
        let tys = mapPartial maybeTermType tms in
        if tys = [] then None
@@ -651,22 +654,22 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  % of terms -- which can happen in the case where a refine def is used,
  % then the various elements of the list will correspond to the arguments to the And(s).
  op [a] unpackTypedTerms (tm : ATerm a) : List (TyVars * AType a * ATerm a) =
-   let 
+   let
      def unpackTm (tm: ATerm a, ty: AType a) : List (TyVars * AType a * ATerm a) =
        case tm of
-         | Pi (pi_tvs, stm, _) -> 
+         | Pi (pi_tvs, stm, _) ->
            foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
-             [] 
+             []
              (unpackTm(stm, ty))
          | And ([], pos) -> [([], ty, Any pos)]
          | And (tms, _) -> foldl (fn (result, stm) -> result ++ unpackTm(stm, ty)) [] tms
          | TypedTerm (stm, ty, _) -> unpackTm(stm, ty)
          | _ -> [([], ty, tm)]
-   in   
+   in
    case tm of
-     | Pi (pi_tvs, stm, _) -> 
+     | Pi (pi_tvs, stm, _) ->
        foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
-         [] 
+         []
          (unpackTypedTerms stm)
 
      | And (tms, _) ->
@@ -674,7 +677,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
      | TypedTerm (stm, Pi(pi_tvs, ty, _), _)  ->
        foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
-         [] 
+         []
          (unpackTm(stm, ty))
 
      | TypedTerm (stm, ty, _)  -> unpackTm(stm, ty)
@@ -701,9 +704,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    % let _ = writeLine(printTerm tm) in
    let ty_tms = unpackTypedTerms tm in
    let len = length ty_tms in
-   if len = 0 then 
+   if len = 0 then
      ([], Any(termAnn tm), tm)
-   else 
+   else
      let (tvs, ty, tm) = ty_tms @ (max (len - n - 1, 0)) in
      % let _ = writeLine("unpackNthTerm: "^show n^"\n"^printTerm(TypedTerm(tm, ty, termAnn t))^"\n"^printTerm t) in
      (tvs, ty, tm)
@@ -777,12 +780,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
     def tvsInPattern tvs pat = (pat, tvs)
     def tvsInType    tvs typ =
       (typ,
-       case typ of 
-         | TyVar(tv, _) -> 
+       case typ of
+         | TyVar(tv, _) ->
            if tv in? tvs then
              tvs
            else
-             tvs ++ [tv] 
+             tvs ++ [tv]
          | _ -> tvs)
   in
   let tsp = (tvsInTerm, tvsInType, tvsInPattern) in
@@ -807,8 +810,8 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
    let (_, rev_gds) = mapAccumPattern (do_term, do_type, do_pat) [] patt in
    reverse rev_gds
-   
- % mapAccum is like map, but threads an accumulator through. 
+
+ % mapAccum is like map, but threads an accumulator through.
  op [acc,a,b] mapAccum(f: acc -> a ->  (b*acc))(accum:acc)(xs: List a):(List b * acc) =
     case xs of
       | [] -> ([],accum)
@@ -859,20 +862,20 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     (ApplyN (newTerms, a),accum')
 
 	 | Record (row, a) ->
-	   let (newRow,accum') = mapAccum 
+	   let (newRow,accum') = mapAccum
               (fn acc -> fn (id,trm) ->
-                let (trm',acc') = mapAccumRec acc trm in  ((id, trm'),acc')) 
-             accum row 
+                let (trm',acc') = mapAccumRec acc trm in  ((id, trm'),acc'))
+             accum row
            in (Record (newRow, a),accum')
 
 	 | Bind (bnd, vars, trm, a) ->
-	   let (newVars,accum') = 
+	   let (newVars,accum') =
                mapAccum (fn accum -> fn (id, ty) ->
                            let (ty',accum') = mapAccumType tsp accum ty
-                           in ((id, ty'), accum')) 
+                           in ((id, ty'), accum'))
                         accum vars
            in
-	   let (newTrm,accum'') = mapAccumRec accum' trm 
+	   let (newTrm,accum'') = mapAccumRec accum' trm
            in (Bind (bnd, newVars, newTrm, a),accum'')
 
 
@@ -894,7 +897,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     (Let (newDecls, newBdy, a),accum'')
 
 	 | LetRec (decls, bdy, a) ->
-	   let (newDecls,accum') = 
+	   let (newDecls,accum') =
                  mapAccum (fn accum -> fn ((id, ty), trm) ->
                              let (ty',accum') = mapAccumType tsp accum ty in
                              let (trm',accum'') = mapAccumRec accum' trm in
@@ -913,7 +916,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     (Fun (f, newTy, a),accum')
 
 	 | Lambda (match, a) ->
-	   let (newMatch,accum') = mapAccum 
+	   let (newMatch,accum') = mapAccum
                  (fn accum -> fn (pat, cond, trm)->
                     let (pat',accum') = mapAccumPattern tsp accum pat in
                     let (cond',accum'') = mapAccumRec  accum' cond in
@@ -937,11 +940,11 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	   let (newTy,accum'') = mapAccumType tsp accum' ty in
 	     (TypedTerm (newTrm, newTy, a),accum'')
 
-         | Pi  (tvs, t, a) -> 
+         | Pi  (tvs, t, a) ->
            let (t',accum') = mapAccumRec accum t in
              (Pi (tvs, t',   a),accum') % TODO: what if map alters vars??
 
-         | And (tms, a)    -> 
+         | And (tms, a)    ->
            let (tms',accum') = mapAccum mapAccumRec accum tms
            in (maybeMkAndTerm (tms', a),accum')
          | _           -> (term,accum)
@@ -969,33 +972,33 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	   let (newS1,accum') = mapAccumRec accum (tsp, type_map, s1) in
 	   let (newS2,accum'') = mapAccumRec accum' (tsp, type_map, s2) in
 	     (Arrow (newS1, newS2, a),accum'')
-	   
+
 	 | Product (row, a) ->
 	   let (newRow,accum') = mapAccumSRow accum (tsp, type_map, row) in
 	     (Product (newRow, a),accum')
-	     
+
 	 | CoProduct (row, a) ->
 	   let (newRow,accum') = mapAccumSRowOpt accum (tsp, type_map, row) in
 	     (CoProduct (newRow, a),accum')
-	       
+
 	 | Quotient (super_type, trm, a) ->
 	   let (newSty,accum') = mapAccumRec accum (tsp, type_map, super_type) in
 	   let (newTrm,accum'') =  mapAccumTerm tsp accum' trm in
 	     (Quotient (newSty, newTrm, a),accum'')
-		 
+
 	 | Subtype (sub_type, trm, a) ->
 	   let (newSty,accum') = mapAccumRec accum (tsp, type_map, sub_type) in
 	   let (newTrm,accum'') =  mapAccumTerm tsp accum' trm in
 	     (Subtype (newSty, newTrm, a),accum'')
-		   
+
 	 | Base (qid, tys, a) ->
 	   let (newTys,accum') = mapAccumSLst accum tsp tys in
 	     (Base (qid, newTys, a),accum')
-		     
+
 	 | Boolean _ -> (ty,accum)
-		     
+
        % | TyVar ??
-		     
+
 	 | MetaTyVar (mtv, pos) ->
 	   let {name,uniqueId,link} = ! mtv in
 	   (case link of
@@ -1007,12 +1010,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	        		 link     = Some newsty},
 	        	    pos), accum'))
 
-         | Pi  (tvs, ty, a) -> 
+         | Pi  (tvs, ty, a) ->
               let (ty',accum') = mapAccumRec accum (tsp, type_map, ty)
               in (Pi (tvs,ty' , a), accum')  % TODO: what if map alters vars?
 
-         | And (tys,     a) -> 
-             let (tys',accum') = 
+         | And (tys,     a) ->
+             let (tys',accum') =
                mapAccum (fn accum -> fn ty -> mapAccumRec accum (tsp, type_map, ty)) accum tys
              in (maybeAndType(tys', a), accum')
          | Any  _            -> (ty,accum)
@@ -1022,7 +1025,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapAccumSRowOpt accum (tsp, type_map, row) =
        case row of
 	 | [] -> ([],accum)
-	 | (id,optty)::rrow -> 
+	 | (id,optty)::rrow ->
            let (optty',accum') = mapAccumRecOpt accum (tsp, type_map, optty) in
            let (rrow',accum'') = mapAccumSRowOpt accum' (tsp, type_map, rrow) in
            (Cons ((id, optty'),rrow'),accum'')
@@ -1030,7 +1033,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapAccumSRow accum (tsp, type_map, row) =
        case row of
 	 | [] -> ([],accum)
-	 | (id,sty)::rrow -> 
+	 | (id,sty)::rrow ->
            let (sty',accum') =  mapAccumRec accum (tsp, type_map, sty) in
            let (rrow',accum'') = mapAccumSRow accum (tsp, type_map, rrow) in
            (Cons ((id, sty'),rrow'),accum'')
@@ -1038,15 +1041,15 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapAccumRecOpt accum (tsp, type_map, opt_type) =
        case opt_type of
 	 | None      -> (None,accum)
-	 | Some sty -> 
+	 | Some sty ->
            let (sty',accum') = mapAccumRec accum (tsp, type_map, sty) in
            (Some sty',accum')
-           
+
 
      def mapAccumRec accum (tsp, type_map, ty) =
        %% apply map to leaves, then apply map to result
        let (ty',accum') = (mapS accum (tsp, type_map, ty)) in
-       let (ty'',accum'') = type_map accum' ty' 
+       let (ty'',accum'') = type_map accum' ty'
        % We do the equality check to reduce space.
        in if ty'' = ty then (ty,accum'') else (ty'',accum'')
    in
@@ -1064,56 +1067,56 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
            let (newP1,accum') = mapAccumRec accum p1 in
 	   let (newP2,accum'') = mapAccumRec accum' p2 in
 	     (AliasPat (newP1, newP2, a),accum'')
-	   
+
 	 | VarPat ((v, ty), a) ->
 	   let (newTy,accum') = mapAccumType tsp accum ty in
 	     (VarPat ((v, newTy), a),accum')
-	     
+
 	 | EmbedPat (id, Some pat, ty, a) ->
 	   let (newPat,accum') = mapAccumRec accum pat in
 	   let (newTy,accum'') = mapAccumType tsp accum' ty in
 	     (EmbedPat (id, Some newPat, newTy, a),accum'')
-	       
+
 	 | EmbedPat (id, None, ty, a) ->
 	   let (newTy,accum') = mapAccumType tsp accum ty in
 	     (EmbedPat (id, None, newTy, a),accum')
-		 
+
 	 | RecordPat (fields, a) ->
-	   let (newFields,accum') = mapAccum 
-               (fn accum -> fn (id, p) -> 
+	   let (newFields,accum') = mapAccum
+               (fn accum -> fn (id, p) ->
                   let (p',accum') = mapAccumRec accum p in ((id, p'),accum')) accum fields in
 	     (RecordPat (newFields, a),accum')
-		   
+
 	 | WildPat (ty, a) ->
 	   let (newTy,accum') = mapAccumType tsp accum ty in
 	     (WildPat (newTy, a),accum')
-		     
+
 	 | QuotientPat (pat, qid, tys, a) ->
 	   let (newPat,accum') = mapAccumRec accum pat in
            let (newTys,accum') = mapAccumSLst accum' tsp tys in
 	     (QuotientPat (newPat, qid, newTys, a),accum')
-			 
+
 	 | RestrictedPat (pat, trm, a) ->
 	   let (newPat,accum') = mapAccumRec accum pat in
 	   let (newTrm,accum'') = mapAccumTerm tsp accum' trm in
 	     (RestrictedPat (newPat, newTrm, a),accum'')
-			 
+
 	 | TypedPat (pat, ty, a) ->
 	   let (newPat,accum') = mapAccumRec accum pat in
 	   let (newTy,accum'') = mapAccumType tsp accum' ty in
 	     (TypedPat (newPat, newTy, a),accum'')
-			   
+
        % | BoolPat   ??
        % | NatPat    ??
        % | StringPat ??
        % | CharPat   ??
-	     
+
 	 | _ -> (pattern,accum)
 
      def mapAccumRec accum pat =
        %% apply map to leaves, then apply map to result
        let (pat',accum') = mapP accum (tsp, pat) in
-       let (pat'',accum'') =  pattern_map accum' pat' 
+       let (pat'',accum'') =  pattern_map accum' pat'
        % We do the equality check to reduce space.
        in if (pat'' = pat) then (pat,accum'') else (pat'',accum'')
 
@@ -1131,15 +1134,15 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
 
 (*
-   % GMK: The map* functions can be defined in terms of mapAccum*, as shown below. 
-   % However, it appears that there is a small performance cost (empirically observed 
+   % GMK: The map* functions can be defined in terms of mapAccum*, as shown below.
+   % However, it appears that there is a small performance cost (empirically observed
    % to be about 5%, when building specware itself with this definition) so we instead
    % use the direct definition.
 
 
  op [a,b,atype] add_acc(f:a->b)(acc:atype)(x:a):(b*atype) = (f x, acc)
 
- 
+
  op [b] mapTerm (tsp as (term_map,type_map,pat_map))(t:ATerm b):(ATerm b) =
     let (val,_) = mapAccumTerm (add_acc term_map, add_acc type_map, add_acc pat_map) () t
    in val
@@ -1317,21 +1320,21 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              ty
            else
              Arrow (newS1, newS2, a)
-	   
+
          | Product (row, a) ->
            let newRow = mapSRow (tsp, type_map, row) in
            if newRow = row then
              ty
            else
              Product (newRow, a)
-	     
+
          | CoProduct (row, a) ->
            let newRow = mapSRowOpt (tsp, type_map, row) in
            if newRow = row then
              ty
            else
              CoProduct (newRow, a)
-	       
+
          | Quotient (super_type, trm, a) ->
            let newSty = mapRec (tsp, type_map, super_type) in
            let newTrm =  mapTerm tsp trm in
@@ -1339,7 +1342,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              ty
            else
              Quotient (newSty, newTrm, a)
-		 
+
          | Subtype (sub_type, trm, a) ->
            let newSty = mapRec (tsp, type_map, sub_type) in
            let newTrm =  mapTerm tsp trm in
@@ -1347,18 +1350,18 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              ty
            else
              Subtype (newSty, newTrm, a)
-		   
+
          | Base (qid, tys, a) ->
            let newTys = mapSLst tsp tys in
            if newTys = tys then
              ty
            else
              Base (qid, newTys, a)
-		     
+
          | Boolean _ -> ty
-		     
+
        % | TyVar ??
-		     
+
          | MetaTyVar (mtv, pos) ->
            let {name,uniqueId,link} = ! mtv in
            (case link of
@@ -1418,14 +1421,14 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              pattern
            else
              AliasPat (newP1, newP2, a)
-	   
+
          | VarPat ((v, ty), a) ->
            let newTy = mapType tsp ty in
            if newTy = ty then
              pattern
            else
              VarPat ((v, newTy), a)
-	     
+
          | EmbedPat (id, Some pat, ty, a) ->
            let newPat = mapRec pat in
            let newTy = mapType tsp ty in
@@ -1433,28 +1436,28 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              pattern
            else
              EmbedPat (id, Some newPat, newTy, a)
-	       
+
          | EmbedPat (id, None, ty, a) ->
            let newTy = mapType tsp ty in
            if newTy = ty then
              pattern
            else
              EmbedPat (id, None, newTy, a)
-		 
+
          | RecordPat (fields, a) ->
            let newFields = map (fn (id, p) -> (id, mapRec p)) fields in
            if newFields = fields then
              pattern
            else
              RecordPat (newFields, a)
-		   
+
          | WildPat (ty, a) ->
            let newTy = mapType tsp ty in
            if newTy = ty then
              pattern
            else
              WildPat (newTy, a)
-		     
+
          | QuotientPat (pat, qid, tys, a) ->
            let newPat = mapRec pat in
            let newTys = mapSLst tsp tys in
@@ -1462,7 +1465,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              pattern
            else
              QuotientPat (newPat, qid, newTys, a)
-			 
+
          | RestrictedPat (pat, trm, a) ->
            let newPat = mapRec pat in
            let newTrm = mapTerm tsp trm in
@@ -1470,7 +1473,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              pattern
            else
              RestrictedPat (newPat, newTrm, a)
-			 
+
          | TypedPat (pat, ty, a) ->
            let newPat = mapRec pat in
            let newTy = mapType tsp ty in
@@ -1478,12 +1481,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              pattern
            else
              TypedPat (newPat, newTy, a)
-			   
+
        % | BoolPat   ??
        % | NatPat    ??
        % | StringPat ??
        % | CharPat   ??
-	     
+
          | _ -> pattern
 
      def mapRec pat =
@@ -1507,35 +1510,35 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     term
 	   else
 	     Apply (newT1, newT2, a)
-	   
+
 	 | ApplyN (terms, a) ->
 	   let newTerms = map mapRec terms in
 	   if newTerms = terms then
 	     term
 	   else
 	     ApplyN (newTerms, a)
-	     
+
 	 | Record (row, a) ->
 	   let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
 	   if newRow = row then
 	     term
 	   else
 	     Record(newRow,a)
-	       
+
 	 | Bind (bnd, vars, trm, a) ->
 	   let newTrm = mapRec trm in
 	   if newTrm = trm then
 	     term
 	   else
 	     Bind (bnd, vars, newTrm, a)
-		 
+
 	 | The (var, trm, a) ->
 	   let newTrm = mapRec trm in
 	   if newTrm = trm then
 	     term
 	   else
 	     The (var, newTrm, a)
-		 
+
 	 | Let (decls, bdy, a) ->
 	   let newDecls = map (fn (pat, trm) -> (mapPat1 pat, mapRec trm)) decls in
 	   let newBdy = mapRec bdy in
@@ -1543,7 +1546,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     term
 	   else
 	     Let (newDecls, newBdy, a)
-		   
+
 	 | LetRec (decls, bdy, a) ->
 	   let newDecls = map (fn ((id, ty), trm) -> ((id, ty), mapRec trm)) decls in
 	   let newBdy = mapRec bdy in
@@ -1551,21 +1554,21 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     term
 	   else
 	     LetRec(newDecls, newBdy, a)
-		     
+
 	 | Var _ -> term
-	     
+
 	 | Fun _ -> term
-		     
+
 	 | Lambda (match, a) ->
 	   let newMatch = map (fn (pat, cond, trm)->
 			       (mapPat1 pat, mapRec cond, mapRec trm))
-	                      match 
+	                      match
 	   in
 	     if newMatch = match then
 	       term
 	     else
 	       Lambda (newMatch, a)
-		       
+
 	 | IfThenElse (t1, t2, t3, a) ->
 	   let newT1 = mapRec t1 in
 	   let newT2 = mapRec t2 in
@@ -1574,27 +1577,27 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     term
 	   else
 	     IfThenElse (newT1, newT2, newT3, a)
-			 
+
 	 | Seq (terms, a) ->
 	   let newTerms = map mapRec terms in
 	   if newTerms = terms then
 	     term
 	   else
 	     Seq (newTerms, a)
-			   
+
 	 | TypedTerm (trm, ty, a) ->
 	   let newTrm = mapRec trm in
 	   if newTrm = trm then
 	     term
 	   else
 	     TypedTerm (newTrm, ty, a)
-			     
+
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t, a)  % TODO: what if map alters vars?
 
          | And (tms, a)    -> maybeMkAndTerm (map mapT tms, a)
 
          | _ -> term
-			     
+
      def mapRec term =
        %% apply map to leaves, then apply map to result
        f (mapT term)
@@ -1610,8 +1613,8 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
   %% Like mapAccumTerm but ignores types
   op [a,b] mapAccumSubTerms (f     : b -> ATerm a -> (ATerm a) * b)
-                            (accum : b) 
-                            (term  : ATerm a) 
+                            (accum : b)
+                            (term  : ATerm a)
    : (ATerm a) * b =
    let
 
@@ -1628,9 +1631,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  Apply (newT1, newT2, a)
            in
            (new_term, accum)
-	   
+
 	 | ApplyN (terms, a) ->
-	   let (new_terms, accum) = 
+	   let (new_terms, accum) =
                foldl (fn ((new_terms, accum), tm) ->
                         let (new_tm, accum) = mapAccumRec accum tm in
                         (new_terms ++ [new_tm], accum))
@@ -1646,12 +1649,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
            (new_term, accum)
 
 	 | Record (row, a) ->
-	   let (new_row, accum) = 
-               foldl (fn ((new_row, accum), (id, tm)) -> 
+	   let (new_row, accum) =
+               foldl (fn ((new_row, accum), (id, tm)) ->
                         let (new_tm, accum) = mapAccumRec accum tm in
                         (new_row ++ [(id, new_tm)], accum))
                      ([], accum)
-                     row 
+                     row
            in
            let new_term =
 	       if new_row = row then
@@ -1660,7 +1663,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  Record (new_row, a)
            in
            (new_term, accum)
-	       
+
 	 | Bind (bnd, vars, trm, a) ->
 	   let (newTrm, accum) = mapAccumRec accum trm in
            let new_term =
@@ -1680,14 +1683,14 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  The (var, newTrm, a)
            in
            (new_term, accum)
-		 
+
 	 | Let (decls, body, a) ->
-	   let (new_decls, accum) = 
-               foldl (fn ((new_decls, accum), (pat, tm)) -> 
+	   let (new_decls, accum) =
+               foldl (fn ((new_decls, accum), (pat, tm)) ->
                         let (new_tm, accum) = mapAccumRec accum tm in
                         (new_decls ++ [(pat, new_tm)], accum))
                      ([], accum)
-                     decls 
+                     decls
            in
 	   let (new_body, accum) = mapAccumRec accum body in
            let new_term =
@@ -1699,12 +1702,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
            (new_term, accum)
 
 	 | LetRec (decls, body, a) ->
-	   let (new_decls, accum) = 
-               foldl (fn ((new_decls, accum), (pat, tm)) -> 
+	   let (new_decls, accum) =
+               foldl (fn ((new_decls, accum), (pat, tm)) ->
                         let (new_tm, accum) = mapAccumRec accum tm in
                         (new_decls ++ [(pat, new_tm)], accum))
                      ([], accum)
-                     decls 
+                     decls
            in
 	   let (new_body, accum) = mapAccumRec accum body in
            let new_term =
@@ -1714,13 +1717,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  LetRec (new_decls, new_body, a)
            in
            (new_term, accum)
-		     
+
 	 | Var _ -> (term, accum)
-	     
+
 	 | Fun _ -> (term, accum)
-		     
+
 	 | Lambda (match, a) ->
-	   let (new_match, accum) = 
+	   let (new_match, accum) =
                foldl (fn ((new_match, accum), (pat, cond, trm)) ->
                         let (pat,  accum) = mapAccumPat accum pat  in
                         let (cond, accum) = mapAccumRec accum cond in
@@ -1728,7 +1731,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                         (new_match ++ [(pat, cond, body)],
                          accum))
                      ([], accum)
-                     match 
+                     match
 	   in
            let new_term =
                if new_match = match then
@@ -1737,7 +1740,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  Lambda (new_match, a)
            in
            (new_term, accum)
-		       
+
 	 | IfThenElse (t1, t2, t3, a) ->
 	   let (new_t1, accum) = mapAccumRec accum t1 in
 	   let (new_t2, accum) = mapAccumRec accum t2 in
@@ -1749,13 +1752,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  IfThenElse (new_t1, new_t2, new_t3, a)
            in
            (new_term, accum)
-			 
+
 	 | Seq (terms, a) ->
-	   let (new_terms, accum) = 
+	   let (new_terms, accum) =
                foldl (fn ((new_tms, accum), tm) ->
                         let (new_tm, accum) = mapAccumRec accum tm in
                         (new_tms ++ [new_tm], accum))
-                     ([], accum) 
+                     ([], accum)
                      terms
            in
            let new_term =
@@ -1765,7 +1768,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  Seq (new_terms, a)
            in
            (new_term, accum)
-			   
+
 	 | TypedTerm (trm, ty, a) ->
 	   let (newTrm, accum) = mapAccumRec accum trm in
            let new_term =
@@ -1775,12 +1778,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  TypedTerm (newTrm, ty, a)
            in
            (new_term, accum)
-			     
-         | Pi  (tvs, tm, a) -> 
+
+         | Pi  (tvs, tm, a) ->
            let (new_tm, accum) = mapAccumRec accum tm in
            (Pi (tvs, new_tm, a), accum)  % TODO: what if map alters vars?
 
-         | And (tms, a) -> 
+         | And (tms, a) ->
            let (new_tms, accum) =
                foldl (fn ((new_tms, accum), tm) ->
                         let (new_tm, accum) = mapAccumRec accum tm in
@@ -1791,7 +1794,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
            (maybeMkAndTerm (new_tms, a), accum)
 
          | _ -> (term, accum)
-			     
+
      def mapAccumRec accum term =
        %% apply map to leaves, then apply map to result
        let (tm, accum) = mapT accum term in
@@ -1800,7 +1803,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapAccumPat accum pat =
        case pat of
 	 %% RestrictedPats can only occur at top level
-	 | RestrictedPat (spat, tm, a) -> 
+	 | RestrictedPat (spat, tm, a) ->
            let (new_tm, accum) = mapAccumRec accum tm in
            (RestrictedPat (spat, new_tm, a), accum)
 	 | _ ->
@@ -1923,7 +1926,7 @@ op[a] mapPattern1 (f: APattern a -> APattern a) (pattern: APattern a): APattern 
                                               existsSubTerm2 descendIntoSubtypes? pred? M) decls
 
       | Var         _             -> false
-				     
+
       | Fun         _             -> false
 
       | Lambda      (rules,    _) -> exists? (fn (p, c, M) ->
@@ -1951,7 +1954,7 @@ op[a] mapPattern1 (f: APattern a -> APattern a) (pattern: APattern a): APattern 
       %% TODO: What about Any?
 
       | _  -> false
-      )				    
+      )
 
  op [b] existsSubTermPat (pred? : (ATerm b -> Bool)) (pat : APattern b) : Bool =
    case pat of
@@ -2034,27 +2037,27 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
      | The       (_,M,      _) -> foldSubTerms f newVal M
 
      | Let       (decls, N, _) -> foldl (fn (val,(_,M)) -> foldSubTerms f val M)
-                                        (foldSubTerms f newVal N) 
+                                        (foldSubTerms f newVal N)
 					decls
 
      | LetRec    (decls, N, _) -> foldl (fn (val,(_,M)) -> (foldSubTerms f val M))
-				        (foldSubTerms f newVal N) 
+				        (foldSubTerms f newVal N)
 					decls
 
      | Var _                   -> newVal
 
      | Fun _                   -> newVal
 
-     | Lambda    (rules,    _) -> let first_cases              = butLast rules in       
+     | Lambda    (rules,    _) -> let first_cases              = butLast rules in
                                   let (last_p, last_c, last_M) = last    rules in
                                   let val =
                                       foldl (fn (val,(p, c, M)) ->
                                                foldSubTerms f (foldSubTerms f (foldSubTermsPat f val p) c) M)
-                                            newVal 
+                                            newVal
                                             first_cases
                                   in
                                   %% todo: this is used by slicing, verify that it is coordinated with code generation
-                                  let val = 
+                                  let val =
                                       if defensive_execution? then
                                         %% We could ignore restriction functions here, but choose not to.
                                         %% An execution slice, for example, will include the restriction function.
@@ -2067,7 +2070,7 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
                                         %% An execution slice, for example, will not include the restriction function.
                                         %% If the restriction here would have failed if present, this omission
                                         %% would cause the last case to (incorrectly) be executed anyway.
-                                        % let _ = 
+                                        % let _ =
                                         %     case last_p of
                                         %       | RestrictedPat(_,t,_) -> writeLine ("Ignoring final restriction: " ^ printTerm t)
                                         %       |  _ -> ()
@@ -2077,8 +2080,8 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
                                   foldSubTerms f (foldSubTerms f val last_c) last_M
 
      | IfThenElse(M, N, P,  _) -> foldSubTerms f
-					       (foldSubTerms f 
-						             (foldSubTerms f newVal M) 
+					       (foldSubTerms f
+						             (foldSubTerms f newVal M)
 						             N)
 					       P
 
@@ -2115,11 +2118,11 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
 	                                                  (foldSubTermsEvalOrder f val M)
 							  N
 
-	 | ApplyN    (Ms,     _) -> foldl (fn (val,M) -> 
+	 | ApplyN    (Ms,     _) -> foldl (fn (val,M) ->
 					   foldSubTermsEvalOrder f val M)
 		                          val Ms
 
-	 | Record    (fields, _) -> foldl (fn (val,(_,M)) -> 
+	 | Record    (fields, _) -> foldl (fn (val,(_,M)) ->
 					    foldSubTermsEvalOrder f val M)
 					  val fields
 
@@ -2130,12 +2133,12 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
 	 | Let       (decls,N,_) -> let dval = foldl (fn (val,(_, M)) ->
 						      foldSubTermsEvalOrder f val M)
 						     val decls
-				    in 
+				    in
 				      foldSubTermsEvalOrder f dval N
 
-	 | LetRec    (decls,N,_) -> foldl (fn (val,(_, M)) -> 
+	 | LetRec    (decls,N,_) -> foldl (fn (val,(_, M)) ->
 					   foldSubTermsEvalOrder f val M)
-				          (foldSubTermsEvalOrder f val N) 
+				          (foldSubTermsEvalOrder f val N)
 					  decls
 
 	 | Var _                 -> val
@@ -2149,13 +2152,13 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
 				    foldl (fn (val,(p, c, M)) ->
 					   foldSubTermsEvalOrder f
 					     (foldSubTermsEvalOrder f
-					        (foldSubTermsEvalOrderPat f val p) c) 
+					        (foldSubTermsEvalOrderPat f val p) c)
 					     M)
 					val rules
 
          | IfThenElse(M,N,P,  _) -> foldSubTermsEvalOrder f
 				      (foldSubTermsEvalOrder f
-				        (foldSubTermsEvalOrder f val M) 
+				        (foldSubTermsEvalOrder f val M)
 					N)
 				      P
 
@@ -2238,26 +2241,26 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 		       map (fn (id, ty)-> (id, replaceType tsp ty)) vars,
 		       replaceRec trm,
 		       a)
-	  
+
 	| The        ((id,ty), trm, a) ->
 	  The        ((id, replaceType tsp ty), replaceRec trm, a)
-	  
+
 	| Let         (decls, bdy, a) ->
 	  Let         (map (fn (pat, trm)-> (replacePattern tsp pat, replaceRec trm)) decls,
 		       replaceRec bdy,
 		       a)
-	  
+
 	| LetRec      (decls, bdy, a) ->
 	  LetRec      (map (fn (id, trm) -> (id, replaceRec trm)) decls,
 		       replaceRec bdy,
 		       a)
-	  
+
 	| Var         ((id,                 ty), a) ->
 	  Var         ((id, replaceType tsp ty), a)
-	  
+
 	| Fun         (top,                 ty, a) ->
 	  Fun         (top, replaceType tsp ty, a)
-	  
+
 	| Lambda      (match, a) ->
 	  Lambda      (map (fn (pat, cond, trm)->
                             (replacePattern tsp pat,
@@ -2265,16 +2268,16 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
                              replaceRec     trm))
 		           match,
 		       a)
-	  
+
 	| IfThenElse  (           t1,            t2,            t3, a) ->
 	  IfThenElse  (replaceRec t1, replaceRec t2, replaceRec t3, a)
-	  
+
 	| Seq         (               terms, a) ->
 	  Seq         (map replaceRec terms, a)
-	  
+
 	| TypedTerm   (           trm,                 ty, a) ->
 	  TypedTerm   (replaceRec trm, replaceType tsp ty, a)
-	  
+
         | Pi          (tvs,            tm, a) ->  % TODO: can replaceRec alter vars?
 	  Pi          (tvs, replaceRec tm, a)
 
@@ -2283,7 +2286,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
         | Any _ -> term
 
-        | _  -> term  
+        | _  -> term
 
     def replaceRec term =
       %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
@@ -2304,26 +2307,26 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
 	 | Product   (                                           row, a) ->
 	   Product   (map (fn (id, ty) -> (id, replaceRec ty)) row, a)
-	   
+
 	 | CoProduct (                                              row,  a) ->
 	   CoProduct (map (fn (id, opt) -> (id, replaceRecOpt opt)) row,  a)
-	   
+
 	 | Quotient  (           ty,                 trm, a) ->
 	   Quotient  (replaceRec ty, replaceTerm tsp trm, a)
-	   
+
 	 | Subtype   (           ty,                 trm, a) ->
 	   Subtype   (replaceRec ty, replaceTerm tsp trm, a)
-	   
+
 	 | Base      (qid,                tys, a) ->
 	   Base      (qid, map replaceRec tys, a)
-	   
+
 	 | Boolean _ -> ty
 
         %| TyVar     ??
         %| MetaTyVar ??
 
          | Pi        (tvs,            ty, a) -> % TODO: can replaceRec alter vars?
-	   Pi        (tvs, replaceRec ty, a) 
+	   Pi        (tvs, replaceRec ty, a)
 
          | And       (               tys, a) ->
 	   maybeAndType (map replaceRec tys, a)
@@ -2360,17 +2363,17 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
 	 | EmbedPat     (id, Some             pat,                  ty, a) ->
 	   EmbedPat     (id, Some (replaceRec pat), replaceType tsp ty, a)
-	   
+
 	 | EmbedPat     (id, None,                                  ty, a) ->
 	   EmbedPat     (id, None,                  replaceType tsp ty, a)
-	   
+
 	 | RecordPat    (                                     fields, a) ->
 	   RecordPat    (map (fn (id,p)-> (id, replaceRec p)) fields, a)
-	   
+
 	 | WildPat      (                ty, a) ->
 	   WildPat      (replaceType tsp ty, a)
 
-	 | QuotientPat  (           pat, qid, tys, a) -> 
+	 | QuotientPat  (           pat, qid, tys, a) ->
 	   QuotientPat  (replaceRec pat, qid, tys, a)
 
 	 | RestrictedPat(           pat,                 trm, a) ->
@@ -2381,7 +2384,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
        % | NatPat    ??
        % | StringPat ??
        % | CharPat   ??
-	   
+
 	 | _ -> pattern
 
      def replaceRec pattern =
@@ -2411,7 +2414,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
  type ATermSchemes b = List (ATermScheme b)
 
  op [a] appTerm ((tsp as (term_app, _, _)) : appTSP a) (term : ATerm a) : () =
-   let 
+   let
 
      def appT (tsp, term) =
        case term of
@@ -2437,9 +2440,9 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 					    appRec bdy)
 
 	 | Var        ((id, ty),    _) -> appType tsp ty
-	 
+
 	 | Fun        (top, ty,     _) -> appType tsp ty
-	 
+
 	 | Lambda     (match,        _) -> app (fn (pat, cond, trm) ->
 						(appPattern tsp pat;
 						 appRec cond;
@@ -2458,7 +2461,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
 	 | _  -> ()
 
-     def appRec term = 
+     def appRec term =
        %% Post-node traversal: leaves first
        (appT (tsp, term); term_app term)
 
@@ -2466,7 +2469,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
      appRec term
 
  op [a] appType ((tsp as (_, ty_app, _)) : appTSP a) (ty : AType a) : () =
-   let 
+   let
 
      def appS (tsp, ty) =
        case ty of
@@ -2495,7 +2498,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
      appRec ty
 
  op [a] appPattern ((tsp as (_, _, pattern_app)) : appTSP a) (pat : APattern a) : () =
-   let 
+   let
 
      def appP (tsp, pat) =
        case pat of
@@ -2567,7 +2570,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  Misc constructors
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- 
+
   op [a] mkAndOp (pos:a):ATerm a =
    let bool_type = Boolean pos in
    let binary_bool_type = Arrow (Product ([("1",bool_type), ("2",bool_type)], pos),
@@ -2599,18 +2602,18 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
      | Subtype (sty, _, _) -> listType? sty
      | _ -> false
 
- op [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
+ op [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =
    case term of
      | Fun (Op (Qualified(q, "Nil"), _), ty, _) | listType? ty -> Some []
      | Fun (Embed (Qualified(q, "Nil"), false), ty, _) | listType? ty -> Some []
-     | Apply (Fun (Op(Qualified(q, "Cons"), _), 
+     | Apply (Fun (Op(Qualified(q, "Cons"), _),
 		   Arrow (Product ([("1", _), ("2", ty)], _), _, _), _),
 	      Record ([(_, t1), (_, t2)], _), _)
        | listType? ty
        -> (case isFiniteList t2 of
              | Some terms -> Some (t1 :: terms)
              | _ ->  None)
-     | ApplyN ([Fun (Op (Qualified(q, "Cons"), _), 
+     | ApplyN ([Fun (Op (Qualified(q, "Cons"), _),
 		     Arrow (Product ([("1", _), ("2",  ty1)], _),
 			    ty2, _), _),
 		Record ([(_, t1), (_, t2)], _), _], _)
@@ -2620,14 +2623,14 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
              | _  ->  None)
      | _ -> None
 
- op [a] isFiniteListPat (pattern : APattern a) : Option (List (APattern a)) =  
+ op [a] isFiniteListPat (pattern : APattern a) : Option (List (APattern a)) =
    case pattern of
      | EmbedPat (Qualified(q, "Nil"), None, ty, _) -> Some []
-     | EmbedPat (Qualified(q, "Cons"), 
-		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
+     | EmbedPat (Qualified(q, "Cons"),
+		 Some (RecordPat ([("1", p1), ("2", p2)], _)),
 		 ty, _)
        | listType? ty
-       -> 
+       ->
        (case isFiniteListPat p2 of
 	  | Some patterns -> Some (p1 :: patterns)
 	  | _ ->  None)
@@ -2670,6 +2673,3 @@ op [a] infixFnTm?(tm: ATerm a): Bool =
     | _ -> false
 
 end-spec
-
-
-
