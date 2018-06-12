@@ -1426,11 +1426,12 @@ converted to lower case."
          (let ((tag (make-tag)))
 	   (send-to-emacs `(:eval ,(current-thread-id) ,tag
 				  ,form-str))
-	   (dcase value
+	   (let ((value (caddr (wait-for-event `(:emacs-return ,tag result)))))
+	     (dcase value
                ((:unreadable value) (make-unredable-result value))
 	       ((:ok value) value)
                ((:error kind . data) (error "~a: ~{~a~}" kind data))
-	       ((:abort) (abort)))))))
+	       ((:abort) (abort))))))))
 
 (defvar *swank-wire-protocol-version* nil
   "The version of the swank/slime communication protocol.")

@@ -7,7 +7,7 @@
 #|
 Top-level functions
 (Specware-Test::run-test-directories "dir1" "dir2" ...)
-runs Specware-Test::process-test-file on files dir1/Tests.lisp, 
+runs Specware-Test::process-test-file on files dir1/Tests.lisp,
 dir2/Tests.lisp, ...
 
 (Specware-Test::run-test-directories-rec "dir1" "dir2" ...)
@@ -17,7 +17,7 @@ their subdirectories.
 Note this can be invoked with
 M-x sw:run-test-harness
 which will run Specware-Test::run-test-directories-rec on the directory
-of the current buffer. (with an argument this runs just 
+of the current buffer. (with an argument this runs just
 Specware-Test::run-test-directories).
 
 (Specware-Test::process-test-file "file")
@@ -46,7 +46,7 @@ on a unit and seeing if the terminal output matches the string after :output.
 Other options will be implemented later. The $TESTDIR refers to the temporary
 directory where the test is being run.
 
-Currently the tests are run in the current specware image. Later there will 
+Currently the tests are run in the current specware image. Later there will
 be the option to run each (test ...) form in a fresh image.
 |#
 
@@ -60,7 +60,7 @@ be the option to run each (test ...) form in a fresh image.
 (defvar *test-temporary-directory*)
 (defvar *test-temporary-directory-name*)
 #+darwin (defvar *test-temporary-directory-name-non-private*)
-(defvar *test-driver-file-name* "Tests.lisp")
+(defvar *test-driver-file-name* "Tests")
 
 ;;; These two are same except in windows where first has \'s instead of /'s
 (defvar *test-temporary-directory-name0* "SpecwareTest")
@@ -91,7 +91,7 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun sorted-directory (dirpath)
   (sort (Specware::sw-directory dirpath)
-	#'(lambda (a b) 
+	#'(lambda (a b)
 	    (string<= (namestring a) (namestring b)))))
 
 (defun run-test-directories-rec-fn (dirs)
@@ -115,7 +115,7 @@ be the option to run each (test ...) form in a fresh image.
      do (let* ((dirpath (if (stringp dir)
 			    (Specware::sw-parse-namestring (cl-user::subst-home (Specware::ensure-final-slash dir)))
 			  dir))
-	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
+	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name* :type "lisp")
 					  dirpath)))
 	  (when (probe-file filepath)
 	    (process-test-file filepath)))))
@@ -153,12 +153,12 @@ be the option to run each (test ...) form in a fresh image.
 	  #+darwin (format nil "/private~a" *test-temporary-directory-name*)
 	  #-darwin *test-temporary-directory-name*)
 	 (old-directory (Specware::current-directory)))
-    (unless *quiet-about-dirs?* 
+    (unless *quiet-about-dirs?*
       (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*))
     (ensure-directories-exist *test-temporary-directory*)
     (Specware::change-directory *test-temporary-directory*)
     (tagbody
-     (unwind-protect 
+     (unwind-protect
 	 (handler-case
 	     (with-open-file (str path :direction :input)
 	       (loop (let ((form (read str nil ':eof)))
@@ -191,7 +191,7 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames filepath *test-directory*))
 	       (target (merge-pathnames filepath *test-temporary-directory*)))
 	  (ensure-directories-exist target)
-	  (if *quiet-copy?* 
+	  (if *quiet-copy?*
 	      (with-output-to-string (*standard-output*)
 		(Specware::copy-file source target))
 	    (Specware::copy-file source target)))))
@@ -249,7 +249,7 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun test-1 (name &key sw swe swe-spec swl swll lisp show showx path (swprb nil swprb?)
 			 output
-             use-goal-file
+                         use-goal-file
 			 (output-predicate 'diff-output)
 			 (value "--NotAValue--")
 			 (value-predicate 'equal)
@@ -258,13 +258,13 @@ be the option to run each (test ...) form in a fresh image.
   (let ((msg (format nil "~4D Testing : ~A" (incf *global-test-counter*) name)))
     ;;
     ;; Note:  The xemacs variable fi:lisp-evalserver-number-reads needs to be bound
-    ;;        to a value larger than the total number of calls that will be made 
-    ;;        here to eval-in-emacs (which equals the number of tests to be run). 
-    ;;        Otherwise, subsequent -eval forms in the script "time out" and fail 
+    ;;        to a value larger than the total number of calls that will be made
+    ;;        here to eval-in-emacs (which equals the number of tests to be run).
+    ;;        Otherwise, subsequent -eval forms in the script "time out" and fail
     ;;        to execute, so the final exit-lisp and kill-emacs forms don't
     ;;        execute, so the script hangs forever.
     ;;
-    ;;        The default value for fi:lisp-evalserver-number-reads is just 200, 
+    ;;        The default value for fi:lisp-evalserver-number-reads is just 200,
     ;;        so current test scripts (e.g. Test_Specware4_ACL) set it to 100000.
     ;;
     ;;        Incrementing fi:lisp-evalserver-number-reads here would be a better
@@ -278,7 +278,7 @@ be the option to run each (test ...) form in a fresh image.
 	(Specware::*dont-use-x-symbol?* t))
     (let* ((normalized-input (cond ((not (null sw     )) (normalize-input sw       ))
                                    ((not (null swll   )) (normalize-input swll     ))
-                                   ((not (null swe    )) (normalize-input swe-spec ))
+                                   ((not (null swe    )) (normalize-input swe      ))
                                    ((not (null swl    )) (normalize-input swl      ))
                                    ((not (null show   )) (normalize-input show     ))
                                    ((not (null showx  )) (normalize-input showx    ))
@@ -392,8 +392,8 @@ be the option to run each (test ...) form in a fresh image.
 	(format s "~&;;; <  ...~%"))
       (dolist (item expected)
 	(cond ((consp item)
-	       (case (car item) 
-		 (:optional  
+	       (case (car item)
+		 (:optional
 		  (dolist (line (cdr item))
 		    (format s "~&;;; ?  ~A   [optional]~%" line)))
 		 (:alternatives
@@ -402,9 +402,9 @@ be the option to run each (test ...) form in a fresh image.
 		      (incf n)
 		      (let ((lines (if (consp alt) alt (list alt))))
 			(dolist (line lines)
-			  (format s "~&;;; ?  ~A   [alt ~D]~%" 
+			  (format s "~&;;; ?  ~A   [alt ~D]~%"
 				  line n))))))
-		 (t 
+		 (t
 		  (format s "~&;;; ?  ~A   [???]~%" (cdr item)))))
 	      (t
 	       (format s "~&;;; <  ~A~%" item))))
@@ -435,22 +435,22 @@ be the option to run each (test ...) form in a fresh image.
 		       (local-chars nil))
 		   (do ((chars (coerce text 'list) (cdr chars)))
 		       ((null chars)
-			(reverse (cons (coerce (reverse local-chars) 'string) 
+			(reverse (cons (coerce (reverse local-chars) 'string)
 				       lines)))
 		     (let ((char (car chars)))
 		       (cond ((equal char #\Newline)
-			      (push (coerce (reverse local-chars) 'string) 
+			      (push (coerce (reverse local-chars) 'string)
 				    lines)
 			      (setq local-chars nil))
 			     (t
 			      (push char local-chars))))))
 	       text))
 
-	   (optional? (x) 
+	   (optional? (x)
 	     (and (consp x)
 		  (eq (car x) :optional)))
 
-	   (alternatives? (x) 
+	   (alternatives? (x)
 	     (and (consp x)
 		  (eq (car x) :alternatives)))
 
@@ -462,7 +462,7 @@ be the option to run each (test ...) form in a fresh image.
 			(extend-match (cdr wanted) saw)
 		      (let ((optional-lines (cdr (car wanted))))
 			(if (lines-match? (car optional-lines) (car saw))
-			    (extend-match (append (cdr optional-lines) (cdr wanted)) 
+			    (extend-match (append (cdr optional-lines) (cdr wanted))
 					  (cdr saw))
 			  (extend-match (cdr wanted) saw)))))
 		   ((null saw)
@@ -471,12 +471,12 @@ be the option to run each (test ...) form in a fresh image.
 		    (dolist (alternative (cdr (car wanted))
 			      ;; all the alternatives fail
 			      (values wanted saw))
-		      (let ((alternative-lines (if (consp alternative) 
+		      (let ((alternative-lines (if (consp alternative)
 						   alternative
 						 (list alternative))))
 			(when (lines-match? (car alternative-lines)
 					    (car saw))
-			  ;; if the first line of an alternative matches, 
+			  ;; if the first line of an alternative matches,
 			  ;; commit to using the rest of that alternative
 			  (return
 			    (extend-match (append (cdr alternative-lines) (cdr wanted))
@@ -485,7 +485,7 @@ be the option to run each (test ...) form in a fresh image.
 		    (extend-match (cdr wanted) (cdr saw)))
 		   (t
 		    (values wanted saw)))))
-	   
+
     (multiple-value-bind (w-tail s-tail)
 	(extend-match (convert-to-lines wanted)
 		      (convert-to-lines saw))
@@ -493,7 +493,7 @@ be the option to run each (test ...) form in a fresh image.
 	    (rev-s-tail (reverse s-tail)))
 	(multiple-value-bind (w-middle s-middle)
 	    (extend-match rev-w-tail rev-s-tail)
-	  (let* ((incomplete-match? 
+	  (let* ((incomplete-match?
 		  (or (not (null w-middle))
 		      (not (null s-middle))))
 		 (partial-match-at-start? (and incomplete-match?
@@ -502,8 +502,8 @@ be the option to run each (test ...) form in a fresh image.
 					       (not (eq s-middle rev-s-tail)))))
 	    (if (and (null w-middle) (null s-middle))
 		nil
-	      (list partial-match-at-start? 
-		    (reverse w-middle) 
+	      (list partial-match-at-start?
+		    (reverse w-middle)
 		    (reverse s-middle)
 		    partial-match-at-end?))))))))
 
@@ -514,13 +514,13 @@ be the option to run each (test ...) form in a fresh image.
 		  (last-char-was-whitespace? t))
 	      (dolist (char chars)
 		(cond ((member char '(#\Space #\Tab))
-		       (unless last-char-was-whitespace? 
+		       (unless last-char-was-whitespace?
 			 (push #\Space result))
 		       (setq last-char-was-whitespace? t))
 		      (t
 		       (push char result)
 		       (setq last-char-was-whitespace? nil))))
-	      (reverse 
+	      (reverse
 	       (if last-char-was-whitespace?
 		   (cdr result)
 		 result))))
@@ -531,11 +531,11 @@ be the option to run each (test ...) form in a fresh image.
 		  (and (null y) (or (null x) (equal x '(#\*)))))
 	       (unless (eq (car x) (car y))
 		 (case (car x)
-		   (#\? 
-		    (return 
+		   (#\?
+		    (return
 		     (matches? (cdr x) (cdr y))))
 		   (#\*
-		    (return 
+		    (return
 		     (or (matches? (cdr x) (cdr y)) ; matches 1 char
 			 (matches? (cdr x) y)       ; matches 0 chars
 			 (matches? x (cdr y)))))      ; matches multiple chars
@@ -544,5 +544,3 @@ be the option to run each (test ...) form in a fresh image.
     (or (string= x y)                   ; was equalp which is case-insensitive
 	(matches? (compress-whitespace (coerce x 'list))
 		  (compress-whitespace (coerce y 'list))))))
-
-    
