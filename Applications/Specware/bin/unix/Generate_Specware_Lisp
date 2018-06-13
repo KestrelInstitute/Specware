@@ -3,7 +3,7 @@
 # This script processes Specware4.sw to produce Specware4.lisp
 
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
-# files. See "man bash" for details. 
+# files. See "man bash" for details.
 
 LISP_MODE=$1
 
@@ -28,7 +28,7 @@ SPECWARE_LISP="$SPECWARE4"/Applications/Specware/lisp/Specware4.lisp
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 
 # --------------------------------------------------------------------------------
-# Make sure Bootrap.$IMAGE_EXTENSION exists 
+# Make sure Bootrap.$IMAGE_EXTENSION exists
 # --------------------------------------------------------------------------------
 
 if [ ! -f "$BOOTSTRAP_IMAGE" ]; then
@@ -43,7 +43,7 @@ if [ ! -f "$BOOTSTRAP_IMAGE" ]; then
 fi
 
 # --------------------------------------------------------------------------------
-# Save the old Specware4.lisp 
+# Save the old Specware4.lisp
 # --------------------------------------------------------------------------------
 
 cd "$SPECWARE4"/Applications/Specware/lisp
@@ -54,8 +54,8 @@ if [ -f "Specware4.lisp" ]; then
   if [ -f Specware4-save.lisp ]; then
     /bin/rm -f Specware4-save.lisp
   fi
-  echo "cat Specware4.lisp Specware4--*.lisp > Specware4-save.lisp"
-  cat Specware4.lisp Specware4--*.lisp > Specware4-save.lisp
+  echo "mv Specware4.lisp Specware4-save.lisp"
+  mv Specware4.lisp Specware4-save.lisp
 else
   echo "Note: No previous specware lisp file."
 fi
@@ -117,4 +117,3 @@ if cmp -s Specware4-new-save.lisp Specware4-save.lisp; then
 fi
 
 /bin/mv -f Specware4-new-save.lisp Specware4-save.lisp
-
