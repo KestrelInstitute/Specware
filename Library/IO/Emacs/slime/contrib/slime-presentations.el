@@ -448,7 +448,7 @@ Also return the start position, end position, and buffer of the presentation."
     (unless (eql major-mode 'slime-repl-mode)
       (slime-switch-to-output-buffer))
     (cl-flet ((do-insertion ()
-                (unless (looking-back "\\s-" (- (point) 1))
+                (unless (looking-back "\\s-" (- (point) 1) nil)
                   (insert " "))
                 (slime-insert-presentation text id)
                 (unless (or (eolp) (looking-at "\\s-"))

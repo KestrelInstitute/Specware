@@ -205,7 +205,7 @@ terminates a current completion."
             ;; Incomplete
             (t
              (when (member completed-prefix completion-set)
-               (slime-minibuffer-respecting-message 
+               (slime-minibuffer-respecting-message
                 "Complete but not unique"))
 	     (when slime-c-p-c-unambiguous-prefix-p
 	       (let ((unambiguous-completion-length
@@ -213,7 +213,7 @@ terminates a current completion."
 			       minimizing (or (cl-mismatch completed-prefix c)
                                               (length completed-prefix)))))
 		 (goto-char (+ beg unambiguous-completion-length))))
-             (slime-display-or-scroll-completions completion-set 
+             (slime-display-or-scroll-completions completion-set
                                                   completed-prefix))))))
 
 (defun slime-complete-symbol*-fancy-bit ()
@@ -245,9 +245,9 @@ current buffer."
      ((and (< beg (point-max))
            (string= (buffer-substring-no-properties beg (1+ beg)) ":"))
       ;; Contextual keyword completion
-      (let ((completions 
+      (let ((completions
              (slime-completions-for-keyword token
-                                            (save-excursion 
+                                            (save-excursion
                                               (goto-char beg)
                                               (slime-parse-form-upto-point)))))
         (when (cl-first completions)
@@ -281,7 +281,7 @@ current buffer."
 ;;; Complete form
 
 (defun slime-complete-form ()
-  "Complete the form at point.  
+  "Complete the form at point.
 This is a superset of the functionality of `slime-insert-arglist'."
   (interactive)
   ;; Find the (possibly incomplete) form around point.
@@ -290,7 +290,7 @@ This is a superset of the functionality of `slime-insert-arglist'."
       (if (eq result :not-available)
           (error "Could not generate completion for the form `%s'" buffer-form)
           (progn
-            (just-one-space (if (looking-back "\\s(" (1- (point)))
+            (just-one-space (if (looking-back "\\s(" (1- (point)) nil)
                                 0
                                 1))
             (save-excursion
@@ -302,4 +302,3 @@ This is a superset of the functionality of `slime-insert-arglist'."
               (indent-sexp)))))))
 
 (provide 'slime-c-p-c)
-
