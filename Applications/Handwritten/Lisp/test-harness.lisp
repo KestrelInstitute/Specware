@@ -289,9 +289,9 @@ be the option to run each (test ...) form in a fresh image.
 			 (let ((*error-output* *standard-output*)) ; so we also collect warnings and error messages
 			   (multiple-value-setq (val error-type)
 			     (ignore-errors
-			      (cond ((not (null sw     )) (cl-user::sw        normalized-input))
+			      (cond ((not (null sw     )) (cl-user::sw            normalized-input))
 				    ((not (null swll   )) (cl-user::swll          normalized-input))
-				    ((not (null swe    )) (swe-test swe           normalized-input))
+				    ((not (null swe    )) (swe-test               normalized-input swe-spec))
 				    ((not (null swl    )) (cl-user::swl           normalized-input))
 				    ((not (null show   )) (cl-user::show          normalized-input))
 				    ((not (null showx  )) (cl-user::showx         normalized-input))

@@ -316,7 +316,7 @@
   (map 'list #'(lambda (file)
 		 (if (equal file "Applications/Specware/lisp/Specware4.lisp")
                    (progn
-                     (format t "~&;;; Possibly running lisp compiler on Specware--<n>.lisp files.~%")
+                     (format t "~&;;; Possibly running lisp compiler on Specware4.lisp.~%")
                      (format t "~&;;; If lisp compilation is needed it takes about 30 seconds...~%")
                      (finish-output t)
                      (time

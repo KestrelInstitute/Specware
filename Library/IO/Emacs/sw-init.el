@@ -799,7 +799,6 @@ sLisp Heap Image File: ")
 (defvar comint-last-prompt nil)
 
 ;; Patch to comint-output-filter to allow filter to move to new buffer
-(when (> emacs-minor-version 3)
 (defun comint-output-filter (process string)
   (let ((oprocbuf (process-buffer process)))
     ;; First check for killed buffer or no input.
@@ -886,16 +885,20 @@ sLisp Heap Image File: ")
 		  (add-text-properties prompt-start (point)
 				       '(read-only t front-sticky (read-only)))))
 	      (when comint-last-prompt
-		(remove-text-properties (car comint-last-prompt)
-					(cdr comint-last-prompt)
-					'(font-lock-face)))
+		;; There might be some keywords here waiting for
+		;; fontification, so no `with-silent-modifications'.
+		(font-lock--remove-face-from-text-property
+		 (car comint-last-prompt)
+		 (cdr comint-last-prompt)
+		 'font-lock-face
+		 'comint-highlight-prompt))
 	      (setq comint-last-prompt
 		    (cons (copy-marker prompt-start) (point-marker)))
-	      (add-text-properties prompt-start (point)
-				   '(rear-nonsticky t
-				     font-lock-face comint-highlight-prompt)))
-	    (goto-char saved-point)
-            )))))))
+	      (font-lock-prepend-text-property prompt-start (point)
+					       'font-lock-face
+					       'comint-highlight-prompt)
+	      (add-text-properties prompt-start (point) '(rear-nonsticky t)))
+	    (goto-char saved-point)))))))
 
 (defun start-specware-build-buffer (&optional name)
   (interactive)
