@@ -59,22 +59,25 @@
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
 					       sb-int:package-at-variance))
-            ;; (defun lgen-lisp-redefinition-warning (warning)
-            ;;   (and (typep warning 'sb-kernel::redefinition-with-defun)
-            ;;        (let* ((new-location (sb-kernel::redefinition-warning-new-location warning))
-            ;;               (new-namestring (and new-location
-            ;;                                    (sb-c:definition-source-location-namestring new-location))))
-            ;;          (string= new-namestring "lgen_lisp_tmp.lisp"
-            ;;                   :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
-            ;;          )))
+            (defun lgen-lisp-redefinition-warning (warning)
+              (and (typep warning 'sb-kernel:redefinition-with-defun)
+                   (let* ((new-location (and (slot-boundp warning 'sb-kernel::new-location)
+                                             (sb-kernel::redefinition-warning-new-location warning)))
+                          (new-namestring (and new-location
+                                               (sb-c:definition-source-location-namestring new-location))))
+                     (if new-namestring
+                         (string= new-namestring "lgen_lisp_tmp.lisp"
+                                  :start1 (- (length new-namestring) (length "lgen_lisp_tmp.lisp")))
+                       (and *load-pathname*
+                            (string= "lgen_lisp_tmp" (pathname-name *load-pathname*)))))))
             (deftype sw-uninteresting-redefinition ()
               '(or (satisfies sb-kernel::uninteresting-ordinary-function-redefinition-p)
-                (satisfies sb-kernel::uninteresting-macro-redefinition-p)
-                (satisfies sb-kernel::uninteresting-generic-function-redefinition-p)
-                (satisfies sb-kernel::uninteresting-method-redefinition-p)
-                ;;(satisfies lgen-lisp-redefinition-warning)
-                sb-int:package-at-variance
-                ))
+                   (satisfies sb-kernel::uninteresting-macro-redefinition-p)
+                   (satisfies sb-kernel::uninteresting-generic-function-redefinition-p)
+                   (satisfies sb-kernel::uninteresting-method-redefinition-p)
+                   (satisfies lgen-lisp-redefinition-warning)
+                   sb-int:package-at-variance
+                   ))
 
             (setq sb-ext:*muffled-warnings* 'sw-uninteresting-redefinition)
 	    (setq sb-ext::*compile-print* nil)

@@ -59,7 +59,7 @@
 (defun convert-pathname-to-cygwin (dir-str)
   (multiple-value-bind (dev dir)
       (parse-device-directory dir-str)
-    (let ((dir (substitute #\/ #\\ dir))) 
+    (let ((dir (substitute #\/ #\\ dir)))
       (if (and (> (length dir) 8) (string= dir "/cygwin/" :end1 8))
           (subseq dir 7)
           (concatenate 'string "/cygdrive/" (string-downcase dev) dir)))))
@@ -96,7 +96,7 @@
 (defun current-directory ()
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
-  (let* ((dir 
+  (let* ((dir
          #+allegro   (substitute #\/ #\\ (namestring (excl::current-directory)))
          #+Lispworks (hcl:get-working-directory)   ; ??       (current-pathname)
          #+mcl       (ccl::current-directory-name) ; ??
@@ -129,7 +129,7 @@
          (components nil)
          (this-component-chars nil))
     (dolist (char chars)
-      (if (member char delimiters) 
+      (if (member char delimiters)
           (unless (null this-component-chars)
             (push (coerce (reverse this-component-chars) 'string)
                   components)
@@ -170,7 +170,7 @@
   (let ((dirpath (dir-to-path directory)))
     (setq directory (namestring dirpath))
     (if #-clisp (probe-file (remove-final-slash directory)) ; remove necessary in some cl's
-        #+clisp (ext:probe-directory directory) 
+        #+clisp (ext:probe-directory directory)
         (progn
           #+allegro   (excl::chdir          directory)
           #+Lispworks (hcl:change-directory directory)
@@ -181,7 +181,7 @@
           #+sbcl      (sb-posix:chdir directory)
           ;            (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
           #+clisp     (setf (ext:default-directory) directory)
-                                        ;#+gcl       
+                                        ;#+gcl
           ;; in Allegro CL, at least,
           ;; if (current-directory) is already a pathname, then
           ;; (make-pathname (current-directory)) will fail
@@ -225,7 +225,7 @@
                     (if pr (setf (cdr pr) newvalue)
                         (push (cons (intern varname "KEYWORD") newvalue)
                               *environment-shadow*)))
-  #+lispworks (setf (hcl::getenv varname) newvalue) 
+  #+lispworks (setf (hcl::getenv varname) newvalue)
   #+cmu       (let ((pr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
                 (if pr (setf (cdr pr) newvalue)
                   (push (cons (intern varname "KEYWORD") newvalue)
@@ -279,20 +279,20 @@
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
     #+(or cmu mcl sbcl gcl clisp)
-    (unless (> 
-             ;; Make sure the fasl file is strictly newer to avoid the following 
+    (unless (>
+             ;; Make sure the fasl file is strictly newer to avoid the following
              ;; race condition that can occur in automated scripts, etc.
              ;;
              ;;  old  X.lisp   [write time = N]
              ;;  old  X.fasl   [write time = N+1]
              ;;  new  X.lisp   [write time = N+1]
-             ;; 
-             ;; If we were to use >= as the test here, we would decide the 
+             ;;
+             ;; If we were to use >= as the test here, we would decide the
              ;; old X.fasl was current for thw new X.lisp
              ;;
              (let ((fasl-file (probe-file (make-pathname :defaults file
                                                          :type *fasl-type*))))
-               (if fasl-file 
+               (if fasl-file
                    (or (file-write-date fasl-file) 0)
                  0))
              (or (file-write-date file) 0))
@@ -304,9 +304,11 @@
     ;;(format t "C: ~a~%" filep)
     ;;(compile-file filep)
     ;;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
-    (compile-file-if-needed filep)
-    ;; scripts depend upon the following returning true iff successful
-    (load (make-pathname :defaults filep :type *fasl-type*))))
+    (if (probe-file filep)
+        (progn (compile-file-if-needed filep)
+               ;; scripts depend upon the following returning true iff successful
+               (load (make-pathname :defaults filep :type *fasl-type*)))
+      (warn "File ~a does not exist" file))))
 
 (defun load-lisp-file (file &rest ignore)
   (declare (ignore ignore))
@@ -358,8 +360,8 @@
   (let ((str (excl:run-shell-command (format nil "c:\\cygwin\\bin\\bash.exe -c ~S"
                                              (format nil "command -p ~A" command-str))
                                      :wait nil :output :stream
-                                     :show-window :hide))) 
-    (do ((ch (read-char str nil nil) (read-char str nil nil))) 
+                                     :show-window :hide)))
+    (do ((ch (read-char str nil nil) (read-char str nil nil)))
         ((null ch) (close str) (sys:os-wait)) (write-char ch)))
   #+cmu  (ext:run-program command-str nil :output t)
   #+mcl  (ccl:run-program command-str nil :output t)
@@ -380,31 +382,31 @@
   #-(or allegro cmu sbcl mcl)
   ;; use unsigned-byte to avoid problems reading x-symbol chars
   ;; For example, read-char might complain for chars with codes above #xC0
-  (with-open-file (istream source 
-                           :direction    :input 
+  (with-open-file (istream source
+                           :direction    :input
                            :element-type 'unsigned-byte)
-    (with-open-file (ostream target 
-                             :direction         :output 
-                             :element-type      'unsigned-byte 
+    (with-open-file (ostream target
+                             :direction         :output
+                             :element-type      'unsigned-byte
                              :if-does-not-exist :create)
       (loop
         (let ((byte (read-byte istream nil :eof)))
-          (cond ((eq :eof byte) 
+          (cond ((eq :eof byte)
                  (return))
-                (t 
+                (t
                  (write-byte byte ostream))))))))
 
 (defun concatenate-files (sources target)
   ;; similar to generic-copy-file above -- rarely used
   (ensure-directories-exist target)
-  (with-open-file (ostream target 
-                           :direction         :output 
+  (with-open-file (ostream target
+                           :direction         :output
                            :element-type      'unsigned-byte
                            :if-does-not-exist :create
                            :if-exists         :supersede)
     (loop for source in sources do
-      (with-open-file (istream source 
-                               :direction    :input 
+      (with-open-file (istream source
+                               :direction    :input
                                :element-type 'unsigned-byte)
         (loop
           (let ((byte (read-byte istream nil :eof)))
@@ -418,8 +420,8 @@
   ;; Note: ead-char might complain for chars with codes above #xC0
   ;; So use unsigned-byte to avoid problems reading x-symbol chars.
   ;; Alternatively, add error handler for smooth continuation.
-  (with-open-file (istream file 
-                           :direction    :input 
+  (with-open-file (istream file
+                           :direction    :input
                            :element-type 'unsigned-byte)
     (with-output-to-string (ostream)
       (loop
@@ -430,7 +432,7 @@
            ((eq byte :eof)  (return))
            ((> byte #x8F)   ) ; ignore non-ascii (chars above 127)
            ((= byte 12)     ) ; ignore #\Page    TODO: why this particular control char??
-           (t 
+           (t
             (write-char (code-char byte) ostream))))))))
 
 (defun first-line-of-file (file)
@@ -439,7 +441,7 @@
 
 (defun sw-directory (pathname &optional #+mcl recursive?)
   (directory #-(or mcl sbcl) pathname
-             #+(or mcl sbcl) 
+             #+(or mcl sbcl)
              (merge-pathnames (make-pathname :name :wild :type :wild) pathname)
              #-sbcl :allow-other-keys         #-sbcl    t  ; permits implementation-specific keys to be ignored by other implementations
              #+mcl  :directories              #+mcl     t  ; specific to mcl
@@ -480,10 +482,10 @@
          (target-dirpath (if (stringp target)
                              (sw-parse-namestring (ensure-final-slash target))
                            target)))
-    #+mcl 
-    (when recursive? 
-      (return 
-        (ccl:run-program "cp"(list "-R" 
+    #+mcl
+    (when recursive?
+      (return
+        (ccl:run-program "cp"(list "-R"
                                    (namestring source-dirpath)
                                    (namestring target-dirpath)))))
     ;; For mcl, only if not recursive.  For all others, always.
