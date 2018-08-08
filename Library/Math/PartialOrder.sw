@@ -1,5 +1,3 @@
-(* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
-
 Carrier = spec type A end-spec
 
 PartialOrder = spec
@@ -7,6 +5,9 @@ PartialOrder = spec
  import Carrier
 
  op <= infixl 20 : A * A -> Bool
+
+ op < (a:A, b:A) infixl 20 : Bool =
+   (a <= b) && ~(a=b)
 
  axiom reflexive_le is
     fa(a:A) a<=a
