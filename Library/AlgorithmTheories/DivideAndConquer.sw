@@ -1,3 +1,5 @@
+(* Copyright 2018 Kestrel Institute. See file LICENSE for license details *)
+
 (*
     A collection of the most common Divide-and-Conquer Algorithm schemes.
 
@@ -5,7 +7,7 @@
   Instances include Insertion Sort, Selection Sort, MaxSegSum
 
 The specification starts by importing basic problem theory DRO,
-which characterizes problems in terms of 
+which characterizes problems in terms of
    D - input type, the given data
    R - output type, the results
    O - satisfaction predicate, which decides when an output z:R is acceptable
@@ -43,7 +45,7 @@ a morphism from DC_01 has been built, the instantiation of the
 algorithm scheme in DC_01_scheme is an automatic pushout/substitution
 operation.
 
-We construct a morphism (interpret) from DC_01 by either 
+We construct a morphism (interpret) from DC_01 by either
 
 (1) selecting a library coalgebra (destructor set) for input type D
 and then calculate a algebra (constructor set) for output type R,
@@ -55,8 +57,8 @@ and then calculate a coalgebra (destructor set) for input type D.
 
 *)
 
-DC_01 = spec 
- import ProblemTheory#DRO 
+DC_01 = spec
+ import ProblemTheory#DRO
  type E   % auxilliary type
 
  op I0: D -> Boolean  % precondition for destructor D0
@@ -71,19 +73,19 @@ DC_01 = spec
  op measure: D -> Nat
 
  axiom Soundness0 is
-   fa(x:D,z:R) I0(x) && O_D0(x) && O_C0(z) => O(x,z) 
+   fa(x:D,z:R) I0(x) && O_D0(x) && O_C0(z) => O(x,z)
  axiom Soundness1 is
    fa(x0:D,e:E,x1:D)
-   fa(z0:R,z1:R) 
+   fa(z0:R,z1:R)
    I1(x0)
-   && O_D1(x0,e,x1) 
-   && O(x1, z1) 
+   && O_D1(x0,e,x1)
+   && O(x1, z1)
    && O_C1(z0,e,z1)
-   => O(x0,z0) 
+   => O(x0,z0)
 
  end-spec
 
-DC_01_scheme = spec 
+DC_01_scheme = spec
   import DC_01
 
 % empty/constant case
@@ -95,7 +97,7 @@ DC_01_scheme = spec
   op D1(x0:D | I0 x0):
       {(e,x1):E*D | O_D1(x0,e,x1)
                   && measure x0 > measure x1}
-  op C1(e:E,z1:R | ex(x1:D) O(x1,z1)): 
+  op C1(e:E,z1:R | ex(x1:D) O(x1,z1)):
        {z0:R | O_C1(z0, e, z1)}
 
 % D&C scheme
@@ -103,9 +105,9 @@ DC_01_scheme = spec
      if I0(x) then C0
      else let (e,x1) = D1(x) in
              C1(e, F x1)
- 
+
   theorem correctness_of_F is fa(x:D) O(x, F x)
- 
+
 end-spec
 
 
@@ -131,7 +133,7 @@ a morphism from DC_012 has been built, the instantiation of the
 algorithm scheme in DC_012_scheme is an automatic pushout/substitution
 operation.
 
-We construct a morphism (interpret) from DC_012 by either 
+We construct a morphism (interpret) from DC_012 by either
 
 (1) selecting a library coalgebra (destructor set) for input type D
 and then calculate a algebra (constructor set) for output type R,
@@ -143,7 +145,7 @@ and then calculate a coalgebra (destructor set) for input type D.
 
 *)
 
-DC_012 = spec 
+DC_012 = spec
  import ProblemTheory#DRO
  type E
 
@@ -166,22 +168,22 @@ DC_012 = spec
  op measure: D -> Nat
 
  axiom Soundness0 is
-   fa(x:D,z:R) I0(x) && O_D0(x) && O_C0(z) => O(x,z) 
+   fa(x:D,z:R) I0(x) && O_D0(x) && O_C0(z) => O(x,z)
  axiom Soundness1 is
-   fa(x:D,e:E,z:R) I1(x) && O_D1(x,e) && O_C1(z, e) => O(x,z) 
+   fa(x:D,e:E,z:R) I1(x) && O_D1(x,e) && O_C1(z, e) => O(x,z)
  axiom Soundness2 is
    fa(x0:D,x1:D,x2:D)
-   fa(z0:R,z1:R,z2:R) 
+   fa(z0:R,z1:R,z2:R)
    I2(x0)
-   && O_D2(x0,x1,x2) 
-   && O(x1, z1) && O(x2, z2) 
+   && O_D2(x0,x1,x2)
+   && O(x1, z1) && O(x2, z2)
    && O_C2(z1, z2, z0)
-   => O(x0,z0) 
+   => O(x0,z0)
 
  end-spec
 
 
-DC_012_scheme = spec 
+DC_012_scheme = spec
   import DC_012
 
 % empty/constant case
@@ -206,9 +208,9 @@ DC_012_scheme = spec
      else if I1(x) then C1(D1(x))
      else let x1x2 = D2(x) in
              C2(F(x1x2.1), F(x1x2.2))
- 
+
   theorem correctness_of_F is fa(x:D) O(x, F(x))
- 
+
 end-spec
 
 (*   References
@@ -243,12 +245,11 @@ AND-reduction search in which we can guide the search directly to a
 feasible solution.   We illustrate the taxonomy refinement by example:
 
 GT_to_DC = morphism GenerateAndTestTheory -> DC_01
-         { State        +-> 
-         , InitialState +-> 
-         , Extract      +-> 
-         , NextState    +-> 
-         , Reachable    +-> 
+         { State        +->
+         , InitialState +->
+         , Extract      +->
+         , NextState    +->
+         , Reachable    +->
          }
 
 *)
-

@@ -1,3 +1,5 @@
+(* Copyright 2018 Kestrel Institute. See file LICENSE for license details *)
+
 (*
 
      Algorithm Theory for State-Based Small-Step Fixpoint Iteration

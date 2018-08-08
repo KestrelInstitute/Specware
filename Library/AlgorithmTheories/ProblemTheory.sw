@@ -1,9 +1,11 @@
+(* Copyright 2018 Kestrel Institute. See file LICENSE for license details *)
+
 (*******************************************************************
 			   Problem Theories (uncurried)
 ********************************************************************)
 
 
-(* ------------------  Basic Problem Theory  --------------------- 
+(* ------------------  Basic Problem Theory  ---------------------
 
     The intent is to capture the abstract structure of problems that
     can be solved by a function and for which the acceptability of an
@@ -25,7 +27,7 @@ DRO = spec
 DROfPartial = spec
  import DRO
  op f(x:D): {oz:Option R | case oz of
-                            | Some z -> O(x, z) 
+                            | Some z -> O(x, z)
                             | None   -> fa(y:R) ~(O(x,y))}
  end-spec
 
@@ -44,7 +46,7 @@ DROf_All = spec
  end-spec
 
 
-(* ----------------------  Pi1 Problem Theory ------------------- 
+(* ----------------------  Pi1 Problem Theory -------------------
 
      This is a generalization of DRO theory in which the acceptability
      of an output for one input can depend on the outputs for other
@@ -67,7 +69,7 @@ Pi1PT = spec
 Pi1PTf1 = spec
  import Pi1PT
  op f : D -> R
- axiom correctness_of_f is 
+ axiom correctness_of_f is
    fa(x1:D,z1:R) fa(x2:D,z2:R) (z1=f(x1) =>  O2(x1, z1, x2,z2))
  end-spec
 
@@ -84,7 +86,7 @@ DROfOpt = spec
  def O2(x1,z1,x2,z2) = (O(x1,z1) && O(x2,z2) && x1=x2
 		        => cost(x1,z1) <= cost(x2,z2))
  op f : D -> R
- axiom correctness_of_f is 
+ axiom correctness_of_f is
    fa(x1:D,z1:R) fa(x2:D,z2:R)
      z1=f(x1) => O2(x1, z1, x2, z2)
  end-spec
@@ -105,7 +107,7 @@ DROfInj = spec
  op O2 : D * R * D * R -> Bool
  def O2(x1,z1,x2,z2) = (O(x1,z1) && O(x2,z2) && x1~=x2 => z1~=z2)
  op f : D -> R
- axiom correctness_of_f is 
+ axiom correctness_of_f is
    fa(x1:D,z1:R) fa(x2:D,z2:R)
      z1=f(x1) && z2=f(x2) => O2(x1, z1, x2, z2)
  end-spec

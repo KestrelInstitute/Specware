@@ -1,9 +1,11 @@
+(* Copyright 2018 Kestrel Institute. See file LICENSE for license details *)
+
 (*
 
         Algorithm Theory for Generate-and-Test algorithms
 
 The specification starts by importing basic problem theory DRO,
-which characterizes problems in terms of 
+which characterizes problems in terms of
    D - input type, the given data
    R - output type, the results
    O - satisfaction predicate, which decides when an output z:R is
@@ -50,11 +52,11 @@ utilization or the history of a computation.
 For proof of correctness, we assume that the output domain is finite.
 We do that by the axioms reachable_R (all elements of output type R
 are generable via the NestState transformer), and finite_reachability
-whcih asserts that the generation process terminates.  
+whcih asserts that the generation process terminates.
 
 For real-world problems where the domain is infinite, we usually apply
 G&T to a finite approximation, where the output domain is a finite
-subset of the real-world domain.  
+subset of the real-world domain.
 
 Issues:
  - typically R is a dependent-type R(x)
@@ -77,7 +79,7 @@ GenerateAndTestTheory = spec
   op Reachable(x:D, dest:State, st:State, k:Nat): Boolean =
     if dest = st
       then true
-    else if k=0 
+    else if k=0
       then false
     else (case NextState(x,st) of
            | None     -> false
@@ -86,15 +88,15 @@ GenerateAndTestTheory = spec
   (*  All elements of R are reachable via NextState. *)
   axiom reachable_R is
      fa(x:D,z:R)
-     ex(k:Nat,dest:State) 
-     Reachable(x,dest,InitialState x, k) 
+     ex(k:Nat,dest:State)
+     Reachable(x,dest,InitialState x, k)
      && Extract dest = z
 
   (* NextState can be iterated only finitely many times. *)
   axiom finite_reachability is
-     fa(x:D)ex(k:Nat, st:State) 
-     NextState(x,st) = None 
-     && Reachable(x,st,InitialState x, k) 
+     fa(x:D)ex(k:Nat, st:State)
+     NextState(x,st) = None
+     && Reachable(x,st,InitialState x, k)
 
 (* reachable_R && finite_reachability => R is finite *)
 
@@ -103,31 +105,31 @@ GenerateAndTestTheory = spec
 
 (*****************   G&T Scheme   ************************)
 
-GenerateAndTest = spec 
+GenerateAndTest = spec
   import GenerateAndTestTheory
 
-  def f(x:D): Option R = 
+  def f(x:D): Option R =
     GT(x, InitialState x)
 
-  def GT(x:D, st:State) : Option R = 
+  def GT(x:D, st:State) : Option R =
     let z = Extract st in
-    (if O(x,z) 
+    (if O(x,z)
        then Some z                 % success case
      else (case NextState(x,st) of
              | None     -> None    % failure case
              | Some st' -> GT(x, st')))
 
   theorem correctness_of_GT is
-   fa(x:D) (case f(x) of 
-              | Some z -> O(x,z) 
+   fa(x:D) (case f(x) of
+              | Some z -> O(x,z)
               | None -> ~(ex(z)O(x,z)))
 
 end-spec
 
-                      
+
 (* ========================================================
     Generate-and-Test for optimization problems
-   ======================================================== 
+   ========================================================
 *)
 
 
@@ -138,26 +140,25 @@ GenerateAndTestOptTheory = spec
 
 (*****************   G&T Optimization Scheme   ************************)
 
-GenerateAndTestOpt = spec 
+GenerateAndTestOpt = spec
   import GenerateAndTestOptTheory
 
-  def f(x:D): Option R = 
+  def f(x:D): Option R =
     GT(x, InitialState x, Extract(InitialState x))
 
-  def GT(x:D, st:State, currentBest:R) : Option R = 
+  def GT(x:D, st:State, currentBest:R) : Option R =
     let z:R = Extract st in
     let nextBest:R = (if O(x,z) && cost(x,z) < cost(x,currentBest)
-                        then z 
+                        then z
                       else currentBest) in
     case NextState(x,st) of
       | None     -> Some nextBest          %% success
       | Some st' -> GT(x, st', nextBest)
 
   theorem correctness_of_GTOpt is
-   fa(x:D) (case f(x) of 
-              | Some z -> O(x,z) 
+   fa(x:D) (case f(x) of
+              | Some z -> O(x,z)
                           && (fa(x1:D,z1:R) O(x1,z1) => cost(x,z)<=cost(x1,z1))
               | None -> ~(ex(z)O(x,z)))
 
 end-spec
-                      

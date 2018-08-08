@@ -3,7 +3,7 @@
         Algorithm Theory for Local Search algorithms
 
 The specification starts by importing basic problem theory DRO,
-which characterizes problems in terms of 
+which characterizes problems in terms of
    D - input type, the given data
    R - output type, the results
    O - satisfaction predicate, which decides when an output z:R is
@@ -44,12 +44,12 @@ In the LS theory below we specify the usual graph topology.  We
 specify the connectedness assumption in terms of reachability of all
 of R from any initial node.  The characteristic operation of a LS
 algorithm is the neighboorhood generator that lists the neighborhood
-of a given node.  
+of a given node.
 
 Local Search structure is too weak to prove total correctness for
 feasibility or optimization problems on infinite domains.  In LS
 theory below, we assume a finite domain to provide a correctness
-proof.  
+proof.
 
 Optimization and Approximation variants of LS
 
@@ -77,10 +77,10 @@ LocalSearchTheory = spec
   import ProblemTheory#DRO
   type State
   op InitialState : D -> State
-  op NextState(x:D, st0:State): Option State 
+  op NextState(x:D, st0:State): Option State
   op Extract : State -> R             % extract an R value from state
 
-  (* defines the set of adjacent states *) 
+  (* defines the set of adjacent states *)
   type NeighborInfo    % represents structural change info
   op Neighbors : State -> List NeighborInfo
   op GenerateNeighbor : State * NeighborInfo -> State
@@ -98,8 +98,8 @@ LocalSearchTheory = spec
   (*  All elements of R are reachable from the initial state via a finite walk *)
   axiom reachable_R_via_walk is
      fa(x:D,z:R)
-     ex(k:Nat, ss: List State) 
-     length ss = k 
+     ex(k:Nat, ss: List State)
+     length ss = k
      && head ss = InitialState x
      && Extract (last ss) = z
      && walk?(ss)
@@ -154,7 +154,7 @@ LS_Unimodal_Theory = spec
     && st0 = last walk
     && (fa(i:Int) i < (length costs) - 1
            => ((costs @ i) <= (costs @ succ(i))))
-    
+
 end-spec
 
 
@@ -166,12 +166,12 @@ TODO:  develop MCMC algorithm strategy which converges in the limit.
 
 *)
 
-LocalSearchOpt_SteepestGradient = spec 
+LocalSearchOpt_SteepestGradient = spec
   import LS_Unimodal_Theory
 
 (* This is a GT_opt instance: generate the neighborhood (elements of
      ns) and find the neighbor whose cost improves that of the current
-     state st, if one exists.  
+     state st, if one exists.
    loosely
    D         +-> List State
    R         +-> {st':State | st' in? Neighbors st}
@@ -181,12 +181,12 @@ LocalSearchOpt_SteepestGradient = spec
    Extract   +-> Id
 *)
 
-  op NextState(x:D,st:State): 
-    {next: Option State 
+  op NextState(x:D,st:State):
+    {next: Option State
     | (case next of
-       | None -> fa(st') st' in? Neighborhood st 
+       | None -> fa(st') st' in? Neighborhood st
                          => cost(x,Extract st) < cost(x,Extract st')
-       | Some st' -> st' in? Neighborhood st 
+       | Some st' -> st' in? Neighborhood st
                      && (fa(st1:State) st1 in? Neighborhood st
                          => cost(x,Extract st') <= cost(x,Extract st1)))} =
     let ns:List State = Neighborhood st in
@@ -194,9 +194,9 @@ LocalSearchOpt_SteepestGradient = spec
       then bestNeighbor(x, ns, Some (head ns), cost(x, Extract(head ns)))
       else bestNeighbor(x, ns, None, cost(x, Extract st))
 
-  def bestNeighbor(x:D, ns:List State, 
-                   currentBestState:Option State, 
-                   currentBestCost:Nat) : Option State = 
+  def bestNeighbor(x:D, ns:List State,
+                   currentBestState:Option State,
+                   currentBestCost:Nat) : Option State =
      let   st':State = head ns in   % extracted element
      let cost':Nat = cost(x,Extract st') in
      if cost'<currentBestCost
@@ -207,22 +207,22 @@ LocalSearchOpt_SteepestGradient = spec
                | Nil   -> currentBestState
                | _::tl -> bestNeighbor(x, tl, currentBestState, currentBestCost))
 
-  def f(x:D): Option R = 
+  def f(x:D): Option R =
     let init:State = InitialState x in
     LS_opt(x, init, Extract init)
 
-  def LS_opt(x:D, st:State, currentBest:R) : Option R = 
+  def LS_opt(x:D, st:State, currentBest:R) : Option R =
     let z:R = Extract st in
     let nextBest:R = (if O(x,z) && cost(x,z) < cost(x,currentBest)
-                        then z 
+                        then z
                       else currentBest) in
     case NextState(x,st) of
       | None     -> Some nextBest          %% success
       | Some st' -> LS_opt(x, st', nextBest)
 
   theorem correctness_of_LS_opt is
-   fa(x:D) (case f(x) of 
-              | Some z -> O(x,z) 
+   fa(x:D) (case f(x) of
+              | Some z -> O(x,z)
                           && (fa(x1:D,z1:R) O(x1,z1) => cost(x,z)<=cost(x1,z1))
               | None -> ~(ex(z)O(x,z)))
 end-spec
