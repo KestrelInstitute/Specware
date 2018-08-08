@@ -73,8 +73,11 @@ Pi1PTf1 = spec
    fa(x1:D,z1:R) fa(x2:D,z2:R) (z1=f(x1) =>  O2(x1, z1, x2,z2))
  end-spec
 
+NatLinearOrderM = morphism ../Math/LinearOrder -> /Library/Base {A +-> Nat.Nat, <= +-> Integer.<=}
+NatLinearOrder = ../Math/LinearOrder[NatLinearOrderM]
+
 DROOpt = spec
- import DRO, translate ../Math/LinearOrder by {A +-> Nat}
+ import DRO, NatLinearOrder
  op cost : D * R -> Nat
  end-spec
 
