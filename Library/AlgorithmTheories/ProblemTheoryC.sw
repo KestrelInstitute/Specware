@@ -21,7 +21,7 @@ DROfPartial = spec
                             | Some z -> (O x z)
                             | None   -> fa(y:R) ~(O x y)}
  % op f : D -> Option R
- % axiom correctness_of_f is 
+ % axiom correctness_of_f is
  %   fa(x:D) case f(x) of
  %            | Some z -> (O x z)
  %            | None   -> fa(y:R) ~(O x y)
@@ -30,7 +30,7 @@ DROfPartial = spec
 DROfTotal = spec
  import DRO
  op f (x:D):{z: R | O x z}
- % axiom correctness_of_f is 
+ % axiom correctness_of_f is
  %   fa(x:D,z:R) (z=f(x) => (O x z))
  end-spec
 
@@ -59,15 +59,15 @@ CSP = spec
 (*   classification morphism from CSP
 morphism CSP -> ProblemDomain
      {D           +-> CNF,      % from DROfPartial
-      R           +-> Valuation, 
+      R           +-> Valuation,
       O           +-> evalCNF,
       f           +-> SAT,
 
       Variable    +->           % from VarVal
-      Value       +-> 
-      valLe       +-> 
-      valBot      +-> 
-      valJoin     +-> 
+      Value       +->
+      valLe       +->
+      valBot      +->
+      valJoin     +->
 
       BasicConstraint   +->     % from Constraint
       WFConstraint?
@@ -106,7 +106,7 @@ Pi1PT = spec
 Pi1PTf1 = spec
  import Pi1PT
  op f : D -> R
- axiom correctness_of_f is 
+ axiom correctness_of_f is
    fa(x1:D,z1:R) fa(x2:D,z2:R) (z1=f(x1) =>  O2(x1, z1, x2,z2))
  end-spec
 
@@ -119,11 +119,11 @@ Pi1PTopt1 = spec
  def O2(x1,z1,x2,z2) = ((O x1 z1) && (O x2 z2) && x1=x2
 		        => cost(x1,z1) <= cost(x2,z2))
  op f : D -> R
- axiom correctness_of_f is 
+ axiom correctness_of_f is
    fa(x1:D,z1:R) fa(x2:D,z2:R)
-     (z1=f(x1) 
-      => (O x1 z1) 
-         && ( x1=x2 && (O x2 z2) 
+     (z1=f(x1)
+      => (O x1 z1)
+         && ( x1=x2 && (O x2 z2)
 	    => cost(x1,z1) <= cost(x2,z2)))
  end-spec
 

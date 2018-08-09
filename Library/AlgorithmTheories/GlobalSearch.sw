@@ -1,4 +1,6 @@
-(*  
+(* Copyright 2018 Kestrel Institute. See file LICENSE for license details *)
+
+(*
 
     Algorithm Theory for Global Search
 
@@ -40,7 +42,7 @@ GlobalSearchTheory = spec
      fa(x:D, s:State, z:R)
       Satisfies(z, s) =
         ((Extract(s) = Some z)
-	    || 
+	    ||
 	 (ex (si:SplitInfo)
              (si in? Subspaces(s) && Satisfies(z, Split(s,si)))))
 
@@ -61,18 +63,18 @@ GlobalSearchTheory = spec
 
 (*****************   GS Scheme with pruning   ************************)
 
-GlobalSearch = spec 
+GlobalSearch = spec
   import GlobalSearchTheory
 
   (* abstract Global Search algorithm to find one feasible solution. *)
-  def f(x:D): Option R = 
+  def f(x:D): Option R =
     if Phi(InitialState(x))
     then GS(x,InitialState(x))
     else None
 
   (* GS explores the search tree using a depth-first strategy.  *)
 
-  def GS(x:D, r:State| Phi(r) ) : Option R = 
+  def GS(x:D, r:State| Phi(r) ) : Option R =
     let sol: Option R = Extract(r) in
     case sol of
       | Some z | O(x,z) -> Some z
@@ -80,9 +82,9 @@ GlobalSearch = spec
 
   (* GSAux explores the children of a space.  *)
 
-  def GSAux(x:D, r:State, rs:List SplitInfo | Phi(r)) : Option R = 
+  def GSAux(x:D, r:State, rs:List SplitInfo | Phi(r)) : Option R =
     case rs of
-      | []   -> None 
+      | []   -> None
       | hd::tl -> if Phi(Split(r,hd))
                   then (case GS(x,Split(r,hd)) of
                          | None -> GSAux(x,r,tl)
@@ -90,8 +92,8 @@ GlobalSearch = spec
                   else  GSAux(x,r,tl)
 
   theorem correctness_of_GS is
-   fa(x:D) (case f(x) of 
-              | Some z -> O(x,z) 
+   fa(x:D) (case f(x) of
+              | Some z -> O(x,z)
               | None -> ~(ex(z)O(x,z)))
 
 end-spec
