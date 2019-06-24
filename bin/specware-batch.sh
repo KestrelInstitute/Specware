@@ -24,6 +24,6 @@ export SWPATH
 #FIXME: Perhaps die if this is not set by the caller?
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
 SBCL_SIZE="${SBCL_SIZE:=2000}"
+SPECWARE_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/unix/Specware4.sbclexe
 
-
-"$SPECWARE4"/bin/specware.exe --dynamic-space-size $SBCL_SIZE --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::process-batch-commands) (sb-unix:unix-exit 0))"
+"$SPECWARE_EXECUTABLE" --dynamic-space-size $SBCL_SIZE --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::process-batch-commands) (sb-unix:unix-exit 0))"

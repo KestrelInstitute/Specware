@@ -255,7 +255,7 @@ CPO qualifying spec
       assume lub_r : "\<forall>S. CPO__directed_p r S --> (\<exists>lub. CPO__leastUpperBound_p r S lub)"
       assume po_r : "ISet__partialOrder_p r"
       assume dir : "CPO__directed_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S"
-      def lub \<equiv> "\<lambda>a . The (CPO__leastUpperBound_p r { f a | f . setToPred S f })"
+      define lub where "lub = \<lambda>a . The (CPO__leastUpperBound_p r { f a | f . setToPred S f })"
       have ex_lub_a : "!!a . \<exists>lub_a . CPO__leastUpperBound_p r { f a | f . setToPred S f } lub_a"
         proof (insert lub_r dir, erule allE, erule mp, auto simp add: CPO__directed_p_def)
           fix a f fa

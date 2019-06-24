@@ -12,10 +12,13 @@ ISABELLE_ROOT=$2
 echo "Running a tiny test of the Transform shell."
 LOG=${SPECWARE4}/Examples/Misc/TinyTransformShellTest.swlog
 run-specware-batch.sh ${SPECWARE4} ${LOG} <<EOFMARKER
+cd ${SPECWARE4}/Examples/Misc
 transform TinyTransformShellTest
 at f
-simplify
-quit
+l
+lr plus_0
+done
+exit
 EOFMARKER
 
 echo "Testing a small example with two morphisms:"
@@ -30,4 +33,3 @@ run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Examples/Misc/TwoMorphisms#CheckRqmt
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Examples/Misc/TwoMorphisms#C
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Examples/Misc/TwoMorphisms#CheckRqmtsC
 run-isabelle-build.sh ${SPECWARE4}/Examples/Misc/Isa ${ISABELLE_ROOT}
-

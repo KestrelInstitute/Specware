@@ -1,28 +1,27 @@
 (* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
+%
 % IsabelleExtensions.sw
 %
-% This file contains definitions and theorems that are not included in the 
+% This file contains definitions and theorems that are not included in the
 % Isabelle standard theories but are needed (or helpful) to prove Specware
-% proof obligations. 
+% proof obligations.
 %
 % From the Specware point of view it is empty
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 spec
- 
+
 import Empty
 
-proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" "~~/src/HOL/Library/Permutation" Main
+proof Isa Thy_Morphism "HOL-Computational_Algebra.Primes" "HOL-Library.Permutation" Main
 end-proof
 
 proof Isa -verbatim
 
-
 (*************************************************************
- * Define simple projections 
+ * Define simple projections
  *************************************************************)
 
 definition second  :: "'a * 'b * 'c \<Rightarrow> 'b"
@@ -72,7 +71,7 @@ lemma empty_false:   "Collect (\<lambda> x. False) = {}"
   by (simp only: empty_def)
 
 (*** stronger control over unfolding "a \<in> S" ***)
- 
+
 lemma mem_lambda_int:
   "a \<in> Collect (\<lambda>(i::int). P i) = P a"
  by simp
@@ -84,16 +83,16 @@ theorem singleton_set [simp]:
 *)
 
 (******************************************************************************
- *  A bit more logic 
+ *  A bit more logic
  ******************************************************************************)
 
 lemma disj_serial: "(P \<or> Q) \<Longrightarrow>  (P \<or> (\<not>P \<and> Q))"
     by blast
 
-lemma conj_all: "\<lbrakk>P x; \<forall>x. P x  \<longrightarrow> Q x\<rbrakk> \<Longrightarrow> Q x" 
+lemma conj_all: "\<lbrakk>P x; \<forall>x. P x  \<longrightarrow> Q x\<rbrakk> \<Longrightarrow> Q x"
   by (drule spec, auto)
 
-lemma conj_imp: "((P \<longrightarrow> Q) \<and> P) = (P \<and> Q)" 
+lemma conj_imp: "((P \<longrightarrow> Q) \<and> P) = (P \<and> Q)"
   by blast
 
 lemma conj_cong_simp:  "((P \<and> Q) = (P \<and> Q')) = (P \<longrightarrow> Q = Q')"
@@ -179,7 +178,7 @@ abbreviation null :: "'a list  \<Rightarrow> bool" where
    "null \<equiv> List.null"
 
 abbreviation (input) mem :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" (infixl "mem" 55) where
-  "x mem xs \<equiv> x \<in> set xs" -- "for backward compatibility"
+  "x mem xs \<equiv> x \<in> set xs" (* "for backward compatibility" *)
 
 abbreviation filtermap :: "('a \<Rightarrow> 'b option) \<Rightarrow> 'a list \<Rightarrow> 'b list" where
    "filtermap \<equiv>  List.map_filter"
@@ -210,13 +209,13 @@ lemma RFunAppl:
 lemma RFunEqual1:
   "(\<forall>x. RFun PD f1 x = RFun PD f2 x) = (\<forall>x. PD x \<longrightarrow> f1 x = f2 x)"
   by(auto simp add: RFunAppl)
-  
+
 lemma RFunEqual[simp]:
   "(RFun PD f1 = RFun PD f2) = (\<forall>x. PD x \<longrightarrow> f1 x = f2 x)"
   apply(simp only: RFunEqual1 [symmetric])
   apply(intro iffI)
   apply(auto)
-  done  
+  done
 
 fun RSet :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a set"
 where
@@ -227,20 +226,20 @@ where
 lemma RSetAppl:
   "\<lbrakk>PD x\<rbrakk> \<Longrightarrow> (x \<in> RSet PD s) = (x \<in> s)"
   by (auto)
-  
+
 lemma RSetEqual1:
   "(\<forall>x. (x \<in> RSet PD s1) = (x \<in> RSet PD s2)) = (\<forall>x. PD x \<longrightarrow> (x \<in> s1) = (x \<in> s2))"
   by(auto simp add: RSetAppl)
-  
+
 lemma RSetEqual[simp]:
   "(RSet PD s1 = RSet PD s2) = (\<forall>x. PD x \<longrightarrow> (x \<in> s1) = (x \<in> s2))"
   apply(simp only: RSetEqual1 [symmetric])
   apply(intro iffI)
   apply(auto)
-  done  
+  done
 
 definition Set_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool" where
- Set_P_def: 
+ Set_P_def:
   "Set_P PD s \<equiv> (\<forall>(x::'a). \<not> (PD x) \<longrightarrow> x \<notin> s)"    (* contrapos: \<forall>(x::'a). x \<in> s \<longrightarrow> PD x
                                                      i.e. s \<subseteq> PD *)
 
@@ -263,7 +262,7 @@ fun Fun_PR :: "('b \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rig
 where
   "Fun_PR Pb f = (\<forall>x. Pb(f x))"
 
-(* 
+(*
 lemma Fun_PD_RFun: "FunPD Pa f \<Longrightarrow> RFun Pa f = f"
   apply(auto)
   apply(drule Fun_PD_def)
@@ -278,13 +277,13 @@ definition TRUE :: "('a \<Rightarrow> bool)" where
 
 (******************************************************************************
  * Functions on subtypes:
- * 
- * Hilbert_Choice.thy has many theorems about inj, surj, bij, inv 
+ *
+ * Hilbert_Choice.thy has many theorems about inj, surj, bij, inv
  * The following defs and theorems extend these to functions on subtypes
  * Note that two of these are already predefined
- * 
- * inj_on :: "['a \<Rightarrow> 'b, 'a set] \<Rightarrow> bool"    
- * Inv :: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> ('b \<Rightarrow> 'a)"   
+ *
+ * inj_on :: "['a \<Rightarrow> 'b, 'a set] \<Rightarrow> bool"
+ * Inv :: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> ('b \<Rightarrow> 'a)"
  *********************************************************************************)
 
 definition surj_on :: "['a \<Rightarrow> 'b, 'a set, 'b set] \<Rightarrow> bool" where     (*surjective on subtypes*)
@@ -296,7 +295,7 @@ definition  defined_on :: "['a \<Rightarrow> 'b, 'a set, 'b set] \<Rightarrow> b
 definition  bij_on  :: "['a \<Rightarrow> 'b, 'a set, 'b set] \<Rightarrow> bool" where    (*bijective on subtypes *)
   "bij_on f A B \<equiv> defined_on f A B \<and> inj_on f A \<and> surj_on f A B"
 
-definition  bij_ON  :: "['a \<Rightarrow> 'b, 'a set, 'b set] \<Rightarrow> bool" where    
+definition  bij_ON  :: "['a \<Rightarrow> 'b, 'a set, 'b set] \<Rightarrow> bool" where
   "bij_ON f A B \<equiv> inj_on f A \<and> surj_on f A B"
   (* This is the equivalent to the current Function__bijective_p_stp *)
 
@@ -305,15 +304,15 @@ definition  inv_on :: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 
 
 (********************************************************************************)
 
-lemma defined_on_simp_set: 
+lemma defined_on_simp_set:
   "defined_on f A B = (\<forall>x\<in>A. f x \<in> B)"
   by (auto simp add: defined_on_def image_def subset_eq)
 
-lemma defined_on_simp: 
+lemma defined_on_simp:
   "defined_on f A B = (\<forall>x. x \<in> A \<longrightarrow> f x \<in> B)"
   by (auto simp add: defined_on_simp_set Ball_def)
 
-lemma defined_on_UNIV [simp]: 
+lemma defined_on_UNIV [simp]:
   "defined_on f A UNIV"
   by (simp add: defined_on_def image_def)
 
@@ -337,31 +336,31 @@ lemma defined_on_inv:
    apply(rule inv_on_mem, simp)
 done
 
-lemma inv_on_f_f [simp]: 
+lemma inv_on_f_f [simp]:
   "\<lbrakk>inj_on f A; x \<in> A\<rbrakk> \<Longrightarrow>  inv_on A f (f x) = x"
   by (metis inv_into_f_f inv_on_def)
 
-lemma f_inv_on_f [simp]: 
+lemma f_inv_on_f [simp]:
   "\<lbrakk>y \<in> f`A\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
   by (metis inv_on_def f_inv_into_f)
 
 lemma inv_on_f_eq: "\<lbrakk>inj_on f A; f x = y; x \<in> A\<rbrakk>  \<Longrightarrow> x = inv_on A f y"
   by (metis inv_on_def inv_on_f_f)
 
-lemma surj_on_f_inv_on_f [simp]: 
+lemma surj_on_f_inv_on_f [simp]:
   "\<lbrakk>surj_on f A B; y\<in>B\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
   by (simp add: image_def surj_on_def)
 
 
 
-lemma inj_on_imp_surj_on_UNIV_inv: 
+lemma inj_on_imp_surj_on_UNIV_inv:
    "inj_on f A \<Longrightarrow> surj_on (inv_on A f) UNIV A"
    apply(auto simp add: surj_on_def)
    apply(rule_tac x="f y" in exI)
    apply(simp add: inv_on_f_f [symmetric])
 done
 
-lemma inj_on_imp_surj_on_inv: 
+lemma inj_on_imp_surj_on_inv:
    "\<lbrakk>defined_on f A B; inj_on f A \<rbrakk>  \<Longrightarrow> surj_on (inv_on A f) B A"
    apply(auto simp add: defined_on_def surj_on_def Bex_def)
    apply(rule_tac x="f y" in exI)
@@ -375,21 +374,21 @@ lemma surj_on_imp_inj_on_inv:
    apply(thin_tac "inv_on A f x = inv_on A f y", auto)
 done
 
-lemma bij_on_imp_bij_on_inv: 
+lemma bij_on_imp_bij_on_inv:
    "bij_on f A B \<Longrightarrow> bij_on (inv_on A f) B A"
-  by (auto simp add: bij_on_def inj_on_imp_surj_on_inv 
+  by (auto simp add: bij_on_def inj_on_imp_surj_on_inv
                      surj_on_imp_inj_on_inv defined_on_inv)
 
 
-lemma bij_ON_UNIV_bij_on: 
+lemma bij_ON_UNIV_bij_on:
    "bij_ON f A UNIV = bij_on f A UNIV"
   by (auto simp add: bij_on_def bij_ON_def defined_on_def)
 
-lemma bij_ON_imp_bij_ON_inv: 
+lemma bij_ON_imp_bij_ON_inv:
    "bij_ON f A UNIV \<Longrightarrow> bij_ON (inv_on A f) UNIV A"
   by (simp add: bij_ON_def  surj_on_imp_inj_on_inv inj_on_imp_surj_on_UNIV_inv)
 
-lemma bij_ON_imp_bij_on_inv: 
+lemma bij_ON_imp_bij_on_inv:
    "bij_ON f A UNIV \<Longrightarrow> bij_on (inv_on A f) UNIV A"
   by (simp add: bij_ON_UNIV_bij_on bij_on_imp_bij_on_inv)
 
@@ -397,17 +396,18 @@ lemma bij_ON_imp_bij_on_inv:
 * A few insights about characters
 *************************************************************)
 
-lemma nat_of_char_less_256 [simp]: "nat_of_char y < 256"
-  apply (subgoal_tac "\<exists>x. y = char_of_nat x", safe)
-  apply (simp)
-  apply (rule_tac x="nat_of_char y" in exI)
-  apply (simp)
-done 
+(* Typed version of of_char *)
+definition nat_of_char :: "char \<Rightarrow> nat"
+  where [simp]:
+  "nat_of_char c \<equiv> of_char c"
 
-(*  Char.chr is like char_of_nat except out of its domain, 
+lemma nat_of_char_less_256 [simp]: "of_char(y::char) < (256::nat)"
+  by simp
+
+(*  Char.chr is like char_of_nat except out of its domain,
     so we define a regularized version *)
 definition Char__chr :: "nat \<Rightarrow> char" where [simp]:
-  "Char__chr = RFun (\<lambda>i. i < 256) char_of_nat"
+  "Char__chr = RFun (\<lambda>i. i < 256) char_of"
 
 (*************************************************************
 *
@@ -428,10 +428,10 @@ lemma mult_left_less_imp_less_pos: "\<lbrakk>j*k < j*i; (0::int) < j\<rbrakk> \<
 
 lemma mult_left_less_imp_less_neg: "\<lbrakk>j*k > j*i; j < (0::int)\<rbrakk> \<Longrightarrow> k < i"
   by (rule_tac i="i" and j="-j" and k="k" in mult_left_less_imp_less_pos, auto)
- 
+
 (*************************************************************
 *
-* Restrict some polymorphic operations to the integers 
+* Restrict some polymorphic operations to the integers
 *
 *************************************************************)
 
@@ -457,7 +457,7 @@ syntax power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
 translations "x *** y" => "(x::nat) ^ (y::nat)"
 
 (**************** and a few insights **********************)
-   
+
 lemma nat_le_abs [simp]:         "nat \<bar>i\<bar> \<le> nat \<bar>j\<bar> = (\<bar>i\<bar> \<le> \<bar>j\<bar>)"
   by auto
 
@@ -482,7 +482,7 @@ lemma sign_neg_iff [simp]:       "sign i = -1 = (i < 0)"
 lemma sign_zero_iff[simp]:       "sign i = 0  = (i = 0)"
   by (simp add: sign_def)
 
-lemma sign_idempotent [simp]:    "sign (sign i) = sign i" 
+lemma sign_idempotent [simp]:    "sign (sign i) = sign i"
   by (simp add: sign_def)
 
 lemma abs_sign_not0 [simp]:      "i \<noteq> 0 \<Longrightarrow> \<bar>sign i\<bar> = 1"
@@ -508,10 +508,10 @@ lemma sign_abs_ubound:           "sign (\<bar>i\<bar>) \<le> 1"
 lemma sign_minus [simp]:         "sign ( -i) = - sign i"
   by (simp add: sign_def)
 lemma sign_sub:                  "\<lbrakk>\<bar>(j::int)\<bar> < \<bar>i\<bar>\<rbrakk> \<Longrightarrow> sign (i - j) = sign i"
-  by (auto simp add: sign_def) 
+  by (auto simp add: sign_def)
 lemma sign_add:                  "\<lbrakk>\<bar>(j::int)\<bar> < \<bar>i\<bar>\<rbrakk> \<Longrightarrow> sign (i + j) = sign i"
-  by (auto simp add: sign_def) 
- 
+  by (auto simp add: sign_def)
+
 lemma sign_add_sign       :      "sign (a + sign a) = sign a"
    by (simp add: sign_def)
 
@@ -521,8 +521,8 @@ apply (simp add: zero_less_mult_iff)
   by (auto simp add: sign_def zero_less_mult_iff)
 
 lemma sign_div:                  "\<bar>j\<bar> \<le> \<bar>i\<bar> \<Longrightarrow> sign (i div j) = sign i * sign j"
-  apply(auto simp add: sign_def  not_less neq_iff 
-                       pos_imp_zdiv_nonneg_iff neg_imp_zdiv_nonneg_iff 
+  apply(auto simp add: sign_def  not_less neq_iff
+                       pos_imp_zdiv_nonneg_iff neg_imp_zdiv_nonneg_iff
                        pos_imp_zdiv_neg_iff neg_imp_zdiv_neg_iff)
   apply(cut_tac a=i and a'=j and b=j in zdiv_mono1_neg, auto)
   apply(cut_tac a=i and a'=0 and b=j in zdiv_mono1, auto)
@@ -535,10 +535,10 @@ lemma mult_sign_self:            "i \<noteq> 0 \<Longrightarrow> sign i * sign i
   by (simp add: sign_def)
 lemma mult_sign_0:               "\<lbrakk>(j::int) = 0\<rbrakk>  \<Longrightarrow> sign i * sign j = 0"
   by simp
-lemma mult_sign_equal:            
+lemma mult_sign_equal:
  "\<lbrakk>(j::int) \<noteq> 0; sign i = sign j\<rbrakk>  \<Longrightarrow> sign i * sign j = 1"
   by (simp add: sign_def)
-lemma mult_sign_nequal:            
+lemma mult_sign_nequal:
  "\<lbrakk>(j::int) \<noteq> 0; i \<noteq> 0; sign i \<noteq> sign j\<rbrakk>  \<Longrightarrow> sign i * sign j = -1"
   by (auto simp add: neq_iff)
 
@@ -567,9 +567,9 @@ done
 
 definition zdvd:: "int \<Rightarrow> int \<Rightarrow> bool"    (infixl "zdvd" 70)
 where             "i zdvd j \<equiv> i dvd j"
-  
+
 lemma zdvd_is_dvd [simp]:          "i zdvd j = (i dvd j)"
-  by (simp add: zdvd_def)  
+  by (simp add: zdvd_def)
 
 lemma dvd_antisym:                "\<lbrakk>0 \<le> (n::int); 0 \<le> m; m dvd n; n dvd m\<rbrakk> \<Longrightarrow>  m = n"
   by (metis abs_of_nonneg zdvd_antisym_abs)
@@ -579,12 +579,12 @@ lemma zdvd_mult_cancel:           "\<lbrakk>0<(m::int); 0\<le>n\<rbrakk> \<Longr
 
 lemma zdvd_zmult_eq:    (******** don't add this to simp - Isabelle hangs **********)
                      "\<lbrakk>j \<noteq> (0::int); k \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd k*i = (j dvd (k * (i mod j)))"
-by (metis dvd_eq_mod_eq_0 zmod_simps(3))
+by (metis mod_eq_0_iff_dvd mod_mult_right_eq)
 
-lemma even_suc_imp_not_even:      "(2 dvd ((a::int) + 1)) = (\<not>(2 dvd a))"  
+lemma even_suc_imp_not_even:      "(2 dvd ((a::int) + 1)) = (\<not>(2 dvd a))"
   by arith
 
-lemma even_imp_suc_not_even:      "(\<not>(2 dvd ((a::int) + 1))) = (2 dvd a)"  
+lemma even_imp_suc_not_even:      "(\<not>(2 dvd ((a::int) + 1))) = (2 dvd a)"
   by arith
 
 lemma odd_le_even_imp_less:       "\<lbrakk>(2::int) dvd x; \<not> 2 dvd y; y \<le> x\<rbrakk> \<Longrightarrow> y < x"
@@ -611,7 +611,7 @@ lemma mod_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rb
 by (metis int_mod_neg_eq)
 
 lemma mod_div_eq:                 "(a::int) = b * (a div b) + (a mod b)"
-  by (simp add:  zmod_zdiv_equality)
+  by (simp add: mult_div_mod_eq [symmetric])
 lemma mod_via_div:                "(a::int) mod b = a - b * (a div b)"
   by (simp add: mod_div_eq algebra_simps)
 lemma div_via_mod:                "(b::int) * (a div b) = a - (a mod b)"
@@ -625,7 +625,7 @@ lemma dvd_if_div_eq:              "\<lbrakk>(a::int) = b * (a div b) \<rbrakk> \
 
 lemma div_mod_split:
    "\<lbrakk>(r::nat) < n\<rbrakk>  \<Longrightarrow> (x = r + q * n) = (x mod n = r \<and>   q = x div n)"
-by auto  
+by auto
 
 (********** a lemma missing in Divides.thy *********************)
 
@@ -633,38 +633,37 @@ lemma div_neg_pos_trivial: "\<lbrakk>a < (0::int);  0 \<le> a+b\<rbrakk> \<Longr
   by (auto intro!: int_div_pos_eq)
 
 lemmas div_trivial = div_pos_pos_trivial div_neg_neg_trivial
-                     div_pos_neg_trivial div_neg_pos_trivial 
+                     div_pos_neg_trivial div_neg_pos_trivial
 
 
 (************ monotonicities and signs *************)
 
 lemma div_pos_pos_le:            "\<lbrakk>(0::int) < b; 0 \<le> a\<rbrakk> \<Longrightarrow>  0 \<le> a div b"
-  by(cut_tac a=0 and a'=a and b=b in zdiv_mono1, auto)   
+  by(cut_tac a=0 and a'=a and b=b in zdiv_mono1, auto)
 lemma div_pos_pos_less:          "\<lbrakk>(0::int) < b; b \<le> a\<rbrakk> \<Longrightarrow>  0 < a div b"
   by(cut_tac a=b and a'=a and b=b in zdiv_mono1, auto)
 lemma div_pos_neg_le:            "\<lbrakk>(0::int) < b; a \<le> 0\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
-  by(cut_tac a=a and a'=0 and b=b in zdiv_mono1, auto)   
+  by(cut_tac a=a and a'=0 and b=b in zdiv_mono1, auto)
 lemma div_pos_neg_less:          "\<lbrakk>(0::int) < b; a < 0\<rbrakk> \<Longrightarrow>  a div b < 0"
 by (metis pos_imp_zdiv_neg_iff)
 lemma div_neg_pos_le:            "\<lbrakk>b < (0::int); 0 \<le> a\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
-  by(cut_tac a=0 and a'=a and b=b in zdiv_mono1_neg, auto)   
+  by(cut_tac a=0 and a'=a and b=b in zdiv_mono1_neg, auto)
 lemma div_neg_pos_less:          "\<lbrakk>b < (0::int); 0 < a\<rbrakk> \<Longrightarrow>  a div b < 0"
 by (metis neg_imp_zdiv_neg_iff)
 lemma div_neg_neg_le:            "\<lbrakk>b < (0::int); a \<le> 0\<rbrakk> \<Longrightarrow>  0 \<le> a div b"
-  by(cut_tac a=a and a'=0 and b=b in zdiv_mono1_neg, auto)   
+  by(cut_tac a=a and a'=0 and b=b in zdiv_mono1_neg, auto)
 lemma div_neg_neg_less:          "\<lbrakk>b < (0::int); a \<le> b\<rbrakk> \<Longrightarrow>  0 < a div b"
   by(cut_tac a=a and a'="b" and b=b in zdiv_mono1_neg, auto)
 
 lemma div_pos_neg_le2:           "\<lbrakk>(0::int) < b; a < b\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
-  by(cut_tac a=a and a'="b - 1" and b=b in zdiv_mono1, auto simp add: div_pos_pos_trivial)
+  by(cut_tac a=a and a'="b - 1" and b=b in zdiv_mono1, auto)
 lemma div_neg_pos_le2:           "\<lbrakk>b < (0::int); b < a\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
-  by(cut_tac a="b + 1" and a'=a and b=b in zdiv_mono1_neg, 
-     auto simp add: div_neg_neg_trivial)
+  by(cut_tac a="b + 1" and a'=a and b=b in zdiv_mono1_neg, auto)
 
 
 lemmas div_signs =
-      div_pos_pos_le div_pos_pos_less 
-      div_pos_neg_le div_pos_neg_less div_pos_neg_le2 
+      div_pos_pos_le div_pos_pos_less
+      div_pos_neg_le div_pos_neg_less div_pos_neg_le2
       div_neg_pos_le div_neg_pos_less div_neg_pos_le2
       div_neg_neg_le div_neg_neg_less
 (*************** use zdiv_mono1(_neg) **********************)
@@ -692,7 +691,7 @@ lemma div_neg_le_iff_neg:        "\<lbrakk>b < (0::int)\<rbrakk> \<Longrightarro
 lemma div_neg_less_iff_neg:      "\<lbrakk>b < (0::int)\<rbrakk> \<Longrightarrow>  a div b < 0 = (0 < a)"
   by (erule neg_imp_zdiv_neg_iff)
 
-lemmas div_signs_eq = 
+lemmas div_signs_eq =
      div_pos_le_iff div_pos_less_iff div_pos_le_iff_neg div_pos_less_iff_neg
      div_neg_le_iff div_neg_less_iff div_neg_le_iff_neg div_neg_less_iff_neg
 
@@ -710,21 +709,21 @@ lemmas div_signs_eq =
 
 lemma div_pos_up_bound:   "\<lbrakk>(0::int) < j\<rbrakk> \<Longrightarrow> (i div j) * j \<le> i"
   by (rule_tac t="i div j * j" and s="i - (i mod j)" in subst, auto simp add: algebra_simps)
-lemma div_pos_low_bound:  "\<lbrakk>(0::int) < j\<rbrakk> \<Longrightarrow> i - j < (i div j) * j" 
+lemma div_pos_low_bound:  "\<lbrakk>(0::int) < j\<rbrakk> \<Longrightarrow> i - j < (i div j) * j"
   by (rule_tac t="i div j * j" and s="i - (i mod j)" in subst, auto simp add: algebra_simps)
-lemma div_neg_up_bound:   "\<lbrakk>j < (0::int)\<rbrakk> \<Longrightarrow> (i div j) * j < i - j" 
+lemma div_neg_up_bound:   "\<lbrakk>j < (0::int)\<rbrakk> \<Longrightarrow> (i div j) * j < i - j"
   by(rule_tac t="i div j * j" and s="i - (i mod j)" in subst, auto simp add: algebra_simps)
 lemma div_neg_low_bound:  "\<lbrakk>j < (0::int)\<rbrakk> \<Longrightarrow> i \<le> i div j * j"
   by(rule_tac t="i div j * j" and s="i - (i mod j)" in subst, auto simp add: algebra_simps)
 
-lemma div_pos_low_bound2: "\<lbrakk>(0::int) < j\<rbrakk> \<Longrightarrow> i  < j + j * (i div j)" 
+lemma div_pos_low_bound2: "\<lbrakk>(0::int) < j\<rbrakk> \<Longrightarrow> i  < j + j * (i div j)"
   by(drule div_pos_low_bound, simp add: algebra_simps)
-lemma div_neg_up_bound2:  "\<lbrakk>j < (0::int)\<rbrakk> \<Longrightarrow> j + j * (i div j) < i" 
+lemma div_neg_up_bound2:  "\<lbrakk>j < (0::int)\<rbrakk> \<Longrightarrow> j + j * (i div j) < i"
   by(drule div_neg_up_bound, simp add: algebra_simps)
 
-lemmas div_bounds = 
+lemmas div_bounds =
      div_pos_up_bound  div_pos_low_bound  div_neg_up_bound  div_neg_low_bound
-                       div_pos_low_bound2 div_neg_up_bound2 
+                       div_pos_low_bound2 div_neg_up_bound2
 
 lemma div_bounds_neq:     "\<lbrakk>(0::int) \<noteq> j\<rbrakk> \<Longrightarrow> i \<noteq> j + j * (i div j)"
   by (auto simp add: div_bounds neq_iff)
@@ -761,22 +760,22 @@ lemma zmod_zminus2_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> 
 lemma zmod_zminus2_if_not_dvd:  "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> a mod (-b) = (a mod b) - b"
    by (simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
 
-lemma abs_div_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
-                        \<Longrightarrow> \<bar>-a div b\<bar> = (if a mod b = 0 then \<bar>a div b\<bar> 
+lemma abs_div_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
+                        \<Longrightarrow> \<bar>-a div b\<bar> = (if a mod b = 0 then \<bar>a div b\<bar>
                                                          else \<bar>a div b + 1\<bar>)"
   by (auto simp add: neq_iff zdiv_zminus1_eq_if)
 
-lemma abs_div_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
-                        \<Longrightarrow> \<bar>a div -b\<bar> = (if a mod b = 0 then \<bar>a div b\<bar> 
+lemma abs_div_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
+                        \<Longrightarrow> \<bar>a div -b\<bar> = (if a mod b = 0 then \<bar>a div b\<bar>
                                                          else \<bar>a div b + 1\<bar>)"
   by (simp add: abs_div_zminus1 div_minus_right)
 
-lemma abs_mod_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
+lemma abs_mod_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
                         \<Longrightarrow> \<bar>-a mod b\<bar> = (if a mod b = 0 then 0 else \<bar>b\<bar> - \<bar>a mod b\<bar>)"
   by (auto simp add: neq_iff zmod_zminus1_eq_if leD,
       simp_all add: less_imp_le abs_sub abs_sub2)
 
-lemma abs_mod_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
+lemma abs_mod_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
                         \<Longrightarrow> \<bar>a mod -b\<bar> = (if a mod b = 0 then 0 else \<bar>b\<bar> - \<bar>a mod b\<bar>)"
   by (simp add: abs_mod_zminus1 mod_minus_right)
 
@@ -788,15 +787,14 @@ lemma div_is_largest_neg: "\<lbrakk>(j::int) < 0; i \<le> k * j\<rbrakk> \<Longr
   by (rule_tac i="i mod j" and j=j in mult_le_bounds_neg, auto)
 
 lemma div_exact_le_pos:         "\<lbrakk>0 < (j::int); j dvd i\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (j * k \<le> i)"
-  by (auto simp add: div_is_largest_pos algebra_simps, 
-      drule_tac c=j in  mult_left_mono, auto simp add: div_eq_if_dvd)
+  by auto
 
 lemma div_exact_le_neg:         "\<lbrakk>(j::int) < 0; j dvd i\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (i \<le> j * k)"
   by(cut_tac i="-i" and j="-j" and k=k in div_exact_le_pos, auto)
 
 lemma div_exact_ge_pos:         "\<lbrakk>0 < (j::int); j dvd i\<rbrakk> \<Longrightarrow> (k \<ge> i div j) = (j * k \<ge> i)"
   by (cut_tac i="-i" and j="j" and k="-k" in div_exact_le_pos,
-        auto simp add: zdiv_zminus1_if_dvd)  
+        auto simp add: zdiv_zminus1_if_dvd)
 
 lemma div_exact_ge_neg:         "\<lbrakk>(j::int) < 0; j dvd i\<rbrakk> \<Longrightarrow> (k \<ge> i div j) = (i \<ge> j * k)"
   by(cut_tac i="-i" and j="-j" and k=k in div_exact_ge_pos, auto)
@@ -804,17 +802,17 @@ lemma div_exact_ge_neg:         "\<lbrakk>(j::int) < 0; j dvd i\<rbrakk> \<Longr
 lemma div_le_pos:         "\<lbrakk>0 < (j::int)\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (j * k \<le> i)"
   apply (auto simp add: div_is_largest_pos algebra_simps)
   apply (drule_tac c=j in  mult_left_mono, simp)
-  apply (erule_tac  order_trans, simp add: zmult_div_cancel)
+  apply (erule_tac  order_trans, simp add: minus_mod_eq_mult_div [symmetric])
 done
 
 lemma div_gt_pos:         "\<lbrakk>0 < (j::int)\<rbrakk> \<Longrightarrow> (k > i div j) = (j * k > i)"
   by (auto simp add: div_le_pos not_le [symmetric])
 
 lemma div_gt_pos_nat:     "\<lbrakk>0 < (j::nat); k > i div j \<rbrakk> \<Longrightarrow> j * k > i"
- by (metis Divides.div_mult2_eq div_eq_0_iff divisors_zero less_nat_zero_code)
+ by (metis Euclidean_Division.div_eq_0_iff div_mult2_eq no_zero_divisors not_less_zero)
 
 lemma div_gt_pos_nat2:     "\<lbrakk>0 < (j::nat);  j * k > i\<rbrakk> \<Longrightarrow> k > i div j"
- by (metis Divides.div_mult2_eq div_eq_0_iff less_nat_zero_code mult_zero_right)
+ by (simp add: less_mult_imp_div_less mult.commute)
 
 (**************** Operations + * abs ***********************)
 
@@ -823,7 +821,7 @@ lemma div_gt_pos_nat2:     "\<lbrakk>0 < (j::nat);  j * k > i\<rbrakk> \<Longrig
 (*************************************************************************
  Predefined for addition and multiplication
 
- lemma zdiv_zadd1_eq:          "(a+b) div (c::int) 
+ lemma zdiv_zadd1_eq:          "(a+b) div (c::int)
                                  = a div c + b div c + ((a mod c + b mod c) div c)"
  lemma zdiv_zadd_self1 [simp]: "a \<noteq> (0::int) ==> (a+b) div a = b div a + 1"
  lemma zdiv_zadd_self2 [simp]: "a \<noteq> (0::int) ==> (b+a) div a = b div a + 1"
@@ -834,7 +832,7 @@ lemma div_gt_pos_nat2:     "\<lbrakk>0 < (j::nat);  j * k > i\<rbrakk> \<Longrig
  lemma zmod_zadd_self1 [simp]: "(a+b) mod a = b mod (a::int)"
  lemma zmod_zadd_self2 [simp]: "(b+a) mod a = b mod (a::int)"
 
- *********** 
+ ***********
 
  lemma zdiv_zmult1_eq:         "(a*b) div c = a*(b div c) + a*(b mod c) div (c::int)"
  lemma zdiv_zmult2_eq:         "(0::int) < c ==> a div (b*c) = (a div b) div c"
@@ -843,13 +841,13 @@ lemma div_gt_pos_nat2:     "\<lbrakk>0 < (j::nat);  j * k > i\<rbrakk> \<Longrig
  lemma zmod_zmult2_eq:         "(0::int) < c ==> a mod (b*c) = b*(a div b mod c) + a mod b"
 
  lemma zdiv_zmult_zmult1:      "c \<noteq> (0::int) ==> (c*a) div (c*b) = a div b"
- lemma zdiv_zmult_zmult2:      "c \<noteq> (0::int) ==> (a*c) div (b*c) = a div b" 
- lemma zdiv_zmult_zmult1_if [simp]: 
+ lemma zdiv_zmult_zmult2:      "c \<noteq> (0::int) ==> (a*c) div (b*c) = a div b"
+ lemma zdiv_zmult_zmult1_if [simp]:
                           "(k*m) div (k*n) = (if k = (0::int) then 0 else m div n)"
 
 ********************************************************************************)
 
-lemma zdiv_abs1_if_dvd:         
+lemma zdiv_abs1_if_dvd:
   "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> \<bar>a\<bar> div b = sign a * (a div b)"
   by (auto simp add: abs_if zdiv_zminus1_if_dvd not_less le_less)
 
@@ -861,11 +859,11 @@ lemma zdiv_abs2_if_dvd:
   * There is no simple way to phrase the following lemmas     *
   * correctly, so they are probably useless                   *
   ************************************************************)
-lemma zdiv_abs1_if_not_dvd:     
+lemma zdiv_abs1_if_not_dvd:
   "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> \<bar>a\<bar> div b =  sign a * (a div b) + sign (a -\<bar>a\<bar>)"
   by (auto simp add: abs_if zdiv_zminus1_if_not_dvd not_less le_less)
 
-lemma zdiv_abs2_if_not_dvd:     
+lemma zdiv_abs2_if_not_dvd:
   "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> a div \<bar>b\<bar> =  sign b * (a div b) + sign (b -\<bar>b\<bar>)"
   by (auto simp add: abs_if zdiv_zminus2_if_not_dvd not_less le_less)
 
@@ -873,7 +871,7 @@ lemma div_abs_sign:             "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrig
   by(simp add: div_signs_eq)
 lemma div_abs_sign_pos:         "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 0 < \<bar>a\<bar> div \<bar>b\<bar> = (\<bar>b\<bar> \<le> \<bar>a\<bar>)"
   by (simp add:div_signs_eq)
-   
+
 lemma div_abs1_sign:            "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> 0 \<le> a div \<bar>b\<bar> = (0 \<le> a)"
   by(simp add: div_signs_eq)
 lemma div_abs1_sign_neg:        "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> a div \<bar>b\<bar> < 0 = (a < 0)"
@@ -887,11 +885,11 @@ lemma div_abs2_sign_neg:        "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrig
   by (auto simp add: div_signs_eq neq_iff)
 lemma div_abs2_sign_pos:        "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> 0 < \<bar>a\<bar> div b = (0 \<le> b \<and> b \<le> \<bar>a\<bar>)"
   by (auto simp add: div_signs_eq neq_iff)
-    		      		   
-lemma div_abs_unique:              
-  "\<lbrakk>(0::int) \<noteq> b; a = b*q + r; 0\<le>r; r<\<bar>b\<bar> \<rbrakk>  \<Longrightarrow> (a div \<bar>b\<bar>) * sign b = q"   
+
+lemma div_abs_unique:
+  "\<lbrakk>(0::int) \<noteq> b; a = b*q + r; 0\<le>r; r<\<bar>b\<bar> \<rbrakk>  \<Longrightarrow> (a div \<bar>b\<bar>) * sign b = q"
    apply(auto simp add: neq_iff div_pos_unique le_less)
-   apply(cut_tac a="(b*(q - 1) + r+b)" and b=b and q="q - 1" and r="r+b" 
+   apply(cut_tac a="(b*(q - 1) + r+b)" and b=b and q="q - 1" and r="r+b"
          in div_neg_unique, auto simp add: zdiv_zminus2_eq_if algebra_simps)
    apply (subgoal_tac "q = -1", auto)
    apply (metis add_less_same_cancel1 diff_0_right diff_minus_eq_add eq_iff_diff_eq_0 less_numeral_extra(3) minus_zero mult.commute mult_minus1_right)
@@ -899,43 +897,43 @@ lemma div_abs_unique:
 
 lemma abs_mod:                   "\<lbrakk>j \<noteq> (0::int)\<rbrakk> \<Longrightarrow> \<bar>i mod j\<bar> = \<bar>\<bar>i\<bar> - \<bar>(i div j) * j\<bar>\<bar>"
   by (cases "i \<le> 0", auto simp add: abs_mul mod_via_div neq_iff not_le div_signs algebra_simps)
-      	
+
 lemma abs_mod2:                  "\<lbrakk>j \<noteq> (0::int)\<rbrakk> \<Longrightarrow> \<bar>j\<bar> - \<bar>i mod j\<bar> = \<bar>\<bar>i\<bar> - \<bar>((i div j) + 1) * j\<bar>\<bar>"
   apply (cases "i \<le> 0", auto simp add: mod_via_div neq_iff not_le)
   (*********** I get 4 cases, need to automate the use of bounds better **************)
   (*** 1: \<lbrakk>i \<le> 0; j < 0\<rbrakk> *****************)
-  apply (frule_tac i=i in div_neg_up_bound2, 
+  apply (frule_tac i=i in div_neg_up_bound2,
          frule_tac i=i in div_neg_low_bound, simp add: algebra_simps)
   (*** 2: \<lbrakk>i \<le> 0; j > 0\<rbrakk> *****************)
   apply (cases "i=0", auto simp add: abs_mul neq_iff)
-  apply (frule div_pos_neg_less, simp, 
+  apply (frule div_pos_neg_less, simp,
          cut_tac a=j and b="i div j" in  mult_pos_neg,
          auto simp add: add_mono algebra_simps)
-  apply (frule_tac i=i in div_pos_up_bound, 
+  apply (frule_tac i=i in div_pos_up_bound,
          frule_tac i=i in div_pos_low_bound2, simp add: algebra_simps)
   (*** 3: \<lbrakk>i > 0; j < 0\<rbrakk> *****************)
   apply (frule div_neg_pos_less, simp,
-         cut_tac b=j and a="i div j" in  mult_neg_neg, 
+         cut_tac b=j and a="i div j" in  mult_neg_neg,
          auto simp add: add_mono algebra_simps)
-  apply (frule_tac i=i in div_neg_up_bound2, 
+  apply (frule_tac i=i in div_neg_up_bound2,
          frule_tac i=i in div_neg_low_bound, simp add: algebra_simps)
   (*** 4: \<lbrakk>i > 0; j > 0\<rbrakk> *****************)
   apply (frule_tac a=i and b=j in div_pos_pos_le, simp,
-         cut_tac b=j and a="i div j" in  mult_nonneg_nonneg, 
+         cut_tac b=j and a="i div j" in  mult_nonneg_nonneg,
          auto simp add: add_mono algebra_simps)
-  apply (frule_tac i=i and j=j in div_pos_low_bound2, 
+  apply (frule_tac i=i and j=j in div_pos_low_bound2,
          frule_tac i=i and j=j in div_pos_up_bound, simp add: algebra_simps)
 done
-	   
- 		      		   
+
+
 (*************************************************************
-*		      		   
-* Lift gcd to integers		   
+*
+* Lift gcd to integers
 * Definition and lemmas copied from NumberTheory/IntPrimes.thy
-*				   
+*
 *************************************************************)
 
-definition zgcd :: "int * int \<Rightarrow> int" 
+definition zgcd :: "int * int \<Rightarrow> int"
   where  "zgcd = (\<lambda>(x,y). int (gcd (nat \<bar>x\<bar>) (nat \<bar>y\<bar>)))"
 
 (** JRM: In Isabelle2009 zgcd is now defined in theory GCD.
@@ -943,7 +941,7 @@ definition zgcd :: "int * int \<Rightarrow> int"
  **      depend on it.
  **)
 lemma zgcd_specware_def:         "zgcd (x,y) = gcd x y"
-  by (auto simp add: zgcd_def gcd_int_def)
+  by (metis gcd_int_def old.prod.case zgcd_def)
 
 lemma zgcd_0 [simp]:             "zgcd (m, 0) = \<bar>m\<bar>"
   by (simp add: zgcd_def abs_if)
@@ -952,16 +950,16 @@ lemma zgcd_0_left [simp]:        "zgcd (0, m) = \<bar>m\<bar>"
 lemma zgcd_geq_zero:             "0 \<le> zgcd(x,y)"
   by (simp add: zgcd_def)
 lemma zgcd_zdvd1 [iff]:          "zgcd(m,n) dvd m"
-  by (simp add: zgcd_def abs_if int_dvd_iff)
+  by (simp add: zgcd_specware_def)
 lemma zgcd_zdvd2 [iff]:          "zgcd(m,n) dvd n"
-  by (simp add: zgcd_def abs_if int_dvd_iff)
+  by (simp add: zgcd_def)
 
 lemma zgcd_greatest_iff:         "k dvd zgcd(m,n) = (k dvd m \<and> k dvd n)"
-by (metis gcd_greatest_iff_int zgcd_specware_def)
+by (metis gcd_greatest_iff zgcd_specware_def)
 
 lemma zgcd_zmult_distrib2:       "0 \<le> k \<Longrightarrow> k * zgcd(m,n) = zgcd(k*m,k*n)"
   by (metis abs_of_nonneg gcd_mult_distrib_int zgcd_specware_def)
- 
+
 lemma zgcd_zminus [simp]:        "zgcd(-m,n) = zgcd (m,n)"
   by (simp add: zgcd_def)
 lemma zgcd_zminus2 [simp]:       "zgcd(m,-n) = zgcd (m,n)"
@@ -971,7 +969,7 @@ lemma zgcd_zmult_distrib2_abs:   "zgcd (k*m, k*n) = \<bar>k\<bar> * zgcd(m,n)"
   by (simp add: abs_if zgcd_zmult_distrib2)
 
 lemma zrelprime_zdvd_zmult_aux:  "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<Longrightarrow> 0 \<le> m \<Longrightarrow> k dvd m"
-  by (metis coprime_dvd_mult_int gcd_commute_int zgcd_specware_def)
+  by (metis (no_types, lifting) dvd_productE dvd_triv_right mult_unit_dvd_iff zgcd_greatest_iff)
 
 
 lemma zrelprime_zdvd_zmult:      "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<Longrightarrow> k dvd m"
@@ -1001,15 +999,11 @@ lemma zlcm_geq_zero:              "0 \<le> zlcm(x,y)"
 lemma zlcm_dvd1 [iff]:            "m dvd zlcm (m,n)"
   apply(auto simp add: zlcm_def)
   apply(insert zgcd_zdvd2 [of "m" "n"])
-  apply(simp add: dvd_eq_mod_eq_0 zdiv_zmult1_eq )
-done
+  by (simp add: dvd_mult_imp_div)
 
 lemma zlcm_dvd2 [iff]:            "n dvd zlcm (m, n)"
-  apply(auto simp add: zlcm_def)
-  apply(insert zgcd_zdvd1 [of "m" "n"])
-  apply(rule_tac t="m*n" and s="n*m" in subst)
-  apply(auto simp add: dvd_eq_mod_eq_0 zdiv_zmult1_eq )
-done
+  by (metis (no_types, lifting) div_mult_swap dvd_abs_iff dvd_def gcd_dvd1 mult.commute
+                                old.prod.case zgcd_specware_def zlcm_def)
 
 (***********************************************************************
 * The following theorem doesn't seem to have a simple proof            *
@@ -1020,10 +1014,10 @@ lemma zlcm_least :                "\<lbrakk>x dvd w; y dvd w\<rbrakk> \<Longrigh
   apply(erule dvdE, erule dvdE)
   apply(insert zgcd_zdvd1 [of "x" "y"], erule dvdE)
   apply(insert zgcd_zdvd2 [of "x" "y"], erule dvdE)
-  apply(rule_tac t="w" and s="x * k" 
+  apply(rule_tac t="w" and s="x * k"
              and P = "\<lambda>w. x * y div zgcd (x, y) dvd w" in ssubst)
-  apply(auto simp add: mult_ac)  
-  apply(frule_tac t="y" and s="kc * zgcd (x, y)" 
+  apply(auto simp add: mult_ac)
+  apply(frule_tac t="y" and s="kc * zgcd (x, y)"
              and P = "\<lambda>z. x * z div zgcd (x, y) dvd  k * x" in ssubst)
   defer
   apply(simp)
@@ -1037,19 +1031,19 @@ lemma zlcm_least :                "\<lbrakk>x dvd w; y dvd w\<rbrakk> \<Longrigh
   apply(rule_tac k="kc" and m="k" and n="kb" in zrelprime_zdvd_zmult)
   defer apply(simp add: dvd_def)
   apply(subgoal_tac "zgcd (kb, kc) dvd kb", erule dvdE, auto)
-  apply(subgoal_tac "zgcd (kb, kc) dvd kc", erule dvdE, auto)  
+  apply(subgoal_tac "zgcd (kb, kc) dvd kc", erule dvdE, auto)
   apply(subgoal_tac "0\<le>zgcd(kb,kc) \<and> 0\<le>zgcd(x,y)")
-  defer apply(rule conjI, rule zgcd_geq_zero, rule zgcd_geq_zero)  
+  defer apply(rule conjI, rule zgcd_geq_zero, rule zgcd_geq_zero)
   apply(subgoal_tac "zgcd (kb, kc) * zgcd (x, y) dvd zgcd (x, y)")
   apply(simp add: zdvd_mult_cancel [symmetric])
   apply(simp only: zgcd_greatest_iff)
   apply(auto simp add: dvd_def)
   apply(rule_tac x="kd" in exI)
-  apply(erule_tac t="x" and s="kb * zgcd (x, y)" 
+  apply(erule_tac t="x" and s="kb * zgcd (x, y)"
               and P="\<lambda>z. z = zgcd (kb, kc) * zgcd (x, y) * kd" in ssubst)
   apply(simp)
   apply(rule_tac x="ke" in exI)
-  apply(erule_tac t="y" and s="kc * zgcd (x, y)" 
+  apply(erule_tac t="y" and s="kc * zgcd (x, y)"
               and P="\<lambda>z. z = zgcd (kb, kc) * zgcd (x, y) * ke" in ssubst)
   apply(simp)
 done
@@ -1058,7 +1052,7 @@ done
 
 (******** modified version with natural numbers as results *******)
 
-definition igcd :: "int * int \<Rightarrow> nat" 
+definition igcd :: "int * int \<Rightarrow> nat"
 where                             "igcd = (\<lambda>(x,y). gcd (zabs x) (zabs y))"
 
 lemma igcd_to_zgcd [simp]:        "int (igcd (m,n)) = zgcd(m,n)"
@@ -1069,8 +1063,8 @@ lemma igcd_0 [simp]:              "igcd (m,0) = zabs m"
 
 lemma igcd_0_left [simp]:         "igcd (0,m) = zabs m"
   by (simp add: igcd_def abs_if)
- 
-definition ilcm :: "int * int \<Rightarrow> nat" 
+
+definition ilcm :: "int * int \<Rightarrow> nat"
 where                             "ilcm = (\<lambda>(x,y). nat (zlcm (x,y)))"
 
 lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
@@ -1078,16 +1072,16 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 
 
 (*******************************************************************************
-* While div/mod is unique on positive numbers there are various ways to extend 
+* While div/mod is unique on positive numbers there are various ways to extend
 * it to the negative ones
 *
 * Isabelle Standard: sign of mod depends on sign of divisor
-* Specware 
+* Specware
 *     - divT/modT: truncate the rational number, then take the rest
 *     - divF/modF: flooring division, same as Isabelle's div/mod
 *     - divC/modC: ceiling division
 *     - divS/modS: standard rounding division:
-*                     truncate if division leaves rest less than .5,  
+*                     truncate if division leaves rest less than .5,
 *     - divR/modR: rounding division as in CommonLisp
 *                     if rest is exactly .5, choose the even number
 *     - divE/modE: mod is always positive (Euclidean)
@@ -1104,23 +1098,23 @@ definition modT :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "modT" 70
    "a modT b \<equiv> (\<bar>a\<bar> mod \<bar>b\<bar>) * (sign a)"
 
 definition divC :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "divC" 70)   where
-   "a divC b \<equiv>  if b dvd a  then a div b  else (a div b) + 1" 
+   "a divC b \<equiv>  if b dvd a  then a div b  else (a div b) + 1"
    (************************* old *******************************
-   * "a divC b \<equiv> if b dvd a \<or> sign a \<noteq> sign b                   *   
+   * "a divC b \<equiv> if b dvd a \<or> sign a \<noteq> sign b                   *
    *                then a divT b   else (a divT b) + 1"        *
    *************************************************************)
 definition modC :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "modC" 70)   where
    "a modC b \<equiv> a - b * (a divC b)"
- 
+
 definition divS :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "divS" 70)   where
-   "a divS b \<equiv> if 2*\<bar>a mod b\<bar> \<ge> \<bar>b\<bar> 
-                  then (a div b) + 1  else a div b" 
+   "a divS b \<equiv> if 2*\<bar>a mod b\<bar> \<ge> \<bar>b\<bar>
+                  then (a div b) + 1  else a div b"
    (************************* old *******************************
    * This definition isn't clearly specified as it isn't used   *
    * in Specware. I chose the one that's easier to reason about *
    * Previously I had                                           *
-   * "a divS b \<equiv> if 2*\<bar>a modT b\<bar> \<ge> \<bar>b\<bar>                          * 
-   *                then (a divT b) + sign(a*b) else  a divT b" *   
+   * "a divS b \<equiv> if 2*\<bar>a modT b\<bar> \<ge> \<bar>b\<bar>                          *
+   *                then (a divT b) + sign(a*b) else  a divT b" *
    *************************************************************)
 definition modS :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "modS" 70)   where
    "a modS b \<equiv> a - b * (a divS b)"
@@ -1128,22 +1122,22 @@ definition modS :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "modS" 70
 definition next_even :: "int \<Rightarrow> int" where
    "next_even i \<equiv> if 2 dvd i then i else i+1"
 
-definition divR :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "divR" 70)   where  
-   (* this is pretty much the same as the two below but we 
+definition divR :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "divR" 70)   where
+   (* this is pretty much the same as the two below but we
       don't have to introduce next_even or divS
     *)
-   "a divR b \<equiv> if (2*\<bar>a mod b\<bar> < \<bar>b\<bar>) 
+   "a divR b \<equiv> if (2*\<bar>a mod b\<bar> < \<bar>b\<bar>)
                   \<or> (2*\<bar>a mod b\<bar> = \<bar>b\<bar> \<and>  2 dvd (a div b))
                   then  a div b
-                  else (a div b) + 1" 			        
+                  else (a div b) + 1"
    (*************************************************************
-   * "a divR b \<equiv> if 2*\<bar>a mod b\<bar> = \<bar>b\<bar> 
+   * "a divR b \<equiv> if 2*\<bar>a mod b\<bar> = \<bar>b\<bar>
    *               then next_even (a div b)
-   *               else a divS b" 			       
+   *               else a divS b"
    **************************************************************
    * "a divR b \<equiv> if (2*\<bar>a modT b\<bar> = \<bar>b\<bar>) \<and> (2 dvd (a divT b))  *
    *                 then a divT b                              *
-   *                 else a divS b"                             *   
+   *                 else a divS b"                             *
    *************************************************************)
 definition modR :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "modR" 70)   where
    "a modR b \<equiv> a - b * (a divR b)"
@@ -1156,15 +1150,15 @@ definition modE :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "modE" 70
 
 
 lemma divT_exa:  "   14 divT  (5::int) =  2  &  14 modT  (5::int) =  4
-  		  & -14 divT  (5::int) = -2  & -14 modT  (5::int) = -4 
+  		  & -14 divT  (5::int) = -2  & -14 modT  (5::int) = -4
   		  &  14 divT (-5::int) = -2  &  14 modT (-5::int) =  4
   		  & -14 divT (-5::int) =  2  & -14 modT (-5::int) = -4"
   by (auto simp add: divT_def modT_def zsgn_def)
 
-lemma div_exa:   "   14 div   (5::int) =  2  &  14 mod   (5::int) =  4 
-  		  & -14 div   (5::int) = -3  & -14 mod   (5::int) =  1 
-  		  &  14 div  (-5::int) = -3  &  14 mod  (-5::int) = -1 
-  		  & -14 div  (-5::int) =  2  & -14 mod  (-5::int) = -4"  
+lemma div_exa:   "   14 div   (5::int) =  2  &  14 mod   (5::int) =  4
+  		  & -14 div   (5::int) = -3  & -14 mod   (5::int) =  1
+  		  &  14 div  (-5::int) = -3  &  14 mod  (-5::int) = -1
+  		  & -14 div  (-5::int) =  2  & -14 mod  (-5::int) = -4"
   by auto
 
 lemma divC_exa:  "   14 divC  (5::int) =  3  &  14 modC  (5::int) = -1
@@ -1206,14 +1200,14 @@ lemma divE_exa:  "   14 divE  (5::int) =  2  &  14 modE  (5::int) =  4
 
 lemma divT_is_div_if_dvd:         "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i divT j = i div j"
   by (auto simp add: divT_def zdiv_abs1_if_dvd zdiv_abs2_if_dvd,
-      simp add:sign_def split: split_if_asm)
+      simp add:sign_def split: if_splits)
 lemma divT_is_div_if_eqsign:      "\<lbrakk>(j::int) \<noteq> 0; sign i = sign j\<rbrakk> \<Longrightarrow> i divT j = i div j"
   by (auto simp add: divT_def abs_if not_less_iff_gr_or_eq)
-lemma divT_vs_div_else:           
+lemma divT_vs_div_else:
         "\<lbrakk>(j::int) \<noteq> 0; \<not> j dvd i; sign i \<noteq> sign j\<rbrakk> \<Longrightarrow> i divT j = i div j + 1"
   by (simp add: divT_def abs_if not_less,
       auto simp add: sign_def zdiv_zminus1_eq_if zdiv_zminus2_eq_if,
-      simp split: split_if_asm)
+      simp split: if_splits)
 
 lemma divT_pos:                   "\<lbrakk>(0::int) \<le> j; 0 \<le> i\<rbrakk> \<Longrightarrow> i divT j = (i div j)"
   by (simp add: divT_def sign_def neq_iff not_less)
@@ -1229,7 +1223,7 @@ lemma modT_alt_def:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longr
       simp add: mod_via_div)
 
 lemma divT_abs_abs_trivial [simp]: "\<lbrakk>\<bar>a\<bar> < \<bar>b\<bar>\<rbrakk> \<Longrightarrow> a divT b = 0"
-  by (simp add: divT_def div_pos_pos_trivial)
+  by (simp add: divT_def)
 lemma divT_pos_pos_trivial:        "\<lbrakk>(0::int) < a; a < b\<rbrakk> \<Longrightarrow> a divT b = 0"
   by simp
 lemma divT_pos_abs_trivial:        "\<lbrakk>(0::int) < a; a < \<bar>b\<bar>\<rbrakk> \<Longrightarrow> a divT b = 0"
@@ -1244,7 +1238,7 @@ lemma exact_divT:                 "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk
 lemma divT_zminus1:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> -i divT j = -(i divT j)"
   by (simp add: divT_def)
 lemma divT_zminus2:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divT -j = -(i divT j)"
-  by (simp add: divT_def) 
+  by (simp add: divT_def)
 lemma modT_zminus1:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> -i modT j = -(i modT j)"
   by(simp add: modT_def)
 lemma modT_zminus2:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modT -j = i modT j"
@@ -1281,8 +1275,8 @@ lemma divT_neg_neg_less:          "\<lbrakk>b < (0::int); a \<le> b\<rbrakk> \<L
 
 
 lemmas divT_signs =
-      divT_pos_pos_le divT_pos_pos_less 
-      divT_pos_neg_le divT_pos_neg_less divT_pos_pos_le2 
+      divT_pos_pos_le divT_pos_pos_less
+      divT_pos_neg_le divT_pos_neg_less divT_pos_pos_le2
       divT_neg_pos_le divT_neg_pos_less divT_neg_pos_le2
       divT_neg_neg_le divT_neg_neg_less
 
@@ -1290,41 +1284,41 @@ lemmas divT_signs =
 
 lemma divT_pos_up_bound:          "\<lbrakk>(0::int) < j; 0 \<le> i\<rbrakk> \<Longrightarrow> (i divT j) * j \<le> i"
   by (simp add: divT_pos div_bounds)
-lemma divT_pos_low_bound:         "\<lbrakk>(0::int) < j; 0 \<le> i\<rbrakk> \<Longrightarrow> i - j < (i divT j) * j" 
+lemma divT_pos_low_bound:         "\<lbrakk>(0::int) < j; 0 \<le> i\<rbrakk> \<Longrightarrow> i - j < (i divT j) * j"
   by (simp add: divT_pos div_bounds)
 lemma divT_neg_low_bound:         "\<lbrakk>j < (0::int); 0 \<le> i\<rbrakk> \<Longrightarrow> i + j < (i divT j) * j"
   by (cut_tac i="i" and j="-j" in divT_pos_low_bound, auto simp add: divT_zminus2)
-lemma divT_neg_up_bound:          "\<lbrakk>j < (0::int); 0 \<le> i\<rbrakk> \<Longrightarrow> (i divT j) * j \<le> i" 
+lemma divT_neg_up_bound:          "\<lbrakk>j < (0::int); 0 \<le> i\<rbrakk> \<Longrightarrow> (i divT j) * j \<le> i"
   by (cut_tac i="i" and j="-j" in divT_pos_up_bound, auto simp add: divT_zminus2)
 
 lemma divT_pos_neg_up_bound:      "\<lbrakk>(0::int) < j; i < 0\<rbrakk> \<Longrightarrow> (i divT j) * j < i + j"
   by (cut_tac i="-i" and j=j in divT_pos_low_bound, auto simp add: divT_zminus1)
-lemma divT_pos_neg_low_bound:     "\<lbrakk>(0::int) < j; i < 0\<rbrakk> \<Longrightarrow> i \<le> (i divT j) * j" 
+lemma divT_pos_neg_low_bound:     "\<lbrakk>(0::int) < j; i < 0\<rbrakk> \<Longrightarrow> i \<le> (i divT j) * j"
   by (cut_tac i="-i" and j=j in divT_pos_up_bound, auto simp add: divT_zminus1)
 lemma divT_neg_neg_up_bound:      "\<lbrakk>j < (0::int); i < 0\<rbrakk> \<Longrightarrow> (i divT j) * j < i - j"
   by (cut_tac i="-i" and j="j" in divT_neg_low_bound, auto simp add: divT_zminus1)
-lemma divT_neg_neg_low_bound:     "\<lbrakk>j < (0::int); i < 0\<rbrakk> \<Longrightarrow> i \<le> (i divT j) * j" 
+lemma divT_neg_neg_low_bound:     "\<lbrakk>j < (0::int); i < 0\<rbrakk> \<Longrightarrow> i \<le> (i divT j) * j"
   by (cut_tac i="-i" and j="j" in divT_neg_up_bound, auto simp add: divT_zminus1)
 
-lemmas divT_bounds = 
-     divT_pos_up_bound      divT_pos_low_bound  
+lemmas divT_bounds =
+     divT_pos_up_bound      divT_pos_low_bound
      divT_neg_up_bound      divT_neg_low_bound
-     divT_pos_neg_up_bound  divT_pos_neg_low_bound  
+     divT_pos_neg_up_bound  divT_pos_neg_low_bound
      divT_neg_neg_up_bound  divT_neg_neg_low_bound
 
 (**************** Operations + * abs ***********************)
 
-lemma sign_divT:                  
+lemma sign_divT:
    "\<lbrakk>b \<noteq> (0::int); a divT b \<noteq> 0\<rbrakk> \<Longrightarrow> sign (a divT b) = sign a * sign b"
   by (simp add: divT_def, frule_tac a=a in div_abs_sign, simp)
 
-lemma divT_abs:                   "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> \<bar>a\<bar> divT \<bar>b\<bar> = \<bar>a divT b\<bar>" 
+lemma divT_abs:                   "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> \<bar>a\<bar> divT \<bar>b\<bar> = \<bar>a divT b\<bar>"
   by (auto simp add: divT_def abs_mult div_abs_sign)
 lemma modT_abs:                   "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> \<Longrightarrow> \<bar>a\<bar> modT \<bar>b\<bar> = \<bar>a modT b\<bar>"
   by (simp add: modT_def abs_mult)
 
 lemma divT_is_largest_abs:   "\<lbrakk>(j::int) \<noteq> 0; \<bar>k * j\<bar> \<le> \<bar>i\<bar>\<rbrakk> \<Longrightarrow> \<bar>k\<bar> \<le> \<bar>i divT j\<bar>"
-  by (simp add: divT_abs [symmetric] divT_pos div_is_largest_pos) 
+  by (simp add: divT_abs [symmetric] divT_pos div_is_largest_pos)
 
 
 (********************************** divC **************************************)
@@ -1341,9 +1335,9 @@ lemma divC_zminus_zminus [simp]:  "(-a) divC (-b) = a divC b"
 
 lemma divC_is_smallest_pos:       "\<lbrakk>0 < (j::int);  i \<le> k * j  \<rbrakk> \<Longrightarrow>  i divC j \<le> k"
   by (auto simp add: divC_def div_exact_ge_pos algebra_simps,
-      cut_tac k="-k" and i="-i" and j="j" in div_is_largest_pos, 
+      cut_tac k="-k" and i="-i" and j="j" in div_is_largest_pos,
       auto simp add: algebra_simps zdiv_zminus1_if_not_dvd)
-lemma divC_is_smallest_neg:       "\<lbrakk>(j::int) < 0;  k * j  \<le>  i\<rbrakk> \<Longrightarrow>  i divC j  \<le> k" 
+lemma divC_is_smallest_neg:       "\<lbrakk>(j::int) < 0;  k * j  \<le>  i\<rbrakk> \<Longrightarrow>  i divC j  \<le> k"
   by (cut_tac k="k" and i="-i" and j="-j" in divC_is_smallest_pos, auto)
 lemma divC_is_smallest:       "\<lbrakk>(j::int) \<noteq> 0; (i * sign j) \<le> k * \<bar>j\<bar>\<rbrakk> \<Longrightarrow>  i divC j \<le> k"
   by (auto simp add: neq_iff divC_is_smallest_pos divC_is_smallest_neg)
@@ -1352,7 +1346,7 @@ lemma divC_is_smallest:       "\<lbrakk>(j::int) \<noteq> 0; (i * sign j) \<le> 
 (********************************** divR **************************************)
 
 (**************************************************************************
-* The most difficult aspect of divR is proving that it satisfies the axioms 
+* The most difficult aspect of divR is proving that it satisfies the axioms
 * given in Integer.sw and that divR is unique. This involves some number theory,
 * reasoning about the relation between odd/even and the modulus
 * We need a few auxiliary lemmas staing the basic insights
@@ -1373,7 +1367,7 @@ lemma divR_def_aux1: "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> (2
   apply(auto)
   (** 1 **)
   apply(simp add: dvd_eq_mod_eq_0)
-  (** 2 **)  
+  (** 2 **)
   apply (cut_tac k=2 and i=a and j=b in zdvd_zmult_eq, simp, simp, cases "b>0", auto)
   (** 3 **)
   apply (cut_tac k=2 and i=a and j=b in zdvd_zmult_eq, simp_all, thin_tac "b dvd 2 * a")
@@ -1391,19 +1385,21 @@ lemma divR_def_aux1: "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> (2
   apply (drule mult_left_less_imp_less_neg, simp)+
   apply (simp)
   apply (frule_tac a=a in neg_mod_conj, auto)
-  apply (metis le_less less_le_trans mult.commute  mult_left_less_imp_less_neg 
+  apply (metis le_less less_le_trans mult.commute  mult_left_less_imp_less_neg
          mult_strict_right_mono not_less zero_less_numeral)
   by (metis mult.commute mult_less_cancel_left mult_strict_right_mono neg_mod_conj not_less_iff_gr_or_eq zero_less_numeral)
- 
+
 lemma divR_def_aux2: "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> (2*\<bar>a mod b\<bar> \<le> \<bar>b\<bar>) = (2 * \<bar>\<bar>a\<bar> - \<bar>(a div b) * b\<bar>\<bar> \<le> \<bar>b\<bar>)"
   by(simp add: abs_mod)
 
 lemma divR_def_aux3: "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> (2*\<bar>a mod b\<bar> \<ge> \<bar>b\<bar>) = (2 * \<bar>\<bar>a\<bar> - \<bar>((a div b) + 1) * b\<bar>\<bar> \<le> \<bar>b\<bar>)"
   by (simp add: abs_mod2 [symmetric])
 
+(* Unnecessary?
 lemma divR_def_aux4: "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longrightarrow> (2 dvd (a div b + 1)) = (\<not>(2 dvd (a div b)))"
   by (simp add: even_suc_imp_not_even)
-  
+*)
+
 lemma divR_def_aux5: "\<lbrakk>b \<noteq> (0::int); a div b \<noteq> 0\<rbrakk>  \<Longrightarrow> sign (a div b) = sign a * sign b"
   by (auto simp add: neq_iff div_signs_eq)
 
@@ -1419,7 +1415,7 @@ lemma divR_aux1:   "\<lbrakk>j \<noteq> (0::int)\<rbrakk> \<Longrightarrow> 2 * 
   by (auto simp add: divR_def abs_mod not_less divR_def_aux3 [symmetric])
 
 lemma divR_aux2:   "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>\<rbrakk> \<Longrightarrow> 2 dvd i divR j"
-  by (auto simp add: divR_def divR_def_aux4)
+  by (auto simp add: divR_def)
 
 lemma divR_aux3:   "\<lbrakk>j \<noteq> (0::int); i divR j \<noteq> 0\<rbrakk> \<Longrightarrow> sign (i divR j) = sign i * sign j"
   by (auto simp add: divR_def divR_def_aux5,
@@ -1428,10 +1424,10 @@ lemma divR_aux3:   "\<lbrakk>j \<noteq> (0::int); i divR j \<noteq> 0\<rbrakk> \
 
 lemma divR_aux4:   "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<bar>(0::int) * j\<bar>\<bar> \<le> \<bar>j\<bar>\<rbrakk> \<Longrightarrow> i divR j = 0"
   by (simp add: divR_def, cases "0 < i \<or> i = 0",
-      auto simp add: not_less neq_iff mod_via_div algebra_simps div_trivial)+
+      auto simp add: neq_iff mod_via_div algebra_simps div_trivial)+
 
 
-lemma divR_aux5a_pos: "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux5a_pos: "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                         sign x = sign i * sign j; (2::int) * \<bar>i mod j\<bar> < \<bar>j\<bar>\<rbrakk>
                         \<Longrightarrow> x = i div j"
     apply (subgoal_tac "x*j \<le> i", simp add: abs_mult algebra_simps)
@@ -1449,7 +1445,7 @@ lemma divR_aux5a_pos: "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \
            simp add: mod_via_div algebra_simps, simp)
     done
 
-lemma divR_aux5a_neg: "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux5a_neg: "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                         sign x = sign i * sign j; (2::int) * \<bar>i mod j\<bar> < \<bar>j\<bar>\<rbrakk>
                         \<Longrightarrow> x = i div j"
     apply (subgoal_tac "x*j \<ge> i", simp_all add: abs_mult algebra_simps)
@@ -1463,9 +1459,9 @@ lemma divR_aux5a_neg: "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \
     apply (subgoal_tac "j * (i div j) > j * x",
            simp add: mult_less_cancel_left)
     (********* I have a lemma "j * (i div j) \<le> i"!!!!!!!!!!!!!!!! ************)
-    apply (subgoal_tac "j * (i div j) \<ge> j * (i div j) + (i mod j)") 
-    apply (metis add1_zle_eq order_trans zmod_zdiv_equality)
-    apply (cut_tac b=0 and a="i mod j" and c="j * (i div j)" in  add_left_mono, 
+    apply (subgoal_tac "j * (i div j) \<ge> j * (i div j) + (i mod j)")
+    apply (metis add1_zle_eq order_trans mult_div_mod_eq [symmetric])
+    apply (cut_tac b=0 and a="i mod j" and c="j * (i div j)" in  add_left_mono,
            simp, simp)
     apply (rule_tac t="2 * j * (1 + i div j)" and s = " 2 * (j + i - (i mod j))" in subst,
           simp add: mod_via_div algebra_simps, simp)
@@ -1482,17 +1478,17 @@ lemma divR_aux5a: "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<bar
 done
 
 
-(************* the proofs are very similar, with subtle differences. 
+(************* the proofs are very similar, with subtle differences.
                Try to simplify / unify them later **************************)
 
-lemma divR_aux5b_pos: "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux5b_pos: "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                         sign x = sign i * sign j; \<bar>j\<bar> < (2::int) * \<bar>i mod j\<bar> \<rbrakk>
                         \<Longrightarrow> x = i div j + 1"
     apply (subgoal_tac "x*j > i", simp add: abs_mult algebra_simps)
     (******************** proof of  "x*j > i \<Longrightarrow> x = i div j + 1" ********************)
-    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1)) 
+    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1))
                         \<and> 0 \<le> (i - j*(x - 1)) \<and> (i - j*(x - 1)) < j",
-           clarify, drule div_pos_unique, auto simp add: algebra_simps) 
+           clarify, drule div_pos_unique, auto simp add: algebra_simps)
     (******************** proof of  "x*j > i" ************************************)
     apply (rule classical, simp add: abs_mult not_less algebra_simps)
     apply (subgoal_tac "2 * j * x > 2 * j * (i div j)",
@@ -1501,21 +1497,21 @@ lemma divR_aux5b_pos: "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \
            simp add: mult_less_cancel_left)
     apply (cut_tac i=i and j=j in div_pos_low_bound2, simp, simp add: algebra_simps)
     apply (rule_tac y="2 *j * (i div j) + 2 * (i mod j) - j" in less_le_trans, simp)
-    apply(rule_tac t="2 * j * (i div j) + 2 * (i mod j)" 
+    apply(rule_tac t="2 * j * (i div j) + 2 * (i mod j)"
                and s="2 * (j * (i div j) + (i mod j))" in subst,
           simp only: algebra_simps, simp)
-done 
+done
 
 
 
-lemma divR_aux5b_neg: "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux5b_neg: "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                         sign x = sign i * sign j; \<bar>j\<bar> < (2::int) * \<bar>i mod j\<bar> \<rbrakk>
                         \<Longrightarrow> x = i div j + 1"
     apply (subgoal_tac "x*j < i", simp add: abs_mult algebra_simps)
     (******************** proof of  "x*j > i \<Longrightarrow> x = i div j + 1" ********************)
-    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1)) 
+    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1))
                         \<and> (i - j*(x - 1)) \<le> 0 \<and> j < (i - j*(x - 1))",
-           clarify, drule div_neg_unique, auto simp add: algebra_simps) 
+           clarify, drule div_neg_unique, auto simp add: algebra_simps)
     (******************** proof of  "x*j > i" ************************************)
     apply (rule classical, simp add: abs_mult not_less algebra_simps)
     apply (subgoal_tac "2 * j * x < 2 * j * (i div j)",
@@ -1524,7 +1520,7 @@ lemma divR_aux5b_neg: "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \
            simp add: mult_less_cancel_left)
     apply (cut_tac i=i and j=j in div_neg_up_bound2, simp, simp add: algebra_simps)
     apply (rule_tac y="2 *j * (i div j) + 2 * (i mod j) - j" in le_less_trans)
-    apply(rule_tac t="2 * j * (i div j) + 2 * (i mod j)" 
+    apply(rule_tac t="2 * j * (i div j) + 2 * (i mod j)"
                and s="2 * (j * (i div j) + (i mod j))" in subst,
           simp only: algebra_simps, simp)
     apply (simp)
@@ -1538,7 +1534,7 @@ lemma divR_aux5b:  "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<ba
     apply (cut_tac i="i"  and j="j"  in divR_aux5b_pos, auto)
     apply (cut_tac i="-i" and j="-j" in divR_aux5b_pos, auto)
     apply (cut_tac i="-i" and j="-j" in divR_aux5b_neg, auto)
-done 
+done
 
 (****** With the proofs being that similar this should with just the "pos" version
         The trouble is that div is symmetric only if i AND j are negated ***)
@@ -1546,12 +1542,9 @@ done
 lemma divR_aux5:   "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; sign x = sign i * sign j;
                      2 * \<bar>i mod j\<bar> \<noteq> \<bar>j\<bar>\<rbrakk>
                       \<Longrightarrow> x = i divR j"
-  by (simp add: divR_def,
-      auto simp add: not_less_iff_gr_or_eq divR_aux5a divR_aux5b)
-     (**** This takes long *******)
+  by (metis divR_aux5a divR_aux5b divR_def linorder_neqE_linordered_idom)
 
-
-lemma divR_aux6a_pos:  "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux6a_pos:  "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                          sign x = sign i * sign j;
                          2 dvd x; 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>; 2 dvd i div j\<rbrakk>
                          \<Longrightarrow> x = i div j"
@@ -1572,7 +1565,7 @@ lemma divR_aux6a_pos:  "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - 
     apply (simp_all add: algebra_simps)
     by (smt int_distrib(2) mod_div_eq)
 
-lemma divR_aux6a_neg:  "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux6a_neg:  "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                          sign x = sign i * sign j;
                          2 dvd x; 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>; 2 dvd i div j\<rbrakk>
                          \<Longrightarrow> x = i div j"
@@ -1588,9 +1581,10 @@ lemma divR_aux6a_neg:  "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - 
            subgoal_tac "j * (1 + 2* (i div j)) > j * (2 * x)",
            simp add: mult_less_cancel_left)
     apply (simp_all add: algebra_simps)
-    apply (smt int_distrib(2) mod_div_equality2)
-    apply (smt even_add odd_one)
-    by (simp add: mult.commute zmod_zdiv_equality')
+    apply (smt int_distrib(2) mult_div_mod_eq)
+    apply (metis Groups.add_ac(2) arith_simps(64) even_add linorder_not_less num.simps(4) order_le_less
+                 rel_simps(73) zdvd1_eq zless_imp_add1_zle)
+    by (simp add: mult.commute minus_div_mult_eq_mod [symmetric])
 
 lemma divR_aux6a:  "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; sign x = sign i * sign j;
                      2 dvd x; 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>; 2 dvd i div j\<rbrakk>
@@ -1600,17 +1594,17 @@ lemma divR_aux6a:  "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<ba
     apply (cut_tac i="i"  and j="j"  in divR_aux6a_pos, auto)
     apply (cut_tac i="-i" and j="-j" in divR_aux6a_pos, auto)
     apply (cut_tac i="-i" and j="-j" in divR_aux6a_neg, auto)
-done 
+done
 
-lemma divR_aux6b_pos:  "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux6b_pos:  "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                          sign x = sign i * sign j;
                          2 dvd x; 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>; \<not> 2 dvd i div j \<rbrakk>
                      \<Longrightarrow> x = i div j + 1"
     apply (subgoal_tac "x*j > i", simp add: abs_mult algebra_simps)
     (******************** proof of  "x*j > i \<Longrightarrow> x = i div j + 1" ********************)
-    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1)) 
+    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1))
                         \<and> 0 \<le> (i - j*(x - 1)) \<and> (i - j*(x - 1)) < j",
-           clarify, drule div_pos_unique, simp_all add: algebra_simps) 
+           clarify, drule div_pos_unique, simp_all add: algebra_simps)
     (******************** proof of  "x*j > i" ************************************)
     apply (rule classical, simp add: abs_mul not_less algebra_simps)
     apply (subgoal_tac "2 * j * x \<ge> 2 * j * (i div j)",
@@ -1619,31 +1613,31 @@ lemma divR_aux6b_pos:  "\<lbrakk>(0::int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - 
            simp add: mult_le_cancel_left,
            subgoal_tac "x \<le> i div j", simp, simp)
     apply (simp_all only: algebra_simps)
-    apply (rule_tac t=" (j::int) * (i div j * 2)" and 
+    apply (rule_tac t=" (j::int) * (i div j * 2)" and
                     s=" 2 * (i - (i mod j))" in subst,
            simp add: mod_via_div, simp)+
     apply (metis div_gt_pos linorder_not_less order_le_less)
     by (smt int_distrib(2) mod_div_eq)
 
-lemma divR_aux6b_neg:  "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
+lemma divR_aux6b_neg:  "\<lbrakk>j < (0::int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>;
                          sign x = sign i * sign j;
                          2 dvd x; 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>; \<not> 2 dvd i div j\<rbrakk>
                      \<Longrightarrow> x = i div j + 1"
     apply (subgoal_tac "x*j < i", simp add: abs_mult algebra_simps)
     (******************** proof of  "x*j > i \<Longrightarrow> x = i div j + 1" ********************)
-    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1)) 
+    apply (subgoal_tac "i = j * (x - 1) + (i - j*(x - 1))
                         \<and> (i - j*(x - 1)) \<le> 0 \<and> j < (i - j*(x - 1))",
-           clarify, drule div_neg_unique, auto simp add: algebra_simps) 
+           clarify, drule div_neg_unique, auto simp add: algebra_simps)
     (******************** proof of  "x*j > i" ************************************)
     apply (rule classical, simp add: abs_mult not_less algebra_simps)
     apply (subgoal_tac "2 * j * x \<le> 2 * j * (i div j)",
            simp add: mult_le_cancel_left,
-           drule_tac y="i div j" in odd_le_even_imp_less, simp, simp, 
+           drule_tac y="i div j" in odd_le_even_imp_less, simp, simp,
            subgoal_tac "j * (1 + 2 * (i div j)) \<le> j * (2 * x)",
            simp add: mult_le_cancel_left)
     apply (simp_all only: algebra_simps)
     apply (metis div_is_largest_neg linorder_not_less mult.commute)
-    by (smt distrib_left mod_div_equality2)
+    by (smt distrib_left mult_div_mod_eq)
 
 lemma divR_aux6b:  "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; sign x = sign i * sign j;
                     2 dvd x; 2 * \<bar>i mod j\<bar> = \<bar>j\<bar>; \<not> 2 dvd i div j\<rbrakk>
@@ -1653,16 +1647,13 @@ lemma divR_aux6b:  "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<ba
     apply (cut_tac i="i"  and j="j"  in divR_aux6b_pos, auto)
     apply (cut_tac i="-i" and j="-j" in divR_aux6b_pos, auto)
     apply (cut_tac i="-i" and j="-j" in divR_aux6b_neg, auto)
-done 
+done
 
 
 lemma divR_aux6:   "\<lbrakk>j \<noteq> (0::int); 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; sign x = sign i * sign j;
                      2 dvd x\<rbrakk>
                       \<Longrightarrow> x = i divR j"
-  by (simp add: divR_def,
-      auto simp add: not_less_iff_gr_or_eq 
-                     divR_aux5a divR_aux5b divR_aux6a divR_aux6b)
-     (**** This takes long *******)
+  by (metis divR_aux5 divR_aux5a divR_aux6a divR_aux6b divR_def)
 
 lemmas divR_def_lemmas =  divR_aux1 divR_aux2 divR_aux3
                           divR_aux4 divR_aux5 divR_aux6
@@ -1670,8 +1661,8 @@ lemmas divR_def_lemmas =  divR_aux1 divR_aux2 divR_aux3
 (****************** Some basic facts about divR ***********************)
 
 lemma divides_iff_modR_0:      "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd i = (i modR j = 0)"
-  by (auto simp add: modR_def divR_def algebra_simps div_eq_if_dvd, 
-      simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
+  by (metis abs_of_nonneg divR_def div_eq_if_dvd dvd_def dvd_eq_mod_eq_0 modR_def mult_cancel_right1
+            order_le_less right_minus_eq zero_less_abs_iff)
 
 lemma modR_0_equals_mod_0:     "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> (i modR j = 0) =  (i mod j = 0)"
   by (simp add: divides_iff_modR_0 dvd_eq_mod_eq_0 [symmetric])
@@ -1680,10 +1671,10 @@ lemma exact_divR:              "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \
   by (simp add: divides_iff_modR_0 modR_def)
 
 lemma divR_zminus1:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i divR j = - (i divR j)"
-  by (auto simp add: divR_def abs_mod_zminus1  zdiv_zminus1_eq_if split: split_if_asm)
+  by (auto simp add: divR_def abs_mod_zminus1  zdiv_zminus1_eq_if split: if_splits)
 
-lemma divR_zminus2:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)" 
-  by (auto simp add: divR_def abs_mod_zminus2  zdiv_zminus2_eq_if split: split_if_asm)
+lemma divR_zminus2:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)"
+  by (auto simp add: divR_def abs_mod_zminus2  zdiv_zminus2_eq_if split: if_splits)
 
 (*************************** divE **************************************)
 
@@ -1705,12 +1696,12 @@ lemma exact_divE:              "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \
 
 lemma modE_sign:  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> (0::int) \<le> i modE j"
   by (auto simp add: modE_alt_def divE_def,
-      cut_tac i=i and j="\<bar>j\<bar>" in div_pos_up_bound, auto, 
+      cut_tac i=i and j="\<bar>j\<bar>" in div_pos_up_bound, auto,
       simp add: abs_via_sign algebra_simps)
 
 lemma modE_bound: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modE j < \<bar>j\<bar>"
   by (auto simp add: modE_alt_def divE_def,
-      cut_tac i=i and j="\<bar>j\<bar>" in div_pos_low_bound, auto, 
+      cut_tac i=i and j="\<bar>j\<bar>" in div_pos_low_bound, auto,
       simp add: abs_via_sign algebra_simps)
 
 
@@ -1737,13 +1728,13 @@ lemma length_Suc_conv2:
 "(length xs = Suc n) = (\<exists>y ys. xs = ys @ [y] \<and> length ys = n)"
 by (induct_tac xs rule: rev_induct, auto)
 
-lemma list_all_set_tl: 
-  "\<lbrakk>\<forall>x\<in>set l. P x\<rbrakk> 
+lemma list_all_set_tl:
+  "\<lbrakk>\<forall>x\<in>set l. P x\<rbrakk>
   \<Longrightarrow> \<forall>x\<in>set (tl l). P x"
   by (rule ballI, erule bspec, induct l, auto)
 
 lemma list_last_conv:
-"\<lbrakk>length xs = Suc l\<rbrakk> 
+"\<lbrakk>length xs = Suc l\<rbrakk>
   \<Longrightarrow> xs = butlast xs @ [xs!l]"
  by (cut_tac xs=xs in append_butlast_last_id, auto,
      cut_tac xs=xs in last_conv_nth, auto)
@@ -1761,88 +1752,88 @@ lemma nth_butlast:
  by (induct l rule: rev_induct, auto simp add: nth_append)
 
 lemma list_eq_if_butlast_last_eq:
-   "\<lbrakk>l1 \<noteq> []; l2 \<noteq> []; butlast l1 = butlast l2; last l1 = last l2\<rbrakk> \<Longrightarrow> 
+   "\<lbrakk>l1 \<noteq> []; l2 \<noteq> []; butlast l1 = butlast l2; last l1 = last l2\<rbrakk> \<Longrightarrow>
      l1 = l2"
    by (induct l1 arbitrary: l2 rule: rev_induct, auto)
 
 lemma list_eq_iff_butlast_last_eq:
-   "\<lbrakk>l1 \<noteq> []; l2 \<noteq> []\<rbrakk> \<Longrightarrow> 
+   "\<lbrakk>l1 \<noteq> []; l2 \<noteq> []\<rbrakk> \<Longrightarrow>
     (l1 = l2) = (butlast l1 = butlast l2 \<and> last l1 = last l2)"
    by (safe, simp add: list_eq_if_butlast_last_eq)
- 
+
 lemma concat_length:
   "\<lbrakk>map length l1 = map length l2\<rbrakk> \<Longrightarrow> length (concat l1) = length (concat l2)"
   by (induct l1 arbitrary: l2, auto)
-  
+
 lemma lists_eq_iff_concat_and_lengths_eq:
   "\<lbrakk>concat l1 = concat l2; map length l1 = map length l2\<rbrakk> \<Longrightarrow> l1 = l2"
   by (induct l1 arbitrary: l2, auto)
 
 (******************************* Lists of numbers *******************)
 theorem foldl_mul_assoc:
-  "foldl op * (a*b) (l::nat list) = a * (foldl op * b l)"
+  "foldl (*) (a*b) (l::nat list) = a * (foldl (*) b l)"
  by (induct l arbitrary: b, simp_all add: mult.assoc)
 
 theorem foldl_mul_assoc1:
-  "foldl op * a (l::nat list) = a * (foldl op * 1 l)"
+  "foldl (*) a (l::nat list) = a * (foldl (*) 1 l)"
  by (cut_tac b=1 in  foldl_mul_assoc, simp)
 
 theorem foldl_nat_mul_assoc:
-  "\<lbrakk>0 \<le> a\<rbrakk> \<Longrightarrow> 
-    \<forall>b. foldl (\<lambda>y x. y * nat x) (nat (a*b)) (l::int list) 
+  "\<lbrakk>0 \<le> a\<rbrakk> \<Longrightarrow>
+    \<forall>b. foldl (\<lambda>y x. y * nat x) (nat (a*b)) (l::int list)
     = (nat a) * (foldl (\<lambda>y x. y * nat x) (nat b) l)"
  apply (induct l, auto simp add: mult.assoc nat_mult_distrib)
  by (metis nat_int)
 
 theorem foldl_nat_mul_assoc1:
   "foldl (\<lambda>y x. y * nat x) a (l::int list) = a * (foldl (\<lambda>y x. y * nat x) 1 l)"
- by (cut_tac a="int a" and l=l in  foldl_nat_mul_assoc, simp, 
+ by (cut_tac a="int a" and l=l in  foldl_nat_mul_assoc, simp,
      drule_tac x=1 in spec, simp)
 
 (*************************************************************
-*		      		   
-* Isabelle 2009-1 has moved prod, nondec, primel, and the unique 
-* factorization theorem to Old_NumberTheory/Factorization.thy, 
+*
+* Isabelle 2009-1 has moved prod, nondec, primel, and the unique
+* factorization theorem to Old_NumberTheory/Factorization.thy,
 * which generates conflicts with the new Number_theory
-* 
+*
 * Below is a copy of all relevant definitions and lemmas from
 * Factorization
-*				   
+*
 *************************************************************)
 
-subsection {* Definitions *}
+subsection \<open> Definitions \<close>
 
 definition
   primel :: "nat list => bool" where
   "primel xs = (\<forall>p \<in> set xs. prime p)"
 
-fun nondec :: "nat list => bool " where 
+fun nondec :: "nat list => bool " where
    "nondec [] = True"
  | "nondec (x # xs) = (case xs of [] => True | y # ys => x \<le> y \<and> nondec xs)"
 
-fun prod :: "nat list => nat" where 
+fun prod :: "nat list => nat" where
    "prod [] = Suc 0"
  | "prod (x # xs) = x * prod xs"
 
-fun oinsert :: "nat => nat list => nat list" where 
+fun oinsert :: "nat => nat list => nat list" where
    "oinsert x [] = [x]"
  |  "oinsert x (y # ys) = (if x \<le> y then x # y # ys else y # oinsert x ys)"
 
-fun type :: "nat list => nat list" where 
+fun type :: "nat list => nat list" where
    "type [] = []"
  | "type (x # xs) = oinsert x (type xs)"
 
-subsection {* Alternative Definitions *}
+subsection \<open> Alternative Definitions \<close>
 
 (* lemmas prime_def = prime_nat_def  *)
 
 lemma primes_iff:
-  "list_all prime  = primel" 
+  "list_all prime  = primel"
  by (simp add:fun_eq_iff list_all_iff primel_def)
 
 
 lemma prod_as_foldl:
-  "foldl op * (Suc 0) = prod"
+  "foldl (*) (Suc 0) = prod"
  apply (auto simp add:fun_eq_iff)
  apply (induct_tac x, simp_all)
  apply (cut_tac l=list in foldl_mul_assoc1, auto)
@@ -1852,16 +1843,16 @@ theorem factors_dvd_prod:
   "x \<in> set factors  \<Longrightarrow> x dvd (prod factors)"
  by (induct factors, auto)
 
-theorem prod_positive:  
+theorem prod_positive:
   "\<lbrakk>\<forall>x\<in>set l. 0<x\<rbrakk>  \<Longrightarrow> 0 < prod l"
   by (induct l, auto)
 
 theorem factors_of_odd:
-  "\<lbrakk>n > 0; prod factors = n \<rbrakk> 
+  "\<lbrakk>n > 0; prod factors = n \<rbrakk>
     \<Longrightarrow> odd n = (list_all odd factors)"
   by (induct factors arbitrary: n, auto)
 
-subsection {* Arithmetic *}
+subsection \<open> Arithmetic \<close>
 
 lemma one_less_m: "(m::nat) \<noteq> m * k ==> m \<noteq> Suc 0 ==> Suc 0 < m"
   by (cases m, auto)
@@ -1879,7 +1870,7 @@ lemma prod_mn_less_k:
   "(0::nat) < n ==> 0 < k ==> Suc 0 < m ==> m * n = k ==> n < k"
   by (induct m, auto)
 
-subsection {* Prime list and product *}
+subsection \<open> Prime list and product \<close>
 
 lemma prod_append: "prod (xs @ ys) = prod xs * prod ys"
   by (induct xs, simp_all add: mult.assoc)
@@ -1895,9 +1886,9 @@ lemma prime_primel: "prime n ==> primel [n] \<and> prod [n] = n"
   by (unfold primel_def, auto)
 
 lemma prime_nd_one: "prime p ==> \<not> p dvd Suc 0"
-  by (unfold prime_def dvd_def, auto)
+  by auto
 
-lemma hd_dvd_prod: "prod (x # xs) = prod ys ==> x dvd (prod ys)" 
+lemma hd_dvd_prod: "prod (x # xs) = prod ys ==> x dvd (prod ys)"
   by (metis dvd_mult_left dvd_refl prod.simps(2))
 
 lemma primel_tl: "primel (x # xs) ==> primel xs"
@@ -1907,25 +1898,27 @@ lemma primel_hd_tl: "(primel (x # xs)) = (prime x \<and> primel xs)"
   by (unfold primel_def, auto)
 
 lemma primes_eq: "prime (p::nat) ==> prime q ==> p dvd q ==> p = q"
-  by (unfold prime_def, auto)
+  by (simp add: primes_dvd_imp_eq)
 
 lemma primel_one_empty: "primel xs ==> prod xs = Suc 0 ==> xs = []"
-  by (cases xs, simp_all add: primel_def prime_def)
+  by (metis factors_dvd_prod insert_iff list.exhaust list.set(2) prime_nd_one primel_def)
 
 lemma prime_g_one: "prime p ==> Suc 0 < p"
-  by (unfold prime_def, auto)
+  by (simp add: prime_gt_Suc_0_nat)
 
 lemma prime_g_zero: "prime (p::nat) ==> 0 < p"
-  by (unfold prime_def, auto)
+  by (simp add: prime_gt_0_nat)
 
 lemma primel_nempty_g_one:
   "primel xs \<Longrightarrow> xs \<noteq> [] \<Longrightarrow> Suc 0 < prod xs"
-  by (induct xs, simp, fastforce simp: primel_def prime_def elim: one_less_mult)
+  apply(induct xs)
+  apply blast
+  by (metis Suc_lessI prime_g_zero primel_def primel_one_empty prod_positive)
 
 lemma primel_prod_gz: "primel xs ==> 0 < prod xs"
-  by (induct xs, auto simp: primel_def prime_def)
+  by (simp add: prime_g_zero primel_def prod_positive)
 
-subsection {* Typeing *}
+subsection \<open> Typing \<close>
 
 lemma nondec_oinsert: "nondec xs \<Longrightarrow> nondec (oinsert x xs)"
   by (induct xs, simp,
@@ -1940,14 +1933,14 @@ lemma x_less_y_oinsert: "x \<le> y ==> l = y # ys ==> x # l = oinsert x l"
 lemma nondec_type_eq [rule_format]: "nondec xs \<longrightarrow> xs = type xs"
   apply (induct xs, safe, simp_all)
   apply (case_tac xs, simp_all)
-  apply (case_tac xs, simp, 
+  apply (case_tac xs, simp,
          rule_tac y = aa and ys = list in x_less_y_oinsert, simp_all)
   done
 
 lemma oinsert_x_y: "oinsert x (oinsert y l) = oinsert y (oinsert x l)"
   by (induct l, auto)
 
-subsection {* Permutation *}
+subsection \<open> Permutation \<close>
 
 lemma perm_primel [rule_format]: "xs <~~> ys ==> primel xs --> primel ys"
   apply (unfold primel_def, induct set: perm)
@@ -1969,7 +1962,7 @@ lemma perm_type: "xs <~~> type xs"
 lemma perm_type_eq: "xs <~~> ys ==> type xs = type ys"
   by (induct set: perm, simp_all add: oinsert_x_y)
 
-subsection {* Existence of a unique prime factorization*}
+subsection \<open> Existence of a unique prime factorization\<close>
 
 lemma ex_nondec_lemma:
   "primel xs ==> \<exists>ys. primel ys \<and> nondec ys \<and> prod ys = prod xs"
@@ -1978,35 +1971,47 @@ lemma ex_nondec_lemma:
 lemma not_prime_ex_mk:
   "Suc 0 < n \<and> \<not> prime n ==>
     \<exists>m k. Suc 0 < m \<and> Suc 0 < k \<and> m < n \<and> k < n \<and> n = m * k"
-  by (unfold prime_def dvd_def,
-      auto intro: n_less_m_mult_n n_less_n_mult_m one_less_m one_less_k)
+  apply (unfold prime_def dvd_def,
+         auto intro: n_less_m_mult_n n_less_n_mult_m one_less_m one_less_k)
+  proof -
+  assume a1: "Suc 0 < n"
+  assume "\<not> prime n"
+  then obtain nn :: "nat \<Rightarrow> nat" where
+    "nn n dvd n \<and> nn n \<noteq> 1 \<and> nn n \<noteq> n"
+    by (metis (full_types) One_nat_def Suc_0_not_prime_nat a1 less_one nat.discI
+                           prime_elem_nat_iff prime_factor_nat)
+  then show "\<exists>na>Suc 0. \<exists>nb>Suc 0. na < n \<and> nb < n \<and> n = na * nb"
+    using a1 by (metis (no_types) Groups.mult_ac(2) One_nat_def Suc_lessE dvd_def n_less_m_mult_n neq0_conv old.nat.distinct(2) one_less_k one_less_m)
+qed
 
 lemma split_primel:
   "primel xs \<Longrightarrow> primel ys \<Longrightarrow> \<exists>l. primel l \<and> prod l = prod xs * prod ys"
   by (rule exI, safe, rule_tac [2] prod_append, simp add: primel_append)
 
 
-lemma factor_exists [rule_format]: 
+lemma factor_exists [rule_format]:
   "Suc 0 < n --> (\<exists>l. primel l \<and> prod l = n)"
   apply (induct n rule: nat_less_induct, rule impI, case_tac "prime n")
   apply (rule exI, erule prime_primel)
   apply (cut_tac n = n in not_prime_ex_mk, auto intro!: split_primel)
-  done
+  by (metis Suc_lessD n_less_n_mult_m semiring_normalization_rules(7) split_primel)
 
-lemma nondec_factor_exists: 
+lemma nondec_factor_exists:
   "Suc 0 < n ==> \<exists>l. primel l \<and> nondec l \<and> prod l = n"
   by (erule factor_exists [THEN exE], blast intro!: ex_nondec_lemma)
 
 lemma prime_dvd_mult_list [rule_format]:
     "prime p ==> p dvd (prod xs) --> (\<exists>m. m:set xs \<and> p dvd m)"
-  by (induct xs, force simp add: prime_def, force dest: prime_dvd_mult_nat)
+  apply(induct xs)
+  apply auto[1]
+  using prime_dvd_mult_eq_nat by auto
 
 lemma hd_xs_dvd_prod:
   "primel (x # xs) ==> primel ys ==> prod (x # xs) = prod ys
     ==> \<exists>m. m \<in> set ys \<and> x dvd m"
   by (rule prime_dvd_mult_list, simp add: primel_hd_tl, erule hd_dvd_prod)
 
-lemma prime_dvd_eq: 
+lemma prime_dvd_eq:
   "primel (x # xs) ==> primel ys ==> m \<in> set ys ==> x dvd m ==> x = m"
   by (rule primes_eq, auto simp add: primel_def primel_hd_tl)
 
@@ -2022,10 +2027,11 @@ lemma perm_primel_ex:
 lemma primel_prod_less:
   "primel (x # xs) ==>
     primel ys ==> prod (x # xs) = prod ys ==> prod xs < prod ys"
-  using prime_g_one primel_hd_tl primel_prod_gz prod_mn_less_k by fastforce
+  by (metis IsabelleExtensions.prod.simps(2) n_less_m_mult_n prime_gt_Suc_0_nat primel_hd_tl
+            primel_prod_gz)
 
 lemma prod_one_empty: "primel xs ==> p * prod xs = p ==> prime p ==> xs = []"
-  by (auto intro: primel_one_empty simp add: prime_def)
+  by (simp add: primel_one_empty)
 
 lemma uniq_ex_aux:
   "\<forall>m. m < prod ys --> (\<forall>xs ys. primel xs \<and> primel ys \<and>
@@ -2043,7 +2049,7 @@ lemma factor_unique [rule_format]:
   apply (rule perm.trans [THEN perm_sym], assumption)
   apply (rule perm.Cons, case_tac "x = []")
   apply (metis perm_prod perm_refl prime_primel primel_hd_tl primel_tl prod_one_empty)
-  apply (metis nat_0_less_mult_iff nat_mult_eq_cancel1 perm_primel perm_prod 
+  apply (metis nat_0_less_mult_iff nat_mult_eq_cancel1 perm_primel perm_prod
                primel_prod_gz primel_prod_less primel_tl prod.simps(2))
   done
 
@@ -2069,11 +2075,11 @@ done
 (**************************** a few insights about relations **************)
 
 definition
-  asym :: "('a * 'a) set => bool" where -- {* symmetry predicate *}
+  asym :: "('a * 'a) set => bool" where (* symmetry predicate *)
   "asym r == \<forall>x y. (x,y) \<in> r \<longrightarrow> (y,x) \<notin> r"
 
 abbreviation
-  equivalence :: "('a * 'a) set => bool" where -- {* equivalence over a type *}
+  equivalence :: "('a * 'a) set => bool" where (* equivalence over a type *)
   "equivalence == equiv UNIV"
 
 abbreviation
@@ -2091,7 +2097,7 @@ abbreviation
 
 
 (******************************************************************************
-* 
+*
 *  Extensions to Quotient Type constructions
 *
 *  Isabelle uses the typedef mechanism to convert quotient sets into types.
@@ -2108,7 +2114,7 @@ abbreviation
 *  of T that are equivalent to some x.
 *  The conversions between elements of the abstract quotient type Q and those
 *  of the type T thus proceed in two steps
-*  
+*
 *  T \<rightarrow> Q: construction of the equivalence class followed by abstraction
 *  Q \<rightarrow> T: explicit representation followed by choosing an element of the class
 *
@@ -2119,27 +2125,27 @@ abbreviation
 *
 *  and implicitly introduces the theorems
 *
-*     Quotient_Q: "Quotient eqT abs_Q rep_Q" 
+*     Quotient_Q: "Quotient eqT abs_Q rep_Q"
 *     Q_equivp:   "equivp eqT"
 *
 *  While this declaration comes with a series of lemmas about Abs_Q and Rep_Q
 *  there are virtually no generic lemmas that support reasoning about
-*  properties of abs_Q, rep_Q, and eqT. Since these show up in every 
-*  application of quotient types we'll provide them here, 
+*  properties of abs_Q, rep_Q, and eqT. Since these show up in every
+*  application of quotient types we'll provide them here,
 *
 *  We introduce a locale "quotient" that assumes the above two theorems to
-*  be true and prove a series of lemmas just from these two facts. 
+*  be true and prove a series of lemmas just from these two facts.
 *
 *  To link the quotient type to this locale we only have to state
 *
 *    interpretation Q : quotient "eqQ" "abs_Q" "rep_Q"
 *       by (simp add: quotient_def Quotient_Q Q_equivp)
 *
-*  Then all the conclusions of the locale quotient will become available 
+*  Then all the conclusions of the locale quotient will become available
 *  immediately, where names are prefixed by the qualifier "Q".
 *  They will be added to the simplifier if declared so in the locale.
-* 
-******************************************************************************) 
+*
+******************************************************************************)
 
 (******************************************************************************
 * Note that after Isabelle 2011 Quotient has been renamed to Quotient3        *
@@ -2170,12 +2176,12 @@ lemma eq_class_eq:  "(eq x = eq y) = eq x y"      by (metis eqv equivp_def)
 
 (*** Some explicit lemmas about the quotient type *******************)
 
-lemma abs_inv:  "eq (rep (abs x)) x" 
+lemma abs_inv:  "eq (rep (abs x)) x"
    by (metis quot eq_refl_raw Quotient3_rep_abs)
 lemma abs_inv1: "eq x (rep (abs x))"           by (metis abs_inv eq_sym_raw)
 
 
-lemma abs_inj:  "(abs x = abs y) = eq x y" 
+lemma abs_inj:  "(abs x = abs y) = eq x y"
    by (metis quot eq_refl_raw Quotient3_rel)
 
 lemma rep_inv:  "abs (rep q) = q"              by (metis quot Quotient3_abs_rep)
@@ -2200,9 +2206,9 @@ lemma rep_abs_simp: "\<lbrakk>\<And>z. eq x z \<Longrightarrow> P z\<rbrakk>
 
 lemma quotE:      "\<exists>z. eq x z   \<and> rep (abs x) = z"  by (metis abs_inv1)
 
-declare abs_inj [simp]  
-        rep_inj [simp]  
-        rep_inj2 [simp] 
+declare abs_inj [simp]
+        rep_inj [simp]
+        rep_inj2 [simp]
 
 (*** implementing the Specware "choose" operator in Isabelle ***)
 definition qchoose :: "('a => 'c) => 'b => 'c"
@@ -2214,16 +2220,16 @@ lemma qchoose_abs: "[|(\<And> x y. eq x y ==> f x = f y)|] ==> qchoose f (abs z)
 end
 
 (***********************************************************************
- * NEW LEMMAS -- MOVED FROM IntegerExt.thy 
+ * NEW LEMMAS -- MOVED FROM IntegerExt.thy
  ***********************************************************************)
 
 
 theorem foldl_int_mul_assoc:
-  "foldl op * (a*b) (l::int list) = a * (foldl op * b l)"
+  "foldl (*) (a*b) (l::int list) = a * (foldl (*) b l)"
  by (induct l arbitrary: b, simp_all add: mult.assoc)
 
 theorem foldl_int_mul_assoc1:
-  "foldl op * a (l::int list) = a * (foldl op * 1 l)"
+  "foldl (*) a (l::int list) = a * (foldl (*) 1 l)"
  by (cut_tac b=1 in  foldl_int_mul_assoc, simp)
 
 (**************************************************************************)
@@ -2231,12 +2237,12 @@ theorem foldl_int_mul_assoc1:
 (**************************************************************************)
 
 
-lemma numeral_simps: 
-  "2 = Suc (Suc 0) \<and> 
-   3 = Suc (Suc (Suc 0)) \<and>  
-   4 = Suc (Suc (Suc (Suc 0))) \<and>  
-   5 = Suc (Suc (Suc (Suc (Suc 0)))) \<and>  
-   6 = Suc (Suc (Suc (Suc (Suc (Suc 0))))) \<and>  
+lemma numeral_simps:
+  "2 = Suc (Suc 0) \<and>
+   3 = Suc (Suc (Suc 0)) \<and>
+   4 = Suc (Suc (Suc (Suc 0))) \<and>
+   5 = Suc (Suc (Suc (Suc (Suc 0)))) \<and>
+   6 = Suc (Suc (Suc (Suc (Suc (Suc 0))))) \<and>
    7 = Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))"
 by arith
 
@@ -2282,12 +2288,12 @@ lemma Nat_to_5_cases  [simp]:
 by arith
 
 lemma nat_pred_less_iff_le [simp]:
-  "\<lbrakk>0 < (n::nat)\<rbrakk> 
+  "\<lbrakk>0 < (n::nat)\<rbrakk>
   \<Longrightarrow> (i - 1 < n) = (i \<le> n)"
 by arith
 
 lemma nat_pred_less_iff_le2 [simp]:
-  "\<lbrakk>0 < (n::nat)\<rbrakk> 
+  "\<lbrakk>0 < (n::nat)\<rbrakk>
   \<Longrightarrow> (i - Suc 0 < n) = (i \<le> n)"
 by arith
 
@@ -2378,20 +2384,21 @@ by (rule_tac x="a div b" in exI, drule sym, simp)
 
 lemma mod_eq_dvd_diff_int:
 "\<lbrakk>0 \<le> c; c < b\<rbrakk> \<Longrightarrow> (a mod b = (c::int)) = (b dvd (a - c))"
-apply (auto simp add: dvd_def algebra_simps mod_pos_pos_trivial)
-apply (subst add.commute, simp add: mod_eq_iff_int)
-done
-  
+apply (auto simp add: dvd_def algebra_simps)
+by (metis div_mult_mod_eq)
+
 lemma mod_eq_dvd_diff_nat:
 "\<lbrakk>c < b; c \<le> a\<rbrakk> \<Longrightarrow> (a mod b = (c::nat)) = (b dvd (a - c))"
 apply (simp add: dvd_def le_imp_diff_is_add, rule iffI)
 apply (drule mod_eq_iff_nat, auto simp add: mult.commute)
-done  
+done
 
-lemma mod_less_eq_dividend_int [simp]:  
+(* Redundant?
+lemma mod_less_eq_dividend_int [simp]:
 "\<lbrakk>0 \<le> (a::int); 0 \<le> b\<rbrakk> \<Longrightarrow> a mod b \<le> a"
 by (cut_tac m="nat a" and n="nat b" in  mod_less_eq_dividend,
     simp only: transfer_nat_int_functions)
+*)
 
 lemma mod_bound2:  "\<lbrakk>prime (p::nat)\<rbrakk> \<Longrightarrow> a mod p < p"
 by (drule prime_gt_0_nat, auto)
@@ -2412,44 +2419,52 @@ lemma mod_eq_small_is_eq:
    "\<lbrakk>(x::nat) < p;  (y::nat) < p;  x mod p = y mod p\<rbrakk> \<Longrightarrow> x = y"
 by simp
 
-lemma mod_add_limit: 
+lemma mod_add_limit:
   "\<lbrakk>prime p; (x::nat) < p; y < p;  x + y = p * q\<rbrakk> \<Longrightarrow> q = 0 \<or> q = 1"
 by (drule_tac i=x and j=p and k=y and l=p in add_less_mono,
     auto simp add: mult_2_right[ symmetric])
 
-lemma mod_add_inv_0 [simp]: 
+lemma mod_add_inv_0 [simp]:
   "\<lbrakk>prime p; (x::nat) = 0; y < p\<rbrakk> \<Longrightarrow> ((x + y) mod p = 0) =  (y = 0)"
-by auto
+  by auto
 
-lemma mod_add_inv: 
+lemma mod_add_inv:
   "\<lbrakk>prime p; (x::nat) < p; y < p; x \<noteq> y\<rbrakk> \<Longrightarrow> ((x + y) mod p = 0) =  (x = p - y)"
-by (auto, frule mod_add_limit, auto)
+  apply(auto)
+  by (metis add_diff_cancel_right' add_eq_0_iff_both_eq_0 dvd_def mod_add_limit mult.right_neutral mult_0_right)
 
-lemma mod_sub_eq: 
+lemma mod_sub_eq:
   "\<lbrakk>prime p; (x::nat) < p; y < p; y \<le> x; (x - y) mod p = 0\<rbrakk> \<Longrightarrow> x = y"
 by auto
 
+(* Unnecessary: Use Divides.mod_eq_dvd_iff_nat
 lemma mod_eq_dvd_iff: "\<lbrakk>(y::nat) \<le> x\<rbrakk> \<Longrightarrow> (x mod p = y mod p) =  (p dvd x - y)"
 apply (auto simp add: dvd_def)
 apply (drule nat_mod_eq_lemma, auto)
 apply (rule_tac t=x and s="p * k + y" in subst, auto)
 done
+*)
 
 lemma mod_square_0:
    "\<lbrakk>prime p; (x::nat) < p;  x\<^sup>2 mod p = 0\<rbrakk> \<Longrightarrow> x=0"
 by (simp add: power2_eq_square  dvd_eq_mod_eq_0 [symmetric] prime_dvd_mult_nat,
     auto simp add: dvd_def)
-  
+
 lemma mod_square_eq_aux:
    "\<lbrakk>prime p; (x::nat) < p;  (y::nat) < p; y\<^sup>2 \<le> x\<^sup>2; x\<^sup>2 mod p = y\<^sup>2 mod p\<rbrakk> \<Longrightarrow> x = p - y \<or> x = y"
-apply (auto simp add:  mod_eq_dvd_iff, subst mod_add_inv [symmetric], assumption+)
+apply (auto simp add: Divides.mod_eq_dvd_iff_nat, subst mod_add_inv [symmetric], assumption+)
 apply (frule power2_le_imp_le, simp)
 apply (subgoal_tac "p dvd (x+y)*(x-y)", thin_tac "p dvd x\<^sup>2 - y\<^sup>2")
-apply (frule prime_dvd_mult_nat, simp, simp only: dvd_eq_mod_eq_0)
-apply (erule disjE, assumption, erule notE, erule mod_sub_eq, assumption+)
-apply (rule_tac t="(x+y)*(x-y)" and s="x\<^sup>2 - y\<^sup>2" in subst)
-apply (simp_all add: power2_eq_square algebra_simps diff_mult_distrib2)
-done
+apply (meson dvd_imp_mod_0 Divides.mod_eq_dvd_iff_nat mod_eq_small_is_eq prime_dvd_multD)
+proof -
+  assume a1: "p dvd x\<^sup>2 - y\<^sup>2"
+  have f2: "x\<^sup>2 = (x + y - y) * x"
+    by (simp add: power2_eq_square)
+  have "y * x + y * y = (x + y) * y"
+    by (metis add_mult_distrib mult.commute)
+  then show "p dvd (x + y) * (x - y)"
+    using f2 a1 by (metis diff_diff_left diff_mult_distrib mult.commute power2_eq_square)
+qed
 
 lemma mod_square_eq:
    "\<lbrakk>prime p; (x::nat) < p;  (y::nat) < p;  x\<^sup>2 mod p = y\<^sup>2 mod p\<rbrakk> \<Longrightarrow> x = p - y \<or> x = y"
@@ -2461,7 +2476,7 @@ done
 lemma mod_square_iff_aux:
    "\<lbrakk>prime p; (x::nat) < p; x\<^sup>2 \<le> (p - x)\<^sup>2\<rbrakk> \<Longrightarrow>  (p - x)\<^sup>2 mod p = x\<^sup>2 mod p"
 apply (frule power2_le_imp_le, simp)
-apply (simp add: mod_eq_dvd_iff)
+apply (simp add: Divides.mod_eq_dvd_iff_nat)
 apply (rule_tac t="(p - x)\<^sup>2 - x\<^sup>2" and s="(p - x + x) * (p - x - x)" in subst, simp_all)
 apply (simp add: power2_eq_square  diff_mult_distrib2, simp add: algebra_simps diff_mult_distrib2)
 done
@@ -2524,9 +2539,7 @@ done
 
 lemma mod_mult_pos [simp]:
   "\<lbrakk>prime (p::nat); 0 < x; x < p; 0 < y; y < p\<rbrakk>  \<Longrightarrow> 0 < (x * y) mod p"
- apply (rule classical, auto simp add: dvd_eq_mod_eq_0 [symmetric])
- apply (drule dvd_imp_le, simp_all)+
-done
+ by (simp add: mod_greater_zero_iff_not_dvd nat_dvd_not_less prime_dvd_mult_iff)
 
 lemma mod_square_pos [simp]:
   "\<lbrakk>prime (p::nat); 0 < x; x < p\<rbrakk>  \<Longrightarrow> 0 < x\<^sup>2 mod p"
@@ -2534,7 +2547,7 @@ by (simp add: power2_eq_square)
 
 lemma mod_cube_pos [simp]:
   "\<lbrakk>prime (p::nat); 0 < x; x < p\<rbrakk>  \<Longrightarrow> 0 < x^3 mod p"
-by (simp add: power3_eq_cube, subst mod_mult_left_eq, simp)
+by (simp add: mod_greater_zero_iff_not_dvd nat_dvd_not_less prime_dvd_power_nat_iff)
 
 
 lemma mod_sub_right_eq: "\<lbrakk>(b::nat) \<le> a\<rbrakk> \<Longrightarrow> (a - b) mod c = (a - b mod c) mod c"
@@ -2542,29 +2555,22 @@ apply (rule_tac t="(a - b) mod c" and s="(b div c * c + a - b) mod c" in subst,
        simp only: diff_add_assoc mod_mult_self3)
 apply (rule_tac t="_ - b" and s="_ - (b div c * c + b mod c)" in subst, simp)
 apply (simp only: diff_diff_left [symmetric], simp)
-done 
+done
 
-lemma mod_power_add: 
+lemma mod_power_add:
    "x ^ (y + z) mod p = (x ^ y) * (x ^ z) mod (p::nat)"
- apply (induct z, auto)
- apply (subst mod_mult_eq, simp)
- apply (subst mod_mult_eq [symmetric], simp add: algebra_simps)
-done
+ by (simp add: power_add)
 
-lemma mod_power_mult: 
+lemma mod_power_mult:
    "x ^ (y * z) mod p = (x ^ y mod p) ^ z mod (p::nat)"
- apply (induct z, auto)
- apply (simp add: power_add)
- apply (subst mod_mult_eq, simp)
- apply (simp add: mod_mult_right_eq [symmetric])
-done
+ by (simp add: power_mod semiring_normalization_rules(31))
 
 
 (********************************************************************)
 
 
 (*** We need this quite often ******************)
-(*** Most of these belong to IsabelleExtiensions but I need to rethink 
+(*** Most of these belong to IsabelleExtiensions but I need to rethink
      which of these should be part of the simplifier **)
 
 lemma convert_to_nat_2:   " 2 = int 2"   by simp
@@ -2581,7 +2587,7 @@ lemmas convert_to_nat =
 
 lemma zless_power_convert [simp]:
   "int n < int base ^ len = (n < base ^ len)"
-   using Nat_Transfer.transfer_int_nat_functions(4) by presburger
+   by simp
 
 lemma zless_power_convert_1 [simp]:
   "int n < 2 ^ len = (n < 2 ^ len)"
@@ -2597,28 +2603,28 @@ lemma zless_power_convert_8 [simp]:
 
 lemma zless_power_convert_16 [simp]:
   "int n < 65536 ^ len = (n < 65536 ^ len)"
-  by (metis int_numeral zless_power_convert)
+  by (metis of_nat_numeral zless_power_convert)
 
 lemma zless_power_convert_32 [simp]:
   "int n < 4294967296 ^ len = (n < 4294967296 ^ len)"
-  by (metis int_numeral zless_power_convert)
+  by (metis of_nat_numeral zless_power_convert)
 
 lemma zless_power_convert_64 [simp]:
   "int n < 18446744073709551616 ^ len = (n < 18446744073709551616 ^ len)"
-  by (metis int_numeral zless_power_convert)
+  by (metis of_nat_numeral zless_power_convert)
 
 (* lemma zdvd_convert_2 [simp]:  "2 dvd int n = (2 dvd n)"
   by simp *)
 lemma zdvd_convert_4 [simp]:  "4 dvd int n = (4 dvd n)"
-  by (simp only: zdvd_def zdvd_int convert_to_nat)
+  by presburger
 lemma zdvd_convert_8 [simp]:  "8 dvd int n = (8 dvd n)"
-  by (simp only: zdvd_def zdvd_int convert_to_nat)
+  by presburger
 lemma zdvd_convert_16 [simp]:  "16 dvd int n = (16 dvd n)"
-  by (simp only: zdvd_def zdvd_int convert_to_nat)
+  by presburger
 lemma zdvd_convert_32 [simp]:  "32 dvd int n = (32 dvd n)"
-  by (simp only: zdvd_def zdvd_int convert_to_nat)
+  by presburger
 lemma zdvd_convert_64 [simp]:  "64 dvd int n = (64 dvd n)"
-  by (simp only: zdvd_def zdvd_int convert_to_nat)
+  by presburger
 
 (*************)
 
@@ -2656,7 +2662,7 @@ lemma int_power_sub_1:   "\<lbrakk>x > 0; (i::int) < 2 ^ (x - Suc 0)\<rbrakk> \<
   by (rule less_trans, auto)
 
 lemma nat_power_less_add:    "\<lbrakk>(i::nat) < 2 ^ x\<rbrakk> \<Longrightarrow> i < 2 ^ (x+k)"
-  by (rule_tac y="2^x" in less_le_trans, auto) 
+  by (rule_tac y="2^x" in less_le_trans, auto)
 lemma int_power_less_add:    "\<lbrakk>(i::int) < 2 ^ x\<rbrakk> \<Longrightarrow> i < 2 ^ (x+k)"
   by (rule_tac y="2^x" in less_le_trans, auto)
 
@@ -2683,17 +2689,17 @@ done
 
 
 (******************************************************************************)
-lemmas numsimps =    nat_power_less_le 
+lemmas numsimps =    nat_power_less_le
                      nat_power_sub_1_less nat_power_sub_1 nat_power_less_add
                      int_power_sub_1_less int_power_sub_1 int_power_less_add
-                     int_less_not_pos int_less_not_pos_pow 
+                     int_less_not_pos int_less_not_pos_pow
                      int_pos  int_nonneg
 
 declare numsimps [simp add]
 (******************************************************************************)
 
 (***********************************************************************
- * NEW LEMMAS -- MOVED FROM FiniteMap.thy 
+ * NEW LEMMAS -- MOVED FROM FiniteMap.thy
  ***********************************************************************)
 
 (** move to IsabelleExtensions ***)
@@ -2707,7 +2713,7 @@ lemma list_singleton_set:  "\<lbrakk>distinct l; l = [x] \<rbrakk> \<Longrightar
    by auto
 
 lemma singleton_list_to_set: "\<lbrakk>distinct l \<rbrakk> \<Longrightarrow> (l = [x]) = (set l ={x})"
-  apply (auto, simp add: list_eq_iff_nth_eq, 
+  apply (auto, simp add: list_eq_iff_nth_eq,
          subst conj_imp [symmetric], safe, clarsimp)
   apply (simp add: set_eq_iff, drule_tac x=x in spec, simp add: in_set_conv_nth)
   apply (simp add: distinct_card [symmetric])
@@ -2721,7 +2727,7 @@ lemma non_empty_simp:     "P \<noteq> {} = (\<exists>x. x \<in> P)"
 
 lemma finite_dom_ran:
   "\<lbrakk>finite (dom m)\<rbrakk>   \<Longrightarrow> finite (ran m)"
-  apply (simp add: dom_def ran_def)      
+  apply (simp add: dom_def ran_def)
   apply (subgoal_tac "{b. \<exists>a. m a = Some b}
                     = {the (m x) |x. \<exists>y. m x = Some y}",
          auto, rule exI, auto)
@@ -2732,35 +2738,32 @@ lemma ran_empty1:
   by (rule ext, simp add: ran_def not_Some_eq [symmetric])
 
 (***********************************************************************
- * NEW LEMMAS -- MOVED FROM SW_Map.thy 
+ * NEW LEMMAS -- MOVED FROM SW_Map.thy
  ***********************************************************************)
 
 
 lemma sorted_equals_nth_mono2:
   "sorted xs = (\<forall>j < length xs. \<forall>i < length xs - j. xs ! j \<le> xs ! (j+i))"
-  apply (auto simp add: sorted_equals_nth_mono)
-  apply (drule_tac x=i in spec, simp,
-         drule_tac x="j-i" in spec, auto)
-done
+   by (smt add.commute le_add1 le_add_diff_inverse2 less_diff_conv not_le sorted_iff_nth_mono trans_le_add2)
 
 (***********************************************************************
- * NEW LEMMAS -- MOVED FROM SW_Set.thy 
+ * NEW LEMMAS -- MOVED FROM SW_Set.thy
  ***********************************************************************)
 
 
 lemma finite_nat_seg:
-  "finite (s::'a set) \<Longrightarrow> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
+  "finite (s::'a set) \<Longrightarrow> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat).
         \<forall>(x::'a). (x \<in> s) = (\<exists>(i::nat). i < n \<and> f i = x))"
   by(auto simp add: finite_conv_nat_seg_image)
 lemma nat_seq_finite:
-  "(\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
-      \<forall>(x::'a). (x \<in> (s::'a set)) = (\<exists>(i::nat). i < n \<and> f i = x)) 
+  "(\<exists>(f::nat \<Rightarrow> 'a) (n::nat).
+      \<forall>(x::'a). (x \<in> (s::'a set)) = (\<exists>(i::nat). i < n \<and> f i = x))
    \<Longrightarrow> finite s"
   by(elim exE, rule nat_seg_image_imp_finite, auto)
 
 
 (***********************************************************************
- * NEW LEMMAS -- MOVED FROM ListExt.thy 
+ * NEW LEMMAS -- MOVED FROM ListExt.thy
  ***********************************************************************)
 
 lemma last_singleton [simp]:
@@ -2772,7 +2775,7 @@ lemma butlast_singleton [simp]:
   by simp
 
 (***********************************************************************
- * NEW LEMMAS -- MOVED FROM Sequence.thy 
+ * NEW LEMMAS -- MOVED FROM Sequence.thy
  ***********************************************************************)
 
 lemma finite_nat_set_has_max:
@@ -2784,7 +2787,7 @@ lemma finite_nat_set_has_max:
  ***********************************************************************)
 
 
-lemma nat_bin_induct: 
+lemma nat_bin_induct:
   "\<lbrakk>P 0; \<And>n. P ((n+1) div 4) \<Longrightarrow> P (Suc n)\<rbrakk> \<Longrightarrow> P n"
   by (rule nat_less_induct, case_tac n, auto)
 
@@ -2793,7 +2796,7 @@ lemma square_mono:
  by (frule mult_left_mono, simp,
      cut_tac a=i and b=j and c=j in mult_right_mono, auto)
 
-lemma div_square: 
+lemma div_square:
   "\<lbrakk>0 < j; 0 \<le> i\<rbrakk> \<Longrightarrow> ((i::int) div j) * (i div j) \<le> (i*i) div (j*j)"
    apply (subst div_le_pos, cut_tac i=1 and j=j in square_mono,
           simp_all (no_asm_simp) add: add1_zle_eq [symmetric])
@@ -2805,11 +2808,11 @@ done
 
 
 (***********************************************************************
- * NEW LEMMAS -- 
+ * NEW LEMMAS --
  ***********************************************************************)
 
 
-lemma mult_add_mono:  
+lemma mult_add_mono:
  "\<lbrakk> (i::nat) < k; j < n \<rbrakk> \<Longrightarrow> n * i + j < n * k"
   apply (simp only: Suc_le_eq [symmetric])
   apply (drule_tac k=n in mult_le_mono2, simp)
@@ -2818,14 +2821,14 @@ done
 lemma mod_mult_self5 [simp]: "(n * k + m) mod n = m mod (n::nat)"
 by (simp add: mult_ac add_ac)
 
-lemma div_mult_self5 [simp]: 
+lemma div_mult_self5 [simp]:
    "m < (n::nat) \<Longrightarrow> (n * k + m) div n = k"
 by (simp add: mult_ac add_ac)
 
 
 lemma set_eq_iff_p:  "(\<forall>i. (i \<in> A) = P i) = (A = {i. P i})"
   by (auto)
-  
+
 
 
 lemma suc_set: "{i. i>0 \<and> P (i - 1)} = Suc ` {i. P i}"
@@ -2839,30 +2842,170 @@ lemma suc_set2: "{i. i=0 \<or> P (i - 1)} = insert 0 (Suc ` {i. P i})"
 ------------------------------------------------------------------------------*)
 
 lemma (in semigroup_add) foldl_assoc:
-shows "foldl op+ (x+y) zs = x + (foldl op+ y zs)"
+shows "foldl (+) (x+y) zs = x + (foldl (+) y zs)"
 by (induct zs arbitrary: y) (simp_all add:add_assoc)
 
 lemma (in monoid_add) foldl_absorb0:
-shows "x + (foldl op+ 0 zs) = foldl op+ x zs"
+shows "x + (foldl (+) 0 zs) = foldl (+) x zs"
 by (induct zs) (simp_all add:foldl_assoc)
 
 lemma foldl_conv_concat:
-  "foldl (op @) xs xss = xs @ concat xss"
+  "foldl (@) xs xss = xs @ concat xss"
 proof (induct xss arbitrary: xs)
   case Nil show ?case by simp
 next
-  interpret monoid_add "op @" "[]" proof qed simp_all
+  interpret monoid_add "(@)" "[]" proof qed simp_all
   case Cons then show ?case by (simp add: foldl_absorb0)
 qed
 
-lemma concat_conv_foldl: "concat xss = foldl (op @) [] xss"
+lemma concat_conv_foldl: "concat xss = foldl (@) [] xss"
   by (simp add: foldl_conv_concat)
 
 lemma (in monoid_add) foldl_foldr1_lemma:
-  "foldl op + a xs = a + foldr op + xs 0"
+  "foldl (+) a xs = a + foldr (+) xs 0"
   by (induct xs arbitrary: a) (auto simp: add_assoc)
 
 (******************************************************************************)
+
+(* Taken from Hilbert_Choice 2016-1. Missing in later versions *)
+subsection \<open>Least value operator\<close>
+
+definition LeastM :: "('a \<Rightarrow> 'b::ord) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a"
+  where "LeastM m P \<equiv> (SOME x. P x \<and> (\<forall>y. P y \<longrightarrow> m x \<le> m y))"
+
+syntax
+  "_LeastM" :: "pttrn \<Rightarrow> ('a \<Rightarrow> 'b::ord) \<Rightarrow> bool \<Rightarrow> 'a"  ("LEAST _ WRT _. _" [0, 4, 10] 10)
+translations
+  "LEAST x WRT m. P" \<rightleftharpoons> "CONST LeastM m (\<lambda>x. P)"
+
+lemma LeastMI2:
+  "P x \<Longrightarrow>
+    (\<And>y. P y \<Longrightarrow> m x \<le> m y) \<Longrightarrow>
+    (\<And>x. P x \<Longrightarrow> \<forall>y. P y \<longrightarrow> m x \<le> m y \<Longrightarrow> Q x) \<Longrightarrow>
+    Q (LeastM m P)"
+  apply (simp add: LeastM_def)
+  apply (rule someI2_ex)
+   apply blast
+  apply blast
+  done
+
+lemma LeastM_equality: "P k \<Longrightarrow> (\<And>x. P x \<Longrightarrow> m k \<le> m x) \<Longrightarrow> m (LEAST x WRT m. P x) = m k"
+  for m :: "_ \<Rightarrow> 'a::order"
+  apply (rule LeastMI2)
+    apply assumption
+   apply blast
+  apply (blast intro!: order_antisym)
+  done
+
+lemma wf_linord_ex_has_least:
+  "wf r \<Longrightarrow> \<forall>x y. (x, y) \<in> r\<^sup>+ \<longleftrightarrow> (y, x) \<notin> r\<^sup>* \<Longrightarrow> P k \<Longrightarrow> \<exists>x. P x \<and> (\<forall>y. P y \<longrightarrow> (m x, m y) \<in> r\<^sup>*)"
+  apply (drule wf_trancl [THEN wf_eq_minimal [THEN iffD1]])
+  apply (drule_tac x = "m ` Collect P" in spec)
+  apply force
+  done
+
+lemma ex_has_least_nat: "P k \<Longrightarrow> \<exists>x. P x \<and> (\<forall>y. P y \<longrightarrow> m x \<le> m y)"
+  for m :: "'a \<Rightarrow> nat"
+  apply (simp only: pred_nat_trancl_eq_le [symmetric])
+  apply (rule wf_pred_nat [THEN wf_linord_ex_has_least])
+   apply (simp add: less_eq linorder_not_le pred_nat_trancl_eq_le)
+  apply assumption
+  done
+
+lemma LeastM_nat_lemma: "P k \<Longrightarrow> P (LeastM m P) \<and> (\<forall>y. P y \<longrightarrow> m (LeastM m P) \<le> m y)"
+  for m :: "'a \<Rightarrow> nat"
+  apply (simp add: LeastM_def)
+  apply (rule someI_ex)
+  apply (erule ex_has_least_nat)
+  done
+
+lemmas LeastM_natI = LeastM_nat_lemma [THEN conjunct1]
+
+lemma LeastM_nat_le: "P x \<Longrightarrow> m (LeastM m P) \<le> m x"
+  for m :: "'a \<Rightarrow> nat"
+  by (rule LeastM_nat_lemma [THEN conjunct2, THEN spec, THEN mp])
+
+
+subsection \<open>Greatest value operator\<close>
+
+definition GreatestM :: "('a \<Rightarrow> 'b::ord) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a"
+  where "GreatestM m P \<equiv> SOME x. P x \<and> (\<forall>y. P y \<longrightarrow> m y \<le> m x)"
+
+definition GreatestIE :: "('a::ord \<Rightarrow> bool) \<Rightarrow> 'a"  (binder "GREATEST " 10)
+  where "GreatestIE \<equiv> GreatestM (\<lambda>x. x)"
+
+syntax
+  "_GreatestM" :: "pttrn \<Rightarrow> ('a \<Rightarrow> 'b::ord) \<Rightarrow> bool \<Rightarrow> 'a"  ("GREATESTM _ WRT _. _" [0, 4, 10] 10)
+translations
+  "GREATESTM x WRT m. P" \<rightleftharpoons> "CONST GreatestM m (\<lambda>x. P)"
+
+lemma GreatestMI2:
+  "P x \<Longrightarrow>
+    (\<And>y. P y \<Longrightarrow> m y \<le> m x) \<Longrightarrow>
+    (\<And>x. P x \<Longrightarrow> \<forall>y. P y \<longrightarrow> m y \<le> m x \<Longrightarrow> Q x) \<Longrightarrow>
+    Q (GreatestM m P)"
+  apply (simp add: GreatestM_def)
+  apply (rule someI2_ex)
+   apply blast
+  apply blast
+  done
+
+lemma GreatestM_equality: "P k \<Longrightarrow> (\<And>x. P x \<Longrightarrow> m x \<le> m k) \<Longrightarrow> m (GREATESTM x WRT m. P x) = m k"
+  for m :: "_ \<Rightarrow> 'a::order"
+  apply (rule GreatestMI2 [where m = m])
+    apply assumption
+   apply blast
+  apply (blast intro!: order_antisym)
+  done
+
+(*
+lemma Greatest_equality: "P k \<Longrightarrow> (\<And>x. P x \<Longrightarrow> x \<le> k) \<Longrightarrow> (GREATESTM x. P x) = k"
+  for k :: "'a::order"
+  apply (simp add: GreatestIE_def)
+  using antisym by blast
+
+lemma ex_has_greatest_nat_lemma:
+  "P k \<Longrightarrow> \<forall>x. P x \<longrightarrow> (\<exists>y. P y \<and> \<not> m y \<le> m x) \<Longrightarrow> \<exists>y. P y \<and> \<not> m y < m k + n"
+  for m :: "'a \<Rightarrow> nat"
+  by (induct n) (force simp: le_Suc_eq)+
+
+lemma ex_has_greatest_nat:
+  "P k \<Longrightarrow> \<forall>y. P y \<longrightarrow> m y < b \<Longrightarrow> \<exists>x. P x \<and> (\<forall>y. P y \<longrightarrow> m y \<le> m x)"
+  for m :: "'a \<Rightarrow> nat"
+  apply (rule ccontr)
+  apply (cut_tac P = P and n = "b - m k" in ex_has_greatest_nat_lemma)
+    apply (subgoal_tac [3] "m k \<le> b")
+     apply auto
+  done
+*)
+lemma GreatestM_nat_lemma:
+  "P k \<Longrightarrow> \<forall>y. P y \<longrightarrow> m y < b \<Longrightarrow> P (GreatestM m P) \<and> (\<forall>y. P y \<longrightarrow> m y \<le> m (GreatestM m P))"
+  for m :: "'a \<Rightarrow> nat"
+  apply (simp add: GreatestM_def)
+  apply (rule someI_ex)
+  apply (erule ex_has_greatest_nat)
+  apply assumption
+  done
+
+lemmas GreatestM_natI = GreatestM_nat_lemma [THEN conjunct1]
+
+lemma GreatestM_nat_le: "P x \<Longrightarrow> \<forall>y. P y \<longrightarrow> m y < b \<Longrightarrow> m x \<le> m (GreatestM m P)"
+  for m :: "'a \<Rightarrow> nat"
+  by (blast dest: GreatestM_nat_lemma [THEN conjunct2, THEN spec, of P])
+
+
+text \<open>\<^medskip> Specialization to \<open>GREATEST\<close>.\<close>
+
+(*
+lemma GreatestI: "P k \<Longrightarrow> \<forall>y. P y \<longrightarrow> y < b \<Longrightarrow> P (GREATEST x. P x)"
+  for k :: nat
+  by (metis GreatestI_nat le_less)
+
+lemma Greatest_le: "P x \<Longrightarrow> \<forall>y. P y \<longrightarrow> y < b \<Longrightarrow> x \<le> (GREATEST x. P x)"
+  for x :: nat
+  by (metis Greatest_le_nat le_less)
+*)
+
 end-proof
 
 end-spec

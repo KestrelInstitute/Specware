@@ -1,6 +1,7 @@
 session "Specware_Examples_SpecwareOverview" = "HOL" +
   options [quick_and_dirty]
+  sessions
+    "HOL-Library"
+    "HOL-Computational_Algebra"
   theories
     DivideAndConquer_Algorithm MergeSort_M
-
-

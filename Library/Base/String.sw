@@ -101,7 +101,7 @@ op Nat.digitToString (d:Nat | d < 10) : String =
 
 % --------------------------------------------------------------------------------
 % We need to formulate a few insights in Isabelle to make the
-% subsequent proofs go through 
+% subsequent proofs go through
 proof Isa -verbatim
 lemma Nat__digitToString_singleton:
  "x<10 \<Longrightarrow> \<exists>(a::char). Nat__digitToString x = [a]"
@@ -148,10 +148,10 @@ lemma Nat__digitToString_of7 [simp]: "Nat__digitToString 7 = ''7''" by auto
 lemma Nat__digitToString_of8 [simp]: "Nat__digitToString 8 = ''8''" by auto
 lemma Nat__digitToString_of9 [simp]: "Nat__digitToString 9 = ''9''" by auto
 
-lemma Nat__digitToString_not_empty [simp]: 
+lemma Nat__digitToString_not_empty [simp]:
 "x<10 \<Longrightarrow> (Nat__digitToString x = []) = False"
   by (cut_tac x=x in Nat__digitToString_singleton, auto)
-lemma Nat__digitToString_not_sign [simp]: 
+lemma Nat__digitToString_not_sign [simp]:
 "x<10 \<Longrightarrow> (Nat__digitToString x = ''-'') = False"
   by (induct x rule: Nat__digitToString.induct, auto)
 end-proof
@@ -171,7 +171,7 @@ op Nat.natToString (x:Nat) : String =
 % --------------------------------------------------------------------------------
 proof Isa -verbatim
 
-lemma Nat__natToString_small: 
+lemma Nat__natToString_small:
 "\<lbrakk>x < 10\<rbrakk>
  \<Longrightarrow> Nat__natToString x = Nat__digitToString x"
   by simp
@@ -181,17 +181,17 @@ lemma Nat__natToString_large:
  Nat__natToString x =
  Nat__natToString (x div 10) @ Nat__digitToString (x mod 10)"
   by simp
-  
+
 lemma Nat__natToString_not_empty [simp]: "(Nat__natToString x = []) = False"
-  by simp 
+  by simp
 
 lemmas [simp del] = Nat__natToString.simps (* avoid loops in the simplifier *)
 
 lemma Nat__natToString_no_sign [simp]:
 "(Nat__natToString x = (CHR ''-'' # s)) = False"
-  apply (cut_tac f="\<lambda>x. x div 10" 
+  apply (cut_tac f="\<lambda>x. x div 10"
              and P="\<lambda>x. \<forall>s.
-                       (Nat__natToString x = CHR ''-'' # s) = False" 
+                       (Nat__natToString x = CHR ''-'' # s) = False"
              and a="x" in measure_induct, auto)
   apply (subgoal_tac "x<10 \<or> 10\<le>x", erule disjE)
   apply (auto simp add: Nat__natToString_small)
@@ -274,7 +274,7 @@ op List.show (sep:String) (l: List String) : String =
 
 proof Isa stringToNat_Obligation_the
   apply (simp add: Nat__natConvertible_def, erule exE)
-  apply (rule_tac a=x in ex1I, simp) 
+  apply (rule_tac a=x in ex1I, simp)
   apply(clarify)
   apply(simp add: String__natToString_injective)
 end-proof
@@ -282,7 +282,7 @@ end-proof
 proof Isa stringToInt_Obligation_the
   apply (simp add:Integer__intConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp)
-  apply (simp add: Integer__intToString_def split: split_if_asm)
+  apply (simp add: Integer__intToString_def split: if_splits)
   apply (cut_tac s = "s" in Nat__stringToNat_Obligation_the)
   apply (simp add: Nat__natConvertible_def, rule_tac x="nat x" in exI, simp)
   apply (erule ex1E, frule_tac x="nat x" in spec, drule_tac x="nat xa" in spec,
@@ -292,7 +292,7 @@ proof Isa stringToInt_Obligation_the
   apply (simp add: Nat__natConvertible_def, rule_tac x="nat (-x)" in exI, simp)
   apply (erule ex1E, frule_tac x="nat (-x)" in spec,
          drule_tac x="nat (-xa)" in spec)
-  apply (drule mp, simp, drule mp, clarify, 
+  apply (drule mp, simp, drule mp, clarify,
          thin_tac "Nat__natToString xb = Nat__natToString (nat (- x))",
          thin_tac "Nat__natToString (nat (- xa)) =
                    Nat__natToString (nat (- x))",
@@ -349,28 +349,28 @@ end-proof
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 
-lemma String__compare_equal_aux: 
+lemma String__compare_equal_aux:
   "\<forall>y. String__compare (x, y) = Equal \<longrightarrow> x = y"
  apply (simp add: String__compare_def)
  apply (induct_tac x)
  apply (rule allI, induct_tac y, simp_all)
  apply (rule allI, induct_tac y, simp_all)
- apply (case_tac "Char__compare (a, aa)", simp_all) 
+ apply (case_tac "Char__compare (a, aa)", simp_all)
 done
 
-lemma String__compare_equal [simp]: 
+lemma String__compare_equal [simp]:
   "\<lbrakk>String__compare (x, y) = Equal\<rbrakk> \<Longrightarrow> x = y"
  by (auto simp add: String__compare_equal_aux)
- 
-lemma String__compare_eq_simp [simp]: 
+
+lemma String__compare_eq_simp [simp]:
   "String__compare (x, x) = Equal"
  by (induct x, simp_all add: String__compare_def )
 
-lemma String__compare_equal_simp: 
+lemma String__compare_equal_simp:
   "(String__compare (x, y) = Equal) = (x = y)"
  by auto
 
-lemma String__compare_antisym_aux: 
+lemma String__compare_antisym_aux:
  "\<forall>y. String__compare (x, y) = Less \<and> String__compare (y, x) = Less \<longrightarrow> x = y"
  apply (simp add: String__compare_def)
  apply (induct_tac x)
@@ -379,27 +379,27 @@ lemma String__compare_antisym_aux:
  apply (case_tac "Char__compare (a, aa)", simp_all add: Char__compare_equal_simp)
  apply (case_tac "Char__compare (aa, a)", simp_all add: Char__compare_equal_simp)
  apply (drule Char__compare_antisym, simp_all)
-done 
+done
 
-lemma String__compare_antisym: 
+lemma String__compare_antisym:
  "\<lbrakk>String__compare (x, y) = Less; String__compare (y, x) = Less\<rbrakk> \<Longrightarrow> x = y"
  by (auto simp add: String__compare_antisym_aux)
 
-lemma String__compare_linear_aux: 
+lemma String__compare_linear_aux:
  "\<forall>y. String__compare (x, y)  \<noteq> Less \<and>  y \<noteq> x \<longrightarrow> String__compare (y, x) = Less"
  apply (simp add: String__compare_def)
  apply (induct_tac x)
  apply (rule allI, induct_tac y, simp_all)
  apply (rule allI, induct_tac y, simp_all)
- apply (case_tac "Char__compare (a, aa)", 
+ apply (case_tac "Char__compare (a, aa)",
         simp_all add: Char__compare_equal_simp Char__compare_greater2less)
 done
 
-lemma String__compare_linear: 
+lemma String__compare_linear:
  "\<lbrakk>String__compare (x, y) \<noteq> Less; y \<noteq> x\<rbrakk> \<Longrightarrow> String__compare (y, x) = Less"
  by (cut_tac x=x in String__compare_linear_aux, simp)
 
-lemma String__compare_trans_aux: 
+lemma String__compare_trans_aux:
  "\<forall>y z. String__compare (x, y) = Less \<and>  String__compare (y, z) = Less
   \<longrightarrow> String__compare (x, z) = Less"
  apply (simp add: String__compare_def del: all_simps)
@@ -408,18 +408,18 @@ lemma String__compare_trans_aux:
  apply (rule allI, induct_tac z, simp_all del: all_simps)
  apply (rule allI, induct_tac y, simp_all del: all_simps)
  apply (rule allI, induct_tac z, simp_all del: all_simps)
- apply (case_tac "Char__compare (a, aa)", 
+ apply (case_tac "Char__compare (a, aa)",
         simp_all add: Char__compare_equal_simp del: all_simps)
- apply (case_tac "Char__compare (aa, ab)", 
+ apply (case_tac "Char__compare (aa, ab)",
         simp_all add: Char__compare_equal_simp del: all_simps)
  apply (drule_tac x=lista in spec, rotate_tac -1,
         drule_tac x=listb in spec, rotate_tac -1, simp)
- apply (case_tac "Char__compare (aa, ab)", 
+ apply (case_tac "Char__compare (aa, ab)",
         simp_all add: Char__compare_equal_simp del: all_simps)
  apply (frule Char__compare_trans, simp, clarsimp)
 done
 
-lemma String__compare_trans: 
+lemma String__compare_trans:
  "\<lbrakk>String__compare (x, y) = Less; String__compare (y, z) = Less\<rbrakk>
   \<Longrightarrow> String__compare (x, z) = Less"
  by (cut_tac x=x in String__compare_trans_aux, auto)
@@ -462,7 +462,7 @@ end-proof
 proof Isa helperlemma
 theorem divmodten:
 "\<lbrakk>(x::nat) mod 10 = (y mod 10); (x div 10) = (y div 10)\<rbrakk> \<Longrightarrow> x = y"
-   by (metis semiring_div_class.mod_div_equality')
+   by (metis mod_by_0 mod_mult2_eq mult_zero_right)
 end-proof
 
 end-spec

@@ -72,10 +72,10 @@ op [a] push_aux (lst:List a, stk:Stack a): Stack a =
   | [] -> stk
   | elt::y -> push_aux(y, push(elt, stk))
 
-%% Push the elements of lst onto stk (earlier elements of lst go shallower in the stack):                  
+%% Push the elements of lst onto stk (earlier elements of lst go shallower in the stack):
 %% Identical to the version in Stacks:
 %% TODO refine this to be a no-op?  or just run the conversion?  what should this be over in the stacks as co-products spec?
-op [a] pushl (lst:List a, stk:Stack a): Stack a = 
+op [a] pushl (lst:List a, stk:Stack a): Stack a =
   case lst of
   | Nil -> stk
   | x::lst1 -> push(x, pushl(lst1,stk))
@@ -155,8 +155,8 @@ proof isa top_def_Obligation_subtype
 end-proof
 
 proof isa top_def
-  apply(rule ext)  
-  apply(case_tac stk)  
+  apply(rule ext)
+  apply(case_tac stk)
   apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__stackToList_def StacksAsLists__empty_stack_p_def)
 end-proof
 
@@ -173,7 +173,6 @@ proof isa pop_def
   apply(cut_tac f="\<lambda> x . StacksAsLists__stackToList x" and x="Stack" in Function__inverse_f_apply)
   apply(auto simp add: StacksAsLists__stackToList_bijective)
   apply(auto simp add: StacksAsLists__stackToList_def)
-  by (metis inj_on_id2 inv_f_eq)
 end-proof
 
 proof isa push_def
@@ -181,12 +180,10 @@ proof isa push_def
   apply(case_tac "x", auto)
   apply(rule StacksAsLists__stackToList_injective)
   apply(auto simp add: StacksAsLists__push_def StacksAsLists__stackToList_listToStack StacksAsLists__stackToList_def StacksAsLists__listToStack_def)
-  by (metis inj_on_id2 inv_f_eq)
 end-proof
 
 proof isa empty_stack_def
   apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__listToStack_def StacksAsLists__stackToList_def)
-  by (metis inj_on_id2 inv_f_eq)
 end-proof
 
 %% TODO Why is this obligation not being generated?  Maybe because the definition of listToStack is identical in Stacks and StacksAsLists.

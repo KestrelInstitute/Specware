@@ -9,7 +9,7 @@ import IsabelleExtensions
 
 (* "Bool" and "Bool.Bool" are parsed as the Specware built-in Boolean type. *)
 
-type Boolean = Bool  % "Boolean" is a deprecated name for Bool 
+type Boolean = Bool  % "Boolean" is a deprecated name for Bool
 
 type Prop = Bool
 
@@ -49,8 +49,8 @@ theorem bool_equal_split is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 % Isabelle pragmas
 
 proof Isa ~~~ [simp] end-proof
-proof Isa &&& [simp] end-proof
-proof Isa ||| [simp] end-proof
+proof Isa &&& -> && [simp] end-proof
+proof Isa ||| -> || [simp] end-proof
 proof Isa TRUE__def [simp] end-proof
 proof Isa FALSE [simp] end-proof
 

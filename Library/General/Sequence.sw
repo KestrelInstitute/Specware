@@ -1075,7 +1075,7 @@ lemma Seq__lists_eq_iff_concat_and_lengths_eq:
 lemma Stream__prefix_length_to_fold:
    "\<lbrakk>\<forall>i. Seq__finite_p (fun i); \<forall>n. Seq__nonEmpty_p (fun n) \<longrightarrow> n < m; k \<le> m\<rbrakk>
     \<Longrightarrow>
-     foldl op + 0 (Stream__prefix (\<lambda>i. length (Seq__list (fun i)), k))
+     foldl (+) 0 (Stream__prefix (\<lambda>i. length (Seq__list (fun i)), k))
     = length (concat (Stream__prefix (\<lambda>i. Seq__list (fun i), k)))"
   by (induct k, auto simp add: Stream__prefix_base Suc_eq_plus1
                                Stream__prefix_step)
@@ -1143,7 +1143,7 @@ lemma Seq__seq_1_fin_dom [simp]:
 lemma Seq__seq_1_fin_elements [simp]:
   "i \<in> dom (Seq__seq_1 (Seq__fin l))  \<Longrightarrow> 
      Seq__seq_1 (Seq__fin l) i = Some (l ! i)"
- by (simp add: Seq__seq_1_fin_simp dom_def split: split_if_asm)
+ by (simp add: Seq__seq_1_fin_simp dom_def split: if_splits)
 
 
 lemma Seq__seq_1_inf_simp:
@@ -1609,7 +1609,7 @@ end-proof
 proof Isa flatten_Obligation_subtype1
   apply (simp add: Seq__SegSeq__subtype_pred_def 
                    List__e_at_at_def list_1_Isa_nth
-         split: split_if_asm)
+         split: if_splits)
   apply (auto simp add: list_all_length nth_butlast)
 end-proof
 
@@ -1622,7 +1622,7 @@ end-proof
 proof Isa flatten_Obligation_subtype3
  apply (simp add: Seq__SegSeq__subtype_pred_def 
                   List__e_at_at_def list_1_Isa_nth
-        split: split_if_asm)
+        split: if_splits)
  apply (auto simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def 
                        Stream__map_def Seq__empty_def setToPred_def)
  apply (erule notE, rule finite_subset, auto)
@@ -1665,7 +1665,7 @@ proof Isa unflatten_Obligation_the
   apply (case_tac x, auto)
   apply (simp_all add: Seq__segmentationOf_def Seq__forall_p_def 
                        list_all_length
-                split: split_if_asm,
+                split: if_splits,
          simp_all add: Seq__segmentation_p_def Seq__SegSeq__subtype_pred_def)
   (* Case 1: finite list *) 
   apply (simp add: list_all_length Seq__lists_eq_iff_concat_and_lengths_eq)
@@ -1693,7 +1693,7 @@ proof Isa unflatten_Obligation_the
   apply (drule_tac x="x + length (concat (map Seq__list (butlast x1)))"
                    in fun_cong, simp)
   (* Case 3 *)
-  apply (case_tac x, simp_all split: split_if_asm)
+  apply (case_tac x, simp_all split: if_splits)
   apply (cut_tac l="Stream__flattenF (Stream__map Seq__list x2)" 
              and lens = "\<lambda>i. Seq__length (x2 i)"
          in Stream__unflattenF_Obligation_the, simp)
@@ -1721,7 +1721,7 @@ proof Isa unflatten_Obligation_the
          drule_tac x=x in spec, drule_tac x=x in spec,
          case_tac "x2 x", simp_all, case_tac "x2a x", simp_all )
   (* Case 4 is as case 3 execpt for the fold issue *)
-  apply (case_tac x, auto split: split_if_asm)
+  apply (case_tac x, auto split: if_splits)
   apply (cut_tac s="Stream__flattenI (Stream__map Seq__list x2)" 
              and lens = "\<lambda>i. Seq__length (x2 i)"
          in Stream__unflattenI_Obligation_the, simp)
@@ -1793,13 +1793,13 @@ proof Isa unflattenU_Obligation_subtype4
                        (map Seq__fin (List__unflatten (x1, n)))" in exI,
          auto simp add:  Seq__forall_p_def list_all_iff)
   apply (simp add: Seq__SegSeq__subtype_pred_def List__unflatten_length
-                   zdvd_int List__e_at_at_def list_1_Isa_nth)
-  apply (frule_tac List__unflatten_length_result, simp add: zdvd_int,
-         clarsimp simp add: list_eq_iff_nth_eq List__unflatten_length  zdvd_int
+                   List__e_at_at_def list_1_Isa_nth)
+  apply (frule_tac List__unflatten_length_result, simp,
+         clarsimp simp add: list_eq_iff_nth_eq List__unflatten_length
                    list_all_iff)
   apply (rule_tac t = "Seq__list \<circ> Seq__fin" and s=id in subst,
          simp add: fun_eq_iff,
-         rule sym, simp add: zdvd_int List__unflatten_concat)
+         rule sym, simp add: List__unflatten_concat)
 end-proof
 
 proof Isa unflattenU_Obligation_subtype5
@@ -2039,7 +2039,7 @@ proof Isa splitAt_Obligation_subtype0
 end-proof
 
 proof Isa splitAtLeftmost_Obligation_subtype
- apply (simp add: Seq__leftmostPositionSuchThat_def Let_def split: split_if_asm)
+ apply (simp add: Seq__leftmostPositionSuchThat_def Let_def split: if_splits)
  apply (case_tac "Seq__positionsSuchThat (s, p)", simp_all add: Seq__empty_def) 
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
@@ -2050,7 +2050,7 @@ proof Isa splitAtLeftmost_Obligation_subtype
 end-proof
 
 proof Isa splitAtRightmost_Obligation_subtype
- apply (simp add: Seq__rightmostPositionSuchThat_def Let_def split: split_if_asm)
+ apply (simp add: Seq__rightmostPositionSuchThat_def Let_def split: if_splits)
  apply (case_tac "Seq__positionsSuchThat (s, p)", simp_all add: Seq__empty_def) 
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)

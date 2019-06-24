@@ -88,7 +88,7 @@ proof Isa -verbatim
 lemma Function__inverse__stp_alt:
   "\<lbrakk>inj_on f (Collect A); y \<in> f`(Collect A)\<rbrakk>
   \<Longrightarrow> Function__inverse__stp A f y = inv_on (Collect A) f y"
-  by (auto simp add: Function__inverse__stp_def, 
+  by (auto simp add: Function__inverse__stp_def,
       rule the_equality, auto simp add: inj_on_def)
 
 lemma Function__inverse__stp_apply [simp]:
@@ -107,7 +107,7 @@ lemma Function__inverse__stp_bijective:
    \<Longrightarrow>
    Function__bijective_p__stp (B, A) (Function__inverse__stp A f)"
 proof -
- def fi \<equiv> "Function__inverse__stp A f"
+ define fi where "fi = Function__inverse__stp A f"
  assume "defined_on f (Collect A) (Collect B)"
  assume "Function__bijective_p__stp (A, B) f"
  hence "inj_on f (Collect A)" and "surj_on f (Collect A) (Collect B)" by (auto simp add: bij_ON_def)
@@ -140,7 +140,7 @@ proof -
  proof (auto simp add: surj_on_def)
   fix x
   assume "A x"
-  def y \<equiv> "f x"
+  define y where "y = f x"
   with `A x` `defined_on f (Collect A) (Collect B)` have "y \<in> (Collect B)"
    by (auto simp add: defined_on_def)
   have "x = fi y"
@@ -159,23 +159,23 @@ proof -
 qed
 
 lemma Function__inverse__stp_eq:
-  "\<lbrakk>\<exists>!x. P x \<and> f x = y; g = Function__inverse__stp P f\<rbrakk> 
+  "\<lbrakk>\<exists>!x. P x \<and> f x = y; g = Function__inverse__stp P f\<rbrakk>
     \<Longrightarrow> P (g y) \<and> f (g y) = y "
   by (simp add: Function__inverse__stp_def, rule the1I2, simp_all)
 
 
 lemma Function__inverse__stp_eq_props:
-  "\<lbrakk>bij_ON f (Collect P) (Collect Q); Function__inverse__stp P f = g; Q y\<rbrakk> 
-     \<Longrightarrow> P (g y) \<and> f (g y) = y "  
+  "\<lbrakk>bij_ON f (Collect P) (Collect Q); Function__inverse__stp P f = g; Q y\<rbrakk>
+     \<Longrightarrow> P (g y) \<and> f (g y) = y "
   apply (cut_tac f=f and g=g and P=P and y=y in Function__inverse__stp_eq)
   apply(auto simp add:
           bij_ON_def surj_on_def Ball_def Bex_def inj_on_def)
 done
 
 lemma Function__inverse__stp_eq_props_true:
-  "\<lbrakk>bij_ON f (Collect P) (Collect TRUE); Function__inverse__stp P f = g\<rbrakk> 
+  "\<lbrakk>bij_ON f (Collect P) (Collect TRUE); Function__inverse__stp P f = g\<rbrakk>
      \<Longrightarrow> P (g y) \<and> f (g y) = y "
-by (metis Bool__TRUE__def Function__inverse__stp_eq_props)  
+by (metis Bool__TRUE__def Function__inverse__stp_eq_props)
 
 
 (* The following Isabelle lemma enables the use of SOME to define inverse, which
@@ -379,18 +379,18 @@ proof Isa ThyMorphism
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 
-(************************************************************ 
+(************************************************************
     this is similar to  Function__fxy_implies_inverse__stp
     but drops the superfluous  assumption Fun_PD P__a f
  ** The proof is the same as before
 ************************************************************)
-    
-theorem Function__fxy_implies_inverse__stp2: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
-    Fun_P(P__a, P__b) f; 
-    P__a x; 
-    P__b y; 
-    f x = y\<rbrakk> \<Longrightarrow> 
+
+theorem Function__fxy_implies_inverse__stp2:
+  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f;
+    Fun_P(P__a, P__b) f;
+    P__a x;
+    P__b y;
+    f x = y\<rbrakk> \<Longrightarrow>
    x = Function__inverse__stp P__a f y"
   proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"

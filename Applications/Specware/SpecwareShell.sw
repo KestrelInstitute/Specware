@@ -15,7 +15,7 @@ import WizardCommands
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext) 
+op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext)
  : Result (TypedValues * CommandContext) =
  case (cmd, args) of
   (*
@@ -40,27 +40,27 @@ op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext)
 
    | "help"                      -> help  ()
    | "path  "                    -> (cl-user::swpath argstr))
-   | "p"                         -> (cl-user::sw     argstr) 
-   | "proc "                     -> (cl-user::sw     argstr) 
-   | "pwd"                       -> (princ (Specware::current-directory)) 
-   | "reproc"                    -> (let ((cl-user::*force-reprocess-of-unit* t)) (cl-user::sw     argstr)) 
-   | "rp"                        -> (let ((cl-user::*force-reprocess-of-unit* t)) (cl-user::sw     argstr)) 
-   | "show  "                    -> (cl-user::show     argstr) 
-   | "showx "                    -> (cl-user::showx    argstr) 
-   | "showdeps"                  -> (cl-user::showdeps argstr) 
-   | "showimports"               -> (cl-user::showimports argstr) 
-   | "showdata"                  -> (cl-user::showdata argstr) 
-   | "showdatav"                 -> (cl-user::showdatav argstr) 
-   | "checkspec"                 -> (cl-user::checkspec argstr) 
+   | "p"                         -> (cl-user::sw     argstr)
+   | "proc "                     -> (cl-user::sw     argstr)
+   | "pwd"                       -> (princ (Specware::current-directory))
+   | "reproc"                    -> (let ((cl-user::*force-reprocess-of-unit* t)) (cl-user::sw     argstr))
+   | "rp"                        -> (let ((cl-user::*force-reprocess-of-unit* t)) (cl-user::sw     argstr))
+   | "show  "                    -> (cl-user::show     argstr)
+   | "showx "                    -> (cl-user::showx    argstr)
+   | "showdeps"                  -> (cl-user::showdeps argstr)
+   | "showimports"               -> (cl-user::showimports argstr)
+   | "showdata"                  -> (cl-user::showdata argstr)
+   | "showdatav"                 -> (cl-user::showdatav argstr)
+   | "checkspec"                 -> (cl-user::checkspec argstr)
 
    | "gen-acl2"                  -> gen_acl2 ()
 
    | "gen-coq"                   -> gen_coq ()
 
-   | "gen-c"                     -> (cl-user::swc    argstr) 
-   | "gen-c-thin"                -> (cl-user::gen-c-thin    argstr) 
+   | "gen-c"                     -> (cl-user::swc    argstr)
+   | "gen-c-thin"                -> (cl-user::gen-c-thin    argstr)
 
-   | "gen-java"                  -> (cl-user::swj    argstr) 
+   | "gen-java"                  -> (cl-user::swj    argstr)
 
    | "gen-haskell"               -> gen_haskell     ()
    | "gen-h"                     -> gen_haskell     ()
@@ -78,7 +78,7 @@ op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext)
    | "oblig"                     -> obligs ()
    | "obligations"               -> obligs ()
    | "obligs"                    -> obligs ()
-  
+
    | "gen-obligations"           -> gen-obligs ()
    | "gen-oblig"                 -> gen-obligs ()
    | "gen-obligs"                -> gen-obligs ()
@@ -90,16 +90,16 @@ op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext)
    | "pc"                        -> (cl-user::swpc argstr)
    | "proofcheck"                -> (cl-user::swpc argstr)
 
-   | "prove"                     -> (cl-user::sw (concatenate 'string "prove " argstr)) 
+   | "prove"                     -> (cl-user::sw (concatenate 'string "prove " argstr))
    | "prwb"                      -> (if argstr (cl-user::swprb argstr) (cl-user::swprb)))
 
    | "punits"                    -> (cl-user::swpf   argstr))
    | "lpunits"                   -> (cl-user::lswpf  argstr)) ; No local version yet
 
-   | "transform"                 -> transform () 
+   | "transform"                 -> transform ()
 
-   | "trace-eval"                -> (setq MSInterpreter::traceEval? t)   (format t "Tracing of eval turned on.")        
-   | "untrace-eval"              -> (setq MSInterpreter::traceEval? nil) (format t "Tracing of eval turned off.")       
+   | "trace-eval"                -> (setq MSInterpreter::traceEval? t)   (format t "Tracing of eval turned on.")
+   | "untrace-eval"              -> (setq MSInterpreter::traceEval? nil) (format t "Tracing of eval turned off.")
 
    | "uses"                      -> uses ()
 
@@ -148,7 +148,7 @@ op dispatch (cmd : String, args : TypedValues, ctxt : CommandContext)
    *)
    | _ ->
      NotYetImplemented
-     
+
 
 op oldProcessSpecwareShellCommand (cmd : String, args_str : String) : TypedValues % implemented in handwritten lisp code
 
@@ -160,7 +160,7 @@ op processSpecwareShellCommand (cmd : String, args_str : String) : TypedValues =
  case parseCommandArgs args_str of
    | Good args ->
      (case dispatch (cmd, args, old_ctxt) of
-        | Good (typed_values, new_ctxt) -> 
+        | Good (typed_values, new_ctxt) ->
           let _ = setCommandContext new_ctxt in
           typed_values
 
@@ -172,8 +172,8 @@ op processSpecwareShellCommand (cmd : String, args_str : String) : TypedValues =
           oldProcessSpecwareShellCommand (cmd, args_str) )
 
    | Error msg ->
-     let _ = writeLine ("could not parse args, reverting to old shell processor: " ^ msg) in
-     oldProcessSpecwareShellCommand (cmd, args_str) 
+     % let _ = writeLine ("could not parse args, reverting to old shell processor: " ^ msg) in
+     oldProcessSpecwareShellCommand (cmd, args_str)
 
 #translate lisp
 -verbatim
@@ -208,4 +208,3 @@ op processSpecwareShellCommand (cmd : String, args_str : String) : TypedValues =
 
 
 end-spec
-

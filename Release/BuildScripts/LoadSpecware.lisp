@@ -63,12 +63,11 @@
             (setq sb-ext:*muffled-warnings* 'sb-int:package-at-variance)
             (setq sb-ext::*compile-print* nil)
             (declaim (optimize (sb-ext:inhibit-warnings 3)))
-            (setq sb-fasl:*fasl-file-type* "sfsl")                      ; Default is "fasl" which conflicts with allegro
             (setq sb-debug:*debug-beginner-help-p* nil)
 
             ;; Preload for efficiency and flexibility
             (eval-when (:compile-toplevel :load-toplevel :execute)
-              (let ((sb-fasl:*fasl-file-type* "fasl"))
+              (progn
                 (require :sb-bsd-sockets)
                 (require :sb-introspect)
                 (require :sb-posix)
@@ -78,6 +77,7 @@
                 (require :sb-grovel)
                 ))
 
+            (setq sb-fasl:*fasl-file-type* "sfsl")                      ; Default is "fasl" which conflicts with allegro
             (setq sb-debug:*debug-beginner-help-p* nil)
             ;; Temporary because of race condition bug with slime
             ;; (setq *features* (remove :sb-thread *features*))

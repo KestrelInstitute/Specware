@@ -8,15 +8,15 @@ refine def divides (x:Int, y:Int) : Bool =
   if x = 0 then y = 0  else y modF x = 0
 
 refine def divR (i:Int, j:Int0): Int =
-  if     2 * abs(i modF j) < abs j 
+  if     2 * abs(i modF j) < abs j
      || (2 * abs(i modF j) = abs j && 2 divides (i divF j))
     then i divF j
     else (i divF j) + 1
 
-refine def divE (i:Int, j:Int0): Int = 
+refine def divE (i:Int, j:Int0): Int =
   (i divF abs j) * sign j
 
-refine def modE (i:Int, j:Int0): Int = 
+refine def modE (i:Int, j:Int0): Int =
   i modF abs j
 
 refine def divT (i:Int, j:Int0): Int =
@@ -35,7 +35,7 @@ proof isa Integer__divides__1__obligation_refine_def
 end-proof
 
 proof isa Integer__divR__1__obligation_refine_def
-  apply (simp only: Integer__divR__1_def transfer_nat_int_numerals(3) 
+  apply (simp only: Integer__divR__1_def
                     zabs_def nat_mult_distrib [symmetric] nat_less_eq_zless)
   apply (auto simp add: divR_def)
 end-proof

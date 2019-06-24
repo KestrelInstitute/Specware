@@ -7,7 +7,7 @@ type Predicate a = a -> Bool
 %% Lift negation to predicates:
 op [a] ~~ (p:Predicate a) : Predicate a = fn x:a -> ~ (p x)
 
-proof Isa Thy_Morphism Set 
+proof Isa Thy_Morphism
   Pred.~~ -> -
 end-proof
 

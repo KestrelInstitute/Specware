@@ -15,7 +15,7 @@ theorem Bits_prop is    fa (d:Nat, bs:Bits) d in? (map toNat2 bs) => d < 2
 op toNat (bs:Bits1) : Nat = fromBigEndian (map toNat2 bs, 2)
 proof Isa -> toNat end-proof
 
-op bits (n:Nat, len:PosNat | n < 2 *** len) : Bits1 
+op bits (n:Nat, len:PosNat | n < 2 *** len) : Bits1
   = map fromNat2 (toBigEndian (n, 2, len))
 proof Isa -> toBits end-proof
 
@@ -24,7 +24,7 @@ theorem toNat_bound is  fa (bs:Bits1) toNat bs < 2 *** (length bs)
 
 proof Isa -verbatim
 (* This one mentions ^ rather than *** and will fire more, since *** now opens up to ^.*)
-theorem Bits__toNat_bound2 [simp]: 
+theorem Bits__toNat_bound2 [simp]:
   "\<lbrakk>bs \<noteq> []\<rbrakk> \<Longrightarrow> toNat bs < 2 ^ length bs"
   apply(insert Bits__toNat_bound)
   apply(auto)
@@ -78,27 +78,27 @@ op zeroExtend (bs:Bits, n:Nat | n >= length bs) : Bits =
 % we introduce different types with explicit sizes in their names):
 
 type Nibble = (Bits | (fn bs:Bits -> ofLength? 4 bs))
-proof Isa -typedef 
+proof Isa -typedef
    by (rule_tac x="replicate 4 B0" in exI, simp)
 end-proof
 
 type Byte = (Bits | (fn bs:Bits -> ofLength? 8 bs))
-proof Isa -typedef 
+proof Isa -typedef
   by (rule_tac x="replicate 8 B0" in exI, simp)
 end-proof
 
 type Word16 = (Bits | (fn bs:Bits -> ofLength? 16 bs))
-proof Isa -typedef 
+proof Isa -typedef
   by (rule_tac x="replicate 16 B0" in exI, simp)
 end-proof
 
 type Word32 = (Bits | (fn bs:Bits -> ofLength? 32 bs))
-proof Isa -typedef 
+proof Isa -typedef
   by (rule_tac x="replicate 32 B0" in exI, simp)
 end-proof
 
 type Word64 = (Bits | (fn bs:Bits -> ofLength? 64 bs))
-proof Isa -typedef 
+proof Isa -typedef
   by (rule_tac x="replicate 64 B0" in exI, simp)
 end-proof
 
@@ -122,7 +122,7 @@ op toBytes   (bs:Bits |  8 divides length bs) : Bytes   = unflatten (bs,  8)
 op toWord16s (bs:Bits | 16 divides length bs) : Word16s = unflatten (bs, 16)
 op toWord32s (bs:Bits | 32 divides length bs) : Word32s = unflatten (bs, 32)
 op toWord64s (bs:Bits | 64 divides length bs) : Word64s = unflatten (bs, 64)
-  
+
 
 
 
@@ -162,25 +162,25 @@ op minWord32s (n:Nat) : Word32s1 = map word32 (toMinBigEndian (n, 2***32))
 op minWord64s (n:Nat) : Word64s1 = map word64 (toMinBigEndian (n, 2***64))
 
 (* Note: I translate *** into Isabelle ^, but this gives polymorphic proof
-   obligations. For now I must change "2 ^ 4 > 2" into "2 ^ 4 > (2::nat)" 
-   by hand *) 
+   obligations. For now I must change "2 ^ 4 > 2" into "2 ^ 4 > (2::nat)"
+   by hand *)
 
 % ------------------------------------------------------------------------------
 % ---------- Part 2: Theorems about properties of operations -------------------
 % ------------------------------------------------------------------------------
 
 % --------------------------------------------------
-theorem toNat_zero is   
+theorem toNat_zero is
   fa (bs:Bits1) (fa (b:Bit) b in? bs => b = B0)  = (toNat bs = 0)
 theorem toNat_base is   fa (b:Bit) toNat [b] = toNat2 b
 
 theorem toNat_induct is
   fa (b:Bit, bs:Bits1) toNat (b |> bs) = (toNat2 b * 2***(length bs)) + toNat bs
 
-theorem inverse_toNat_bits is  
+theorem inverse_toNat_bits is
   fa (n:Nat, len:PosNat) n < 2 *** len => toNat (bits (n, len)) = n
 
-theorem inverse_bits_toNat is  
+theorem inverse_bits_toNat is
    fa (bs:Bits1)  bits (toNat bs, length bs) = bs
 
 theorem toNat_injective is
@@ -188,7 +188,7 @@ theorem toNat_injective is
        (toNat bs1 = toNat bs2) = (bs1 = bs2)
 
 theorem toNat_surjective is
-  fa  (n:Nat, len:PosNat) ex (bs:Bits1) n < 2***len => 
+  fa  (n:Nat, len:PosNat) ex (bs:Bits1) n < 2***len =>
      length bs = len && n = toNat bs
 
 theorem bits_injective is
@@ -202,37 +202,37 @@ theorem bits_surjective is
 
 theorem PLUS_length is
   fa (bs1:Bits1, bs2:Bits1)  length bs1 = length bs2 =>
-     length (bs1 PLUS bs2) = length bs1 
+     length (bs1 PLUS bs2) = length bs1
 
 % ------------------------------------------------------------
 theorem not_length is
-  fa (bs:Bits) length (not bs) = length bs 
+  fa (bs:Bits) length (not bs) = length bs
 
 theorem and_length is
   fa (bs1:Bits, bs2:Bits)  length bs1 = length bs2 =>
-     length (bs1 and bs2) = length bs1 
+     length (bs1 and bs2) = length bs1
 
 theorem ior_length is
    fa (bs1:Bits, bs2:Bits)  length bs1 = length bs2 =>
-      length (bs1 ior bs2) = length bs1 
+      length (bs1 ior bs2) = length bs1
 
 theorem xor_length is
   fa (bs1:Bits, bs2:Bits)  length bs1 = length bs2 =>
-     length (bs1 xor bs2) = length bs1 
+     length (bs1 xor bs2) = length bs1
 
 theorem nand_length is
   fa (bs1:Bits, bs2:Bits)  length bs1 = length bs2 =>
-     length (bs1 nand bs2) = length bs1 
+     length (bs1 nand bs2) = length bs1
 
 theorem nor_length is
   fa (bs1:Bits, bs2:Bits)  length bs1 = length bs2 =>
-     length (bs1 nor bs2) = length bs1 
+     length (bs1 nor bs2) = length bs1
 
 theorem xor_cancel is
   fa (bs1:Bits, bs2:Bits)  length bs1 = length bs2 =>
     bs1 xor bs2 xor bs2 = bs1
 
-theorem toNat_complement_sum is  
+theorem toNat_complement_sum is
   fa (bs:Bits1) toNat bs + toNat (not bs) = 2 *** (length bs) - 1
 % ------------------------------------------------------------
 
@@ -287,7 +287,7 @@ theorem byte_surjective is
   fa (bs:Byte) ex(i:Nat) i < 256 && bs = byte i
 
 theorem byte_PLUS_simp is
-  fa (i:Nat, j:Nat) i < 256 => j < 256 => 
+  fa (i:Nat, j:Nat) i < 256 => j < 256 =>
         byte i PLUS byte j = byte ((i + j) mod 256)
 
 theorem byte_PLUS_simp2 is
@@ -308,9 +308,9 @@ theorem byte_PLUS_simp2 is
 % ------------------------------------------------------------------------------
 % ---------- Part 5: The proofs ------------------------------------------------
 % ------------------------------------------------------------------------------
-% Note: for the time being we place Isabelle lemmas that are needed for a proof 
+% Note: for the time being we place Isabelle lemmas that are needed for a proof
 %       and cannot be expressed in SpecWare as "verbatim" lemmas into the
-%       preceeding proofs 
+%       preceeding proofs
 % ------------------------------------------------------------------------------
 
 
@@ -318,7 +318,7 @@ theorem byte_PLUS_simp2 is
 proof Isa Bits_prop [simp]
   by (auto simp add: member_def image_iff)
 end-proof
-  
+
 
 proof Isa toNat_bound [simp]
  by (cut_tac base=2 and digits="map toNat2 bs" in Integer__fromBigEndian_bound,
@@ -330,8 +330,8 @@ proof Isa toNat_zero
 
 (******************************************************************************)
 (* We need an Isabelle-specific version as well *)
-lemma Bits__toNat_zero1: 
-  "\<lbrakk>bs\<noteq>[]\<rbrakk> 
+lemma Bits__toNat_zero1:
+  "\<lbrakk>bs\<noteq>[]\<rbrakk>
      \<Longrightarrow> (\<forall>x\<in>set bs. x = B0) =  (toNat bs = 0)"
   apply (simp add: toNat_def Integer__fromBigEndian_zero  [symmetric])
 (******************************************************************************)
@@ -344,18 +344,18 @@ proof Isa toNat_base [simp]
 end-proof
 
 proof Isa toNat_induct [simp]
- by (cut_tac a="toNat2 b" and digits = "map toNat2 bs" and base=2 
-     in Integer__fromBigEndian_induct, 
+ by (cut_tac a="toNat2 b" and digits = "map toNat2 bs" and base=2
+     in Integer__fromBigEndian_induct,
      auto simp add: toNat_def)
 end-proof
 
 
-proof Isa bits_Obligation_subtype0  
+proof Isa bits_Obligation_subtype0
   by (cut_tac Integer__toBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
-proof Isa bits_Obligation_subtype1 
-  by (cut_tac Integer__toBigEndian_length, auto) 
+proof Isa bits_Obligation_subtype1
+  by (cut_tac Integer__toBigEndian_length, auto)
 end-proof
 
 proof Isa bits_length [simp]
@@ -382,13 +382,13 @@ end-proof
 
 
 proof Isa toNat_injective [simp]
- by (cut_tac ?digits1.0="map toNat2 bs1" and ?digits2.0="map toNat2 bs2" 
-     and base=2   in Integer__fromBigEndian_injective, 
+ by (cut_tac ?digits1.0="map toNat2 bs1" and ?digits2.0="map toNat2 bs2"
+     and base=2   in Integer__fromBigEndian_injective,
      auto simp add: toNat_def)
 end-proof
 
 proof Isa toNat_surjective
-  by (rule_tac x="toBits(n mod 2 ^ len,len)" in exI, 
+  by (rule_tac x="toBits(n mod 2 ^ len,len)" in exI,
       simp add: length_greater_0_iff)
 end-proof
 
@@ -397,10 +397,10 @@ proof Isa bits_surjective
 end-proof
 
 proof Isa bits_injective [simp]
- apply (cut_tac n=n and m=m and base=2 in Integer__toBigEndian_injective, 
+ apply (cut_tac n=n and m=m and base=2 in Integer__toBigEndian_injective,
         auto simp add: toBits_def)
- apply (drule map_inj_on, auto) 
- apply (rule_tac B ="{x. x<2}" in subset_inj_on, 
+ apply (drule map_inj_on, auto)
+ apply (rule_tac B ="{x. x<2}" in subset_inj_on,
         auto simp add: Integer__toBigEndian_subset)
 end-proof
 
@@ -412,7 +412,7 @@ end-proof
 proof Isa PLUS_length [simp]
  by (simp add: Bits__PLUS_def Let_def)
 end-proof
-  
+
 proof Isa not_length [simp]
   by (simp add: not_bs_def)
 end-proof
@@ -446,8 +446,7 @@ proof Isa toNat_complement_sum_Obligation_subtype
 end-proof
 
 proof Isa toNat_complement_sum
- apply (simp only: transfer_int_nat_numerals(2), subst zdiff_int,
-        simp add: zero_less_power, simp del: of_nat_add)
+ apply (simp)
  apply (induct bs, auto simp add: not_bs_def )
  apply (case_tac bs, auto)
  apply (case_tac a, auto simp add: Bit__not.simps)
@@ -456,7 +455,7 @@ end-proof
 
 % ------------------------------------------------------------------------------
 
-proof Isa Nibble_length [simp] 
+proof Isa Nibble_length [simp]
   by (rule Abs_Bits__Nibble_induct, simp add: Abs_Bits__Nibble_inverse )
 
 (******************************************************************************)
@@ -468,7 +467,7 @@ declare Abs_Bits__Nibble_inverse [simp add]
 lemma Rep_Bits__Nibble_simp [simp]:
   "\<lbrakk>length y = 4\<rbrakk> \<Longrightarrow>  (Rep_Bits__Nibble x = y) = (x = Abs_Bits__Nibble y)"
 apply (subst Abs_Bits__Nibble_inject [symmetric],
-      simp_all add: Rep_Bits__Nibble Rep_Bits__Nibble_inverse)
+      simp_all)
 (******************************************************************************)
 end-proof
 
@@ -500,7 +499,7 @@ declare Abs_Bits__Word16_inverse [simp add]
 lemma Rep_Bits__Word16_simp [simp]:
   "\<lbrakk>length y = 16\<rbrakk> \<Longrightarrow>  (Rep_Bits__Word16 x = y) = (x = Abs_Bits__Word16 y)"
 apply (subst Abs_Bits__Word16_inject [symmetric],
-      simp_all add: Rep_Bits__Word16 Rep_Bits__Word16_inverse)
+      simp_all)
 (******************************************************************************)
 end-proof
 
@@ -516,7 +515,7 @@ declare Abs_Bits__Word32_inverse [simp add]
 lemma Rep_Bits__Word32_simp [simp]:
   "\<lbrakk>length y = 32\<rbrakk> \<Longrightarrow>  (Rep_Bits__Word32 x = y) = (x = Abs_Bits__Word32 y)"
 apply (subst Abs_Bits__Word32_inject [symmetric],
-      simp_all add: Rep_Bits__Word32 Rep_Bits__Word32_inverse)
+      simp_all)
 (******************************************************************************)
 end-proof
 
@@ -532,11 +531,11 @@ declare Abs_Bits__Word64_inverse [simp add]
 lemma Rep_Bits__Word64_simp [simp]:
   "\<lbrakk>length y = 64\<rbrakk> \<Longrightarrow>  (Rep_Bits__Word64 x = y) = (x = Abs_Bits__Word64 y)"
 apply (subst Abs_Bits__Word64_inject [symmetric],
-      simp_all add: Rep_Bits__Word64 Rep_Bits__Word64_inverse)
+      simp_all)
 (******************************************************************************)
 end-proof
 
-proof Isa Nibble_nonempty [simp] 
+proof Isa Nibble_nonempty [simp]
   by (simp add: length_greater_0_iff)
 end-proof
 
@@ -571,7 +570,7 @@ proof Isa byte_surjective
 end-proof
 
 proof Isa byte_PLUS_simp
-  by (simp add: Bits__PLUS_def Bits__byte_def 
+  by (simp add: Bits__PLUS_def Bits__byte_def
                 Abs_Bits__Byte_inverse)
 end-proof
 
@@ -604,7 +603,7 @@ end-proof
 proof Isa minBits_Obligation_subtype
    by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
-          
+
 proof Isa minBits_Obligation_subtype0
    by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
@@ -712,13 +711,13 @@ theorem Bits__inverse_bits_toNat2 [simp]: (** this form is more useful *)
   "\<lbrakk>0 < len; length bs = len\<rbrakk> \<Longrightarrow> toBits(toNat bs, len) = bs"
 by auto
 
-theorem Bits__toNat_inject_rule: 
+theorem Bits__toNat_inject_rule:
   "\<lbrakk>toNat bs1 = toNat bs2; length bs1 = length bs2; 0 < length bs1\<rbrakk>
    \<Longrightarrow>  bs1 = bs2"
  by (erule rev_mp, subst Bits__toNat_injective, auto)
 
-lemma Bits__inverse_toNat_byte [simp]: 
-  "\<lbrakk>n < 2 ^ 8\<rbrakk> 
+lemma Bits__inverse_toNat_byte [simp]:
+  "\<lbrakk>n < 2 ^ 8\<rbrakk>
    \<Longrightarrow> toNat (Rep_Bits__Byte (Bits__byte n)) = n"
  by (simp add: Bits__byte_def)
 (******************************************************************************)
@@ -734,11 +733,11 @@ lemma Bits__nonempty_eqlength:
   by (simp only: length_greater_0_iff)
 
 lemma Bits__nonempty_le_length:
-  "\<lbrakk>bs1 \<noteq> []; length bs2 = length bs1 + k\<rbrakk>  \<Longrightarrow> bs2 \<noteq> []" 
+  "\<lbrakk>bs1 \<noteq> []; length bs2 = length bs1 + k\<rbrakk>  \<Longrightarrow> bs2 \<noteq> []"
   by (simp only: length_greater_0_iff)
 
 lemma Bits__nonempty_less_length:
-  "\<lbrakk>bs1 \<noteq> []; length bs1 < length bs2\<rbrakk>  \<Longrightarrow> bs2 \<noteq> []" 
+  "\<lbrakk>bs1 \<noteq> []; length bs1 < length bs2\<rbrakk>  \<Longrightarrow> bs2 \<noteq> []"
   by (simp only: length_greater_0_iff)
 
 lemma Bits__toNat_small_hd:
@@ -751,7 +750,7 @@ done
 
 lemma Bits__toNat_hd_0:
   "\<lbrakk>len > 0; toNat bs < 2 ^ (len - 1); length bs = len\<rbrakk>  \<Longrightarrow> hd bs = B0"
-  by (cases bs, auto, case_tac "list=[]", auto, case_tac a, auto) 
+  by (cases bs, auto, case_tac "list=[]", auto, case_tac a, auto)
 
 lemma Bits__toNat_hd_0a:
   "\<lbrakk>bs\<noteq>[]; toNat bs < 2 ^ (length bs - 1)\<rbrakk>  \<Longrightarrow> hd bs = B0"
@@ -760,28 +759,28 @@ lemma Bits__toNat_hd_0a:
 lemma Bits__toNat_hd_1:
   "\<lbrakk>len > 0;  2 ^ (len - 1) \<le> toNat bs; length bs = len\<rbrakk> \<Longrightarrow> hd bs = B1"
   by (cases bs, auto, case_tac "list=[]", auto,
-      case_tac a, auto, 
+      case_tac a, auto,
       drule Bits__toNat_bound, case_tac a, auto)
 
 lemma Bits__toNat_hd_1a:
   "\<lbrakk>bs\<noteq>[]; 2 ^ (length bs - 1) \<le> toNat bs\<rbrakk> \<Longrightarrow> hd bs = B1"
   by (rule Bits__toNat_hd_1, simp_all)
 
-lemma Bits__extendLeft_toNat_B0: 
+lemma Bits__extendLeft_toNat_B0:
   "\<lbrakk>bs \<noteq> []\<rbrakk>  \<Longrightarrow>  toNat (replicate k B0 @ bs) = toNat bs"
    by (induct k, auto)
 
-lemma Bits__extendLeft_toNat_B1: 
+lemma Bits__extendLeft_toNat_B1:
   "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
    \<Longrightarrow>  toNat (replicate k B1 @ bs) + 2 ^ length bs =
        toNat bs + 2 ^ (k + length bs)"
-   by (induct k, auto) 
+   by (induct k, auto)
 
-lemma Bits__extendLeft_toNat_aux: 
+lemma Bits__extendLeft_toNat_aux:
   "\<lbrakk>bs1 \<noteq> []\<rbrakk>
-    \<Longrightarrow> \<forall>bs2. length bs2 = length bs1 + k \<and> toNat bs1 = toNat bs2 \<longrightarrow> 
+    \<Longrightarrow> \<forall>bs2. length bs2 = length bs1 + k \<and> toNat bs1 = toNat bs2 \<longrightarrow>
               bs2 =  replicate k B0 @ bs1"
-   apply (induct k, 
+   apply (induct k,
           clarsimp simp add: Bits__nonempty_eqlength,
           clarsimp simp add: add_Suc_right length_Suc_conv)
    apply (drule sym,
@@ -790,18 +789,18 @@ lemma Bits__extendLeft_toNat_aux:
    apply (frule_tac Bits__nonempty_le_length, auto)
 done
 
-lemma Bits__extendLeft_toNat: 
+lemma Bits__extendLeft_toNat:
   "\<lbrakk>bs1 \<noteq> []; length bs1 < length bs2 ; toNat bs1 = toNat bs2\<rbrakk>
     \<Longrightarrow> bs2 = List__extendLeft (bs1, B0, length bs2)"
    by (frule_tac k="length bs2 - length bs1" in Bits__extendLeft_toNat_aux,
        auto simp add: List__extendLeft_def)
 
-lemma Bits__extendLeft_toNat2: 
+lemma Bits__extendLeft_toNat2:
   "\<lbrakk>bs1 \<noteq> []; length bs1 < len2 ; length bs2 = len2; toNat bs1 = toNat bs2\<rbrakk>
     \<Longrightarrow> bs2 = List__extendLeft (bs1, B0, len2)"
    by (drule Bits__extendLeft_toNat, auto)
 
-lemma Bits__extendLeft_to_len_nat: 
+lemma Bits__extendLeft_to_len_nat:
   "\<lbrakk>0 < len; i < 2 ^ len; len < len2; length bs = len2; toNat bs = i\<rbrakk>
     \<Longrightarrow> bs = List__extendLeft (toBits (i, len), B0, len2)"
   by (rule Bits__extendLeft_toNat2, auto)
@@ -811,13 +810,13 @@ lemma Bits__toNat_zero_val:
   by (cut_tac bs=a in Bits__toNat_zero1 [symmetric],
       simp_all add: length_greater_0_iff list_eq_iff_nth_eq)
 
-lemma Bits_bound_neg: 
+lemma Bits_bound_neg:
    "0 < length bs \<Longrightarrow> int (toNat bs) - 2 ^ length bs < 0"
-by simp   
+by simp
 
 lemma toBits_mod_aux:
   "\<lbrakk>0 <len\<rbrakk>
-    \<Longrightarrow> \<forall>bits i. length bits = len+k \<and> toNat bits = i \<longrightarrow> 
+    \<Longrightarrow> \<forall>bits i. length bits = len+k \<and> toNat bits = i \<longrightarrow>
             toBits (i mod 2^len, len) = List__suffix (bits, len)"
   apply (induct k, auto, simp add: length_Suc_conv, clarify)
   apply (drule_tac x=ys in spec, simp add: List__suffix_alt)
@@ -838,7 +837,7 @@ lemma toBits_mod2:
 (******************************************************************************)
 lemmas bitssimps =   Bits__toNat_hd_0 Bits__toNat_hd_0a
                      Bits__toNat_hd_1 Bits__toNat_hd_1a
-                     Bits__toNat_small_hd 
+                     Bits__toNat_small_hd
 
 declare bitssimps [simp add]
 (******************************************************************************)
@@ -849,7 +848,7 @@ end-proof
 
 % ------------------------------------------------------------------------------
 % The file BitList-ext.sw contains a few additional Isabelle-specific lemmas
-% that we likely don't need anymore 
+% that we likely don't need anymore
 % ------------------------------------------------------------------------------
 
 endspec

@@ -93,7 +93,7 @@ op isaDirectoryName: String = "Isa"
   def uidToIsaName {path, hashSuffix=_} =
    let device? = deviceString? (head path) in
    let main_name = last path in
-   let path_dir = butLast path in 
+   let path_dir = butLast path in
    let mainPath = flatten (foldr (fn (elem, result) -> "/"::elem::result)
 			        ["/Isa/", thyName main_name]
 				(if device? then tail path_dir else path_dir))
@@ -188,7 +188,7 @@ op isaDirectoryName: String = "Isa"
       | _ -> (last uid.path, uidToIsaName uid, "")
 
   op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun",
-                                         "option", "string",
+                                         "option", "string", "factorial",
                                          "lattices", "orderings", "sat", "relation", "record",
                                          "gcd", "datatype", "recdef", "hilbert_choice"]
   op thyName(spname: String): String =
@@ -274,13 +274,13 @@ op isaDirectoryName: String = "Isa"
     case relId of
       | UnitId_Relative uid -> unitIdShortName uid
       | SpecPath_Relative uid -> unitIdShortName uid
-    
+
   op unitIdShortName(uid: UnitId): String =
     case uid of
       | {path, hashSuffix = Some nm} -> nm
       | {path, hashSuffix} -> last path
 
-  op  evaluateRelUIDWrtUnitId(rel_uid: RelativeUID, pos: Position, currentUID: UnitId): Option (Value * UnitId) = 
+  op  evaluateRelUIDWrtUnitId(rel_uid: RelativeUID, pos: Position, currentUID: UnitId): Option (Value * UnitId) =
     let
       %% Ignore exceptions
       def handler _ (* except *) =
@@ -289,12 +289,12 @@ op isaDirectoryName: String = "Isa"
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
 		((val, _, _), uid)  <- evaluateReturnUID pos rel_uid false;
-		return (Some(val, uid))} 
+		return (Some(val, uid))}
     in
       runSpecCommand (catch prog handler)
 
 
-  op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value = 
+  op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
     let
       %% Ignore exceptions
       def handler _ (* except *) =
@@ -303,7 +303,7 @@ op isaDirectoryName: String = "Isa"
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
 		val  <- evaluateTerm sc_tm;
-		return (Some val)} 
+		return (Some val)}
     in
       runSpecCommand (catch prog handler)
 
@@ -314,7 +314,7 @@ op isaDirectoryName: String = "Isa"
       | Some global_context ->
         findUnitIdForUnit(val, global_context)
 
-  %% Seems to be dead code?:  
+  %% Seems to be dead code?:
   op  printUID : String * Bool * Bool -> ()
   def printUID (uid, recursive?, simplify?) =
     case evaluateUnitId uid of
@@ -370,7 +370,7 @@ op isaDirectoryName: String = "Isa"
         in
         ppSpec c oblig_spec
       | _ -> prString "<Not a spec>"
- 
+
   %% --------------------------------------------------------------------------------
   %% Specs
   %% --------------------------------------------------------------------------------
@@ -462,7 +462,7 @@ op isaDirectoryName: String = "Isa"
       | Apply(Fun(Implies, _, _), Record([("1", lhs), ("2", rhs)], _), _) -> equalityArgs rhs
       | Bind(_, _, bod, _) -> equalityArgs bod
       | Apply(_, Record([("1", lhs), ("2", rhs)], _), _) -> (lhs, rhs)
-      | _ -> (eq_tm, trueTerm) 
+      | _ -> (eq_tm, trueTerm)
 
   op makeTheorem(qid: QualifiedId, fml: MSTerm): SpecElement =
     let uvs = freeVars fml in
@@ -631,7 +631,7 @@ op isaDirectoryName: String = "Isa"
                      %% Make refinement obligation proof
                      let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
                      % let _ = writeLine("arp: "^thm_name^" "^show(embed? Property (head elts))) in
-                     % let _ = writeLine(printTerm dfn^"\n"^printTerm prev_dfn) in 
+                     % let _ = writeLine(printTerm dfn^"\n"^printTerm prev_dfn) in
 
                      % Test whether the new definition, dfn, and the previous definition, prev_dfn,
                      % of an op are defined (i.e., whether they satisfy anyTerm?)
@@ -1444,8 +1444,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = normalizeTopLevelLambdas spc in
     let spc = if lambdaLift? then
                 % ignore imports, don't simulate closures, process all ops
-                lambdaLiftInternal(spc, false, false, []) 
-	       else 
+                lambdaLiftInternal(spc, false, false, [])
+	       else
                  spc
     in
     let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in
@@ -1516,8 +1516,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                    [prString "imports ", ppImports c spc.elements],
                    [prString "begin"]]
                   ++
-                  (if specHasSorryProof? spc then [[], [prString "ML {* Config.put quick_and_dirty true; *}" %% old command (prior to Isabelle2013-2): "ML {* quick_and_dirty := true; *}"
-                                                                 ], []] else [])
+                  (if specHasSorryProof? spc then [[], [prString "ML \\<open> Config.put quick_and_dirty true; \\<close>" %% old command (prior to Isabelle2013-2): "ML {* quick_and_dirty := true; *}"
+                                                       ], []]
+                   else [])
                   ++
 		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
 		  [prString "end"],
@@ -1724,7 +1725,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                  %	  | (Property prop) :: (Pragma prag) :: rst ->
                  %	    Cons(ppProperty c prop "" (Some prag),
                  %		 aux c spc rst)
-          
+
                | (el as Op(qid, true, _)) :: rst | defHasForwardRef?(qid, rst, spc) ->
                  let (op_qids, pre_els, mrec_els, m_rst) = findMutuallyRecursiveElts(qid, rst, spc) in
                  if pre_els = []
@@ -1942,7 +1943,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                         | TypeDef(qid, _) -> qid in? type_refs
                         | _ -> false)
       els
-        
+
   op findMutuallyRecursiveCoProductElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
        : SpecElements * SpecElements =
     let type_refs = typesInTypeDefFor(qid0, spc) in
@@ -1996,10 +1997,10 @@ removeSubTypes can introduce subtype conditions that require addCoercions
             :: ppMRC(r_els, "and ")
      in
      ppMRC(els, "datatype ")
-          
+
 
   op normalizeSpecElements (elts: SpecElements): SpecElements =
-    let def normElts(elts, prev_elts) = 
+    let def normElts(elts, prev_elts) =
           case elts of
             | [] -> prev_elts
               %% Duplicated type decl can be ignored (probably result of spec import in-lining)
@@ -2007,9 +2008,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                                         | Type(qid2, _) | qid1 = qid2 -> true
                                                                         | TypeDef(qid2, _) | qid1 = qid2 -> true
                                                                         | _ -> false)
-                                          prev_elts 
+                                          prev_elts
                 -> normElts(rst, prev_elts)
-                                          
+
             | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
               normElts(Op(qid1, true, a) :: rst, prev_elts)
             | (Op (qid1, false, a)) :: rst | existsSpecElement?
@@ -2084,7 +2085,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                    | Qualified(UnQualified, nm) ->
                                                      let Qualified(q, _) = type_qid in
                                                      Qualified(q, nm)
-                                                   | qid -> qid                                                     
+                                                   | qid -> qid
                                   in
                                   (mkTypeCoercionEntryForTypeDef spc type_qid tct, dummy_qid)
                                 | _ -> (tct, type_qid))
@@ -2134,7 +2135,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	   | Some {names, fixity, dfn, fullyQualified?=_} ->
 	     ppOpInfo c true def? elems opt_prag
                names fixity 0 dfn  % TODO: change  op_with_def?  to  def? -- no one looks at it??
-	   | _ -> 
+	   | _ ->
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
@@ -2143,7 +2144,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	   | Some {names, fixity, dfn, fullyQualified?=_} ->
              let names = map (refinedQID refine_num) names in
 	     ppOpInfo c (refine_num > 0) true elems opt_prag names fixity refine_num dfn
-	   | _ -> 
+	   | _ ->
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
@@ -2157,7 +2158,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                  elems
                then prEmpty
                else ppTypeInfo c false (names, dfn) opt_prag elems
-	   | _ -> 
+	   | _ ->
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
@@ -2172,10 +2173,10 @@ removeSubTypes can introduce subtype conditions that require addCoercions
         %      elems
         %   then (warn("Redefinition of type "^printQualifiedId qid^" at "^printAll pos);
         %         prString("(* Illegal type redefinition of "^printQualifiedId qid^" ignored! *)"))
-        % else 
+        % else
 	(case AnnSpec.findTheType(spc, qid) of
 	   | Some {names, dfn} -> ppTypeInfo c true (names, dfn) opt_prag elems
-	   | _ -> 
+	   | _ ->
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
@@ -2186,7 +2187,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                              | Some n -> specwareToIsaString(subFromTo(mid_str, n, length mid_str))
         in
         prLines 0 [prString verbatim_str]
-	   
+
       | Pragma("proof", mid_str, "end-proof", pos) | hookPragma? mid_str ->
         (case controlPragmaString mid_str of
           | Some(_ :: hook_name :: _) ->
@@ -2224,7 +2225,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                else find1 r
    in
    find1 xSymbolWords
-            
+
 
  op specwareToIsaString(s: String): String =
    case search("\\_", s) of
@@ -2242,7 +2243,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
              | None -> loop(i+2)
    in
    subFromTo(s, 0, i+1) ^ "<" ^ subFromTo(s, i+2, j+1) ^ ">" ^ specwareToIsaString(subFromTo(s, j+1, len))
-         
+
 
  op findPragmaNamed(elts: SpecElements, qid as (Qualified(q, nm)): QualifiedId, opt_prag: Option Pragma)
      : Option Pragma =
@@ -2313,7 +2314,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
  op ppConstructor(c: Context, c_qid as Qualified(_, c_nm): QualifiedId, qid: QualifiedId): Pretty =
    case constructorTranslation(c_nm, c) of
      | Some tr_c_nm -> prString tr_c_nm
-     | None -> 
+     | None ->
    prString(if qid in? directConstructorTypes then ppIdStr c_nm
               else qidToIsaString c_qid)
 
@@ -2333,7 +2334,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
      | _ ->  ppQualifiedId qid
 
  op mkFieldName(nm: String): String =
-   let fieldname = nm ^ "__fld" in 
+   let fieldname = nm ^ "__fld" in
    let _ = writeLine ("WARNING: using default record field name, "^fieldname^", for "^nm^".") in
    ppIdStr fieldname
 
@@ -2349,7 +2350,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
    if quote? && nm in? isabelleReservedWords then prConcat [prString "\"", pr, prString "\""]
    else pr
 
-   
+
  op  ppTypeInfo : Context -> Bool -> List QualifiedId * MSType -> Option Pragma -> SpecElements -> Pretty
  def ppTypeInfo c full? (aliases, dfn) opt_prag elems =
    let mainId = head aliases in
@@ -2497,7 +2498,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
               else mkApply(mkOp(Qualified("Nat", "succ"), mkArrow(natType, natType)),
                            expandNat(i - 1))
        in
-       expandNat i              
+       expandNat i
      | _ -> tm
 
  op  defToFunCases: Context -> MSTerm -> MSTerm -> List (MSTerm * MSTerm)
@@ -2593,7 +2594,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
            cases1 ++ cases2
          | _ -> [(hd,bod)]
      def aux_case(hd,bod: MSTerm) =
-       aux(hd,bod) 
+       aux(hd,bod)
      def fix_vars(hd,bod) =
        case hd of
          | Fun(_, ty, _) ->
@@ -2739,7 +2740,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MSTerm) (ty: MSType) (opt
 % into a single place
 %
 % Return true iff the given op should be defined with the Isabelle
-% function mechanism, instead of using "consts". 
+% function mechanism, instead of using "consts".
 op qidUsesFunctionDef? (c: Context, qid: QualifiedId,
                         refine_num_opt: Option Nat) : Bool =
   let spc = case c.spec? of
@@ -2785,7 +2786,7 @@ op qidUsesFunctionDef? (c: Context, qid: QualifiedId,
 
 
 % Return true iff the given op should be defined with the Isabelle
-% function mechanism, instead of using "consts". 
+% function mechanism, instead of using "consts".
 op opUsesFunctionDef? (c: Context, mainId: QualifiedId, fixity: Fixity, ty: MSType,
                        body: MSTerm, opt_prag: Option Pragma) : Bool =
   targetFunctionDefs?
@@ -2844,7 +2845,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
     then
       ppFunctionDef c aliases term ty opt_prag fixity
   else
-  let decl = 
+  let decl =
         [prString(if def? then "definition " else "consts "),
           %ppTyVars tvs,
           ppIdInfo aliases,
@@ -2951,11 +2952,11 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
  %op  Utilities.substitute    : MSTerm * MSVarSubst -> MSTerm
  %op  Utilities.freeVars      : MSTerm -> MSVars
 
-op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm = 
+op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
     case pat
-      of EmbedPat(con,None,ty,a) -> 
+      of EmbedPat(con,None,ty,a) ->
          Some(Fun(Embed(con,false),ty,a))
-       | EmbedPat(con,Some p,ty,a) -> 
+       | EmbedPat(con,Some p,ty,a) ->
          (case p of
             | WildPat(pty,a) | multiArgConstructor?(con,ty,getSpec c) ->
               let tys = productTypes(getSpec c, pty) in
@@ -2970,18 +2971,18 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
             | _ ->
           case patToTerm(p, ext, c)
             of None -> None
-             | Some (trm) -> 
+             | Some (trm) ->
                let ty1 = patternType p in
                Some (Apply(Fun(Embed(con,true),Arrow(ty1,ty,a),a),trm,a)))
-       | RecordPat(fields,a) -> 
+       | RecordPat(fields,a) ->
          let
-            def loop(new,old,i) = 
+            def loop(new,old,i) =
                 case new
                   of [] -> Some(Record(reverse old,a))
-                   | (l,p)::new -> 
+                   | (l,p)::new ->
                 case patToTerm(p, ext^(show i), c)
                   of None -> None
-                   | Some(trm) -> 
+                   | Some(trm) ->
                      loop(new, Cons((l,trm),old), i+1)
          in
          loop(fields,[], 0)
@@ -2998,8 +2999,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        | QuotientPat(pat,cond,_,_)  -> None %% Not implemented
        | RestrictedPat(pat,cond,_)  ->
          patToTerm(pat,ext, c)		% cond ??
-       | AliasPat(p1,p2,_) -> 
-         (case patToTerm(p2, ext, c) 
+       | AliasPat(p1,p2,_) ->
+         (case patToTerm(p2, ext, c)
             of None -> patToTerm(p1, ext, c)
              | Some(trm) -> Some trm)
 
@@ -3217,7 +3218,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          in deleteVars(v_args, vs)
        def filterKnown(vs: MSVars, id: String, f: MSTerm, args: MSTerms, bound_vs: MSVars): MSVars =
          % let _ = writeLine("fk "^id^": "^ anyToString (map (fn (x,_) -> x) vs)) in
-         if id = "natural?" || id in? isabelleOverloadedOps 
+         if id = "natural?" || id in? isabelleOverloadedOps
             || exists? (fn ci -> id in? ci.overloadedOps)
                 c.coercions
           then vs
@@ -3452,7 +3453,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                       | None ->
                     case search(" \\<forall>",prag_str) of
                       | Some n -> n+9
-                      | None -> 
+                      | None ->
                     case search(" \\_forall",prag_str) of
                       | Some n -> n+9
                       | None -> length prag_str
@@ -3728,7 +3729,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                      let new_v = ("cv", dom) in
                      ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
                    | None -> fail("Can't reverse term: "^printTerm term))
-          | _ ->                 
+          | _ ->
             prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
                        case term2 of
                          | Record _ -> ppTerm c TmTop term2
@@ -3738,7 +3739,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    case term of
      | Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran)) ->
        %% Remnants of adding exploitOverloading
-       ppTerm c parentTerm x       
+       ppTerm c parentTerm x
      | Apply (trm1, trm2 as (Record ([("1", t1), ("2", t2)], a)), _) ->
        (case (trm1, t2) of
         | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
@@ -3751,7 +3752,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                               let def ppField (x,y) =
                                      prConcat [prString (case recd_ty of
                                                            | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
-                                                           | _ -> mkFieldName( x^"1")),
+                                                           | _ -> mkFieldName(x^"1")),
                                                prString " := ",
                                                ppTerm c TmTop y]
                               in
@@ -3786,7 +3787,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
            | (Nonfix, (Some pr_op, Infix (a, p), _, _)) ->
              prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
            | (TmTop,    (Some pr_op, Infix (a, p), _, _)) ->
-             prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
+             prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2)
            | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) ->
              if p1 = p2
                then prInfix (Infix (Left, p2), Infix (Right, p2),
@@ -3817,7 +3818,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
             let def ppField (x,y) =
                   prConcat [prString (case recd_ty of
                                       | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
-                                      | _ -> mkFieldName( x^"2")),
+                                      | _ -> mkFieldName(x^"2")),
                             prString " = ",
                             ppTerm c TmTop y]
             in
@@ -3889,7 +3890,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        let eta_var = ("xx", domain(spc, lam_ty)) in
        let eta_tm = mkLambda(mkVarPat eta_var, mkApply(term, mkVar eta_var)) in
        ppTerm c parentTerm eta_tm
-     | IfThenElse (pred,term1,term2,_) -> 
+     | IfThenElse (pred,term1,term2,_) ->
        enclose?(infix? parentTerm,
                 blockLinear (0,[(0,prConcat [prString "if ",
                                              ppTerm c TmTop pred,
@@ -3934,7 +3935,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op ppTermNonNormCtx (c: Context) (parentTerm: ParentTerm) (tm: MSTerm) : Pretty =
    let spc = getSpec c in
    let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
-   let typeNameInfo = topLevelTypeNameInfo spc in              
+   let typeNameInfo = topLevelTypeNameInfo spc in
    let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
    ppTerm c parentTerm tm'
 
@@ -3988,7 +3989,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | _ ->
    case unfoldToBaseNamedType(spc, prod_ty) of
      | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,p)
-     | _ -> mkFieldName ( p^"3")
+     | _ -> mkFieldName (p^"3")
 
  op  ppBinder : Binder -> Pretty
  def ppBinder binder =
@@ -4068,9 +4069,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    in
      (prSep (-3) blockAll (prString " | ") (map ppCase cases))
 
- op ppPattern (c: Context) (pattern: MSPattern) (wildstr: Option String) (parens?: Bool): Pretty = 
+ op ppPattern (c: Context) (pattern: MSPattern) (wildstr: Option String) (parens?: Bool): Pretty =
    case pattern of
-     | AliasPat (pat1, pat2, _) -> 
+     | AliasPat (pat1, pat2, _) ->
        prBreak 0 [ppPattern c pat1 wildstr true,
                   prString " as ",
                   ppPattern c pat2 wildstr true]
@@ -4114,7 +4115,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                      prString ")"]
          | _ ->
            let def ppField (x,pat) =
-                 prConcat [prString (mkFieldName( x^"4")),
+                 prConcat [prString (mkFieldName(x^"4")),
                            prString "=",
                            ppPattern c pat (extendWild wildstr x) true]
            in
@@ -4128,15 +4129,15 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | StringPat (str,_) -> prString ("''" ^ str ^ "''")
      | BoolPat (b,_) -> ppBool b
      | CharPat (chr,_) -> prString (Char.show chr)
-     | NatPat (int,_) -> prString (Nat.show int)      
-     | QuotientPat (pat,qid,_,_) -> 
+     | NatPat (int,_) -> prString (Nat.show int)
+     | QuotientPat (pat,qid,_,_) ->
        % NOTE: we choose to create junk Isabelle instead of failing to
        % allow the rest of the Isabelle to be generated
        prString ("(Quotient patterns not (currently) supported by the Isabelle translator)")
        % prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
        %            ppPattern c pat wildstr false,
        %            prString ")"]
-     | RestrictedPat (pat,term,_) -> 
+     | RestrictedPat (pat,term,_) ->
 %        (case pat of
 %	   | RecordPat (fields,_) ->
 %	     (case fields of
@@ -4363,7 +4364,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
    case ty of
      | Base (qid,[],_) -> ppTypeQualifiedId c qid
       %% CoProduct only at top level
-%     | CoProduct (taggedTypes,_) -> 
+%     | CoProduct (taggedTypes,_) ->
 %       let def ppTaggedType (id,optTy) =
 %       case optTy of
 %         | None -> quoteIf(~in_quotes?, id, ppConstructor id)
@@ -4381,9 +4382,9 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
 %                    | Subtype -> true
 %                    | _ -> false,
 %                  prSep (-2) blockAll (prString "| ") (map ppTaggedType taggedTypes))
-     | Boolean _ -> prString "bool"  
+     | Boolean _ -> prString "bool"
      | TyVar (tyVar,_) -> prConcat[prString "'",prString tyVar]
-     | MetaTyVar (tyVar,_) -> 
+     | MetaTyVar (tyVar,_) ->
        let ({link, uniqueId, name}) = ! tyVar in
        prString (name ^ (Nat.show uniqueId))
 
@@ -4422,7 +4423,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
                        (map ppField fields))
           | _ ->
             let def ppField (x,y) =
-            prLinearCat 2 [[prString (mkFieldName( x^"5")),
+            prLinearCat 2 [[prString (mkFieldName(x^"5")),
                             prString " :: "],
                            [ppType c TyTop in_quotes? y]]
             in
@@ -4453,9 +4454,9 @@ def infix? parentTerm =
     | Infix _ -> true
     | _ -> false
 
-op termFixity (c: Context) (term: MSTerm): Option Pretty * Fixity * Bool * Bool = 
+op termFixity (c: Context) (term: MSTerm): Option Pretty * Fixity * Bool * Bool =
   case term of
-    | Fun (termOp, _, _) -> 
+    | Fun (termOp, _, _) ->
       (case termOp of
          | Op (id, fixity) ->
            (case specialOpInfo c id of
@@ -4473,7 +4474,7 @@ op termFixity (c: Context) (term: MSTerm): Option Pretty * Fixity * Bool * Bool 
                                               true, false))
          | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 35), true, false)
          | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 30), true, false)
-         | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 25), true, false) 
+         | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 25), true, false)
          | Iff            -> (Some(prString "="), Infix (Left, 50), true, false)
          | Not            -> (Some(lengthString(1, "\\<not>")), Infix (Left, 40), false, false) % ?
          | Equals         -> (Some(prString "="), Infix (Left, 50), true, false) % was 10 ??
@@ -4612,14 +4613,14 @@ def isSimplePattern? trm =
            | CoProduct(prs,_) ->
              foldl (fn ((found,overloaded),(Qualified(_, id),_)) ->
                       if id in? found
-                        then (  found, id::overloaded)
+                        then   (found, id::overloaded)
                       else (id::found,     overloaded))
                result prs
            | _ -> result)
      ([],[])
      spc.types).2
 
-op unfoldMonadBinds(spc: Spec): Spec = 
+op unfoldMonadBinds(spc: Spec): Spec =
   let def unfold tm =
         case tm of
           | Apply(Fun(Op(Qualified(_, "monadBind"), _), _, _) , x, _) ->

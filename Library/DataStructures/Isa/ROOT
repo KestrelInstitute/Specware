@@ -1,4 +1,7 @@
 session "Specware_Library_DataStructures" = "HOL" +
   options [quick_and_dirty]
+  sessions
+    "HOL-Library"
+    "HOL-Computational_Algebra"
   theories
    MapsAsSets_M SetsAsMaps_M SetsAsBagMaps_M StacksAsCoproducts_M StacksAsLists_M SetsAsBags_M BagsAsLists_M BagsAsMaps_M MapsAsSTHTables_M MapsAsVectors_M AllIsa

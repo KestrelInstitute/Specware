@@ -6,8 +6,8 @@ PartialOrder = spec
 
  op <= infixl 20 : A * A -> Bool
 
- op < (a:A, b:A) infixl 20 : Bool =
-   (a <= b) && ~(a=b)
+ % op < (a:A, b:A) infixl 20 : Bool =
+ %   (a <= b) && ~(a=b)
 
  axiom reflexive_le is
     fa(a:A) a<=a

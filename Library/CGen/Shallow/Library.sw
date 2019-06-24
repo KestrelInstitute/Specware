@@ -204,26 +204,26 @@ theorem toint_upper_bound_chained_leq [simp]:
 
 
 
-theorem toNat_bound_chained [simp]: 
+theorem toNat_bound_chained [simp]:
   "\<lbrakk>bs \<noteq> [] ; k \<ge> (2 ^ (length bs)) \<rbrakk> \<Longrightarrow> toNat bs < k"
   apply(cut_tac bs=bs in Bits__toNat_bound)
   apply(simp_all  del:Bits__toNat_bound)
 done
 
-theorem toNat_bound_chained_int_version [simp]: 
+theorem toNat_bound_chained_int_version [simp]:
   "\<lbrakk>bs \<noteq> [] ; nat k \<ge> (2 ^ (length bs)) \<rbrakk> \<Longrightarrow> int (toNat bs) < k"
   apply(cut_tac bs=bs and k="nat k" in toNat_bound_chained)
   apply(simp_all  del:Bits__toNat_bound toNat_bound_chained)
 done
 
-theorem toNat_bound_chained_leq [simp]: 
+theorem toNat_bound_chained_leq [simp]:
   "\<lbrakk>bs \<noteq> [] ; k \<ge> (2 ^ (length bs)) - 1 \<rbrakk> \<Longrightarrow> toNat bs <= k"
   apply(cut_tac k="k + 1" in toNat_bound_chained)
   apply(auto simp del:toNat_bound_chained)
 done
 
 (*
-theorem toNat_bound_chained_int_version_2 [simp]: 
+theorem toNat_bound_chained_int_version_2 [simp]:
   "\<lbrakk>bs \<noteq> [] ; nat k \<ge> (2 ^ (length bs)) - 1 \<rbrakk> \<Longrightarrow> int (toNat bs) <= k"
   apply(cut_tac k="k + 1" in toNat_bound_chained_int_version)
   apply(simp, simp)
@@ -236,17 +236,11 @@ done
 
 theorem mod_upper_bound_chained:
  "\<lbrakk> (n::int) > 0 ; k \<ge> n - 1 \<rbrakk> \<Longrightarrow> (m::int) mod n \<le> k"
-  apply(cut_tac a=m and b=n in Divides.pos_mod_bound)
-  apply(force)
-  apply(simp del: Divides.pos_mod_bound)
-  done
+  by (meson Divides.pos_mod_bound order_trans zle_diff1_eq)
 
 theorem mod_lt_chained:
  "\<lbrakk> (n::int) > 0 ; k \<ge> n \<rbrakk> \<Longrightarrow> (m::int) mod n < k"
-  apply(cut_tac a=m and b=n in Divides.pos_mod_bound)
-  apply(force)
-  apply(simp del: Divides.pos_mod_bound)
-  done
+  using Euclidean_Division.pos_mod_bound less_le_trans by blast
 
 theorem int_expt [simp]:
   "int (2 ^ (n::nat)) = 2 ^ n"
@@ -255,16 +249,11 @@ theorem int_expt [simp]:
 
 theorem mod_lower_bound_chained:
  "\<lbrakk> (n::int) > 0 ; k \<le> 0\<rbrakk> \<Longrightarrow> k \<le> (m::int) mod n"
-  apply(cut_tac a=m and b=n in Divides.pos_mod_sign)
-  apply(force)
-  apply(simp del: Divides.pos_mod_sign)
-  done
+  using Divides.pos_mod_sign order_trans by blast
 
 theorem mod_minus_dividend [simp]:
   "(m - n) mod (n::int) = m mod n"
-  apply(cut_tac a="m - n" and b = n in Divides.semiring_div_class.mod_add_self2)
-  apply(force)
-  done
+  by simp
 
 theorem not_negative_from_bound:
   "\<lbrakk>length bs = (8::nat); toNat bs \<le> (127::nat)\<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p bs"
@@ -278,12 +267,7 @@ theorem not_negative_from_bound:
 
 theorem mod_does_nothing_rewrite [simp]:
   "\<lbrakk> x \<ge> 0 ; y > 0\<rbrakk> \<Longrightarrow> ((x::int) mod y = x) = (x < y)"
-  apply(auto)
-  defer 1
-  apply(rule Divides.mod_pos_pos_trivial, force, force)
-  apply(cut_tac a=x and b=y in Divides.pos_mod_bound, force)
-  apply(arith)
-  done
+  by (metis mod_pos_pos_trivial pos_mod_conj)
 
 theorem mod_does_nothing_rewrite_alt [simp]:
   "\<lbrakk> x \<ge> 0 ; y > 0\<rbrakk> \<Longrightarrow> (x = (x::int) mod y) = (x < y)"
@@ -316,33 +300,33 @@ theorem length_signExtend [simp]:
   "\<lbrakk> n \<ge> length bs\<rbrakk> \<Longrightarrow> length (TwosComplement__signExtend(bs, (n::nat))) = n"
   apply(simp add: TwosComplement__signExtend_def List__extendLeft_def)
   done
-	
+
 
 theorem mod_of_toInt65536 [simp]:
-  "\<lbrakk> length bs = 16 \<rbrakk> \<Longrightarrow> 
+  "\<lbrakk> length bs = 16 \<rbrakk> \<Longrightarrow>
    (TwosComplement__toInt bs) mod (65536::int) = int (toNat bs)"
   apply(simp add: TwosComplement__toInt_def)
   done
 
 theorem mod_of_toInt4294967296 [simp]:
-  "\<lbrakk> length bs = 32 \<rbrakk> \<Longrightarrow> 
+  "\<lbrakk> length bs = 32 \<rbrakk> \<Longrightarrow>
    (TwosComplement__toInt bs) mod (4294967296::int) = int (toNat bs)"
   apply(simp add: TwosComplement__toInt_def)
   done
 
 theorem mod_of_toInt18446744073709551616 [simp]:
-  "\<lbrakk> length bs = 64 \<rbrakk> \<Longrightarrow> 
+  "\<lbrakk> length bs = 64 \<rbrakk> \<Longrightarrow>
    (TwosComplement__toInt bs) mod (18446744073709551616) = int (toNat bs)"
   apply(simp add: TwosComplement__toInt_def)
   done
 
 theorem mod_of_toInt340282366920938463463374607431768211456 [simp]:
-  "\<lbrakk> length bs = 128 \<rbrakk> \<Longrightarrow> 
+  "\<lbrakk> length bs = 128 \<rbrakk> \<Longrightarrow>
    (TwosComplement__toInt bs) mod (340282366920938463463374607431768211456) = int (toNat bs)"
   apply(simp add: TwosComplement__toInt_def)
   done
 
-theorem toBits_toNat_extend: 
+theorem toBits_toNat_extend:
   "\<lbrakk>length bs > 0 ; length bs <= len\<rbrakk> \<Longrightarrow> toBits (toNat bs, len) = Bits__zeroExtend (bs, len)"
   apply(simp add:Bits__zeroExtend_def List__extendLeft_def)
   apply(cut_tac k="len - length bs" and bs=bs in Bits__extendLeft_toNat_B0, force)
@@ -352,14 +336,14 @@ theorem toBits_toNat_extend:
 
 (* rename *)
 
-(* lemma Bits__extendLeft_toNat_B1_new: 
+(* lemma Bits__extendLeft_toNat_B1_new:
    "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
     \<Longrightarrow>  TwosComplement__toInt (replicate k B1 @ bs) = TwosComplement__toInt bs"
    apply (simp add: TwosComplement__toInt_def)
 
 
 
-theorem toBits_toNat_extend: 
+theorem toBits_toNat_extend:
   "\<lbrakk>length bs > 0 ; length bs < len ; hd bs = B1\<rbrakk> \<Longrightarrow> toBits (nat (TwosComplement__toInt bs mod 65536), 16) = TwosComplement__signExtend (bs, len)"
   apply(simp add:TwosComplement__signExtend_def List__extendLeft_def)
   apply(cut_tac k="len - length bs" and bs=bs in Bits__extendLeft_toNat_B1_new, force)
@@ -386,25 +370,25 @@ theorem zadd_int_back:
   by auto
 
 (* drop a hyp? or allow    0 < k  OR   bs = B1 *)
-lemma toInt_replicate: 
+lemma toInt_replicate:
   "\<lbrakk>bs \<noteq> []; 0 < k; hd bs = B1 \<rbrakk>
    \<Longrightarrow>  TwosComplement__toInt (replicate k B1 @ bs) = TwosComplement__toInt bs"
   apply (simp add: TwosComplement__toInt_def TwosComplement__nonNegative_p_alt_def TwosComplement__sign_def List.hd_append)
   apply(cut_tac bs=bs and k=k in Bits__extendLeft_toNat_B1, force, force)
   apply(simp add: move_negated_addend move_negated_addend_2 move_negated_addend_3)
   apply(cut_tac m="toNat (replicate k B1 @ bs) + 2 ^ length bs" and n="toNat bs + 2 ^ (k + length bs)" in int_injective)
-by (metis length_sublists add.commute of_nat_numeral of_nat_power zadd_int_back)
+by (metis add.commute of_nat_numeral of_nat_power zadd_int_back)
 
 
 (*
 theorem nonNegative_p_replicate_B1:
   "\<lbrakk> hd bs = B1 \<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p (replicate k B1 @ bs) = False"
-  apply(simp add: TwosComplement__nonNegative_p_def TwosComplement__negative_p_def TwosComplement__sign_def  List.hd_append) 
+  apply(simp add: TwosComplement__nonNegative_p_def TwosComplement__negative_p_def TwosComplement__sign_def  List.hd_append)
   done
 
-theorem toBits_toInt_extend: 
+theorem toBits_toInt_extend:
   "\<lbrakk>length bs > 0 ; length bs < len ; hd bs = B1\<rbrakk> \<Longrightarrow> toBits (nat (TwosComplement__toInt bs mod (2 ^ len)), len) = TwosComplement__signExtend (bs, len)"
-  apply(simp add:TwosComplement__signExtend_def List__extendLeft_def TwosComplement__sign_def) 
+  apply(simp add:TwosComplement__signExtend_def List__extendLeft_def TwosComplement__sign_def)
   apply(cut_tac k="len - length bs" and bs=bs in toInt_replicate, force)
   apply(cut_tac bs="(replicate (len - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force, force, force)
   apply(simp add: TwosComplement__toInt_def)
@@ -417,15 +401,15 @@ theorem toBits_toInt_extend:
 
 
 theorem extendLeft_equal_extendLeft [simp]:
- "\<lbrakk> length lst1 = length lst2 ; length lst1 \<le> len \<rbrakk> \<Longrightarrow> 
-    ((List__extendLeft (lst1, val1, len) = List__extendLeft (lst2, val2, len))) = 
+ "\<lbrakk> length lst1 = length lst2 ; length lst1 \<le> len \<rbrakk> \<Longrightarrow>
+    ((List__extendLeft (lst1, val1, len) = List__extendLeft (lst2, val2, len))) =
      ((lst1 = lst2) & (if (length lst1 = len) then True else (val1 = val2)))"
   apply(auto simp add: List__extendLeft_def)
   done
 
 
 theorem zeroextend_equal_signextend [simp]:
-  "\<lbrakk> length bs \<le> len \<rbrakk> \<Longrightarrow> 
+  "\<lbrakk> length bs \<le> len \<rbrakk> \<Longrightarrow>
   Bits__zeroExtend (bs, len) = TwosComplement__signExtend (bs, len) = (if (length bs = len) then True else TwosComplement__sign bs = B0)"
   apply(auto simp add: TwosComplement__signExtend_def Bits__zeroExtend_def)
   done
@@ -436,7 +420,7 @@ theorem toBits_move:
   apply(auto simp del: Bits__inverse_toNat_bits)
   done
 
-theorem toNat__replicate_B1: 
+theorem toNat__replicate_B1:
   "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
    \<Longrightarrow>  toNat (replicate k B1 @ bs)  =
        toNat bs + 2 ^ (k + length bs) - 2 ^ length bs"
@@ -516,8 +500,8 @@ theorem map_suffix is [a, b]
 
 
 
-%% alternate characterization of the type of the digit list passed to fromBigEndian 
-op all_less (val:Nat) (lst: List Nat) : Bool = 
+%% alternate characterization of the type of the digit list passed to fromBigEndian
+op all_less (val:Nat) (lst: List Nat) : Bool =
    case lst of
    | [] -> true
    | hd::tl -> hd < val && all_less val tl
@@ -527,7 +511,7 @@ theorem all_less_intro is
 
 theorem all_less_becomes is
   fa (lst: List Nat, val:Nat) all_less val lst = (fa(d:Nat) d in? lst => d < val)
-        
+
 
 %% Nice, recursive definition of fromBigEndian.  The one in IntegerExt_ExecOps is tail recursive and not as nice to reason about.
 %% This one allows digits to be empty.
@@ -632,7 +616,7 @@ theorem narithhack4:
   done
 
 lemma Library__fromBigEndian_rec_bound [simp]:
-  "\<lbrakk>base\<ge>2; Library__all_less base digits\<rbrakk> 
+  "\<lbrakk>base\<ge>2; Library__all_less base digits\<rbrakk>
      \<Longrightarrow> Library__fromBigEndian_rec (digits,base) < base ^ (length digits)"
   apply(induct digits, simp_all add:Library__fromBigEndian_rec.simps)
   apply(auto)
@@ -669,14 +653,14 @@ done
 
 
 theorem Library__fromBigEndian_rec_mod:
- "\<lbrakk>n <= length digits ; Library__all_less base digits ; base \<ge> 2\<rbrakk> \<Longrightarrow> 
+ "\<lbrakk>n <= length digits ; Library__all_less base digits ; base \<ge> 2\<rbrakk> \<Longrightarrow>
   Library__fromBigEndian_rec (digits, base) mod base^(n::nat) = Library__fromBigEndian_rec (List__suffix (digits, n), base)"
   apply(simp add: SW_List.List__suffix_alt Library__fromBigEndian_rec_drop)
 done
 
 
 theorem fromBigEndian_mod:
- "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; Library__all_less 2 digits\<rbrakk> \<Longrightarrow> 
+ "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; Library__all_less 2 digits\<rbrakk> \<Longrightarrow>
   Integer__fromBigEndian (digits, 2) mod 2^(n::nat) = Integer__fromBigEndian (List__suffix (digits, n), 2)"
   apply(cut_tac base=2 and digits=digits in Library__fromBigEndian_becomes2)
   apply(force, force, force)
@@ -689,7 +673,7 @@ theorem fromBigEndian_mod:
 
 (* This may match better when n is a constant (because the 2^n will get computed) *)
 theorem fromBigEndian_suffix:
- "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; Library__all_less 2 digits\<rbrakk> \<Longrightarrow> 
+ "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; Library__all_less 2 digits\<rbrakk> \<Longrightarrow>
   Integer__fromBigEndian (List__suffix (digits, n), 2) = Integer__fromBigEndian (digits, 2) mod 2^(n::nat)"
   apply(cut_tac n=n and digits=digits in fromBigEndian_mod)
   apply(auto)
@@ -704,9 +688,7 @@ done
 
 theorem mod_diff_drop_right:
   "\<lbrakk> (y::int) mod m = 0 \<rbrakk> \<Longrightarrow> (x - y) mod m = x mod m"
-  apply(cut_tac x=x and y=y and m=m in Divides.zdiff_zmod_right)
-  apply(simp)
-  done
+by (metis add.inverse_neutral add.right_neutral add_uminus_conv_diff mod_diff_right_eq)
 
 theorem nat_expt [simp]:
   "\<lbrakk> base \<ge> 0\<rbrakk> \<Longrightarrow> (nat (base ^ n)) = (nat base) ^ n"
@@ -723,12 +705,7 @@ theorem expt_dvd_expt_nat:
 
 theorem expt_dvd_expt_int [simp]:
  "\<lbrakk>(base::int) > 1\<rbrakk> \<Longrightarrow> (base ^ m dvd base ^ n) = (m \<le> n)"
-  apply(cut_tac base="nat base" and m=m and n=n in expt_dvd_expt_nat, force)
-  apply(cut_tac x="base ^ m" and y="base ^ n" in Nat_Transfer.transfer_nat_int_relations(4))
-  apply(force)
-  apply(force)
-  apply(auto)
-  done
+by (simp add: dvd_power_iff)
 
 theorem toInt_mod [simp]:
  "\<lbrakk>length bs \<ge> n\<rbrakk> \<Longrightarrow> TwosComplement__toInt bs mod 2^n = int (toNat bs mod 2^n)"
@@ -808,13 +785,13 @@ theorem must_be_high:
   apply(arith)
   done
 
-theorem nth_to_hd: 
+theorem nth_to_hd:
   "\<lbrakk>xs \<noteq> []\<rbrakk> \<Longrightarrow> xs ! 0 = hd xs"
   by (simp add:List.hd_conv_nth)
 
 
 
-theorem drop_to_tail: 
+theorem drop_to_tail:
   "\<lbrakk>0 < length bs\<rbrakk> \<Longrightarrow> drop (Suc 0) bs = tl bs"
   apply (cut_tac l=bs in SW_List.List__tail__def)
   apply(force)
@@ -885,7 +862,7 @@ theorem top_bit_one:
 done
 
 
-  
+
 
 theorem expt_lower_bound:
   "(2::nat) ^ (n::nat) >= 1"
@@ -928,14 +905,12 @@ theorem toNat_bound2:
   "\<lbrakk> bs ! n = B1 ; n < length bs ; n > 0 \<rbrakk> \<Longrightarrow> toNat bs \<ge> 2 ^ (length bs - n - 1)"
   apply(cut_tac x="(take n bs)" and y="drop n bs" in toNat_app)
   apply(force)
-  apply(simp)
-  apply(simp add: List.append_take_drop_id)
+  apply(auto)
   apply(cut_tac bs="(drop n bs)" in toNat_bound_when_one_better)
-  apply(simp add:List.hd_drop_conv_nth)
-  apply(simp)
-  apply(simp add:  add:List.length_drop)
+  apply(auto simp add:List.hd_drop_conv_nth)
   done
-  
+
+
 theorem mod_known_nat:
  "[| y \<ge> (0::nat) ;y < m ;  x mod m = y mod m |]  ==> x mod m = y"
   apply(auto)
@@ -948,12 +923,7 @@ by auto
 
 theorem mod_diff_drop_right_nat:
   "\<lbrakk> y \<le> x ; (y::nat) mod m = 0 \<rbrakk> \<Longrightarrow> (x - y) mod m = x mod m"
-  thm Divides.zdiff_zmod_right
-  thm Divides.ring_div_class.mod_diff_right_eq
-  apply(cut_tac a=x and b=y and c=m in mod_sub_right_eq)
-  apply(simp)
-  apply(simp)
-  done
+  by (simp add: mod_sub_right_eq)
 
 lemmas TC_lemmas =
   TwosComplement__rangeForLength_def
@@ -971,34 +941,43 @@ lemma toNat_int_bound:
   "\<lbrakk>length bs = n; n \<ge> 8\<rbrakk> \<Longrightarrow> \<not> (2^n \<le> int (toNat bs))"
   by (auto simp add: zle_int not_le)
 
+lemma must_be_high_generic_aux:
+  " (int (2 ^ k)
+     \<le> int y +
+        (int (x * 2 ^ n) + int (2 ^ (n - Suc 0)))) =
+ ((2 ^ k)
+     \<le>  y +
+        ((x * 2 ^ n) + (2 ^ (n - Suc 0)))) "
+  by linarith
+
 theorem must_be_high_generic:
-  "\<lbrakk> (x::nat) < 2^(k - n) ; y < 2^n; n < k; 0 < n\<rbrakk> 
+  "\<lbrakk> (x::nat) < 2^(k - n) ; y < 2^n; n < k; 0 < n\<rbrakk>
    \<Longrightarrow>   (- (2^(n - 1)) \<le> int (x * 2^n) + int y - 2^k)
       = (x = 2^(k - n) - 1 \<and> y \<ge> 2^(n - 1))"
-  apply (simp add: algebra_simps, 
-         simp only: of_nat_power[symmetric] int_mult[symmetric] convert_to_nat zadd_int int_int_eq 
-                    zless_int zle_int)
+  apply (simp add: algebra_simps)
+  apply (simp only: of_nat_power[symmetric] of_nat_mult[symmetric] convert_to_nat of_nat_add
+                    int_int_eq of_nat_less_iff zle_int must_be_high_generic_aux)
   apply (rule iffI, rotate_tac -1, rule context_conjI, auto)
   defer
   (* Goal 2 *)
-  apply (rule classical, erule rev_mp,  simp add: not_le)
-  apply (rule_tac t="(2^(k - n) - Suc 0) * 2^n + 2^(n - Suc 0)" 
+  apply (rule classical, erule rev_mp, simp add: not_le)
+  apply (rule_tac t="(2^(k - n) - Suc 0) * 2^n + 2^(n - Suc 0)"
               and s="2^k - 2^(n - Suc 0)"
          in subst,
          simp add: diff_mult_distrib power_add [symmetric],
-         simp add: power_sub_1_eq_nat )
-  apply (rotate_tac -1, drule_tac k="2^k - 2^(n - Suc 0)" in add_less_mono1, 
+         simp add: power_sub_1_eq_nat)
+  apply (rotate_tac -1, drule_tac k="2^k - 2^(n - Suc 0)" in add_less_mono1,
          simp)
   (* Goal 3 *)
-  apply (rule_tac t="(2^(k - n) - Suc 0) * 2^n + 2^(n - Suc 0)" 
+  apply (rule_tac t="(2^(k - n) - Suc 0) * 2^n + 2^(n - Suc 0)"
               and s="2^k - 2^(n - Suc 0)"
          in subst,
          simp add: diff_mult_distrib power_add [symmetric],
-         simp add: power_sub_1_eq_nat )
-  apply (rotate_tac -1, drule_tac k="2^k - 2^(n - Suc 0)" in add_le_mono1, 
+         simp add: power_sub_1_eq_nat)
+  apply (rotate_tac -1, drule_tac k="2^k - 2^(n - Suc 0)" in add_le_mono1,
          simp)
   (* Goal 1 *)
-  apply (rule classical, auto simp add: nat_neq_iff,  erule rev_mp, 
+  apply (rule classical, auto simp add: nat_neq_iff,  erule rev_mp,
          simp add: not_le less_eq_Suc_le, thin_tac _)
   apply (simp only: add_Suc [symmetric])
         (*** replace y by upper bound **)
@@ -1014,7 +993,7 @@ theorem must_be_high_generic:
         (*** now do the math ***)
   apply (frule_tac Integer__expt_monotone, subst add.commute)
   apply (simp add: diff_mult_distrib power_add [symmetric] mult_2 [symmetric]
-                   add.assoc [symmetric]  
+                   add.assoc [symmetric]
               )
   apply (cut_tac x=n in power_sub_1_eq_nat, auto)
 done
@@ -1022,45 +1001,50 @@ done
 
 theorem toInt_suffix:
   "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ;
-    n>0; length bs \<ge> n\<rbrakk> \<Longrightarrow> 
+    n>0; length bs \<ge> n\<rbrakk> \<Longrightarrow>
   TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
   apply(case_tac "length bs = n", simp, drule le_neq_trans, simp)
-  apply(auto simp add: TwosComplement__toInt_def TC_lemmas 
+  apply(auto simp add: TwosComplement__toInt_def TC_lemmas
                         toNat_suffix  hd_suffix)
   apply(cases "hd bs = B0", simp_all)
-  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
+  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs"
             in toNat_app, auto, rotate_tac -1, thin_tac _)
   apply(cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_1, auto)
-  apply(cut_tac x="toNat(take (length bs - n) bs)" 
-            and y="toNat(drop (length bs - n) bs)" 
+  apply(cut_tac x="toNat(take (length bs - n) bs)"
+            and y="toNat(drop (length bs - n) bs)"
             and n=n and k="length bs" in must_be_high_generic, auto)
   apply(rotate_tac -1, erule rev_mp, simp,
         subst hd_conv_nth, simp, simp)
   (**** now the same argument again ****)
-  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
+  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs"
             in toNat_app, auto)
   apply (cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_0,
          simp, simp, simp)
   apply(rotate_tac -1, erule rev_mp, subst hd_conv_nth, simp, simp)
   (**** and again ****)
-  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
+  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs"
             in toNat_app, auto)
-  apply(cut_tac x="toNat(take (length bs - n) bs)" 
-            and y="toNat(drop (length bs - n) bs)" 
+  apply(cut_tac x="toNat(take (length bs - n) bs)"
+            and y="toNat(drop (length bs - n) bs)"
             and n=n and k="length bs" in must_be_high_generic, auto)
   apply (simp add: field_simps,
-         simp only: of_nat_power[symmetric] int_mult[symmetric] convert_to_nat zadd_int int_int_eq 
-                    zless_int zle_int)
-  apply (simp add: mult_Suc_right [symmetric] power_add [symmetric])
-done
+         simp only: of_nat_power[symmetric] of_nat_mult[symmetric] convert_to_nat of_nat_add int_int_eq
+                    of_nat_less_iff zle_int)
+  proof -
+  assume "0 < n"
+  assume a1: "n < length bs"
+  have f2: "\<forall>n na. (na::nat) + (n - na) = n \<or> \<not> na \<le> n"
+    by (metis add.commute minus_plus_hack_for_nats)
+  have "n \<le> length bs"
+    using a1 by linarith
+  then show "int (2 ^ length bs) = int (2 ^ n) + int (2 ^ n * (2 ^ (length bs - n) - Suc 0))"
+    using f2 by (metis (no_types) Suc_pred mult_Suc_right nat_zero_less_power_iff neq0_conv of_nat_add power_add zero_neq_numeral)
+qed
 
 
-theorem div_le_dividend_rule: 
+theorem div_le_dividend_rule:
   "\<lbrakk>k \<ge> m\<rbrakk> \<Longrightarrow> (m::nat) div n \<le> k"
-  thm Divides.div_le_dividend
-  apply(cut_tac m=m and n=n in Divides.div_le_dividend)
-  apply(arith)
-  done
+  using div_le_dividend order_trans by blast
 
 theorem zdiv_le_dividend:
   "\<lbrakk> m \<ge> 0 ; n > 0\<rbrakk> \<Longrightarrow> (m::int) div n \<le> m"
@@ -1069,7 +1053,7 @@ theorem zdiv_le_dividend:
   apply(simp)
   done
 
-theorem zdiv_le_dividend_rule: 
+theorem zdiv_le_dividend_rule:
   "\<lbrakk>k \<ge> m ; m\<ge> 0 ; n > 0\<rbrakk> \<Longrightarrow> (m::int) div n \<le> k"
   apply(cut_tac m=m and n=n in zdiv_le_dividend)
   apply(force, force)
@@ -1078,17 +1062,15 @@ theorem zdiv_le_dividend_rule:
 
 theorem div_ge_0_chained [simp]:
   "\<lbrakk> (k::int) \<le> 0 ; x \<ge> 0 ; y\<ge>0\<rbrakk> \<Longrightarrow> k \<le> (x div y)"
-  apply(cut_tac x=x and y=y in Divides.transfer_nat_int_function_closures(1))
-  apply(simp_all)
-  done
+  using Library.le_trans div_int_pos_iff by blast
 
 theorem divT_is_div_if_non_neg:
   "\<lbrakk>(j::int) > 0; i \<ge> 0\<rbrakk> \<Longrightarrow> i divT j = i div j"
   by (auto simp add: divT_def abs_if not_less_iff_gr_or_eq)
 
 end-proof
-  
-  
+
+
 
 (***************************** Proofs start here ******************************)
 

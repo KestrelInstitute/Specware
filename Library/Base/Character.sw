@@ -30,8 +30,8 @@ op ord : Bijection (Char, {n:Nat | n < 256}) = inverse chr
 % if we limit ourselves to natural numbers less than 256
 proof Isa -verbatim
 theorem Char_ord_inv:
-"(i<256 \<longrightarrow> nat_of_char(char_of_nat i) = i)
- \<and> char_of_nat(nat_of_char c) = c"
+"(i<256 \<longrightarrow> of_char(char_of (i::nat)) = i)
+ \<and> char_of(of_char c) = c"
   by (simp)
 end-proof
 % ------------------------------------------------------
@@ -65,24 +65,19 @@ op compare (c1:Char, c2:Char) : Comparison = compare (ord c1, ord c2)
 % Isabelle pragmas
 proof Isa chr_subtype_constr
   apply (auto simp add: bij_on_def inj_on_def surj_on_def bij_ON_def)
-  apply (metis Divides.mod_less nat_of_char_of_nat)
-  apply(metis IsabelleExtensions.nat_of_char_less_256 char_of_nat_of_char)
+  using String.nat_of_char_less_256 by fastforce
 end-proof
 
 proof Isa ord_subtype_constr
  apply (auto simp add: bij_ON_def inj_on_def surj_on_def  Bex_def)
- apply (rule_tac s="char_of_nat (nat_of_char x)" in ssubst)
- apply (simp,
-        thin_tac  "nat_of_char x = nat_of_char y", simp)
- apply (rule_tac x="char_of_nat y" in exI)
- apply (simp)
+ by (metis mod_if of_char_of)
 end-proof
 
 proof Isa ord__def
   apply (cut_tac Char__chr_subtype_constr, simp add: Function__inverse__stp_simp )
   apply (rule ext)
   apply(subst Function__inverse__stp_simp)
-  apply (metis bij_ON_UNIV_bij_on) 
+  apply (metis bij_ON_UNIV_bij_on)
   apply (rule inv_on_f_eq)
   apply( auto simp add: bij_on_def)
   apply (metis bij_ON_def)
@@ -95,29 +90,16 @@ proof Isa isNum [simp] end-proof
 proof Isa isAlphaNum [simp] end-proof
 proof Isa isAscii [simp] end-proof
 proof Isa toUpperCase [simp] end-proof
-
-proof Isa toUpperCase_Obligation_subtype0
-  apply (simp add:nat_of_char_def)
-end-proof
-
 proof Isa toLowerCase [simp] end-proof
-
-proof Isa toLowerCase_Obligation_subtype
- apply (simp add:nat_of_char_def)
-end-proof
-
-proof Isa toLowerCase_Obligation_subtype0
- apply (simp add:nat_of_char_def)
-end-proof
 
 % mapping to Isabelle:
 % Because of subtyping requirements we cannot simply map Char.chr to Isabelle's
-% char_of_nat but have to use the regularized version Char__chr, which is 
+% char_of but have to use the regularized version Char__chr, which is
 % defined in IsabelleExtensions (obsolete? sjw- 1/3/12)
 
 proof Isa Thy_Morphism
   type Char.Char -> char
-  Char.chr       -> char_of_nat
+  Char.chr       -> char_of
   Char.ord       -> nat_of_char
 end-proof
 
@@ -143,43 +125,49 @@ proof Isa -verbatim
 (* Extensions to SW_String                                                *)
 (**************************************************************************)
 
-lemma Char__compare_trans: 
+lemma Char__compare_trans:
  "\<lbrakk>Char__compare (x, y) = Less; Char__compare (y, z) = Less\<rbrakk>
   \<Longrightarrow> Char__compare (x, z) = Less"
- by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+ by (smt Char__compare_def Compare__Comparison.distinct(5) Integer__compare_def old.prod.case)
 
-lemma Char__compare_linear: 
+lemma Char__compare_linear:
  "\<lbrakk>Char__compare (x, y) \<noteq> Less; y \<noteq> x\<rbrakk> \<Longrightarrow> Char__compare (y, x) = Less"
- apply (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
- apply (drule_tac f="char_of_nat" in arg_cong, simp)
+ apply (simp add: Char__compare_def Integer__compare_def split: if_splits)
 done
 
-lemma Char__compare_greater2less_rule: 
+lemma Char__compare_greater2less_rule:
  "\<lbrakk>Char__compare (x, y) = Greater\<rbrakk> \<Longrightarrow> Char__compare (y, x) = Less"
-  by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+  proof -
+  assume a1: "Char__compare (x, y) = Greater"
+  have f2: "(if int (of_char y) < int (of_char x) then Less else if int (of_char x) < int (of_char y) then Greater else Equal) = Char__compare (y, x)"
+    by (simp add: Char__compare_def Integer__compare_def)
+  have "(if int (of_char x) < int (of_char y) then Less else if int (of_char y) < int (of_char x) then Greater else Equal) = Char__compare (x, y)"
+    by (simp add: Char__compare_def Integer__compare_def)
+  then show ?thesis
+    using f2 a1 by (metis (no_types) Compare__Comparison.distinct(1))
+  qed
 
-lemma Char__compare_greater2less: 
+lemma Char__compare_greater2less:
  "(Char__compare (x, y) = Greater) =  (Char__compare (y, x) = Less)"
-  by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+  by (simp add: Char__compare_def Integer__compare_def split: if_splits)
 
-lemma Char__compare_antisym: 
+lemma Char__compare_antisym:
  "\<lbrakk>Char__compare (x, y) = Less; Char__compare (y, x) = Less\<rbrakk> \<Longrightarrow> x = y"
- by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+ by (simp add: Char__compare_def Integer__compare_def split: if_splits)
 
-lemma Char__compare_equal [simp]: 
+lemma Char__compare_equal [simp]:
   "\<lbrakk>Char__compare (x, y) = Equal\<rbrakk> \<Longrightarrow> x = y"
- apply (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
- apply (drule_tac f="char_of_nat" in arg_cong, simp)
+ apply (simp add: Char__compare_def Integer__compare_def split: if_splits)
 done
- 
-lemma Char__compare_eq_simp [simp]: 
+
+lemma Char__compare_eq_simp [simp]:
   "Char__compare (x, x) = Equal"
  by (simp add: Char__compare_def Integer__compare_def)
- 
-lemma Char__compare_equal_simp: 
+
+lemma Char__compare_equal_simp:
   "(Char__compare (x, y) = Equal) = (x = y)"
  by auto
- 
+
 end-proof
 
 endspec

@@ -780,7 +780,7 @@ end-proof
 proof Isa flattenI_Obligation_subtype0
  by (rotate_tac 1, erule rev_mp, rule the1I2, 
      erule Stream__flattenI_Obligation_the, 
-     auto simp add: zdiff_int length_concat Stream__prefix_step)
+     auto simp add: of_nat_diff length_concat Stream__prefix_step)
 end-proof
 
 proof Isa unflattenF_Obligation_the 
@@ -937,7 +937,7 @@ proof Isa longestCommonPrefix_Obligation_subtype
 end-proof
 
 proof Isa longestCommonPrefix_Obligation_subtype0
-  apply (simp add: Greatest_def GreatestM_def, rule someI2_ex, simp_all)
+  apply (simp add: GreatestIE_def GreatestM_def, rule someI2_ex, simp_all)
   apply (drule Stream__longestCommonPrefix_Obligation_subtype)
   apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def )
 end-proof

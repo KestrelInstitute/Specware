@@ -28,8 +28,9 @@
 #+allegro(setq xref::*record-xref-info* nil)
 
 #+sbcl (eval-when (:compile-toplevel :load-toplevel :execute)
-         (let ((sb-fasl:*fasl-file-type* "fasl"))
-           (require :sb-posix)))
+                  (setq sb-fasl:*fasl-file-type* "fasl")
+                  (require :sb-posix)
+                  (setq sb-fasl:*fasl-file-type* "sfsl"))
 
 (defun sw-parse-namestring (str)
   #-sbcl (parse-namestring str)

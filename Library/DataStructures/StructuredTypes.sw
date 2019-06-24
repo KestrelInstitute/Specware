@@ -1,6 +1,6 @@
 (* Copyright 2015 Kestrel Institute. See file LICENSE for license details *)
 
-(*  
+(*
 
     This spec serves as one-stop shopping for polymorphic finite sets,
     bags, collections, and maps.  It also collects basic operators for
@@ -11,11 +11,11 @@
 %RecTypes qualifying
 spec
   % List comes from base: /Library/Base/List
-  import Stacks              
-  import Sets                
-  import Bags                
-  import Maps#Maps_extended  
-  import STBase              
+  import Stacks
+  import Sets
+  import Bags
+  import Maps#Maps_extended
+  import STBase
 
 theorem simplify_gt0 is
   fa(x:Nat) (x + 1 > x) = true
@@ -83,7 +83,7 @@ theorem delete1_of_empty is [a]
   fa(x:a) delete1(x,[]) = []
 
 theorem distribute_concat_over_if is [a]
-  fa(lst1:List a, p:Bool, lst2a:List a, lst2b:List a) 
+  fa(lst1:List a, p:Bool, lst2a:List a, lst2b:List a)
     lst1 ++ (if p then lst2a else lst2b) = (if p then lst1++lst2a else lst1++lst2b)
 
 theorem last_of_append is [a]
@@ -105,7 +105,7 @@ theorem last_of_append is [a]
   theorem set_delete_does_nothing_rewrite_alt is [a]
     fa(x: a,s) (s = set_delete(x,s)) = ~(in?(x,s))
 
- 
+
 
 
 
@@ -131,7 +131,7 @@ theorem last_of_append is [a]
 
   %Previously this used set_insert_new, but that would require a
   %precondition on ns ensuring that i is not already present.
-  op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
+  op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat =
       (if i>=j then ns else upto_loop(succ(i),j, set_insert(i,ns)))
 
   proof Isa -hook hook1b end-proof
@@ -151,7 +151,7 @@ theorem last_of_append is [a]
     fa(i:Nat, j:Nat, ns:Set Nat) (i < j) => upto_loop(i,j,ns) = set_insert(i,upto_loop(i+1,j,ns))
 
   %% Easier to reason about, but may cause a stack overflow on large inputs:
-  op upto_loop2 (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
+  op upto_loop2 (i:Nat,j:Nat,ns:Set Nat):Set Nat =
     if j<=i then ns else set_insert(i,upto_loop2(i+1,j,ns))
 
   theorem upto_loop2_opener is
@@ -174,7 +174,7 @@ theorem last_of_append is [a]
 
   %% Helper function for uptoL:
 
-  op uptoL_loop (i:Nat,j:Nat,ns:List Nat):List Nat = 
+  op uptoL_loop (i:Nat,j:Nat,ns:List Nat):List Nat =
       (if j<=i then ns else uptoL_loop(i,pred(j),Cons(pred(j),ns)))
 
   proof Isa -hook hook1 end-proof
@@ -194,7 +194,7 @@ theorem last_of_append is [a]
     fa(i:Nat, j:Nat, ns:List Nat) (i < j) => uptoL_loop(i,j,ns) = i::uptoL_loop(i+1,j,ns)
 
   %% Easier to reason about
-  op uptoL_loop2 (i:Nat,j:Nat,ns:List Nat):List Nat = 
+  op uptoL_loop2 (i:Nat,j:Nat,ns:List Nat):List Nat =
     if j<=i then ns else i::uptoL_loop2(i+1,j,ns)
 
   theorem uptoL_loop2_opener is
@@ -284,7 +284,7 @@ theorem last_of_append is [a]
 
   % TODO Can't prove the subtype obligations, due to the (probably overly-restrictive) idempotency condition on set_fold.
   op [a,b] bag_fold_set (f: a -> (Bag b))(ss: Set a) : Bag b =
-     set_fold empty_bag 
+     set_fold empty_bag
               (fn (bs:Bag b,ssa:a) -> bs \/ f(ssa))               %bag_union(f(ssa), bs))
               ss
 
@@ -307,7 +307,7 @@ theorem last_of_append is [a]
       (if p && q then expr2 else expr1))
 
   theorem lift_if_set_diff is [A]
-   fa(p:Bool,t1:Set A,t2:Set A,e1:Set A,e2:Set A) 
+   fa(p:Bool,t1:Set A,t2:Set A,e1:Set A,e2:Set A)
      (  (if p then t1 else e1) -- (if p then t2 else e2)
       = (if p then t1 -- t2 else e1 -- e2) )
 
@@ -328,9 +328,9 @@ theorem last_of_append is [a]
 % TODO Just define it that way?
   op [a] --- infixl 25 : Bag a * Set a -> Bag a
   axiom bag_set_difference is [a]
-     fa(b:Bag a, s:Set a, y: a) 
-       (occs(y,(b --- s)) =  (if y in? s 
-                                then natMinus(occs(y,b),1) 
+     fa(b:Bag a, s:Set a, y: a)
+       (occs(y,(b --- s)) =  (if y in? s
+                                then natMinus(occs(y,b),1)
                               else occs(y,b)))
 
   theorem bs_diff_of_emptyset is [a]
@@ -341,8 +341,8 @@ theorem last_of_append is [a]
 
   theorem distribute_bs_diff_over_left_insert is [a]
       fa(c:Bag a,d:Set a,y:a)
-        (bag_insert(y,c) --- d 
-           = (if y in? d 
+        (bag_insert(y,c) --- d
+           = (if y in? d
                then c --- set_delete(y,d)  % was c --- d, but that seemed wrong (consider c={y} (i.e., singleton bag containing y) and d={y}.)
              else bag_insert(y,c --- d)))
 
@@ -354,7 +354,7 @@ theorem last_of_append is [a]
       fa(c:Bag a,d:Set a,y:a)
         bag_delete(y,c) --- d = bag_delete(y,c --- d)
   % Old: Did not seem right.  Consider c={y,y} and d={y}.
-           %  (if y in? d 
+           %  (if y in? d
            %     then c --- d
            %   else bag_delete(y,c --- d))
 
@@ -363,7 +363,7 @@ theorem last_of_append is [a]
         c --- set_delete(y,d) = %% old: bag_delete(y, c --- d) Did not seem right.  Consider c={y} and d=empty.
         (if (y in? d && y bagin? c) then bag_insert(y, c --- d) else c --- d)
 
-% not quite right 
+% not quite right
 %  theorem distribute_bs_diff_over_bag_join is [a]
 %      fa(A:Bag a,B:Bag a,C:Set a)
 %        ((A \/ B) --- C = (A --- C) \/ (B --- C))
@@ -395,7 +395,7 @@ end-proof
 %------- Partition2S: homomorphism from Partition of Nats to Set -----------------------
 % see CC0 derivation
 
-  % def Partition2S(mp:MemoryPartition): Set Nat = 
+  % def Partition2S(mp:MemoryPartition): Set Nat =
   %       upto(mp.FromLo, mp.ToLo) \/ upto(mp.FromHi, mp.ToHi)
 
 
@@ -466,13 +466,15 @@ end-proof
 %% (*------- CM2S: homomorphism from Characteristic-Map to Set ---------------
 
 %% with characteristic maps there are several choices:
-%% 1. partial map, with default of false using 
+%% 1. partial map, with default of false using; Only works if all calls are in domain
 %%        m(x) = map_apply mp false x
-%% 2. total map, using TMApply; requires knowing the exact domain/universe
+%% 2. total map, using TMApply
 %%        m(x) = TMApply mp x
+%% This only works if the range only has one possible value: I.e.: ()
 %% *)
 
-  op [a] CM2S(m:Map(a,Bool)):Set a =  
+%% 1.
+  op [a] CM2S(m:Map(a,Bool)):Set a =
     set_fold empty_set
              (fn(sa:Set a,domelt:a) -> if (domelt in? (domain m)  %% Makes this function type-check
                                           && ~(domelt in? sa) %% Makes this function type-check
@@ -481,17 +483,17 @@ end-proof
                                        else sa)
              (domain m)
 
-  op [a] S2CM(S:Set a):Map(a,Bool) =  
+  op [a] S2CM(S:Set a):Map(a,Bool) =
     set_fold empty_map
-             (fn(amap:Map(a,Bool),domelt:a) -> (update amap domelt (true)))
+             (fn(amap:Map(a,Bool),domelt:a) -> (update amap domelt true))
              S
 
   theorem S2CM_empty_set is [a]
       (S2CM (empty_set:Set a)) = (empty_map:Map(a,Boolean))
 
-  %TODO: Probably not true: cm may map some elems to false.
+  %TODO: Not true: cm may map some elems to false.
   theorem S2CM_CM2S is [a]
-      fa(cm:Map(a,Bool)) (S2CM (CM2S cm)) = cm 
+      fa(cm:Map(a,Bool)) (S2CM (CM2S cm)) = cm
 
   theorem S2CM_insert is [a]
       fa (S:Set a, n:a) (S2CM(set_insert(n,S)) = (update (S2CM S) n true))
@@ -501,9 +503,9 @@ end-proof
 
 
   theorem CM2S_update is [a]
-      fa(m:Map(a,Bool), x:a, y:Bool) 
+      fa(m:Map(a,Bool), x:a, y:Bool)
         CM2S(update m x y)
-            = (if y 
+            = (if y
                  then set_insert(x, CM2S m) %% had set_insert_new here, but it didn't type check.
                else set_delete(x, CM2S m))
 
@@ -517,9 +519,54 @@ end-proof
     fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
 
   theorem CM2S_member is [a]
-    fa(x:a,mp:Map(a,Bool))    
-      ((x in? domain mp)     %%  needed to make this type check
-       => (TMApply(mp,x)) = (x in? CM2S mp))
+    fa(x:a,mp:Map(a,Bool))
+      x in? domain mp     %%  needed to make this type check
+       => (TMApply(mp,x)) = (x in? CM2S mp)
+
+%%% 2.
+  op [a] CM2Sa(m:Map(a,())):Set a =
+    set_fold empty_set
+             (fn(sa:Set a,domelt:a) -> if domelt in? domain m  %% Makes this function type-check ?!
+                                          && ~(domelt in? sa)  %% Makes this function type-check ?!
+                                       then set_insert_new(domelt, sa)
+                                       else sa)
+             (domain m)
+
+  op [a] S2CMa(S:Set a):Map(a,()) =
+    set_fold empty_map
+             (fn(amap:Map(a,()),domelt:a) -> (update amap domelt ()))
+             S
+
+  theorem S2CMa_empty_set is [a]
+      (S2CMa (empty_set:Set a)) = (empty_map:Map(a,()))
+
+  theorem S2CMa_CM2Sa is [a]
+      fa(cm:Map(a,())) (S2CMa (CM2Sa cm)) = cm
+
+  theorem S2CMa_insert is [a]
+      fa (S:Set a, n:a) (S2CMa(set_insert(n,S)) = (update (S2CMa S) n ()))
+
+  theorem CM2Sa_empty_map is [a]
+      CM2Sa(empty_map:Map(a,())) = empty_set
+
+
+  theorem CM2Sa_update is [a]
+      fa(m:Map(a,()), x:a)
+        CM2Sa(update m x ())
+            = set_insert(x, CM2Sa m)
+
+  theorem CM_iso_Sa is [a]
+    fa(mp:Map(a,()),ns:Set a) (CM2Sa(mp)=ns) = (mp = S2CMa ns)
+
+  theorem CM2Sa_set_insert is [a]
+    fa(x:a,mp:Map(a,())) CM2Sa(update mp x ())  = set_insert(x, CM2Sa mp) %% had set_insert_new here, but it didn't type check.
+
+  theorem CM2Sa_set_delete is [a]
+    fa(x:a,mp:Map(a,())) CM2Sa(remove mp x) = set_delete(x, CM2Sa mp)
+
+  theorem CM2Sa_member is [a]
+    fa(x:a,mp:Map(a,()))
+      (apply mp x = Some()) = (x in? CM2Sa mp)
 
 %------- L2S: homomorphism from List to Set -----------------------
 
@@ -615,8 +662,8 @@ end-proof
 % reverse args to filter to get context properties for later simplification
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
-      ( ((L2S lst) subset (domain cm))
-      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:{x:a | x in? lst})->  ~(TMApply(cm,x))) lst)) )
+       (L2S lst) subset (domain cm)
+      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:{x:a | x in? lst}) ->  none?(apply cm x)) lst))
 
 
   % theorem L2S_set_diff is [a,M]
@@ -632,14 +679,14 @@ end-proof
 %%     fa(x:a,y:a,
 %%        f:(List a)*a->(List a),
 %%        g:(Set a)*a->(Set a),
-%%        cl:(List a), lst:(List a)) 
+%%        cl:(List a), lst:(List a))
 %%       ( L2S(f(lst,x)) = g(L2S lst,x)
 %%         =>
-%%         L2S (foldl f cl lst) = 
+%%         L2S (foldl f cl lst) =
 %%         (set_fold (fn(ic:Set a,z:a)-> g(ic,z)) (L2S cl)(L2S lst)) )
 
 %%   theorem L2S_map_apply is [a]
-%%     fa(y:a,m:Map(List a,List a),lst:(List a),lunit:(List a)) 
+%%     fa(y:a,m:Map(List a,List a),lst:(List a),lunit:(List a))
 %%       ( L2S (map_apply m lunit lst) = set_insert(y, L2S lst) )
 %% *)
 
@@ -664,7 +711,7 @@ end-proof
 
 proof Isa -verbatim
 (* trying to sneak in this lemma:*)
-  theorem ndL2S_Obligation_subtype0_helper: 
+  theorem ndL2S_Obligation_subtype0_helper:
     "(x in? ndL2S y) = (x mem y)"
     apply(induct y)
     apply (metis Set__empty_set in_of_empty ndL2S.simps(1))
@@ -679,7 +726,7 @@ end-proof
      fa(al:ndList a) (al = Nil) = (ndL2S(al) = empty_set)
 
   theorem ndL2S_Cons is [a]
-    fa(y:a,lst:ndList a) ~(y in? lst) => ndL2S(Cons(y,lst)) = set_insert(y, ndL2S lst) 
+    fa(y:a,lst:ndList a) ~(y in? lst) => ndL2S(Cons(y,lst)) = set_insert(y, ndL2S lst)
 
   theorem ndL2S_member is [a]
     fa(y:a,lst:ndList a) ( (y in? lst) = (y in? ndL2S lst) )
@@ -722,8 +769,8 @@ end-proof
 
   theorem ndL2S_set_diff is [a,M]
     fa(lst:ndList a,cm:Map(a,Bool))
-      ( ((ndL2S lst) subset (domain cm))
-      => ((ndL2S lst) -- (CM2S cm)) = (ndL2S (filter (fn(x:{x:a | x in? lst})->  ~(TMApply(cm,x))) lst)) )
+       ((ndL2S lst) subset (domain cm))
+      => ((ndL2S lst) -- (CM2S cm)) = (ndL2S (filter (fn(x:{x:a | x in? lst})->  none?(apply cm x)) lst))
 
 %%Doesn't type check (also has a name clash with lift_ndL2S_over_if above):
   %% theorem lift_ndL2S_over_if is [a]
@@ -795,14 +842,14 @@ end-proof
   %%   fa(x:a,y:a,
   %%      f:(List a)*a->(List a),
   %%      g:(Bag a)*a->(Bag a),
-  %%      cl:(List a), lst:(List a)) 
+  %%      cl:(List a), lst:(List a))
   %%     ( L2B(f(lst,x)) = g(L2B lst,x)
   %%       =>
-  %%       L2B (foldl f cl lst) = 
+  %%       L2B (foldl f cl lst) =
   %%       (bag_fold (fn(ic:Bag a,z:a)-> g(ic,z)) (L2B cl)(L2B lst)) )
 
   %% theorem L2B_map_apply is [a]
-  %%   fa(y:a,m:Map(List a,List a),lst:(List a),lunit:(List a)) 
+  %%   fa(y:a,m:Map(List a,List a),lst:(List a),lunit:(List a))
   %%     ( L2B (map_apply m lunit lst) = bag_insert(y, L2B lst) )
 
 %% (* ------- L2C: homomorphism from List to Collection -----------------------
@@ -839,14 +886,14 @@ end-proof
 %%     fa(x:a,y:a,
 %%        f:      (List a)*a->(List a),
 %%        g:(Collection a)*a->(Collection a),
-%%        cl:(List a), lst:(List a)) 
+%%        cl:(List a), lst:(List a))
 %%       ( L2C(f(lst,x)) = g(L2C lst,x)
 %%         =>
-%%         L2C (foldl f cl lst) = 
+%%         L2C (foldl f cl lst) =
 %%         (coll_fold (fn(ic:Collection a,z:a)-> g(ic,z)) (L2C cl)(L2C lst)) )
 
 %%   theorem L2C_map_apply is [a]
-%%     fa(y:a,m:Map(List a,List a),lst:(List a),lunit:(List a)) 
+%%     fa(y:a,m:Map(List a,List a),lst:(List a),lunit:(List a))
 %%       ( L2C (map_apply m lunit lst) = coll_insert(y, L2C lst) )
 
 %% *)
@@ -870,18 +917,18 @@ end-proof
 *)
 
   theorem M2F_update is [a,b]
-      fa(m:Map(a,b),x:a,y,bdefault:b) %,S:Set a) 
+      fa(m:Map(a,b),x:a,y,bdefault:b) %,S:Set a)
         M2F((update m x y),bdefault) = (fn x0 -> if x0=x
                                                    then  y
                                                  else M2F(m,bdefault) x0)
 
   theorem M2F_TMApply is [a,b]
-      fa(m:Map(a,b),x:a,y:b,bdefault:b) 
+      fa(m:Map(a,b),x:a,y:b,bdefault:b)
         x in? domain(m) => (M2F(m,bdefault) x) = TMApply(m,x)
 
   theorem M_iso_F is [a,b]
-     fa(mp:Map(a,b),bdefault:b, S:Set a,n) 
-       (M2F(mp, bdefault) = (fn x | x in? S -> n x)) 
+     fa(mp:Map(a,b),bdefault:b, S:Set a,n)
+       (M2F(mp, bdefault) = (fn x | x in? S -> n x))
        = (             mp = (F2M S (fn x | x in? S -> n x)))
 
 (* ------- MM2F: homomorphism from Map-of-Map to Function-to-Set --------------- *)
@@ -895,7 +942,7 @@ end-proof
 
 
 %  theorem IM2F_update is [a,b]
-%      fa(m:Map(a,List b),x:a,y:List b) 
+%      fa(m:Map(a,List b),x:a,y:List b)
 %        IM2F(update m x y) = (fn(x0:a)-> if x0=x
 %                                        then L2C y
 %                                        else L2C (map_apply m Nil x))
@@ -911,7 +958,7 @@ end-proof
 
 %  theorem MM2FAN_empty_map is [A,I,B]
 %      MM2FAN(empty_map:Map(A,Map(I,B))) = (fn ((a,i):A*I)-> ??? )
-  
+
 
 (* ------- MM2FB: homomorphism from Map-of-Map to Function-to-Bag --------------- *)
 
@@ -921,7 +968,7 @@ end-proof
 
   theorem MM2FB_empty_map is [a,i,b]
       MM2FB(empty_map:Map(a,Map(i,b))) = (fn(x:a)-> empty_bag)
-  
+
 
 (* ------- MM2FL: homomorphism from Map-of-Map to Function-to-List --------------- *)
 
@@ -948,7 +995,7 @@ end-proof
 
 %% (*------- S2C: homomorphism from Set to Collection ---------------
 
-%%   op [a] S2C(s:Set a):Collection a =  
+%%   op [a] S2C(s:Set a):Collection a =
 %%     set_fold empty_coll
 %%              (fn(c,selt) -> coll_insert(selt, c))
 %%              s
@@ -967,7 +1014,7 @@ end-proof
 
 %% % no, this isn't right
 %%   theorem M2S_update is [a,b]
-%%       fa(m:Map(a,b), x:a, y:b) 
+%%       fa(m:Map(a,b), x:a, y:b)
 %%         M2S(update m x y) = set_insert(y, set_delete(TMApply(m,x), M2S m))
 
   theorem range_of_update_lemma is [b]
@@ -976,14 +1023,14 @@ end-proof
       (range (update mp (size mp) lc) = set_insert(lc, range mp))
 
  %% Old, incorrect version of this theorem:
- %% theorem set_insert_new_of_range is 
+ %% theorem set_insert_new_of_range is
  %%     fa(lc,mp) range (update mp (size mp) lc) = set_insert_new(lc, range mp)
 
   theorem set_insert_new_of_range is [b]
     fa(lc:b, mp:Map(Nat,b))
       (~((size mp) in? (domain mp)) &&  %% This assumption is needed for the theorem to be true (without it, we may have to delete from the range whatever (size mp) used to map to).
        ~(lc in? (range mp)))  %% This assumption is needed for the call to insert_new to type-check.
-      => 
+      =>
       (range (update mp (size mp) lc) = set_insert_new(lc, range mp))
 
 
@@ -1000,7 +1047,7 @@ end-proof
 %%       M2C(empty_map:Map(a,b)) = empty_coll
 
 %%   theorem M2C_update is [a,b]
-%%       fa(m:Map(a,b), x:a, y:b) 
+%%       fa(m:Map(a,b), x:a, y:b)
 %%         M2C(update m x y) = coll_insert(y, coll_delete(TMApply(m,x), M2C m))
 
 %%   op [a,b] map2List(m:Map(a,b)): List b =
@@ -1010,7 +1057,7 @@ end-proof
 
 %% % M2C m = L2C (map2List m)
 %%   theorem reduce_L2C_M2C is [a,b]
-%%       fa(m:Map(a,b), y:List b) 
+%%       fa(m:Map(a,b), y:List b)
 %%         (L2C (map2List m) = M2C m)
 %% *)
 
@@ -1195,8 +1242,17 @@ proof isa CM2S_Obligation_subtype
   apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
 end-proof
 
+
+(* CM2Sb proofs *)
+proof isa CM2Sb_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+  apply(auto simp add: Set__set_insert_new_def)
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
+end-proof
+
 proof isa L2S_set_diff_Obligation_subtype
-  apply(simp add: Set__Set_P_def Set__forall_rewrite Set__set_difference CM2S_member[symmetric] L2S_member)
+  by (simp add: L2S_member Set__Set_P_def Set__forall_rewrite Set__set_difference)
 end-proof
 
 proof isa L2B_Nil
@@ -1253,8 +1309,7 @@ end-proof
 proof isa L2B_concat
   apply(induct lst1)
   apply(simp add: L2B_Nil_alt Bag__bag_union_left_unit)
-  apply(simp add: L2B_Cons)
-  apply(metis Bag__distribute_bagunion_over_left_insert)
+  by (simp add: Bag__distribute_bagunion_over_left_insert L2B_Cons)
 end-proof
 
 proof isa F2M_Obligation_subtype
@@ -1299,6 +1354,8 @@ proof isa M2S_update
   sorry
 end-proof
 
+(* CM2S S2CM proofs *)
+
 proof isa S2CM_Obligation_subtype
   apply(auto simp add: Set__foldable_p_def)
   apply(rule Map__map_equality)
@@ -1321,6 +1378,10 @@ proof Isa S2CM_empty_set
   apply(simp add: S2CM_def)
   apply(rule Set__set_fold1)
   apply(metis S2CM_Obligation_subtype)
+end-proof
+
+proof Isa CM2S_empty_map
+  by (auto simp add: CM2S_def Map__domain_of_empty Set__empty_set Set__foldable_p_def Set__set_fold1)
 end-proof
 
 proof isa CM2S_update_Obligation_subtype
@@ -1353,6 +1414,67 @@ end-proof
 
 proof isa CM2S_member
   sorry
+end-proof
+
+(* CM2Sa S2CMa proofs *)
+proof Isa CM2Sa_Obligation_subtype
+  by (smt B2S_Obligation_subtype Set__foldable_p_def Set__set_insert_new_def case_prod_conv
+          set_insert_does_nothing_rewrite)
+end-proof
+
+proof isa S2CMa_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof isa S2CMa_CM2Sa
+  sorry
+end-proof
+
+proof isa S2CMa_insert
+  apply(simp add: S2CMa_def)
+  apply(subst Set__set_fold2_alt2)
+  apply(simp add: S2CMa_Obligation_subtype)
+  apply(simp add: Function__idempotent_p_def Map__update_of_update_both)
+  apply(simp)
+end-proof
+
+proof Isa S2CMa_empty_set
+  apply(simp add: S2CMa_def)
+  apply(rule Set__set_fold1)
+  apply(metis S2CMa_Obligation_subtype)
+end-proof
+
+proof isa CM2Sa_update_Obligation_subtype
+  sorry
+end-proof
+
+proof isa CM2Sa_update
+  sorry
+end-proof
+
+proof isa CM_iso_Sa
+  sorry
+end-proof
+
+proof isa CM2Sa_set_insert
+  by (simp add: CM2Sa_update)
+end-proof
+
+proof isa CM2Sa_set_delete
+  by (metis CM2Sa_update Map__domain_of_remove Map__domain_update2 Map__update_of_remove_same S2CMa_CM2Sa
+            Set__distribute_set_delete_over_set_insert set_delete_does_nothing_rewrite_alt
+            set_insert_does_nothing_rewrite_alt)
+end-proof
+
+proof isa CM2Sa_member_Obligation_subtype
+  sorry
+end-proof
+
+proof isa CM2Sa_member
+  by (metis CM2Sa_set_delete CM2Sa_set_insert Map__remove Map__update S2CMa_CM2Sa option.simps(3)
+            set_delete_does_nothing_rewrite_alt set_insert_does_nothing_rewrite_alt)
 end-proof
 
 proof isa distribute_bs_diff_over_left_insert
@@ -1410,7 +1532,7 @@ end-proof
 
 proof isa upto_loop_insert
   apply (induct "(i,j,ns)" arbitrary: i ns rule: upto_loop.induct)
-  apply (metis Set__set_insertion_commutativity upto_loop.simps) 
+  apply (metis Set__set_insertion_commutativity upto_loop.simps)
 end-proof
 
 proof isa upto_loop_insert_rev
@@ -1471,11 +1593,11 @@ proof Isa set_insert_new_of_range
 end-proof
 
 proof Isa F2M_Obligation_subtype0
-  sorry
+  by simp
 end-proof
 
-proof Isa CM2S_empty_map
-  apply(simp add: CM2S_def Map__domain_of_empty)
+proof Isa CM2Sa_empty_map
+  apply(simp add: CM2Sa_def Map__domain_of_empty)
   apply(subst Set__set_fold1)
   apply(simp add: Set__foldable_p_def Set__set_insert_new_def)
   apply(auto simp add: Set__empty_set)
@@ -1574,13 +1696,13 @@ end-proof
 proof Isa L2S_uptoL
   apply(simp only: uptoL_def)
   apply(case_tac "pair")
-  apply(auto simp only: Pair2S_def StructuredTypes.upto_def) 
+  apply(auto simp only: Pair2S_def StructuredTypes.upto_def)
 end-proof
 
 proof Isa L2S_uptoL_loop
   apply(induct "(i,j,ns)" arbitrary: j ns rule: uptoL_loop.induct)
   apply(case_tac "j \<le> i")
-  apply(auto simp del: uptoL_loop.simps upto_loop.simps)
+  by (simp add: L2S_Cons)
 end-proof
 
 proof Isa hook1
@@ -1601,7 +1723,7 @@ end-proof
 
 proof Isa hook2
 (* Version with the object-level quantifier, so I can induct properly. *)
-theorem uptoL_loop_move_accumulator_helper: 
+theorem uptoL_loop_move_accumulator_helper:
   "\<forall> ns . uptoL_loop(i, j, ns) = uptoL_loop(i, j, []) @ ns"
   apply(cut_tac P="\<lambda> (i, j, ns) . \<forall> ns . uptoL_loop(i, j, ns) = uptoL_loop(i, j, []) @ ns" and x="(i,j,[])" in uptoL_loop_induct_good)
   defer
@@ -1616,7 +1738,7 @@ end-proof
 
 proof Isa hook2b
 (* Version with the object-level quantifier, so I can induct properly. *)
-theorem upto_loop_move_accumulator_helper: 
+theorem upto_loop_move_accumulator_helper:
   "\<forall> ns . upto_loop(i, j, ns) = (upto_loop(i, j, Set__empty_set) \\/ ns)"
   thm upto_loop_induct_good
   apply(cut_tac P="\<lambda> (i, j, ns) . \<forall> ns . upto_loop(i, j, ns) = (upto_loop(i, j, Set__empty_set) \\/ ns)" and x="(i,j,Set__empty_set)" in upto_loop_induct_good)
@@ -1724,13 +1846,15 @@ proof Isa L2S_set_diff
   apply(rule Set__membership)
   apply(auto)
   apply(simp add: L2S_member [symmetric] Set__set_difference , auto)
-  apply (metis CM2S_member L2S_set_diff_Obligation_subtype0)
+  (* Bogus proof because S2CM_CM2S is not a theorem *)
+  apply(metis CM2S_empty_map CM2S_set_delete Map__domain_of_empty Map__domain_update2 S2CM_CM2S
+               Set__empty_set set_delete_does_nothing_rewrite set_insert_does_nothing_rewrite_alt)
   apply(simp add: L2S_member [symmetric] Set__set_difference CM2S_member [symmetric])
-  apply(metis CM2S_member L2S_set_diff_Obligation_subtype0)
+  by (metis L2S_member Map__map_domain Set__subset_def option.discI)
 end-proof
 
 proof Isa L2S_set_diff_Obligation_subtype0
-  apply(metis L2S_member Set__subset_def)
+  by (simp add: list_all_length)
 end-proof
 
 proof Isa L2S_set_diff_Obligation_subtype1
@@ -1748,9 +1872,8 @@ proof Isa ndL2S_Obligation_subtype0
   apply(simp add: ndL2S_Obligation_subtype0_helper)
 end-proof
 
-
 proof Isa ndL2S_Equal_Nil
-  by (metis distinct_singleton hd_in_set ndL2S_Nil ndL2S_Obligation_subtype0 ndL2S_Obligation_subtype0_helper)
+  using Set__empty_set list.set_sel(1) ndL2S_Obligation_subtype0_helper by force
 end-proof
 
 proof Isa ndL2S_Cons
@@ -1762,20 +1885,15 @@ proof Isa ndL2S_member
 end-proof
 
 proof Isa ndL2S_vs_Pair2S
-  apply(rule Set__membership)
-  apply(simp add: ndL2S_Obligation_subtype0_helper Pair2S_def)
-  apply(metis (mono_tags) L2S_member L2S_vs_Pair2S Pair2S_def old.prod.exhaust prod.case)
+  by (simp add: L2S_member L2S_uptoL Set__membership ndL2S_Obligation_subtype0_helper)
 end-proof
 
 proof Isa ndL2S_delete1
-  apply(auto)
-  apply(rule Set__membership)
-  apply(auto simp add: ndL2S_Obligation_subtype0_helper Set__in_of_delete)
+  by (metis L2S_delete1_safe2 L2S_member Set__membership ndL2S_Obligation_subtype0_helper)
 end-proof
 
 proof Isa length_of_delete1_ndList
-  apply(auto)
-  apply (metis List__delete1_delete1_curried List__length_of_delete1)
+  by (meson List__length_of_delete1)
 end-proof
 
 proof Isa ndL2S_head
@@ -1798,22 +1916,21 @@ proof Isa ndL2S_diff
 end-proof
 
 proof Isa ndL2S_set_diff_Obligation_subtype
-  apply(metis (erased, lifting) Set__Set_P_def Set__forall_rewrite Set__set_difference ndL2S_member)
+  by (simp add: Set__Set_P_def Set__forall_rewrite Set__set_difference ndL2S_Obligation_subtype0_helper)
 end-proof
 
 proof Isa ndL2S_set_diff_Obligation_subtype0
-  apply(metis Set__subset_def ndL2S_Obligation_subtype0_helper)
+  by (simp add: list_all_length)
 end-proof
 
 proof Isa ndL2S_set_diff_Obligation_subtype1
-  apply(metis list_all_iff)
+  using distinct_filter by blast
 end-proof
 
 proof Isa ndL2S_set_diff
   apply(rule Set__membership)
-  apply(auto simp add: Set__set_difference ndL2S_Obligation_subtype0_helper)
-  apply (metis CM2S_member ndL2S_set_diff_Obligation_subtype0)
-  apply (metis CM2S_member ndL2S_set_diff_Obligation_subtype0)
+  by (metis CM2S_set_delete CM_iso_S Map__domain_of_empty Map__domain_update2 Pair2S_delete Pair2S_empty S2CM_empty_set
+            Set__set_insertion_equal_empty_alt prod.sel(2) zero_le)
 end-proof
 
 proof Isa length_of_tail
@@ -1840,15 +1957,15 @@ proof Isa L2B_length
 end-proof
 
 proof Isa M2F_TMApply
-  sorry
+  by (metis M2F_update Map__TMApply_becomes_apply Map__update_of_apply_same)
 end-proof
 
 proof Isa simplify_gt4
-apply(metis Divides.div_less One_nat_def Suc_pred div_2_gt_zero neq0_conv one_add_one simplify_gt0 zero_less_diff)
+by linarith
 end-proof
 
 proof Isa simplify_gt4a
-apply(metis add_gr_0 div_0 neq0_conv semiring_div_class.mod_div_equality')
+by (simp add: mod_if)
 end-proof
 
 proof Isa last_of_append
@@ -1857,26 +1974,26 @@ end-proof
 
 proof Isa Stack2L_tail_Obligation_subtype
   by auto(simp add: Stack__empty_stack_p_def)
-end-proof    
+end-proof
 
 proof Isa Stack2L_tail_Obligation_subtype0
-  by auto(simp add: Stack__empty_stack_p_def)   
+  by auto(simp add: Stack__empty_stack_p_def)
 end-proof
 
 proof Isa Stack2L_tail
-  by auto(simp add: Stack__empty_stack_p_def)   
+  by auto(simp add: Stack__empty_stack_p_def)
 end-proof
 
 proof Isa Stack2L_head_Obligation_subtype
-  by auto(simp add: Stack__empty_stack_p_def)   
+  by auto(simp add: Stack__empty_stack_p_def)
 end-proof
 
 proof Isa Stack2L_head_Obligation_subtype0
-  by auto(simp add: Stack__empty_stack_p_def)   
+  by auto(simp add: Stack__empty_stack_p_def)
 end-proof
 
 proof Isa Stack2L_head
-  by auto(simp add: Stack__empty_stack_p_def)   
+  by auto(simp add: Stack__empty_stack_p_def)
 end-proof
 
 

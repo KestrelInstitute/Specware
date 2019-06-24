@@ -39,20 +39,25 @@ spec
 proof Isa minTCNumber__1_Obligation_subtype2
   apply (cases i, simp_all)
   apply (thin_tac "_ \<or> _")
-  apply (simp only: minus_minus  diff_minus_eq_add zadd_int
-                    int_1 [symmetric] nat_int,
-         auto simp add: Bits__minBits_def)
+  apply (auto simp add: Bits__minBits_def)
   apply (thin_tac _, thin_tac _)
-  apply (simp only: convert_to_nat_2 int_1 [symmetric]
-                    algebra_simps zadd_int zle_int add_0 
-                    semiring_numeral_div_class.discrete [symmetric])
-  (** we lack a few lemmas about Integer__toMinBigEndian ***)  
+  apply (simp only: algebra_simps zle_int add_0)
+  (** we lack a few lemmas about Integer__toMinBigEndian ***)
   apply (cut_tac base=2 and x="n+1" in Integer__toMinBigEndian_nonnil, simp)
   apply (erule rev_mp, simp add: Integer__toMinBigEndian_def LeastM_def,
          rule someI2_ex, auto simp add: Integer__toMinBigEndian_exists)
   apply (simp add: Integer__bigEndian_p_def,
          cut_tac base=2 and digits="rev x" and x="n+1" in Integer__littleEndian_p_bound,
          auto)
+  using Integer__littleEndian_p_nil apply blast
+  proof -
+    fix n :: nat and x :: "nat list"
+    assume a1: "Integer__littleEndian_p (rev x, 2, nat (1 + int n))"
+    have "n + 1 = nat (1 + int n)"
+      by force
+    then show "Integer__littleEndian_p (rev x, 2, n + 1)"
+      using a1 by presburger
+  qed
 end-proof
 
 proof Isa minTCNumber__1__obligation_refine_def
@@ -68,19 +73,19 @@ proof Isa minTCNumber__1__obligation_refine_def
   apply (simp add: Integer__toMinBigEndian_def LeastM_def,
          rule someI2_ex, auto simp add: Integer__toMinBigEndian_exists)
   apply (simp add: toNat_def)
-  apply (subst map_idI, simp, subst Bit__inverse_toNat2_fromNat2, 
+  apply (subst map_idI, simp, subst Bit__inverse_toNat2_fromNat2,
          drule_tac x=xa in spec, simp_all)
   apply (simp add: Integer__fromBigEndian_def)
   apply (cut_tac Integer__fromBigEndian_Obligation_the)
   apply (rule the1I2, simp_all)
-  apply (erule ex1E, rotate_tac -1, 
+  apply (erule ex1E, rotate_tac -1,
          frule_tac x=n in  spec, drule mp, simp,
          drule_tac x=xa in  spec, drule mp, simp_all)
   apply (safe, simp add: Integer__bigEndian_p_def Integer__littleEndian_p_nil)
-  (***** 2.2 ***)  
+  (***** 2.2 ***)
   apply (cut_tac x=i in negD, simp, clarify, simp only: minus_minus nat_int)
   apply (auto simp add: Bits__minBits_def Let_def)
-  apply (simp add: hd_map TwosComplementInt Integer__toMinBigEndian_nonnil 
+  apply (simp add: hd_map TwosComplementInt Integer__toMinBigEndian_nonnil
                    toNat_def)
   apply (subst map_idI, simp, subst Bit__inverse_toNat2_fromNat2)
   apply (cut_tac base=2 and n="Suc n" in Integer__toMinBigEndian_elements, simp,

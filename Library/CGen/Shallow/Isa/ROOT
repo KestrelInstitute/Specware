@@ -1,5 +1,7 @@
 session "Specware_Library_CGen_Shallow" = "HOL" +
   options [quick_and_dirty]
+ sessions
+   "HOL-Library"
+   "HOL-Computational_Algebra"
   theories
     CGenShallowAllIsa
-

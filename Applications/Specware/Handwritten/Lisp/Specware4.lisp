@@ -82,27 +82,26 @@
             (setq sb-ext:*muffled-warnings* 'sw-uninteresting-redefinition)
 	    (setq sb-ext::*compile-print* nil)
 	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
-	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 
 	    ;; Preload for efficiency and flexibility
-	    (eval-when (:compile-toplevel :load-toplevel :execute)
-	      (let ((sb-fasl:*fasl-file-type* "fasl"))
-                ;; The following four lines load hunchentoot and supercede the next four requires
-                ;; (load "quicklisp")
-                ;; (load "/Users/westfold/quicklisp/setup.lisp")
-                ;; (pushnew :hunchentoot-no-ssl *features*)
-                ;; (funcall (find-symbol "QUICKLOAD" :ql) "hunchentoot")
+            (eval-when (:compile-toplevel :load-toplevel :execute)
+              ;; The following four lines load hunchentoot and supercede the next four requires
+              ;; (load "quicklisp")
+              ;; (load "/Users/westfold/quicklisp/setup.lisp")
+              ;; (pushnew :hunchentoot-no-ssl *features*)
+              ;; (funcall (find-symbol "QUICKLOAD" :ql) "hunchentoot")
 
-		(require :sb-bsd-sockets)
-		(require :sb-introspect)
-		(require :sb-posix)
-                (require :sb-cltl2)
-                ;; :sb-sprof may need to be removed if running on windows
-		#-win32 (require :sb-sprof)
-                (require :asdf)
-                (require :sb-grovel)
-                ))
+              (require :sb-bsd-sockets)
+              (require :sb-introspect)
+              (require :sb-posix)
+              (require :sb-cltl2)
+              ;; :sb-sprof may need to be removed if running on windows
+              #-win32 (require :sb-sprof)
+              (require :asdf)
+              (require :sb-grovel)
+              )
+	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
 	    ;; Temporary because of race condition bug with slime

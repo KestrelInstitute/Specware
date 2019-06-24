@@ -48,7 +48,7 @@ op [a,b] @ (m:Map(a,b), x:a | x in? domain m) infixl 30 : b =
   let Some y = m x in y
 proof Isa -> @_m end-proof              % Avoid overloading
 
-op [a,b] maps? (m: Map(a,b)) (x:a) (y:b) : Bool = 
+op [a,b] maps? (m: Map(a,b)) (x:a) (y:b) : Bool =
   m definedAt x && m @ x = y
 
 op [a,b] applys (m: Map(a,b)) (xS: Set a) : Set b =
@@ -102,7 +102,7 @@ op [a,b] single? (m: Map(a,b)) : Bool = single? (domain m)
 % op [a] id (dom: Set a) : Map(a,a) = fn x:a -> Some x
 
 op [a] id (dom: Set a) : Map(a,a) =
-  fn x:a -> if x in? dom then Some x else None 
+  fn x:a -> if x in? dom then Some x else None
 
 % -------------------------------------------------------------
 % update map at point(s) (analogous to record update):
@@ -139,8 +139,8 @@ op [a,b] injective? (m:Map(a,b)) : Bool =
   fa (x1:a, x2:a) x1 in? domain m && x2 in? domain m && m x1 = m x2 => x1 = x2
 
 type InjectiveMap(a,b) = (Map(a,b) | injective?)
-proof Isa -typedef 
- by (rule_tac x="Map__update empty x y" in exI,
+proof Isa -typedef
+ by (rule_tac x="Map__update Map.empty x y" in exI,
      simp add:  Map__injective_p_def Map__update_def dom_if )
 end-proof
 
@@ -168,8 +168,8 @@ op [a,b] countable?   (m:Map(a,b)) : Bool = countable?   (domain m)
 op [a,b] uncountable? (m:Map(a,b)) : Bool = uncountable? (domain m)
 
 type      FiniteMap(a,b) = (Map(a,b) | finite?)
-proof Isa -typedef 
- by (rule_tac x="empty" in exI, simp)
+proof Isa -typedef
+ by (rule_tac x="Map.empty" in exI, simp)
 end-proof
 
 
@@ -204,9 +204,9 @@ op [a,b] agree? (m1: Map(a,b), m2: Map(a,b)) : Bool =
 op [a,b] /\ (m1: Map(a,b), m2: Map(a,b) | agree?(m1,m2)) infixr 25 : Map(a,b) =
   fn x:a -> if x in? domain m1 && x in? domain m2 then m1 x else None
 proof Isa -> /\_m end-proof
-            
+
 op [a,b] \/ (m1: Map(a,b), m2: Map(a,b) | agree?(m1,m2)) infixr 24 : Map(a,b) =
-  fn x:a -> if x in? domain m1 then m1 x 
+  fn x:a -> if x in? domain m1 then m1 x
             else if x in? domain m2 then m2 x else None
 proof Isa -> \/_m end-proof
 
@@ -242,14 +242,14 @@ theorem double_update is [a,b]
 % ------------------------------------------------------------------------------
 
 
-proof Isa Thy_Morphism Map
+proof Isa Thy_Morphism
   type Map.Map       -> map
   Map.domain         -> dom
   Map.range          -> ran
   Map.:>             -> \<circ>\<^sub>m   Left  55 reversed
   Map.o              -> \<circ>\<^sub>m   Left  55
   Map.<=             -> \<subseteq>\<^sub>m Left  50
-  Map.empty          -> empty
+  Map.empty          -> Map.empty
   Map.<<<            -> ++                  Left 100
   Map.restrictDomain -> |`                  Left 110
 end-proof
@@ -259,12 +259,12 @@ end-proof
 % ------------------------------------------------------------------------------
 % ---------- Part 5: The proofs ------------------------------------------------
 % ------------------------------------------------------------------------------
-% Note: for the time being we place Isabelle lemmas that are needed for a proof 
+% Note: for the time being we place Isabelle lemmas that are needed for a proof
 %       and cannot be expressed in SpecWare as "verbatim" lemmas into the
-%       preceeding proofs 
+%       preceeding proofs
 % ------------------------------------------------------------------------------
 
-% Some proofs can be removed, as the obligation isn't generated anymore 
+% Some proofs can be removed, as the obligation isn't generated anymore
 
 proof Isa range__def
  by (auto simp: ran_def)
@@ -306,13 +306,13 @@ by auto
 
 lemma Map__Map__applyi_simp:
   "Map__applyi m y  = {x. x \<in> dom m \<and> m x = Some y}"
-  by (simp add: Map__applyi_def Map__maps_p_def definedAt_m_def 
+  by (simp add: Map__applyi_def Map__maps_p_def definedAt_m_def
                 Map__domain__def e_at_m_def,
       auto simp add:  split: option.split)
 
 lemma Map__Map__applys_simp:
   "Map__applys m S  = {y. \<exists>x. x \<in> S \<and> m x = Some y}"
-  apply (simp add: Map__applys_def Map__maps_p_def definedAt_m_def 
+  apply (simp add: Map__applys_def Map__maps_p_def definedAt_m_def
                 Map__domain__def e_at_m_def,
       auto simp add:  split: option.split)
 (******************************************************************************)
@@ -321,8 +321,8 @@ lemma Map__Map__applys_simp:
 end-proof
 
 proof Isa inverse_Obligation_subtype
-  apply (case_tac "m", 
-         auto simp add: Map__injective_p_def Let_def split: split_if_asm)
+  apply (case_tac "m",
+         auto simp add: Map__injective_p_def Let_def split: if_splits)
   apply (simp add: Map__Map__applyi_simp)
   apply (rotate_tac -2, thin_tac _, thin_tac _, erule notE)
   apply (subgoal_tac "the_elem {x \<in> dom y. y x = Some x1} = x
@@ -337,8 +337,8 @@ proof Isa inverse_Obligation_subtype
 end-proof
 
 proof Isa inverse_Obligation_subtype0
-  apply (case_tac "m", 
-         auto simp add: Map__injective_p_def Let_def split: split_if_asm)
+  apply (case_tac "m",
+         auto simp add: Map__injective_p_def Let_def split: if_splits)
   apply (rotate_tac -2, drule_tac x=x in spec, simp add: Map__Map__applyi_simp)
   apply (erule notE, auto simp add: set_eq_iff)
   apply (drule spec, drule spec, erule mp, simp add: Map__domain__def)
@@ -371,27 +371,27 @@ end-proof
 proof Isa update_preserves_finite1 [simp]
   apply (auto simp add: Map__update_def dom_if)
   apply (erule rev_mp,
-         rule_tac t="{z. z \<noteq> x}" and s="UNIV - {x}" in subst, 
+         rule_tac t="{z. z \<noteq> x}" and s="UNIV - {x}" in subst,
          auto simp add: Diff_Int_distrib)
 end-proof
 
-proof Isa fromAssocList_Obligation_subtype 
+proof Isa fromAssocList_Obligation_subtype
   by (simp add: member_def dom_if)
 end-proof
 
 proof Isa fromAssocList_Obligation_subtype1
-  apply (cut_tac d__x=alist in List__unzip_subtype_constr)  
-  apply (auto simp add:  dom_if member_def 
+  apply (cut_tac d__x=alist in List__unzip_subtype_constr)
+  apply (auto simp add:  dom_if member_def
          List__positionOf_def List__theElement_def)
 
 (******************************************************************************
 *** Note the correct type of Map__fromAssocList__stp is
-consts Map__fromAssocList__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
+consts Map__fromAssocList__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
                                    ('a \<times> 'b) list \<Rightarrow>  ('a, 'b)Map__FiniteMap"
 ******************************************************************************)
 
 end-proof
-  
+
 proof Isa fromAssocList_Obligation_subtype2
   by (metis List__equiLong_def List__positionOf_length2 List__unzip_subtype_constr prod.case prod.inject)
 end-proof
@@ -402,7 +402,7 @@ end-proof
 % ------------------------------------------------------------------------------
 
 
-%  ---------- most of the following can be converted into SpecWare Theorems 
+%  ---------- most of the following can be converted into SpecWare Theorems
 % ----------- need to do this later
 
 proof Isa -verbatim
@@ -412,10 +412,10 @@ lemma Map__fromAssocList_empty [simp]:
   by (simp add: Map__fromAssocList_def dom_if)
 
 lemma Map__fromAssocList_singleton [simp]:
-  "Rep_Map__FiniteMap (Map__fromAssocList [(x,y)]) = Map__update empty x y "
+  "Rep_Map__FiniteMap (Map__fromAssocList [(x,y)]) = Map__update Map.empty x y "
   by (simp add: Map__fromAssocList_def dom_if Map__update_def ext)
 
-lemma Map__singleton_element [simp]: 
+lemma Map__singleton_element [simp]:
   "Map__update Map.empty x y x = Some y"
   by (simp add: Map__update_def)
 
