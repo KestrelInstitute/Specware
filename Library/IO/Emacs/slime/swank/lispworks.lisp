@@ -762,8 +762,8 @@ function names like \(SETF GET)."
 	   htab))
 
 (defimplementation swank-compile-string (string &key buffer position filename
-                                         policy)
-  (declare (ignore filename policy))
+                                                line column policy)
+  (declare (ignore filename line column policy))
   (assert buffer)
   (assert position)
   (let* ((location (list :emacs-buffer buffer position))
@@ -1018,3 +1018,9 @@ function names like \(SETF GET)."
 
 (defimplementation make-weak-value-hash-table (&rest args)
   (apply #'make-hash-table :weak-kind :value args))
+
+;;;; Packages
+
+#+package-local-nicknames
+(defimplementation package-local-nicknames (package)
+  (hcl:package-local-nicknames package))

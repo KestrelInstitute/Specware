@@ -1,4 +1,4 @@
-(require 'cl)
+;(require 'cl)
 
 ;; Load everything
 (cl-pushnew (concat (getenv "SPECWARE4") "/Library/IO/Emacs/x-symbol/") load-path)

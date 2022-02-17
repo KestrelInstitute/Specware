@@ -28,7 +28,7 @@
 ;; Finally, there is also an inferior-specware-mode-hook -- see
 ;; sl-proc.el. For more information consult the mode's *info* tree.
 
-(require 'cl)
+;(require 'cl)
 
 ;;; VERSION STRING
 
@@ -171,7 +171,7 @@ accepted in lieu of prompting."
 ;(defun insert-negation () (interactive) (insert "¬"))
 ;(defun insert-emptyset () (interactive) (insert "Ø"))
 
-(defvar x-symbol-mode)
+(defvar x-symbol-mode nil)
 
 (defun sw:x-symbol-toggle ()
   (customize-set-variable 'sw:use-x-symbol (not sw:use-x-symbol))

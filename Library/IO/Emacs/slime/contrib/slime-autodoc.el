@@ -156,7 +156,7 @@ If it's not in the cache, the cache will be updated asynchronously."
     (slime-curry #'slime-autodoc--async% context multilinep)))
 
 (defun slime-autodoc--async% (context multilinep doc)
-  (cl-destructuring-bind (doc cache-p) doc
+  (cl-destructuring-bind (doc &optional cache-p) doc
     (unless (eq doc :not-available)
       (when cache-p
 	(slime-autodoc--cache-put context doc))
@@ -181,9 +181,12 @@ If it's not in the cache, the cache will be updated asynchronously."
 	    `((,(concat prefix "A") . slime-autodoc-manually)
 	      (,(concat prefix (kbd "C-A")) . slime-autodoc-manually)
 	      (,(kbd "SPC") . slime-autodoc-space)))
-  (set (make-local-variable 'eldoc-documentation-function) 'slime-autodoc)
   (set (make-local-variable 'eldoc-minor-mode-string) nil)
-  (setq slime-autodoc-mode (eldoc-mode arg))
+  (if (boundp 'eldoc-documentation-functions)
+      (add-hook 'eldoc-documentation-functions 'slime-autodoc nil t)
+      (set (make-local-variable 'eldoc-documentation-function) 'slime-autodoc))
+  (eldoc-mode arg)
+  (setq slime-autodoc-mode t)
   (when (called-interactively-p 'interactive)
     (message "Slime autodoc mode %s."
              (if slime-autodoc-mode "enabled" "disabled"))))

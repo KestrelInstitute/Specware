@@ -119,24 +119,23 @@ terminates a current completion."
        (equal (buffer-name (window-buffer slime-completions-window))
               slime-completions-buffer-name)))
 
-(defun slime-display-completion-list (completions base)
+(defun slime-display-completion-list (completions start end)
   (let ((savedp (slime-complete-maybe-save-window-configuration)))
     (with-output-to-temp-buffer slime-completions-buffer-name
       (display-completion-list completions)
-      (let ((offset (- (point) 1 (length base))))
-        (with-current-buffer standard-output
-          (setq completion-base-position offset)
-          (set-syntax-table lisp-mode-syntax-table))))
+      (with-current-buffer standard-output
+        (setq completion-base-position (list start end))
+        (set-syntax-table lisp-mode-syntax-table)))
     (when savedp
       (setq slime-completions-window
             (get-buffer-window slime-completions-buffer-name)))))
 
-(defun slime-display-or-scroll-completions (completions base)
+(defun slime-display-or-scroll-completions (completions start end)
   (cond ((and (eq last-command this-command)
               (slime-completion-window-active-p))
          (slime-scroll-completions))
         (t
-         (slime-display-completion-list completions base)))
+         (slime-display-completion-list completions start end)))
   (slime-complete-delay-restoration))
 
 (defun slime-scroll-completions ()
@@ -205,7 +204,7 @@ terminates a current completion."
             ;; Incomplete
             (t
              (when (member completed-prefix completion-set)
-               (slime-minibuffer-respecting-message
+               (slime-minibuffer-respecting-message 
                 "Complete but not unique"))
 	     (when slime-c-p-c-unambiguous-prefix-p
 	       (let ((unambiguous-completion-length
@@ -214,7 +213,8 @@ terminates a current completion."
                                               (length completed-prefix)))))
 		 (goto-char (+ beg unambiguous-completion-length))))
              (slime-display-or-scroll-completions completion-set
-                                                  completed-prefix))))))
+                                                  beg
+                                                  (max (point) end)))))))
 
 (defun slime-complete-symbol*-fancy-bit ()
   "Do fancy tricks after completing a symbol.
@@ -245,9 +245,9 @@ current buffer."
      ((and (< beg (point-max))
            (string= (buffer-substring-no-properties beg (1+ beg)) ":"))
       ;; Contextual keyword completion
-      (let ((completions
+      (let ((completions 
              (slime-completions-for-keyword token
-                                            (save-excursion
+                                            (save-excursion 
                                               (goto-char beg)
                                               (slime-parse-form-upto-point)))))
         (when (cl-first completions)
@@ -281,7 +281,7 @@ current buffer."
 ;;; Complete form
 
 (defun slime-complete-form ()
-  "Complete the form at point.
+  "Complete the form at point.  
 This is a superset of the functionality of `slime-insert-arglist'."
   (interactive)
   ;; Find the (possibly incomplete) form around point.
@@ -290,7 +290,7 @@ This is a superset of the functionality of `slime-insert-arglist'."
       (if (eq result :not-available)
           (error "Could not generate completion for the form `%s'" buffer-form)
           (progn
-            (just-one-space (if (looking-back "\\s(" (1- (point)) nil)
+            (just-one-space (if (looking-back "\\s(" (1- (point)))
                                 0
                                 1))
             (save-excursion
@@ -302,3 +302,4 @@ This is a superset of the functionality of `slime-insert-arglist'."
               (indent-sexp)))))))
 
 (provide 'slime-c-p-c)
+

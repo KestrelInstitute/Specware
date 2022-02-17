@@ -35,7 +35,7 @@ use `slime-export-symbol-representation-function'.")
   "Save the package file after each automatic modification")
 
 (defvar slime-defpackage-regexp
-  "^(\\(cl:\\|common-lisp:\\)?defpackage\\>[ \t']*")
+  "^(\\(cl:\\|common-lisp:\\|uiop:\\|uiop/package:\\)?\\(defpackage\\|define-package\\)\\>[ \t']*")
 
 (defun slime-find-package-definition-rpc (package)
   (slime-eval `(swank:find-definition-for-thing
@@ -223,7 +223,7 @@ already exported/unexported."
            (slime-end-of-list))
           (t
            (slime-end-of-list)
-           (unless (looking-back "^\\s-*" nil)
+           (unless (looking-back "^\\s-*")
              (newline-and-indent))
            (insert "(:export ")
            (save-excursion (insert ")"))))))
@@ -260,7 +260,7 @@ already exported/unexported."
 (defun slime-insert-export (symbol-name)
   ;; Assumes we're at the inside :export after the last symbol
   (let ((symbol-name (slime-format-symbol-for-defpackage symbol-name)))
-    (unless (looking-back "^\\s-*" nil)
+    (unless (looking-back "^\\s-*")
       (newline-and-indent))
     (insert symbol-name)))
 

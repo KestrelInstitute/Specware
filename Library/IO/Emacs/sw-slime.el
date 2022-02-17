@@ -82,7 +82,9 @@
 	    `(unless (find-package :Specware)
 	       (defpackage :Specware (:use "CL")))
 	    `(set (intern "*USING-SLIME-INTERFACE?*" :Specware) t)
-            `(funcall (read-from-string "swank-loader:init"))
+            `(funcall (read-from-string "swank-loader:init")
+                      ;; :from-emacs t
+                      )
             `(funcall (read-from-string "swank:start-server")
                         ,(sw::normalize-filename ; slime-to-lisp-filename
                           (if cygwin? (concat "/cygwin" port-filename)
@@ -172,7 +174,7 @@ If NEWLINE is true then add a newline at the end of the input."
       (add-text-properties slime-repl-input-start-mark
                            (point)
                            `(slime-repl-old-input
-                             ,(incf slime-repl-old-input-counter))))
+                             ,(cl-incf slime-repl-old-input-counter))))
     (let ((overlay (make-overlay slime-repl-input-start-mark end)))
       ;; These properties are on an overlay so that they won't be taken
       ;; by kill/yank.
@@ -426,42 +428,7 @@ to end."
       (eval (pop *sw-after-prompt-forms*)))))
 
 ;;; Mods to slime.el and slime-repl.el
-(defun slime-repl-emit (string)
-  ;; insert the string STRING in the output buffer
-  (with-current-buffer (slime-output-buffer)
-    (save-excursion
-      (goto-char slime-output-end)
-      (slime-save-marker slime-output-start
-        (slime-propertize-region '(face slime-repl-output-face
-                                        slime-repl-output t
-                                        rear-nonsticky (face))
-          (let ((inhibit-read-only t))
-            (insert-before-markers string)
-            (when sw:use-x-symbol
-              (x-symbol-decode-region slime-output-start (point)))
-            (when (and (= (point) slime-repl-prompt-start-mark)
-                       (not (bolp)))
-              (insert-before-markers "\n")
-              (set-marker slime-output-end (1- (point))))))))
-    (when slime-repl-popup-on-output
-      (setq slime-repl-popup-on-output nil)
-      (display-buffer (current-buffer)))
-    (slime-repl-show-maximum-output)))
-
-
-;; (defface slime-repl-output-face
-;;   (if (slime-face-inheritance-possible-p)
-;;       '((t (:inherit font-lock-string-face)))
-;;   ;; sjw: RosyBrown --> DarkBrown as was too light
-;;     '((((class color) (background light)) (:foreground "DarkBrown"))
-;;       (((class color) (background dark)) (:foreground "LightSalmon"))
-;;       (t (:slant italic))))
-;;   "Face for Lisp output in the SLIME REPL."
-;;   :group 'slime-repl)
-
-;; Mod to use new slime-repl-update-banner hooks?
-(setq slime-repl-banner-function 'sw-slime-repl-insert-banner)
-(defun sw-slime-repl-insert-banner ()
+(defun slime-repl-insert-banner ()
   (slime-move-point (point-max))
   (let* ((banner (format "%s %s on %s %s"
                          sw:system-name

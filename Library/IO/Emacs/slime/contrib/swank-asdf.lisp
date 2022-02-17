@@ -23,8 +23,10 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (member :asdf *features*)
-    (ignore-errors (let ((sb-fasl:*fasl-file-type* "fasl")) ; sjw
-                     (funcall 'require "asdf")))))
+    (ignore-errors (let ((saved-fasl-type sb-fasl:*fasl-file-type*)) ; sjw
+                     (setq sb-fasl:*fasl-file-type* "fasl")
+                     (funcall 'require "asdf")
+                     (setq sb-fasl:*fasl-file-type* saved-fasl-type)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (member :asdf *features*)
@@ -56,8 +58,7 @@ install a recent release of ASDF and in your ~~/.swank.lisp specify:
 ;; connection.
 #-asdf3
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (or #+asdf3 t #+asdf2
-              (asdf:version-satisfies (asdf:asdf-version) "2.14.6"))
+  (unless (and #+asdf2 (asdf:version-satisfies (asdf:asdf-version) "2.14.6"))
     (error "Your ASDF is too old. ~
             The oldest version supported by swank-asdf is 2.014.6.")))
 ;;; Import functionality from ASDF that isn't available in all ASDF versions.
@@ -507,14 +508,6 @@ already knows."
 (defslimefun reload-system (name)
   (let ((*recompile-system* (asdf:find-system name)))
     (operate-on-system-for-emacs name 'asdf:load-op)))
-
-;; Doing list-all-systems-in-central-registry might be quite slow
-;; since it accesses a file-system, so run it once at the background
-;; to initialize caches.
-(when (eql *communication-style* :spawn)
-  (spawn (lambda ()
-           (ignore-errors (list-all-systems-in-central-registry)))
-         :name "init-asdf-fs-caches"))
 
 ;;; Hook for compile-file-for-emacs
 
