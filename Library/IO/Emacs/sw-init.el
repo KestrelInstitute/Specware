@@ -163,7 +163,7 @@
 	  "/Applications/Specware/bin/"
 	  (if *windows-system-p*
 	      "windows"
-	    (case system-type
+	    (cl-case system-type
 	      (darwin "unix")
               (gnu/linux "unix")
 	      (t (symbol-name system-type))))))
@@ -285,7 +285,7 @@ sLisp Heap Image File: ")
 		     sw:common-lisp-buffer-name (- 100 i)))
 	  (sit-for 0.2 t)
 	  (when (inferior-lisp-running-p)
-	    (return t)))
+	    (cl-return t)))
 	()   ;; (message "Specware is running..")
       ;; timed out -- see if we should and can start lisp
       (if *specware-auto-start*
@@ -297,7 +297,7 @@ sLisp Heap Image File: ")
 			   sw:common-lisp-buffer-name (- 100 i))
 		  (sit-for 0.1 t)
 		  (when (inferior-lisp-running-p)
-		    (return t)))
+		    (cl-return t)))
 		(message "New Specware now runnning...")
 	      (error "Could not start Specware.")))
 	(error "Specware not running. Do M-x run-specware4")))))
@@ -674,7 +674,7 @@ sLisp Heap Image File: ")
     (dotimes (i 10)
       (sit-for 1)
       (when (file-exists-p base-world-name)
-	(return nil)))
+	(cl-return nil)))
     (sw:exit-lisp)
     (sit-for 1))
   (cond ((null base-world-name)
@@ -708,7 +708,7 @@ sLisp Heap Image File: ")
 		 (concat bin-dir "/Specware4-saved." *lisp-image-extension*)
 		 t))
   (sit-for 1)
-  (eval-in-lisp-in-order (format (case *specware-lisp*
+  (eval-in-lisp-in-order (format (cl-case *specware-lisp*
 				   (cmulisp "(ext:save-lisp %S)")
 				   (allegro "(excl::dumplisp :name %S)")
 				   (openmcl "(ccl:save-application %S)")
@@ -723,7 +723,7 @@ sLisp Heap Image File: ")
   (dotimes (i 10)
     (sit-for 1)
     (when (file-exists-p world-name)
-      (return nil)))
+      (cl-return nil)))
   (unless (eq *specware-lisp* 'sbcl)
     (eval-in-lisp-in-order
      (format "(cl:let ((filename %S))
@@ -929,7 +929,7 @@ sLisp Heap Image File: ")
   ;; In the meantime, make the buffer names distinct (maybe not a bad idea anyway).
 
   (when *windows-system-p*
-    (setq buffer-name (concat (format "[%d] " (incf buffer-counter)) buffer-name)))
+    (setq buffer-name (concat (format "[%d] " (cl-incf buffer-counter)) buffer-name)))
 
   (if (and (buffer-live-p (get-buffer buffer-name))
            (not *windows-system-p*)) ;; see note above

@@ -43,10 +43,10 @@
 (mapc 'sw:load-specware-emacs-file sw:specware-emacs-files)
 
 (setq auto-mode-alist
-  (list* '("\\.sl$" . specware-mode)
-	 '("\\.spec$" . specware-mode)
-	 '("\\.sw$" . specware-mode)
-	 auto-mode-alist))
+  (cl-list* '("\\.sl$" . specware-mode)
+	    '("\\.spec$" . specware-mode)
+	    '("\\.sw$" . specware-mode)
+	    auto-mode-alist))
 
 (defvar *load-mode-motion+* t)
 

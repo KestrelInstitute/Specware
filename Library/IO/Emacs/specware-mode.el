@@ -1580,7 +1580,7 @@ STRING should be given if the last search was by `string-match' on STRING."
                                                               (length filename))))
                      (let ((rel-filename (substring filename (length dir))))
                        (unless (cl-position-if-not 'unitIdChar rel-filename)
-                         (return (if (eq (elt rel-filename 0) ?/)
+                         (cl-return (if (eq (elt rel-filename 0) ?/)
                                      rel-filename
                                    (concat "/" rel-filename)))))))
             finally (let ((oldpath (sw:eval-in-lisp "(cl-user::get-swpath)"))
@@ -1591,7 +1591,7 @@ STRING should be given if the last search was by `string-match' on STRING."
                        (if (or (eq window-system 'mswindows) (eq window-system 'w32) cygwin?) ";" ":")
                        (car head-dir-uid))
                       (sleep-for 0.1) ; Just to avoid confusing output
-                      (return (cdr head-dir-uid)))))))
+                      (cl-return (cdr head-dir-uid)))))))
 
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "

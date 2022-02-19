@@ -35,7 +35,7 @@
 (defvar *lisp-executable-extension*
   (if *windows-system-p*
       "exe"
-    (case *specware-lisp*
+    (cl-case *specware-lisp*
       (openmcl "mclexe")
       (cmulisp "cmuexe")
       (sbcl    "sbclexe")
@@ -43,7 +43,7 @@
       (gcl     "gclexe"))))
 
 (defvar *lisp-image-extension*
-  (case *specware-lisp*
+  (cl-case *specware-lisp*
     (openmcl "openmcl-image")
     (cmulisp "cmuimage")
     (sbcl    "sbclimage")
@@ -51,7 +51,7 @@
     (gcl     "gclimage")))
 
 (defvar *fasl-extension*
-  (case *specware-lisp*
+  (cl-case *specware-lisp*
     (allegro "fasl")
     (mcl     "dfsl")
     (cmu     "x86f")
@@ -86,7 +86,7 @@
   (setq inferior-lisp-program lisp-program)
   (setq expand-symlinks-rfs-exists t)
   (defvar slime-multiprocessing
-    (case *specware-lisp*
+    (cl-case *specware-lisp*
       (allegro   t)
       (openmcl   t)
       (cmu       t)
@@ -107,20 +107,19 @@
       (slime-start ;:buffer sw:common-lisp-buffer-name
                    :program common-lisp-image-name
 		   :program-args
-		   (case *specware-lisp*
+		   (cl-case *specware-lisp*
 		     ((cmulisp sbcl)
 		      (if common-lisp-image-file
 			  (list "-core" common-lisp-image-file)
                         (list "--dynamic-space-size" (format "%s" *sbcl-size*)           ; %s prints strings without quotes
                               "--control-stack-size" (format "%s" *sbcl-stack-size*))))  ; %s prints strings without quotes
-		     (allegro (concatenate 'list
-					   common-lisp-image-arguments
-					   (if common-lisp-image-file
-					       (list "-I" common-lisp-image-file)
-					     ())
-					   (if *windows-system-p*
-					       '("-e" "'(setf (eol-convention *standard-output*) :unix)'")
-					     ())))
+		     (allegro (concat common-lisp-image-arguments
+				      (if common-lisp-image-file
+					  (list "-I" common-lisp-image-file)
+					())
+				      (if *windows-system-p*
+					  '("-e" "'(setf (eol-convention *standard-output*) :unix)'")
+					())))
 		     (gcl common-lisp-image-file) ; Don't use common-lisp-image-name
 		     (otherwise (if (null common-lisp-image-file)
 				    ()

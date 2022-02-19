@@ -202,7 +202,7 @@ If NEWLINE is true then add a newline at the end of the input."
   (set-process-sentinel (slime-connection) 'slime-quit-specware-sentinel))
 
 (defun slime-quit-specware-sentinel (process message)
-  (assert (process-status process) 'closed)
+  (cl-assert (process-status process) 'closed)
   (let* ((inferior (slime-inferior-process process))
          ;(inferior-buffer (if inferior (process-buffer inferior)))
 	 )
@@ -318,7 +318,7 @@ DIRECTORY change to this directory before starting the process.
     (let ((cmd
 	   (format "%s +B %s -L %s/Library/IO/Emacs/load-slime.lisp&"
 		   program
-		   (apply 'concat (loop for arg in program-args append (list " " arg)))
+		   (apply 'concat (cl-loop for arg in program-args append (list " " arg)))
 		   (getenv "SPECWARE4")
 		   ;;slime-port
 		   )))

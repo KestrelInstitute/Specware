@@ -578,11 +578,10 @@
     (make-local-variable '*numbered-choices*)
     (setq *numbered-choices* numbered-choices)
     (apply 'widget-create
-	   (list*
-	    'radio-button-choice
-	    :value nil
-	    :notify 'choice-notify
-	    item-choices))
+	   (cl-list* 'radio-button-choice
+	             :value nil
+	             :notify 'choice-notify
+	             item-choices))
     (message "Choose an entry")))
 
 (defun choice-notify (widget ignore event)

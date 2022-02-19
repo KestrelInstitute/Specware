@@ -29,7 +29,7 @@
 	     (cl-subseq common-lisp-buffer-name
                         1 (- (length common-lisp-buffer-name) 1))
 	     (if common-lisp-image-file
-		 (case *specware-lisp*
+		 (cl-case *specware-lisp*
 		   ((cmulisp sbcl)
 		     (if common-lisp-image-file
 			 (concat common-lisp-image-name " -core " common-lisp-image-file)
