@@ -1,6 +1,8 @@
 
 ;; Load everything and use slime interface to lisp instead of Franz's
 
+(require 'cl-macs)
+
 (defvar lisp-emacs-interface-type 'slime)
 
 (defconst *specware* (or (getenv "SPECWARE4") (concat (getenv "HOME") "/Specware")))

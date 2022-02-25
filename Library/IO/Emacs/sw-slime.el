@@ -1,5 +1,6 @@
 (require 'slime)
 (require 'slime-repl)
+(require 'cl-macs)
 
 ;;; Based on slime-repl-mode
 (defvar specware-listener-mode-map)

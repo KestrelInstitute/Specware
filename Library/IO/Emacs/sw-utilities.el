@@ -9,6 +9,8 @@
 ;;; (defvar default-directory-name (concat *specware* "/"))
 
 (require 'dired)			; For (default-directory)
+(require 'cl-macs)
+
 (defvar default-directory-name default-directory) ; moved to top of file to avoid warning msg
 
 ;; (verify-emacs-version)

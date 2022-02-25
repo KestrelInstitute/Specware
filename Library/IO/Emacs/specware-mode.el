@@ -28,14 +28,12 @@
 ;; Finally, there is also an inferior-specware-mode-hook -- see
 ;; sl-proc.el. For more information consult the mode's *info* tree.
 
-;(require 'cl)
+(require 'cl-macs)
 
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
   "specware-mode, Version 4.2.15")
-
-(provide 'specware-mode)
 
 ;;; VARIABLES CONTROLLING THE MODE
 (defgroup specware nil
@@ -1573,7 +1571,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 (defun name-relative-to-swpath (filename)
   (save-excursion
     (let ((swpath (get-swpath)))
-      (loop for dir in swpath
+      (cl-loop for dir in swpath
             do (let ((dir (sw::normalize-filename dir)))
                  (if (string-equal dir
                                    (substring filename 0 (min (length dir)
@@ -2336,9 +2334,9 @@ qualifier: }")
       (forward-char i)
     (while (> i 0)
       (let ((x-symbol-char (cdr (x-symbol-charsym-after (point)))))
-	(decf i (if (null x-symbol-char)
-		    1
-		  (length (x-symbol-expansion x-symbol-char))))
+	(cl-decf i (if (null x-symbol-char)
+		       1
+		     (length (x-symbol-expansion x-symbol-char))))
 	(forward-char 1)))))
 
 (defun x-symbol-expansion (x-symbol-char)
@@ -2625,5 +2623,8 @@ With an argument, it doesn't convert imports."
 (add-hook 'sw:specware-load-hook 'specware-mode-version t)
 
 (run-hooks 'sw:specware-load-hook)
+
+
+(provide 'specware-mode)
 
 ;;; specware-mode.el has just finished.
